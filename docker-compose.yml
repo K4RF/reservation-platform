@@ -1,0 +1,3 @@
+# Local infrastructure configuration
+# Services will be added in the Docker Compose setup issue.
+services: {}
