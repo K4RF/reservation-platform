@@ -67,18 +67,30 @@
 * 실패 이벤트 재처리
 
 ---
-
 ## 3. 기술 스택
 
-### Backend
+### 현재 적용(Backend)
 
-* Java
-* Spring Boot
-* Spring Security
-* Spring Data JPA
-* JWT
-* OAuth2 Client
-* Gradle
+- Java 21
+- Spring Boot 4.0.7
+- Gradle
+- Docker
+- Docker Compose
+- MySQL 8.4
+- Redis 7.4
+- GitHub Actions
+
+### 예정
+
+- Spring Security
+- JWT
+- OAuth2
+- Spring Data JPA
+- Kafka
+- Prometheus
+- Grafana
+- k6
+- AWS
 
 ### Database
 
