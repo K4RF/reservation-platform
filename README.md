@@ -1,12 +1,14 @@
 # Reservation Platform
-[![Backend CI](https://github.com/<username>/<repository>/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/<username>/<repository>/actions/workflows/backend-ci.yml)
+
+[![Backend CI](https://github.com/K4RF/reservation-platform/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/K4RF/reservation-platform/actions/workflows/backend-ci.yml)
 
 대규모 트래픽 환경에서 발생할 수 있는 **예약 충돌 문제를 해결하기 위한 예약 플랫폼**입니다.
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> 현재 프로젝트 초기 설정 및 설계 단계입니다.
-> 기능과 문서는 개발 진행에 따라 지속적으로 업데이트됩니다.
+> 현재 **Phase 0 — Project Setup** 단계입니다. Spring Boot 프로젝트, 로컬
+> MySQL·Redis용 Docker Compose, Backend CI가 구성되어 있습니다. 예약 도메인
+> 기능과 데이터베이스·Redis 연동은 아직 구현되지 않았습니다.
 
 ---
 
@@ -34,6 +36,8 @@
 ---
 
 ## 2. 주요 기능
+
+아래 항목은 프로젝트에서 단계적으로 구현할 **예정 기능**입니다.
 
 ### 사용자 및 인증
 
@@ -67,66 +71,45 @@
 * 실패 이벤트 재처리
 
 ---
+
 ## 3. 기술 스택
 
-### 현재 적용(Backend)
+### 현재 적용
 
-- Java 21
-- Spring Boot 4.0.7
-- Gradle
-- Docker
-- Docker Compose
-- MySQL 8.4
-- Redis 7.4
-- GitHub Actions
+| 구분 | 기술 및 버전 | 현재 범위 |
+| --- | --- | --- |
+| Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
+| Web | Spring MVC | REST API 구현 기반 |
+| Validation | Bean Validation | 요청 데이터 검증 기반 |
+| Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
+| Test | JUnit Platform | Spring Context 로드 테스트 |
+| Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
+| CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-### 예정
+> MySQL과 Redis 컨테이너는 구성되어 있지만, Backend의 JPA·Redis 의존성과
+> 연결 설정은 아직 추가되지 않았습니다.
 
-- Spring Security
-- JWT
-- OAuth2
-- Spring Data JPA
-- Kafka
-- Prometheus
-- Grafana
-- k6
-- AWS
+### 도입 예정
 
-### Database
+| 구분 | 기술 |
+| --- | --- |
+| Persistence | Spring Data JPA, MySQL |
+| Authentication | Spring Security, JWT, OAuth2 Client |
+| Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
+| Messaging | Apache Kafka |
+| Monitoring | Prometheus, Grafana |
+| Performance Test | k6 |
+| Deployment | AWS EC2, RDS, ElastiCache |
 
-* MySQL
-* Redis
-
-### Messaging
-
-* Apache Kafka
-
-### Infrastructure
-
-* Docker
-* Docker Compose
-* AWS EC2
-* AWS RDS
-* AWS ElastiCache
-
-### CI/CD
-
-* GitHub Actions
-
-### Monitoring
-
-* Prometheus
-* Grafana
-
-### Performance Test
-
-* k6
-
-> 구체적인 버전과 구성은 기술 검토 및 개발 진행에 따라 확정합니다.
+예정 기술의 구체적인 버전과 구성은 도입 시점의 기술 검토 후 확정합니다.
 
 ---
 
 ## 4. 시스템 구성
+
+아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
+현재는 Spring Boot API 기본 프로젝트와 MySQL·Redis 로컬 컨테이너만
+구성되어 있습니다.
 
 ```text
 Client
@@ -154,44 +137,43 @@ Spring Boot API
 
 ## 5. 프로젝트 구조
 
-초기 목표 구조는 다음과 같습니다.
+현재 Git에서 관리하는 주요 구조는 다음과 같습니다.
 
 ```text
 reservation-platform/
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows/
+│       └── backend-ci.yml
 ├── backend/
-│   ├── src/
+│   ├── src/main/
+│   ├── src/test/
 │   ├── build.gradle
-│   └── Dockerfile
-│
+│   ├── settings.gradle
+│   └── gradlew, gradlew.bat
 ├── frontend/
 │   └── README.md
-│
 ├── infra/
 │   ├── docker/
 │   ├── prometheus/
 │   └── grafana/
-│
 ├── load-test/
 │   └── k6/
-│
 ├── docs/
 │   ├── architecture/
 │   ├── api/
 │   ├── erd/
 │   ├── adr/
-│   ├── performance/
-│   └── troubleshooting/
-│
-├── .github/
-│   ├── ISSUE_TEMPLATE/
-│   ├── workflows/
-│   └── pull_request_template.md
-│
+│   └── performance/
+├── .env_sample
+├── AGENTS.md
 ├── docker-compose.yml
 └── README.md
 ```
 
-> 실제 디렉터리 구조는 구현 과정에서 변경될 수 있습니다.
+`frontend`, `infra`, `load-test`와 일부 `docs` 하위 디렉터리는 현재
+placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 추가됩니다.
 
 ---
 
@@ -207,7 +189,8 @@ reservation-platform/
 * [x] Spring Boot 프로젝트 생성
 * [x] 로컬 개발용 Docker Compose 구성
 * [x] 기본 CI Workflow 구성
-* [ ] 프로젝트 문서 구조 설정
+* [x] 프로젝트 문서 구조 설정
+* [x] 최상위 README 작성
 
 ### Phase 1 — Basic Reservation
 
@@ -267,7 +250,7 @@ reservation-platform/
 배포 자동화와 운영 지표 모니터링 환경을 구축합니다.
 
 * [ ] 애플리케이션 Docker 이미지 구성
-* [ ] GitHub Actions CI 구성
+* [x] GitHub Actions CI 구성
 * [ ] GitHub Actions CD 구성
 * [ ] AWS 배포 환경 구성
 * [ ] Prometheus 연동
@@ -321,9 +304,12 @@ docs/
 ├── api/                # API 명세
 ├── erd/                # 데이터 모델 및 ERD
 ├── adr/                # 주요 기술 의사결정
-├── performance/        # 성능 테스트 결과
-└── troubleshooting/    # 문제 원인과 해결 과정
+└── performance/        # 성능 테스트 결과
 ```
+
+현재 `architecture`와 `adr`에는 문서 작성 원칙이 정리되어 있으며,
+`api`, `erd`, `performance`는 placeholder 상태입니다. 문제 원인과 해결 과정은
+필요 시 `docs/troubleshooting`을 추가하여 관리할 예정입니다.
 
 장기적인 개발일지, 작업 계획 및 회고는 Notion에서 관리하고, 포트폴리오 평가에 필요한 핵심 문서는 GitHub에 정리합니다.
 
@@ -332,16 +318,16 @@ docs/
 ## 9. 브랜치 전략
 
 ```text
-main
-└── issue/{issue-number}-{description}
+develop
+└── feature/#{issue-number}-{description}
 ```
 
 예시:
 
 ```text
-issue/1-project-initial-setup
-issue/12-create-reservation-api
-issue/24-apply-redis-distributed-lock
+feature/#7-README
+feature/#12-create-reservation-api
+feature/#24-apply-redis-distributed-lock
 ```
 
 작업 흐름은 다음과 같습니다.
@@ -351,12 +337,13 @@ Issue 생성
 → 작업 브랜치 생성
 → 구현 및 테스트
 → Pull Request 생성
-→ 자체 리뷰
-→ main 병합
+→ CI 및 자체 리뷰
+→ develop 병합
 → Issue 종료
 ```
 
-개인 프로젝트이므로 별도의 장기 유지 `develop` 브랜치는 두지 않고, 짧게 유지되는 작업 브랜치를 `main`에 병합하는 방식을 사용합니다.
+현재 기본 브랜치는 `develop`입니다. Issue 단위의 짧은 작업 브랜치를 생성하고,
+Pull Request를 통해 `develop`에 병합합니다.
 
 ---
 
@@ -405,10 +392,13 @@ docs: add concurrency test results
 * [x] Label 정리
 * [x] 기본 디렉터리 생성
 * [x] Spring Boot 프로젝트 초기화
-* [x] 로컬 인프라 구성
+* [x] MySQL·Redis 로컬 Docker Compose 구성
 * [x] CI Workflow 구성
+* [ ] 예약 도메인 기능 구현
+* [ ] Backend와 MySQL·Redis 연동
 
 ---
+
 ## 12. 로컬 개발 환경 실행
 
 ### 사전 요구사항
@@ -421,36 +411,86 @@ docs: add concurrency test results
 
 ### 환경 변수 설정
 
-프로젝트 루트의 `.env.example` 파일을 복사하여 `.env` 파일을 생성합니다.
+프로젝트 루트의 `.env_sample` 파일을 복사하여 `.env` 파일을 생성합니다.
 
 #### Windows PowerShell
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item .env_sample .env
 ```
 
-## 13. 실행 방법
-
-프로젝트 초기 설정 완료 후 작성할 예정입니다.
+#### macOS/Linux
 
 ```bash
-# Repository clone
-git clone <repository-url>
+cp .env_sample .env
+```
 
-# 프로젝트 디렉터리 이동
+`.env`의 비밀번호와 포트 값을 로컬 환경에 맞게 변경합니다. 실제 비밀값이
+포함된 `.env` 파일은 Git에 커밋하지 않습니다.
+
+### 저장소 준비
+
+```bash
+git clone https://github.com/K4RF/reservation-platform.git
 cd reservation-platform
+```
 
-# 로컬 인프라 실행
+### 로컬 인프라 실행
+
+```bash
 docker compose up -d
+docker compose ps
+```
 
-# Backend 실행
+종료할 때는 다음 명령을 사용합니다.
+
+```bash
+docker compose down
+```
+
+MySQL 데이터 볼륨까지 삭제하려면 `docker compose down -v`를 사용할 수
+있습니다. 이 명령은 로컬 MySQL 데이터를 삭제하므로 필요한 경우에만
+실행합니다.
+
+### Backend 실행
+
+Windows PowerShell:
+
+```powershell
+cd backend
+.\gradlew.bat bootRun
+```
+
+macOS/Linux:
+
+```bash
 cd backend
 ./gradlew bootRun
 ```
 
-> 실제 실행 명령과 환경 변수 설정 방법은 개발 환경 구성이 완료된 후 업데이트합니다.
+현재 Backend는 MySQL·Redis와 아직 연결되어 있지 않으므로 애플리케이션
+기본 실행에 컨테이너가 필수는 아닙니다.
 
----
+## 13. 테스트 및 빌드
+
+Windows PowerShell:
+
+```powershell
+cd backend
+.\gradlew.bat test
+.\gradlew.bat build
+```
+
+macOS/Linux:
+
+```bash
+cd backend
+./gradlew test
+./gradlew build
+```
+
+GitHub Actions의 `Backend CI`는 `develop` 브랜치의 Backend 관련 push와
+Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 
 ## 14. 주요 기술 과제
 
