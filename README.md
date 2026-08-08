@@ -396,8 +396,27 @@ docs: add concurrency test results
 * [ ] CI Workflow 구성
 
 ---
+## 12. 로컬 개발 환경 실행
 
-## 12. 실행 방법
+### 사전 요구사항
+
+로컬에서 프로젝트를 실행하려면 다음 환경이 필요합니다.
+
+- Java 21
+- Docker
+- Docker Compose
+
+### 환경 변수 설정
+
+프로젝트 루트의 `.env.example` 파일을 복사하여 `.env` 파일을 생성합니다.
+
+#### Windows PowerShell
+
+```powershell
+Copy-Item .env.example .env
+```
+
+## 13. 실행 방법
 
 프로젝트 초기 설정 완료 후 작성할 예정입니다.
 
@@ -420,7 +439,7 @@ cd backend
 
 ---
 
-## 13. 주요 기술 과제
+## 14. 주요 기술 과제
 
 이 프로젝트에서 중점적으로 검증할 기술 과제는 다음과 같습니다.
 
@@ -433,6 +452,6 @@ cd backend
 
 ---
 
-## 14. License
+## 15. License
 
 라이선스는 프로젝트 공개 범위 확정 후 추가할 예정입니다.
