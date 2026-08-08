@@ -1,4 +1,5 @@
 # Reservation Platform
+[![Backend CI](https://github.com/<username>/<repository>/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/<username>/<repository>/actions/workflows/backend-ci.yml)
 
 대규모 트래픽 환경에서 발생할 수 있는 **예약 충돌 문제를 해결하기 위한 예약 플랫폼**입니다.
 
@@ -188,12 +189,12 @@ reservation-platform/
 
 프로젝트 개발을 위한 기본 환경과 협업 규칙을 설정합니다.
 
-* [ ] GitHub Issue 및 Pull Request Template 적용
-* [ ] 브랜치 및 커밋 규칙 정의
-* [ ] 프로젝트 기본 디렉터리 구성
-* [ ] Spring Boot 프로젝트 생성
-* [ ] 로컬 개발용 Docker Compose 구성
-* [ ] 기본 CI Workflow 구성
+* [x] GitHub Issue 및 Pull Request Template 적용
+* [x] 브랜치 및 커밋 규칙 정의
+* [x] 프로젝트 기본 디렉터리 구성
+* [x] Spring Boot 프로젝트 생성
+* [x] 로컬 개발용 Docker Compose 구성
+* [x] 기본 CI Workflow 구성
 * [ ] 프로젝트 문서 구조 설정
 
 ### Phase 1 — Basic Reservation
@@ -387,13 +388,13 @@ docs: add concurrency test results
 * [x] Pull Request Template 적용
 * [x] 초기 설정 Issue 생성
 * [x] 초기 설정 브랜치 생성
-* [ ] README 작성
-* [ ] Milestone 생성
-* [ ] Label 정리
-* [ ] 기본 디렉터리 생성
-* [ ] Spring Boot 프로젝트 초기화
-* [ ] 로컬 인프라 구성
-* [ ] CI Workflow 구성
+* [x] README 작성
+* [x] Milestone 생성
+* [x] Label 정리
+* [x] 기본 디렉터리 생성
+* [x] Spring Boot 프로젝트 초기화
+* [x] 로컬 인프라 구성
+* [x] CI Workflow 구성
 
 ---
 ## 12. 로컬 개발 환경 실행
