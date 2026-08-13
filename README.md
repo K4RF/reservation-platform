@@ -7,8 +7,9 @@
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
-> MySQL·Redis용 Docker Compose, Backend CI와 회원가입 API가 구성되어 있습니다.
-> Redis 연동과 예약 도메인 기능은 아직 구현되지 않았습니다.
+> MySQL·Redis용 Docker Compose, Backend CI, 회원가입 API와 JWT 인증 기반이
+> 구성되어 있습니다. 로그인·토큰 발급 API, Redis 연동과 예약 도메인 기능은
+> 아직 구현되지 않았습니다.
 
 ---
 
@@ -83,6 +84,8 @@
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA, MySQL 8.4 | 회원 정보 저장 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
+| Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
+| JWT | Spring Security OAuth2 JOSE | HS256 Access Token 생성·검증 기반 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
@@ -94,7 +97,7 @@
 
 | 구분 | 기술 |
 | --- | --- |
-| Authentication | Spring Security 인증·인가, JWT, OAuth2 Client |
+| Authentication | 로그인 및 Token 발급 API, OAuth2 Client |
 | Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
@@ -108,8 +111,9 @@
 ## 4. 시스템 구성
 
 아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
-현재는 Spring Boot API, 회원가입과 MySQL 저장 기능, MySQL·Redis 로컬
-컨테이너가 구성되어 있습니다. Redis 활용과 Kafka 연동은 도입 예정입니다.
+현재는 Spring Boot API, 회원가입과 MySQL 저장 기능, Stateless SecurityFilterChain,
+JWT 생성·검증 및 인증 Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다.
+Redis 활용과 Kafka 연동은 도입 예정입니다.
 
 ```text
 Client
@@ -197,8 +201,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 기본 예약 서비스를 구현합니다.
 
 * [x] 회원가입
-* [ ] 로그인
-* [ ] JWT 인증·인가
+* [x] JWT 인증 기반 구성
+* [ ] 로그인 및 JWT 발급 API
 * [ ] OAuth2 로그인
 * [ ] 숙소 등록
 * [ ] 숙소 목록 및 상세 조회
@@ -395,6 +399,7 @@ docs: add concurrency test results
 * [x] MySQL·Redis 로컬 Docker Compose 구성
 * [x] CI Workflow 구성
 * [x] 회원가입 및 비밀번호 해시 저장
+* [x] Spring Security 및 JWT 인증 기반 구성
 * [ ] 예약 도메인 기능 구현
 * [x] Backend와 MySQL 연동
 * [ ] Backend와 Redis 연동
@@ -429,6 +434,32 @@ cp .env_sample .env
 
 `.env`의 비밀번호와 포트 값을 로컬 환경에 맞게 변경합니다. 실제 비밀값이
 포함된 `.env` 파일은 Git에 커밋하지 않습니다.
+
+JWT 서명용 Secret은 32바이트 이상의 난수를 Base64로 인코딩해
+`JWT_SECRET`에 설정합니다. `.env_sample`의 placeholder를 그대로 사용하면
+애플리케이션이 시작되지 않습니다.
+
+Windows PowerShell:
+
+```powershell
+$jwtBytes = New-Object byte[] 32
+[Security.Cryptography.RandomNumberGenerator]::Fill($jwtBytes)
+[Convert]::ToBase64String($jwtBytes)
+```
+
+macOS/Linux:
+
+```bash
+openssl rand -base64 32
+```
+
+관련 환경변수는 다음과 같습니다.
+
+```dotenv
+JWT_SECRET=<base64-encoded-secret>
+JWT_ISSUER=reservation-platform
+JWT_ACCESS_TOKEN_EXPIRATION=30m
+```
 
 ### 저장소 준비
 

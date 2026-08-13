@@ -13,3 +13,8 @@ spring:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}
     open-in-view: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:reservation-platform}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:30m}

@@ -8,3 +8,8 @@ spring:
     hibernate:
       ddl-auto: create-drop
     open-in-view: false
+
+jwt:
+  secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+  issuer: reservation-platform-test
+  access-token-expiration: 30m

@@ -44,14 +44,15 @@ The Gradle project root is `backend/`, not the repository root.
 - Spring MVC
 - Bean Validation
 - Spring Data JPA
-- Spring Security Crypto (`PasswordEncoder` only)
+- Spring Security 7 with a stateless filter chain
+- Spring Security OAuth2 JOSE for HS256 JWT creation and validation
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for tests
 
-Spring Security authentication and authorization, JWT, OAuth2, Redis, Kafka,
-Prometheus, Grafana, k6, CD, and a frontend framework are planned but are not
-currently configured unless the repository is updated to include them.
+Login and token issuance APIs, OAuth2, Redis, Kafka, Prometheus, Grafana, k6,
+CD, and a frontend framework are planned but are not currently configured
+unless the repository is updated to include them.
 
 ## Build and Test Commands
 
@@ -113,6 +114,8 @@ Backend configuration and behavior are implemented and verified.
 
 - `backend/src/main/resources/application.yaml` configures the MySQL datasource
   from environment variables and can optionally load the repository `.env` file.
+- JWT signing requires a Base64-encoded secret of at least 32 bytes through
+  `JWT_SECRET`; never add a real signing secret to tracked configuration.
 - Never commit passwords, tokens, private keys, production connection strings, or
   other credentials.
 - Use environment variables or explicitly ignored local configuration for secret
@@ -133,7 +136,8 @@ Before completing a change:
 
 ## Current Limitations
 
-- Member sign-up and MySQL persistence are implemented; login and authentication
+- Member sign-up, MySQL persistence, stateless Spring Security, and JWT
+  authentication infrastructure are implemented; login and token issuance APIs
   are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
