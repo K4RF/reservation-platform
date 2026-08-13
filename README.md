@@ -6,9 +6,9 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> 현재 **Phase 0 — Project Setup** 단계입니다. Spring Boot 프로젝트, 로컬
-> MySQL·Redis용 Docker Compose, Backend CI가 구성되어 있습니다. 예약 도메인
-> 기능과 데이터베이스·Redis 연동은 아직 구현되지 않았습니다.
+> 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
+> MySQL·Redis용 Docker Compose, Backend CI와 회원가입 API가 구성되어 있습니다.
+> Redis 연동과 예약 도메인 기능은 아직 구현되지 않았습니다.
 
 ---
 
@@ -81,20 +81,20 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
+| Persistence | Spring Data JPA, MySQL 8.4 | 회원 정보 저장 |
+| Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
-| Test | JUnit Platform | Spring Context 로드 테스트 |
+| Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-> MySQL과 Redis 컨테이너는 구성되어 있지만, Backend의 JPA·Redis 의존성과
-> 연결 설정은 아직 추가되지 않았습니다.
+> Backend는 MySQL과 연결되며 Redis 연결 설정은 아직 추가되지 않았습니다.
 
 ### 도입 예정
 
 | 구분 | 기술 |
 | --- | --- |
-| Persistence | Spring Data JPA, MySQL |
-| Authentication | Spring Security, JWT, OAuth2 Client |
+| Authentication | Spring Security 인증·인가, JWT, OAuth2 Client |
 | Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
@@ -108,8 +108,8 @@
 ## 4. 시스템 구성
 
 아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
-현재는 Spring Boot API 기본 프로젝트와 MySQL·Redis 로컬 컨테이너만
-구성되어 있습니다.
+현재는 Spring Boot API, 회원가입과 MySQL 저장 기능, MySQL·Redis 로컬
+컨테이너가 구성되어 있습니다. Redis 활용과 Kafka 연동은 도입 예정입니다.
 
 ```text
 Client
@@ -196,7 +196,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 기본 예약 서비스를 구현합니다.
 
-* [ ] 회원가입
+* [x] 회원가입
 * [ ] 로그인
 * [ ] JWT 인증·인가
 * [ ] OAuth2 로그인
@@ -380,7 +380,7 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-현재는 **Phase 0 — Project Setup** 단계입니다.
+현재는 **Phase 1 — Basic Reservation** 단계입니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용
@@ -394,8 +394,10 @@ docs: add concurrency test results
 * [x] Spring Boot 프로젝트 초기화
 * [x] MySQL·Redis 로컬 Docker Compose 구성
 * [x] CI Workflow 구성
+* [x] 회원가입 및 비밀번호 해시 저장
 * [ ] 예약 도메인 기능 구현
-* [ ] Backend와 MySQL·Redis 연동
+* [x] Backend와 MySQL 연동
+* [ ] Backend와 Redis 연동
 
 ---
 
@@ -437,6 +439,9 @@ cd reservation-platform
 
 ### 로컬 인프라 실행
 
+Docker MySQL은 Host의 `3307` 포트를 컨테이너의 `3306` 포트에 연결합니다.
+Backend는 프로젝트 루트 `.env`의 `MYSQL_PORT`와 동일한 포트를 사용합니다.
+
 ```bash
 docker compose up -d
 docker compose ps
@@ -468,8 +473,10 @@ cd backend
 ./gradlew bootRun
 ```
 
-현재 Backend는 MySQL·Redis와 아직 연결되어 있지 않으므로 애플리케이션
-기본 실행에 컨테이너가 필수는 아닙니다.
+Backend 기본 설정은 MySQL을 사용하므로 애플리케이션 실행 전에 MySQL
+컨테이너가 필요합니다. Backend는 프로젝트 루트의 `.env`를 로컬 설정으로
+읽습니다. 다른 데이터베이스를 사용할 때는 `DB_URL`, `MYSQL_USER`,
+`MYSQL_PASSWORD`를 실행 환경에서 재정의할 수 있습니다.
 
 ## 13. 테스트 및 빌드
 
