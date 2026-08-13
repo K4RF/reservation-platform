@@ -43,12 +43,15 @@ The Gradle project root is `backend/`, not the repository root.
 - Gradle Wrapper 9.5.1
 - Spring MVC
 - Bean Validation
+- Spring Data JPA
+- Spring Security Crypto (`PasswordEncoder` only)
+- MySQL Connector/J
 - Lombok
-- JUnit Platform
+- JUnit Platform and H2 for tests
 
-Spring Data JPA, Spring Security, JWT, OAuth2, MySQL, Redis, Kafka,
-Prometheus, Grafana, k6, CI/CD, and a frontend framework are planned but are
-not currently configured unless the repository is updated to include them.
+Spring Security authentication and authorization, JWT, OAuth2, Redis, Kafka,
+Prometheus, Grafana, k6, CD, and a frontend framework are planned but are not
+currently configured unless the repository is updated to include them.
 
 ## Build and Test Commands
 
@@ -76,8 +79,9 @@ Run the narrowest relevant tests while developing. Run the full `test` task
 before handing off backend changes, and run `build` for backend-wide or build
 configuration changes.
 
-`docker-compose.yml` currently defines no services. Do not report local
-infrastructure as available until services are actually configured and verified.
+`docker-compose.yml` defines MySQL 8.4 and Redis 7.4 for local development.
+Do not report application integration as available until the corresponding
+Backend configuration and behavior are implemented and verified.
 
 ## Working Rules
 
@@ -107,8 +111,8 @@ infrastructure as available until services are actually configured and verified.
 
 ## Configuration and Secrets
 
-- `backend/src/main/resources/application.yaml` currently contains only the
-  application name.
+- `backend/src/main/resources/application.yaml` configures the MySQL datasource
+  from environment variables and can optionally load the repository `.env` file.
 - Never commit passwords, tokens, private keys, production connection strings, or
   other credentials.
 - Use environment variables or explicitly ignored local configuration for secret
@@ -129,10 +133,11 @@ Before completing a change:
 
 ## Current Limitations
 
-- No domain APIs, persistence components, authentication, concurrency control,
-  Redis, or Kafka integration are implemented.
-- Docker Compose defines no services.
-- No GitHub Actions workflow is present.
+- Member sign-up and MySQL persistence are implemented; login and authentication
+  are not implemented.
+- Redis, concurrency control, and Kafka integration are not implemented.
+- Docker Compose defines MySQL and Redis services.
+- A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - The frontend is a placeholder with no selected technology stack.
-- The only automated test currently verifies that the Spring application context
-  loads.
+- Automated tests cover the application context, global exception handling, and
+  member sign-up behavior using H2.
