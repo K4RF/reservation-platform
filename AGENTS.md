@@ -50,9 +50,9 @@ The Gradle project root is `backend/`, not the repository root.
 - Lombok
 - JUnit Platform and H2 for tests
 
-Login and token issuance APIs, OAuth2, Redis, Kafka, Prometheus, Grafana, k6,
-CD, and a frontend framework are planned but are not currently configured
-unless the repository is updated to include them.
+OAuth2, Refresh Token handling, Redis, Kafka, Prometheus, Grafana, k6, CD, and
+a frontend framework are planned but are not currently configured unless the
+repository is updated to include them.
 
 ## Build and Test Commands
 
@@ -136,12 +136,13 @@ Before completing a change:
 
 ## Current Limitations
 
-- Member sign-up, MySQL persistence, stateless Spring Security, and JWT
-  authentication infrastructure are implemented; login and token issuance APIs
-  are not implemented.
+- Member sign-up, email/password login, MySQL persistence, stateless Spring
+  Security, and JWT Access Token issuance and authentication are implemented.
+- Refresh Token issuance and lifecycle management are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - The frontend is a placeholder with no selected technology stack.
-- Automated tests cover the application context, global exception handling, and
-  member sign-up behavior using H2.
+- Automated tests cover the application context, global exception handling,
+  member sign-up, login failure normalization, JWT issuance, and authenticated
+  access using H2.

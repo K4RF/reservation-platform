@@ -7,7 +7,8 @@ import junsik.reservation.global.exception.ErrorCode;
 public enum SecurityErrorCode implements ErrorCode {
 
 	UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "인증이 필요합니다."),
-	ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_002", "접근 권한이 없습니다.");
+	ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_002", "접근 권한이 없습니다."),
+	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_003", "이메일 또는 비밀번호가 올바르지 않습니다.");
 
 	private final HttpStatus status;
 	private final String code;
