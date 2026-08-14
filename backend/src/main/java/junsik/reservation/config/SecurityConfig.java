@@ -17,6 +17,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import junsik.reservation.security.JwtAccessDeniedHandler;
 import junsik.reservation.security.JwtAuthenticationEntryPoint;
 import junsik.reservation.security.JwtAuthenticationFilter;
+import junsik.reservation.security.OAuth2AuthenticationFailureHandler;
+import junsik.reservation.security.OAuth2AuthenticationSuccessHandler;
+import junsik.reservation.service.OAuth2MemberService;
 
 @Configuration
 public class SecurityConfig {
@@ -36,7 +39,10 @@ public class SecurityConfig {
 			HttpSecurity http,
 			JwtAuthenticationFilter jwtAuthenticationFilter,
 			JwtAuthenticationEntryPoint authenticationEntryPoint,
-			JwtAccessDeniedHandler accessDeniedHandler
+			JwtAccessDeniedHandler accessDeniedHandler,
+			OAuth2MemberService oauth2MemberService,
+			OAuth2AuthenticationSuccessHandler oauth2SuccessHandler,
+			OAuth2AuthenticationFailureHandler oauth2FailureHandler
 	) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
@@ -46,9 +52,14 @@ public class SecurityConfig {
 				.exceptionHandling(exceptions -> exceptions
 						.authenticationEntryPoint(authenticationEntryPoint)
 						.accessDeniedHandler(accessDeniedHandler))
+				.oauth2Login(oauth2 -> oauth2
+						.userInfoEndpoint(userInfo -> userInfo.userService(oauth2MemberService))
+						.successHandler(oauth2SuccessHandler)
+						.failureHandler(oauth2FailureHandler))
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.POST, "/api/v1/members").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+						.requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 						.requestMatchers("/error").permitAll()
 						.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
 						.anyRequest().authenticated())

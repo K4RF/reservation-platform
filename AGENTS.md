@@ -46,13 +46,14 @@ The Gradle project root is `backend/`, not the repository root.
 - Spring Data JPA
 - Spring Security 7 with a stateless filter chain
 - Spring Security OAuth2 JOSE for HS256 JWT creation and validation
+- Spring Security OAuth2 Client with Google as the initial provider
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for tests
 
-OAuth2, Refresh Token handling, Redis, Kafka, Prometheus, Grafana, k6, CD, and
-a frontend framework are planned but are not currently configured unless the
-repository is updated to include them.
+Additional OAuth2 providers, Refresh Token handling, Redis, Kafka, Prometheus,
+Grafana, k6, CD, and a frontend framework are planned but are not currently
+configured unless the repository is updated to include them.
 
 ## Build and Test Commands
 
@@ -116,6 +117,8 @@ Backend configuration and behavior are implemented and verified.
   from environment variables and can optionally load the repository `.env` file.
 - JWT signing requires a Base64-encoded secret of at least 32 bytes through
   `JWT_SECRET`; never add a real signing secret to tracked configuration.
+- Google OAuth2 login requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`;
+  keep both values in the ignored `.env` file or environment variables.
 - Never commit passwords, tokens, private keys, production connection strings, or
   other credentials.
 - Use environment variables or explicitly ignored local configuration for secret
@@ -136,13 +139,16 @@ Before completing a change:
 
 ## Current Limitations
 
-- Member sign-up, email/password login, MySQL persistence, stateless Spring
-  Security, and JWT Access Token issuance and authentication are implemented.
+- Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
+  stateless Spring Security, and JWT Access Token issuance and authentication
+  are implemented.
+- Google accounts are linked to existing members by verified email; otherwise a
+  new member and provider-specific social account are created.
 - Refresh Token issuance and lifecycle management are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - The frontend is a placeholder with no selected technology stack.
 - Automated tests cover the application context, global exception handling,
-  member sign-up, login failure normalization, JWT issuance, and authenticated
-  access using H2.
+  member sign-up, login failure normalization, Google OAuth2 member mapping,
+  JWT issuance, and authenticated access using H2.

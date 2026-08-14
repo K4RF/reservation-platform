@@ -7,9 +7,9 @@
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
-> MySQL·Redis용 Docker Compose, Backend CI, 회원가입·로그인 API와 JWT Access
-> Token 기반 인증이 구성되어 있습니다. Redis 연동과 예약 도메인 기능은 아직
-> 구현되지 않았습니다.
+> MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
+> OAuth2 로그인과 JWT Access Token 기반 인증이 구성되어 있습니다. Redis
+> 연동과 예약 도메인 기능은 아직 구현되지 않았습니다.
 
 ---
 
@@ -86,6 +86,7 @@
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
+| Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
@@ -97,7 +98,7 @@
 
 | 구분 | 기술 |
 | --- | --- |
-| Authentication | OAuth2 Client, Refresh Token 정책 |
+| Authentication | 추가 OAuth2 Provider, Refresh Token 정책 |
 | Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
@@ -111,10 +112,10 @@
 ## 4. 시스템 구성
 
 아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
-현재는 Spring Boot API, 회원가입·이메일 로그인과 MySQL 저장 기능,
-Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증 Filter,
-MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis 활용과 Kafka 연동은
-도입 예정입니다.
+현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
+저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
+Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis 활용과 Kafka
+연동은 도입 예정입니다.
 
 ```text
 Client
@@ -204,7 +205,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 회원가입
 * [x] JWT 인증 기반 구성
 * [x] 로그인 및 JWT 발급 API
-* [ ] OAuth2 로그인
+* [x] OAuth2 로그인
 * [ ] 숙소 등록
 * [ ] 숙소 목록 및 상세 조회
 * [ ] 예약 생성
@@ -402,6 +403,7 @@ docs: add concurrency test results
 * [x] 회원가입 및 비밀번호 해시 저장
 * [x] Spring Security 및 JWT 인증 기반 구성
 * [x] 이메일 로그인 및 JWT Access Token 발급
+* [x] Google OAuth2 로그인 및 기존 회원 연결
 * [ ] 예약 도메인 기능 구현
 * [x] Backend와 MySQL 연동
 * [ ] Backend와 Redis 연동
@@ -461,7 +463,18 @@ openssl rand -base64 32
 JWT_SECRET=<base64-encoded-secret>
 JWT_ISSUER=reservation-platform
 JWT_ACCESS_TOKEN_EXPIRATION=30m
+GOOGLE_CLIENT_ID=<google-oauth-client-id>
+GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 ```
+
+Google Cloud Console의 OAuth Client에는 로컬 Redirect URI로
+`http://localhost:8080/login/oauth2/code/google`을 등록합니다. Backend 실행 후
+`http://localhost:8080/oauth2/authorization/google`로 접속하면 Google 로그인을
+시작하며, 성공한 Callback 응답으로 서비스 JWT Access Token을 반환합니다.
+
+Google이 검증한 이메일과 동일한 기존 회원이 있으면 해당 회원에 Google 계정을
+연결하며 기존 비밀번호 로그인은 유지합니다. 동일 이메일 회원이 없으면 `USER`
+역할의 신규 회원과 Google 소셜 계정을 생성합니다.
 
 ### 저장소 준비
 
