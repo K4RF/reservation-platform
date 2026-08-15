@@ -1,6 +1,7 @@
 package junsik.reservation.global.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +56,17 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(HandlerMethodValidationException.class)
 	public ResponseEntity<ErrorResponse> handleHandlerMethodValidationException(
 			HandlerMethodValidationException exception,
+			HttpServletRequest request
+	) {
+		ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+		return ResponseEntity
+				.status(errorCode.getStatus())
+				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+	}
+
+	@ExceptionHandler(ConstraintViolationException.class)
+	public ResponseEntity<ErrorResponse> handleConstraintViolationException(
+			ConstraintViolationException exception,
 			HttpServletRequest request
 	) {
 		ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;

@@ -8,8 +8,8 @@
 
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
-> OAuth2 로그인과 JWT Access Token 기반 인증이 구성되어 있습니다. Redis
-> 연동과 예약 도메인 기능은 아직 구현되지 않았습니다.
+> OAuth2 로그인, JWT Access Token 기반 인증과 숙소 등록·조회 API가 구성되어
+> 있습니다. Redis 연동, 객실 및 예약 도메인 기능은 아직 구현되지 않았습니다.
 
 ---
 
@@ -82,7 +82,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA, MySQL 8.4 | 회원 정보 저장 |
+| Persistence | Spring Data JPA, MySQL 8.4 | 회원·소셜 계정·숙소 정보 저장 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -134,6 +134,18 @@ Spring Boot API
        ├── Point Event Consumer
        └── Notification Event Consumer
 ```
+
+### 현재 숙소 API
+
+| Method | Endpoint | 권한 | 기능 |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/accommodations` | `ADMIN` | 숙소 등록 |
+| `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
+| `GET` | `/api/v1/accommodations?page=0&size=20` | 인증 사용자 | 숙소 목록 조회 |
+
+목록은 숙소 ID 오름차순으로 반환하며 `page`는 0부터 시작합니다. `size`는
+1 이상 100 이하만 허용합니다. 검색, 임의 정렬, 복합 필터는 현재 MVP 범위에
+포함되지 않습니다.
 
 초기에는 하나의 애플리케이션 내부에서 도메인 경계를 분리한 **모듈러 모놀리스** 형태로 개발합니다.
 
@@ -206,8 +218,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] JWT 인증 기반 구성
 * [x] 로그인 및 JWT 발급 API
 * [x] OAuth2 로그인
-* [ ] 숙소 등록
-* [ ] 숙소 목록 및 상세 조회
+* [x] 숙소 등록
+* [x] 숙소 목록 및 상세 조회
 * [ ] 예약 생성
 * [ ] 예약 조회
 * [ ] 예약 취소
@@ -404,6 +416,7 @@ docs: add concurrency test results
 * [x] Spring Security 및 JWT 인증 기반 구성
 * [x] 이메일 로그인 및 JWT Access Token 발급
 * [x] Google OAuth2 로그인 및 기존 회원 연결
+* [x] 숙소 등록 및 페이지 기반 목록·단건 조회
 * [ ] 예약 도메인 기능 구현
 * [x] Backend와 MySQL 연동
 * [ ] Backend와 Redis 연동

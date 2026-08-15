@@ -5,9 +5,8 @@
 `Reservation Platform` is a personal backend portfolio project focused on
 preventing reservation conflicts under concurrent traffic.
 
-The repository is currently in the initial Spring Boot setup phase. Features
-listed in `README.md` include roadmap items and must not be treated as already
-implemented.
+The repository is in Phase 1 of the backend implementation. Features listed in
+`README.md` include roadmap items and must not be treated as already implemented.
 
 ## Source of Truth
 
@@ -144,6 +143,10 @@ Before completing a change:
   are implemented.
 - Google accounts are linked to existing members by verified email; otherwise a
   new member and provider-specific social account are created.
+- Accommodation creation is restricted to `ADMIN`; authenticated users can read
+  accommodation details and ID-ordered paginated lists.
+- Accommodation search, custom sorting, filtering, rooms, and reservations are
+  not implemented.
 - Refresh Token issuance and lifecycle management are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
@@ -151,4 +154,5 @@ Before completing a change:
 - The frontend is a placeholder with no selected technology stack.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
-  JWT issuance, and authenticated access using H2.
+  JWT issuance, authenticated access, and accommodation registration and query
+  behavior using H2.
