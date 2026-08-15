@@ -145,8 +145,10 @@ Before completing a change:
   new member and provider-specific social account are created.
 - Accommodation creation is restricted to `ADMIN`; authenticated users can read
   accommodation details and ID-ordered paginated lists.
-- Accommodation search, custom sorting, filtering, rooms, and reservations are
-  not implemented.
+- Room creation under an accommodation is restricted to `ADMIN`; authenticated
+  users can read room details and accommodation-scoped paginated room lists.
+- Accommodation search, custom sorting, filtering, room inventory, availability,
+  and reservations are not implemented.
 - Refresh Token issuance and lifecycle management are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
@@ -155,4 +157,4 @@ Before completing a change:
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
-  behavior using H2.
+  behavior, and room registration and query behavior using H2.
