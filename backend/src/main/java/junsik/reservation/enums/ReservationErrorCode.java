@@ -4,16 +4,16 @@ import org.springframework.http.HttpStatus;
 
 import junsik.reservation.global.exception.ErrorCode;
 
-public enum MemberErrorCode implements ErrorCode {
+public enum ReservationErrorCode implements ErrorCode {
 
-	DUPLICATE_EMAIL(HttpStatus.CONFLICT, "MEMBER_001", "이미 가입된 이메일입니다."),
-	NOT_FOUND(HttpStatus.NOT_FOUND, "MEMBER_002", "존재하지 않는 회원입니다.");
+	INVALID_PERIOD(HttpStatus.BAD_REQUEST, "RESERVATION_001", "체크인 날짜는 체크아웃 날짜보다 이전이어야 합니다."),
+	PERIOD_OVERLAP(HttpStatus.CONFLICT, "RESERVATION_002", "해당 기간에 이미 예약된 객실입니다.");
 
 	private final HttpStatus status;
 	private final String code;
 	private final String message;
 
-	MemberErrorCode(HttpStatus status, String code, String message) {
+	ReservationErrorCode(HttpStatus status, String code, String message) {
 		this.status = status;
 		this.code = code;
 		this.message = message;
