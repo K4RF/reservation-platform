@@ -147,8 +147,13 @@ Before completing a change:
   accommodation details and ID-ordered paginated lists.
 - Room creation under an accommodation is restricted to `ADMIN`; authenticated
   users can read room details and accommodation-scoped paginated room lists.
+- Authenticated members can create `CONFIRMED` room reservations. Reservation
+  periods use `[check-in, check-out)` semantics and member identity comes from
+  the JWT principal, not the request body.
+- Reservation overlap prevention currently uses a normal read-before-write query
+  inside one transaction and does not prevent races between concurrent requests.
 - Accommodation search, custom sorting, filtering, room inventory, availability,
-  and reservations are not implemented.
+  reservation queries, cancellation, and concurrency control are not implemented.
 - Refresh Token issuance and lifecycle management are not implemented.
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
@@ -157,4 +162,5 @@ Before completing a change:
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
-  behavior, and room registration and query behavior using H2.
+  behavior, room registration and query behavior, and basic reservation creation
+  and period overlap behavior using H2.
