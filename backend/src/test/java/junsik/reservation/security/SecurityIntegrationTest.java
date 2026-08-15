@@ -132,9 +132,11 @@ class SecurityIntegrationTest {
 	}
 
 	private String tamperSignature(String token) {
-		int lastIndex = token.length() - 1;
-		char replacement = token.charAt(lastIndex) == 'a' ? 'b' : 'a';
-		return token.substring(0, lastIndex) + replacement;
+		int signatureStart = token.lastIndexOf('.') + 1;
+		char replacement = token.charAt(signatureStart) == 'a' ? 'b' : 'a';
+		return token.substring(0, signatureStart)
+				+ replacement
+				+ token.substring(signatureStart + 1);
 	}
 
 	@RestController
