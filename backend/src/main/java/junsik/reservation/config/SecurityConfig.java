@@ -60,6 +60,7 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/members").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations/*/rooms").hasRole("ADMIN")
 						.requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
 						.requestMatchers("/error").permitAll()
 						.requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
