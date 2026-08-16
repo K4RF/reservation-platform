@@ -46,6 +46,7 @@ The Gradle project root is `backend/`, not the repository root.
 - Spring Security 7 with a stateless filter chain
 - Spring Security OAuth2 JOSE for HS256 JWT creation and validation
 - Spring Security OAuth2 Client with Google as the initial provider
+- Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for tests
@@ -162,9 +163,13 @@ Before completing a change:
 - Redis, concurrency control, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
+- Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
+  accessible for development and API verification. Protected controller
+  operations declare the `bearerAuth` JWT security requirement.
 - The frontend is a placeholder with no selected technology stack.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, and reservation creation,
-  period overlap, owner-scoped queries, pagination, and cancellation using H2.
+  period overlap, owner-scoped queries, pagination, cancellation, and generated
+  OpenAPI/Swagger UI access using H2.

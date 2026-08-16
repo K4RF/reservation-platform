@@ -89,6 +89,7 @@
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
+| API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
@@ -245,7 +246,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 조회
 * [x] 예약 취소
 * [ ] 기본 예외 처리
-* [ ] API 문서화
+* [x] Swagger/OpenAPI 기반 API 문서화
 
 ### Phase 2 — Concurrency Control
 
@@ -442,6 +443,7 @@ docs: add concurrency test results
 * [x] 인증 회원의 객실 예약 생성 및 일반 조회 기반 기간 중복 검증
 * [x] 인증 회원의 예약 단건·페이지 목록 조회 및 상태 기반 취소
 * [x] Backend와 MySQL 연동
+* [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
 * [ ] Backend와 Redis 연동
 
 ---
@@ -559,6 +561,23 @@ Backend 기본 설정은 MySQL을 사용하므로 애플리케이션 실행 전�
 컨테이너가 필요합니다. Backend는 프로젝트 루트의 `.env`를 로컬 설정으로
 읽습니다. 다른 데이터베이스를 사용할 때는 `DB_URL`, `MYSQL_USER`,
 `MYSQL_PASSWORD`를 실행 환경에서 재정의할 수 있습니다.
+
+### Swagger UI 및 OpenAPI
+
+Backend 실행 후 다음 주소에서 API 명세를 확인할 수 있습니다.
+
+| 구분 | 접근 주소 |
+| --- | --- |
+| Swagger UI | `http://localhost:8080/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
+
+Swagger UI의 `Authorize` 버튼에서 로그인 API로 발급받은 JWT Access Token을
+입력하면 Bearer 인증이 필요한 숙소·객실·예약 API를 직접 호출할 수 있습니다.
+`Bearer ` 접두사는 Swagger UI가 자동으로 추가하므로 토큰 값만 입력합니다.
+
+Swagger UI와 OpenAPI Endpoint는 현재 인증 없이 접근할 수 있습니다. 개발 및
+API 검증 용도이며, 운영 환경 공개 여부와 환경별 비활성화 정책은 배포 단계에서
+별도로 결정합니다.
 
 ## 13. 테스트 및 빌드
 
