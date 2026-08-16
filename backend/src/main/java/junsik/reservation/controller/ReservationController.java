@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -18,12 +19,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.ReservationResponse;
 import junsik.reservation.security.MemberPrincipal;
 import junsik.reservation.service.ReservationService;
 
+@Tag(name = "Reservations", description = "예약 API")
+@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 @Validated
 @RestController
 @RequestMapping("/api/v1/reservations")
@@ -35,6 +45,17 @@ public class ReservationController {
 		this.reservationService = reservationService;
 	}
 
+	@Operation(
+			summary = "예약 생성",
+			responses = @ApiResponse(
+					responseCode = "201",
+					description = "예약 생성 성공",
+					content = @Content(
+							mediaType = MediaType.APPLICATION_JSON_VALUE,
+							schema = @Schema(implementation = ReservationResponse.class)
+					)
+			)
+	)
 	@PostMapping
 	public ResponseEntity<ReservationResponse> create(
 			@AuthenticationPrincipal MemberPrincipal principal,
@@ -46,6 +67,7 @@ public class ReservationController {
 				.body(response);
 	}
 
+	@Operation(summary = "본인 예약 단건 조회")
 	@GetMapping("/{reservationId}")
 	public ResponseEntity<ReservationResponse> getById(
 			@AuthenticationPrincipal MemberPrincipal principal,
@@ -54,6 +76,7 @@ public class ReservationController {
 		return ResponseEntity.ok(reservationService.getById(principal.memberId(), reservationId));
 	}
 
+	@Operation(summary = "본인 예약 목록 조회")
 	@GetMapping
 	public ResponseEntity<PageResponse<ReservationResponse>> getAllByMember(
 			@AuthenticationPrincipal MemberPrincipal principal,
@@ -65,6 +88,7 @@ public class ReservationController {
 		return ResponseEntity.ok(reservationService.getAllByMember(principal.memberId(), page, size));
 	}
 
+	@Operation(summary = "본인 예약 취소")
 	@PatchMapping("/{reservationId}/cancel")
 	public ResponseEntity<ReservationResponse> cancel(
 			@AuthenticationPrincipal MemberPrincipal principal,

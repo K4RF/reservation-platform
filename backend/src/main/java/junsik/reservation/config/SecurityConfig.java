@@ -57,6 +57,7 @@ public class SecurityConfig {
 						.successHandler(oauth2SuccessHandler)
 						.failureHandler(oauth2FailureHandler))
 				.authorizeHttpRequests(authorize -> authorize
+						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/members").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations").hasRole("ADMIN")
