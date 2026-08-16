@@ -9,8 +9,8 @@
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
-> 예약 생성 API가 구성되어 있습니다. Redis 연동, 동시성 제어와 예약 조회·취소
-> 기능은 아직 구현되지 않았습니다.
+> 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 연동과 동시성
+> 제어 기능은 아직 구현되지 않았습니다.
 
 ---
 
@@ -148,6 +148,9 @@ Spring Boot API
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms?page=0&size=20` | 인증 사용자 | 숙소별 객실 목록 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
+| `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
+| `GET` | `/api/v1/reservations?page=0&size=20` | 인증 사용자 | 본인 예약 목록 조회 |
+| `PATCH` | `/api/v1/reservations/{reservationId}/cancel` | 예약 소유자 | 본인 예약 취소 |
 
 목록은 각 리소스 ID 오름차순으로 반환하며 `page`는 0부터 시작합니다. `size`는
 1 이상 100 이하만 허용합니다. 검색, 임의 정렬, 복합 필터와 날짜별 객실 재고는
@@ -158,6 +161,11 @@ Spring Boot API
 처리하므로 기존 예약의 체크아웃 날짜와 다음 예약의 체크인 날짜가 같을 수
 있습니다. 현재 중복 검증은 `CONFIRMED` 예약을 일반 조회한 뒤 저장하는 방식이며,
 동시 요청 Race Condition과 DB·Redis Lock은 Phase 2에서 다룹니다.
+
+예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
+있습니다. 예약 취소는 데이터를 삭제하지 않고 `CONFIRMED` 상태를 `CANCELLED`로
+변경하며, 이미 취소된 예약은 다시 취소할 수 없습니다. 세부 취소 가능 시간과
+환불 정책은 현재 MVP 범위에 포함되지 않습니다.
 
 초기에는 하나의 애플리케이션 내부에서 도메인 경계를 분리한 **모듈러 모놀리스** 형태로 개발합니다.
 
@@ -234,8 +242,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 숙소 목록 및 상세 조회
 * [x] 객실 등록 및 숙소별 목록·상세 조회
 * [x] 예약 생성
-* [ ] 예약 조회
-* [ ] 예약 취소
+* [x] 예약 조회
+* [x] 예약 취소
 * [ ] 기본 예외 처리
 * [ ] API 문서화
 
@@ -432,7 +440,7 @@ docs: add concurrency test results
 * [x] 숙소 등록 및 페이지 기반 목록·단건 조회
 * [x] 객실 등록 및 숙소별 페이지 목록·단건 조회
 * [x] 인증 회원의 객실 예약 생성 및 일반 조회 기반 기간 중복 검증
-* [ ] 예약 조회 및 취소 구현
+* [x] 인증 회원의 예약 단건·페이지 목록 조회 및 상태 기반 취소
 * [x] Backend와 MySQL 연동
 * [ ] Backend와 Redis 연동
 

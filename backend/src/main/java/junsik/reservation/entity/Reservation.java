@@ -21,10 +21,13 @@ import junsik.reservation.enums.ReservationStatus;
 @Entity
 @Table(
 		name = "reservations",
-		indexes = @Index(
-				name = "idx_reservations_room_status_period",
-				columnList = "room_id,status,check_in_date,check_out_date"
-		)
+		indexes = {
+				@Index(
+						name = "idx_reservations_room_status_period",
+						columnList = "room_id,status,check_in_date,check_out_date"
+				),
+				@Index(name = "idx_reservations_member", columnList = "member_id")
+		}
 )
 public class Reservation {
 
@@ -100,5 +103,16 @@ public class Reservation {
 
 	public ReservationStatus getStatus() {
 		return status;
+	}
+
+	public boolean isCancellable() {
+		return status == ReservationStatus.CONFIRMED;
+	}
+
+	public void cancel() {
+		if (!isCancellable()) {
+			throw new IllegalStateException("확정 상태의 예약만 취소할 수 있습니다.");
+		}
+		this.status = ReservationStatus.CANCELLED;
 	}
 }

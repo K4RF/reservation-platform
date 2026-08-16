@@ -2,6 +2,8 @@ package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -188,6 +190,123 @@ class ReservationIntegrationTest {
 		assertThat(reservationRepository.count()).isEqualTo(2);
 	}
 
+	@Test
+	void getsOwnReservationById() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+
+		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
+				.andExpect(jsonPath("$.memberId").value(member.getId()))
+				.andExpect(jsonPath("$.roomId").value(room.getId()))
+				.andExpect(jsonPath("$.checkInDate").value("2030-01-10"))
+				.andExpect(jsonPath("$.checkOutDate").value("2030-01-15"))
+				.andExpect(jsonPath("$.status").value("CONFIRMED"));
+	}
+
+	@Test
+	void getsOnlyOwnReservationsWithPagination() throws Exception {
+		Member member = saveMember("member@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Room room = saveRoom();
+		Reservation first = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+		Reservation second = saveReservation(member, room, CHECK_OUT, CHECK_OUT.plusDays(2));
+		Reservation third = saveReservation(member, room, CHECK_OUT.plusDays(2), CHECK_OUT.plusDays(4));
+		saveReservation(otherMember, room, CHECK_OUT.plusDays(4), CHECK_OUT.plusDays(6));
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("page", "0")
+					.param("size", "2"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content[0].reservationId").value(first.getId()))
+				.andExpect(jsonPath("$.content[1].reservationId").value(second.getId()))
+				.andExpect(jsonPath("$.page").value(0))
+				.andExpect(jsonPath("$.size").value(2))
+				.andExpect(jsonPath("$.totalElements").value(3))
+				.andExpect(jsonPath("$.totalPages").value(2))
+				.andExpect(jsonPath("$.first").value(true))
+				.andExpect(jsonPath("$.last").value(false));
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("page", "1")
+					.param("size", "2"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].reservationId").value(third.getId()))
+				.andExpect(jsonPath("$.last").value(true));
+	}
+
+	@Test
+	void cancelsOwnConfirmedReservation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
+				.andExpect(jsonPath("$.status").value("CANCELLED"));
+
+		assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
+				.isEqualTo(ReservationStatus.CANCELLED);
+	}
+
+	@Test
+	void rejectsOtherMembersReservationQueryAndCancellation() throws Exception {
+		Member owner = saveMember("owner@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Reservation reservation = saveReservation(owner, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservation.getId())
+					.header("Authorization", bearerToken(otherMember.getId())))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("RESERVATION_004"));
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(otherMember.getId())))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("RESERVATION_004"));
+
+		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+	}
+
+	@Test
+	void rejectsUnknownReservationQueryAndCancellation() throws Exception {
+		Member member = saveMember("member@example.com");
+
+		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", 999999L)
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("RESERVATION_003"));
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", 999999L)
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("RESERVATION_003"));
+	}
+
+	@Test
+	void rejectsCancellingAlreadyCancelledReservation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isOk());
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("RESERVATION_005"))
+				.andExpect(jsonPath("$.message").value("이미 취소된 예약입니다."));
+	}
+
 	private org.springframework.test.web.servlet.ResultActions performCreate(
 			Long memberId,
 			Long roomId,
@@ -211,6 +330,17 @@ class ReservationIntegrationTest {
 				"Accommodation address"
 		));
 		return roomRepository.saveAndFlush(Room.create(accommodation, "Deluxe Room", 4));
+	}
+
+	private Reservation saveReservation(
+			Member member,
+			Room room,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		return reservationRepository.saveAndFlush(
+				Reservation.create(member, room, checkInDate, checkOutDate)
+		);
 	}
 
 	private String bearerToken(Long memberId) {

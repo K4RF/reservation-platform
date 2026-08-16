@@ -2,10 +2,14 @@ package junsik.reservation.service;
 
 import java.time.LocalDate;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.dto.CreateReservationRequest;
+import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.ReservationResponse;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
@@ -62,6 +66,44 @@ public class ReservationService {
 				request.checkOutDate()
 		);
 		return ReservationResponse.from(reservationRepository.save(reservation));
+	}
+
+	@Transactional(readOnly = true)
+	public ReservationResponse getById(Long memberId, Long reservationId) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		return ReservationResponse.from(reservation);
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<ReservationResponse> getAllByMember(Long memberId, int page, int size) {
+		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+		Page<ReservationResponse> reservations = reservationRepository
+				.findAllByMemberId(memberId, pageRequest)
+				.map(ReservationResponse::from);
+		return PageResponse.from(reservations);
+	}
+
+	@Transactional
+	public ReservationResponse cancel(Long memberId, Long reservationId) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		if (!reservation.isCancellable()) {
+			throw new BusinessException(ReservationErrorCode.ALREADY_CANCELLED);
+		}
+		reservation.cancel();
+		return ReservationResponse.from(reservation);
+	}
+
+	private Reservation getReservation(Long reservationId) {
+		return reservationRepository.findById(reservationId)
+				.orElseThrow(() -> new BusinessException(ReservationErrorCode.NOT_FOUND));
+	}
+
+	private void validateOwner(Reservation reservation, Long memberId) {
+		if (!reservation.getMember().getId().equals(memberId)) {
+			throw new BusinessException(ReservationErrorCode.ACCESS_DENIED);
+		}
 	}
 
 	private void validatePeriod(LocalDate checkInDate, LocalDate checkOutDate) {
