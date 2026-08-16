@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +17,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.CreateRoomRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.RoomResponse;
 import junsik.reservation.service.RoomService;
 
+@Tag(name = "Rooms", description = "객실 API")
+@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 @Validated
 @RestController
 @RequestMapping("/api/v1")
@@ -32,6 +42,17 @@ public class RoomController {
 		this.roomService = roomService;
 	}
 
+	@Operation(
+			summary = "숙소 객실 등록",
+			responses = @ApiResponse(
+					responseCode = "201",
+					description = "객실 등록 성공",
+					content = @Content(
+							mediaType = MediaType.APPLICATION_JSON_VALUE,
+							schema = @Schema(implementation = RoomResponse.class)
+					)
+			)
+	)
 	@PostMapping("/accommodations/{accommodationId}/rooms")
 	public ResponseEntity<RoomResponse> create(
 			@PathVariable Long accommodationId,
@@ -43,11 +64,13 @@ public class RoomController {
 				.body(response);
 	}
 
+	@Operation(summary = "객실 단건 조회")
 	@GetMapping("/rooms/{roomId}")
 	public ResponseEntity<RoomResponse> getById(@PathVariable Long roomId) {
 		return ResponseEntity.ok(roomService.getById(roomId));
 	}
 
+	@Operation(summary = "숙소별 객실 목록 조회")
 	@GetMapping("/accommodations/{accommodationId}/rooms")
 	public ResponseEntity<PageResponse<RoomResponse>> getAllByAccommodation(
 			@PathVariable Long accommodationId,
