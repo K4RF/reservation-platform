@@ -178,4 +178,6 @@ Before completing a change:
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, and reservation creation,
   period overlap, owner-scoped queries, pagination, cancellation, and generated
-  OpenAPI/Swagger UI access using H2.
+  OpenAPI/Swagger UI access using H2. A dedicated MVP integration test connects
+  sign-up, login, admin accommodation and room creation, user queries,
+  reservation creation, owner queries, and cancellation in one transaction.

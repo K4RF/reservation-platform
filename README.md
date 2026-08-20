@@ -212,6 +212,7 @@ reservation-platform/
 │   ├── api/
 │   ├── erd/
 │   ├── adr/
+│   ├── testing/
 │   └── performance/
 ├── .env_sample
 ├── AGENTS.md
@@ -255,6 +256,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 취소
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
+* [x] Basic Reservation MVP 종단간 통합 테스트
 
 ### Phase 2 — Concurrency Control
 
@@ -452,6 +454,7 @@ docs: add concurrency test results
 * [x] 인증 회원의 예약 단건·페이지 목록 조회 및 상태 기반 취소
 * [x] Backend와 MySQL 연동
 * [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
+* [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
 * [x] Backend와 Redis Refresh Token 저장 연동
 
 ---
