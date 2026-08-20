@@ -46,12 +46,13 @@ The Gradle project root is `backend/`, not the repository root.
 - Spring Security 7 with a stateless filter chain
 - Spring Security OAuth2 JOSE for HS256 JWT creation and validation
 - Spring Security OAuth2 Client with Google as the initial provider
+- Spring Data Redis for Refresh Token storage and TTL management
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for tests
 
-Additional OAuth2 providers, Refresh Token handling, Redis, Kafka, Prometheus,
+Additional OAuth2 providers, Access Token blacklisting, Kafka, Prometheus,
 Grafana, k6, CD, and a frontend framework are planned but are not currently
 configured unless the repository is updated to include them.
 
@@ -159,8 +160,13 @@ Before completing a change:
   inside one transaction and does not prevent races between concurrent requests.
 - Accommodation search, custom sorting, filtering, room inventory, availability,
   reservation filtering, and concurrency control are not implemented.
-- Refresh Token issuance and lifecycle management are not implemented.
-- Redis, concurrency control, and Kafka integration are not implemented.
+- Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
+  Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
+  validated for Access Token reissue.
+- Logout deletes the member's Refresh Token. Access Token blacklisting is not
+  implemented, so an existing Access Token remains valid until expiration.
+- Redis distributed locks, Redis caching, concurrency control, and Kafka
+  integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
