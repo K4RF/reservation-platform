@@ -1,6 +1,8 @@
 package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -21,13 +23,16 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import junsik.reservation.entity.Member;
 import junsik.reservation.repository.MemberRepository;
+import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.security.MemberPrincipal;
+import junsik.reservation.security.JwtProperties;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -52,6 +57,12 @@ class LoginIntegrationTest {
 	@Autowired
 	private JwtDecoder jwtDecoder;
 
+	@Autowired
+	private JwtProperties jwtProperties;
+
+	@MockitoBean
+	private RefreshTokenStore refreshTokenStore;
+
 	@Test
 	void logsInWithEmailIgnoringCaseAndIssuesAccessToken() throws Exception {
 		Member member = saveMember();
@@ -59,15 +70,26 @@ class LoginIntegrationTest {
 		MvcResult result = performLogin("Member@Example.com", PASSWORD)
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.accessToken").isNotEmpty())
+				.andExpect(jsonPath("$.refreshToken").isNotEmpty())
 				.andExpect(jsonPath("$.tokenType").value("Bearer"))
 				.andExpect(jsonPath("$.password").doesNotExist())
 				.andReturn();
 
 		String accessToken = JsonPath.read(result.getResponse().getContentAsString(), "$.accessToken");
+		String refreshToken = JsonPath.read(result.getResponse().getContentAsString(), "$.refreshToken");
 		Jwt jwt = jwtDecoder.decode(accessToken);
+		Jwt refreshJwt = jwtDecoder.decode(refreshToken);
 
 		assertThat(jwt.getSubject()).isEqualTo(member.getId().toString());
 		assertThat(jwt.getClaimAsString("role")).isEqualTo("USER");
+		assertThat(jwt.getClaimAsString("token_type")).isEqualTo("ACCESS");
+		assertThat(refreshJwt.getClaimAsString("token_type")).isEqualTo("REFRESH");
+		assertThat(refreshJwt.getExpiresAt()).isAfter(jwt.getExpiresAt());
+		verify(refreshTokenStore).save(
+				eq(member.getId()),
+				eq(refreshToken),
+				eq(jwtProperties.refreshTokenExpiration())
+		);
 	}
 
 	@Test
