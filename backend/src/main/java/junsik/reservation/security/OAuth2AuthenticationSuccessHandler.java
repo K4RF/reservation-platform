@@ -13,16 +13,17 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import junsik.reservation.dto.LoginResponse;
+import junsik.reservation.service.TokenService;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 
-	private final JwtTokenProvider jwtTokenProvider;
+	private final TokenService tokenService;
 	private final ObjectMapper objectMapper;
 
-	public OAuth2AuthenticationSuccessHandler(JwtTokenProvider jwtTokenProvider, ObjectMapper objectMapper) {
-		this.jwtTokenProvider = jwtTokenProvider;
+	public OAuth2AuthenticationSuccessHandler(TokenService tokenService, ObjectMapper objectMapper) {
+		this.tokenService = tokenService;
 		this.objectMapper = objectMapper;
 	}
 
@@ -33,11 +34,11 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
 			Authentication authentication
 	) throws IOException, ServletException {
 		OAuth2MemberPrincipal principal = (OAuth2MemberPrincipal) authentication.getPrincipal();
-		String accessToken = jwtTokenProvider.createAccessToken(principal.getMemberId(), principal.getRole());
+		LoginResponse tokens = tokenService.issueTokens(principal.getMemberId(), principal.getRole());
 
 		response.setStatus(HttpServletResponse.SC_OK);
 		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-		objectMapper.writeValue(response.getOutputStream(), LoginResponse.bearer(accessToken));
+		objectMapper.writeValue(response.getOutputStream(), tokens);
 	}
 }
