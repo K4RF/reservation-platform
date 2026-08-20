@@ -9,8 +9,8 @@
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
-> 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 연동과 동시성
-> 제어 기능은 아직 구현되지 않았습니다.
+> 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
+> Token 재발급과 로그아웃이 구현됐으며 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -89,19 +89,21 @@
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
+| Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-> Backend는 MySQL과 연결되며 Redis 연결 설정은 아직 추가되지 않았습니다.
+> Backend는 MySQL과 Redis에 연결됩니다. Redis는 현재 Refresh Token 저장에만
+> 사용하며 분산 락과 Cache는 아직 적용하지 않았습니다.
 
 ### 도입 예정
 
 | 구분 | 기술 |
 | --- | --- |
-| Authentication | 추가 OAuth2 Provider, Refresh Token 정책 |
+| Authentication | 추가 OAuth2 Provider, Access Token Blacklist 정책 |
 | Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
@@ -117,8 +119,8 @@
 아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
-Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis 활용과 Kafka
-연동은 도입 예정입니다.
+Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
+저장과 TTL 관리에 사용하며 분산 락·Cache 활용과 Kafka 연동은 도입 예정입니다.
 
 ```text
 Client
@@ -138,7 +140,13 @@ Spring Boot API
        └── Notification Event Consumer
 ```
 
-### 현재 숙소·객실·예약 API
+### 현재 인증·숙소·객실·예약 API
+
+| Method | Endpoint | 권한 | 기능 |
+| --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/login` | 공개 | Access/Refresh Token 발급 |
+| `POST` | `/api/v1/auth/reissue` | 공개 | Refresh Token으로 Access Token 재발급 |
+| `POST` | `/api/v1/auth/logout` | 인증 사용자 | Redis Refresh Token 삭제 |
 
 | Method | Endpoint | 권한 | 기능 |
 | --- | --- | --- | --- |
@@ -447,7 +455,7 @@ docs: add concurrency test results
 * [x] Backend와 MySQL 연동
 * [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
 * [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
-* [ ] Backend와 Redis 연동
+* [x] Backend와 Redis Refresh Token 저장 연동
 
 ---
 
@@ -504,6 +512,9 @@ openssl rand -base64 32
 JWT_SECRET=<base64-encoded-secret>
 JWT_ISSUER=reservation-platform
 JWT_ACCESS_TOKEN_EXPIRATION=30m
+JWT_REFRESH_TOKEN_EXPIRATION=14d
+REDIS_HOST=localhost
+REDIS_PORT=6380
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 ```

@@ -25,12 +25,14 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.SocialAccount;
 import junsik.reservation.enums.OAuthProvider;
 import junsik.reservation.repository.MemberRepository;
+import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.SocialAccountRepository;
 import junsik.reservation.security.OAuth2AuthenticationFailureHandler;
 import junsik.reservation.security.OAuth2AuthenticationSuccessHandler;
@@ -67,6 +69,9 @@ class OAuth2MemberServiceIntegrationTest {
 
 	@Autowired
 	private JwtDecoder jwtDecoder;
+
+	@MockitoBean
+	private RefreshTokenStore refreshTokenStore;
 
 	@Test
 	void redirectsGoogleAuthorizationRequestUsingConfiguredClient() throws Exception {
@@ -133,11 +138,15 @@ class OAuth2MemberServiceIntegrationTest {
 		successHandler.onAuthenticationSuccess(request, response, authentication);
 
 		String accessToken = JsonPath.read(response.getContentAsString(), "$.accessToken");
+		String refreshToken = JsonPath.read(response.getContentAsString(), "$.refreshToken");
 		Jwt jwt = jwtDecoder.decode(accessToken);
+		Jwt refreshJwt = jwtDecoder.decode(refreshToken);
 		assertThat(response.getStatus()).isEqualTo(200);
 		assertThat(JsonPath.<String>read(response.getContentAsString(), "$.tokenType")).isEqualTo("Bearer");
 		assertThat(jwt.getSubject()).isEqualTo(principal.getMemberId().toString());
 		assertThat(jwt.getClaimAsString("role")).isEqualTo("USER");
+		assertThat(jwt.getClaimAsString("token_type")).isEqualTo("ACCESS");
+		assertThat(refreshJwt.getClaimAsString("token_type")).isEqualTo("REFRESH");
 	}
 
 	@Test

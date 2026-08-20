@@ -12,18 +12,17 @@ import junsik.reservation.dto.LoginRequest;
 import junsik.reservation.dto.LoginResponse;
 import junsik.reservation.enums.SecurityErrorCode;
 import junsik.reservation.global.exception.BusinessException;
-import junsik.reservation.security.JwtTokenProvider;
 import junsik.reservation.security.MemberUserDetails;
 
 @Service
 public class LoginService {
 
 	private final AuthenticationManager authenticationManager;
-	private final JwtTokenProvider jwtTokenProvider;
+	private final TokenService tokenService;
 
-	public LoginService(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
+	public LoginService(AuthenticationManager authenticationManager, TokenService tokenService) {
 		this.authenticationManager = authenticationManager;
-		this.jwtTokenProvider = jwtTokenProvider;
+		this.tokenService = tokenService;
 	}
 
 	public LoginResponse login(LoginRequest request) {
@@ -34,8 +33,7 @@ public class LoginService {
 					UsernamePasswordAuthenticationToken.unauthenticated(normalizedEmail, request.password())
 			);
 			MemberUserDetails principal = (MemberUserDetails) authentication.getPrincipal();
-			String accessToken = jwtTokenProvider.createAccessToken(principal.getMemberId(), principal.getRole());
-			return LoginResponse.bearer(accessToken);
+			return tokenService.issueTokens(principal.getMemberId(), principal.getRole());
 		} catch (AuthenticationException exception) {
 			throw new BusinessException(SecurityErrorCode.INVALID_CREDENTIALS);
 		}

@@ -19,11 +19,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.enums.ReservationStatus;
+import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.ReservationRepository;
 import junsik.reservation.support.MvpTestFixture;
 
@@ -55,6 +57,9 @@ class BasicReservationMvpIntegrationTest {
 
 	@Autowired
 	private JwtDecoder jwtDecoder;
+
+	@MockitoBean
+	private RefreshTokenStore refreshTokenStore;
 
 	private MvpTestFixture fixture;
 
