@@ -3,18 +3,17 @@ package junsik.reservation.controller;
 import java.net.URI;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +24,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.AccommodationResponse;
+import junsik.reservation.dto.AccommodationSearchRequest;
 import junsik.reservation.dto.CreateAccommodationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.service.AccommodationService;
@@ -72,11 +72,8 @@ public class AccommodationController {
 	@Operation(summary = "숙소 목록 조회")
 	@GetMapping
 	public ResponseEntity<PageResponse<AccommodationResponse>> getAll(
-			@RequestParam(defaultValue = "0") @Min(value = 0, message = "페이지는 0 이상이어야 합니다.") int page,
-			@RequestParam(defaultValue = "20")
-			@Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
-			@Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.") int size
+			@Valid @ModelAttribute @ParameterObject AccommodationSearchRequest request
 	) {
-		return ResponseEntity.ok(accommodationService.getAll(page, size));
+		return ResponseEntity.ok(accommodationService.getAll(request));
 	}
 }

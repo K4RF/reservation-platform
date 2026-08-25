@@ -8,11 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,9 @@ class RoomIntegrationTest {
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
 
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
 	@Test
 	void createsRoomForAccommodationWithAdminRole() throws Exception {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
@@ -54,7 +60,8 @@ class RoomIntegrationTest {
 					.content("""
 							{
 							  "name": "  Deluxe Twin Room  ",
-							  "capacity": 4
+							  "capacity": 4,
+							  "nightlyPrice": 150000.00
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -65,12 +72,14 @@ class RoomIntegrationTest {
 				.andExpect(jsonPath("$.roomId").isNumber())
 				.andExpect(jsonPath("$.accommodationId").value(accommodation.getId()))
 				.andExpect(jsonPath("$.name").value("Deluxe Twin Room"))
-				.andExpect(jsonPath("$.capacity").value(4));
+				.andExpect(jsonPath("$.capacity").value(4))
+				.andExpect(jsonPath("$.nightlyPrice").value(150000.00));
 
 		Room savedRoom = roomRepository.findAll().getFirst();
 		assertThat(savedRoom.getAccommodation().getId()).isEqualTo(accommodation.getId());
 		assertThat(savedRoom.getName()).isEqualTo("Deluxe Twin Room");
 		assertThat(savedRoom.getCapacity()).isEqualTo(4);
+		assertThat(savedRoom.getNightlyPrice()).isEqualByComparingTo("150000.00");
 	}
 
 	@Test
@@ -83,12 +92,17 @@ class RoomIntegrationTest {
 					.content("""
 							{
 							  "name": "",
-							  "capacity": 0
+							  "capacity": 0,
+							  "nightlyPrice": 0
 							}
 							"""))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("COMMON_001"))
-				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("name", "capacity")));
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
+						"name",
+						"capacity",
+						"nightlyPrice"
+				)));
 
 		assertThat(roomRepository.count()).isZero();
 	}
@@ -175,6 +189,59 @@ class RoomIntegrationTest {
 	}
 
 	@Test
+	void filtersRoomsByCapacityPriceAndStatusWithAllowedSort() throws Exception {
+		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+		Accommodation otherAccommodation = saveAccommodation("Mountain Hotel");
+		Room standard = saveRoom(accommodation, "Standard", 4, "150000.00");
+		Room suite = saveRoom(accommodation, "Suite", 3, "200000.00");
+		saveRoom(accommodation, "Budget", 4, "90000.00");
+		saveRoom(accommodation, "Small", 2, "180000.00");
+		Room inactive = saveRoom(accommodation, "Inactive", 5, "180000.00");
+		saveRoom(otherAccommodation, "Other", 5, "180000.00");
+		jdbcTemplate.update("update rooms set status = 'INACTIVE' where id = ?", inactive.getId());
+
+		mockMvc.perform(get(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("minCapacity", "3")
+					.param("minPrice", "100000.00")
+					.param("maxPrice", "200000.00")
+					.param("status", "ACTIVE")
+					.param("sortBy", "NIGHTLY_PRICE")
+					.param("direction", "DESC"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content[0].roomId").value(suite.getId()))
+				.andExpect(jsonPath("$.content[0].nightlyPrice").value(200000.00))
+				.andExpect(jsonPath("$.content[1].roomId").value(standard.getId()))
+				.andExpect(jsonPath("$.content[1].nightlyPrice").value(150000.00))
+				.andExpect(jsonPath("$.totalElements").value(2));
+	}
+
+	@Test
+	void rejectsInvalidRoomSearchFilters() throws Exception {
+		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+
+		mockMvc.perform(get(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("minCapacity", "0")
+					.param("minPrice", "-1"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"));
+
+		mockMvc.perform(get(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("minPrice", "200000")
+					.param("maxPrice", "100000"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("ROOM_003"));
+
+		mockMvc.perform(get(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("sortBy", "ACCOMMODATION"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void returnsNotFoundForRoomPageOfUnknownAccommodation() throws Exception {
 		mockMvc.perform(get(roomsUrl(999999L))
 					.header("Authorization", bearerToken(MemberRole.USER)))
@@ -195,6 +262,15 @@ class RoomIntegrationTest {
 		return roomRepository.saveAndFlush(Room.create(accommodation, "Room " + index, index + 1));
 	}
 
+	private Room saveRoom(Accommodation accommodation, String name, int capacity, String nightlyPrice) {
+		return roomRepository.saveAndFlush(Room.create(
+				accommodation,
+				name,
+				capacity,
+				new BigDecimal(nightlyPrice)
+		));
+	}
+
 	private String roomsUrl(Long accommodationId) {
 		return ACCOMMODATIONS_URL + "/" + accommodationId + "/rooms";
 	}
@@ -207,7 +283,8 @@ class RoomIntegrationTest {
 		return """
 				{
 				  "name": "Deluxe Twin Room",
-				  "capacity": 4
+				  "capacity": 4,
+				  "nightlyPrice": 150000.00
 				}
 				""";
 	}

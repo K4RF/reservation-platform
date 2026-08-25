@@ -115,7 +115,8 @@ class BasicReservationMvpIntegrationTest {
 					.content("""
 							{
 							  "name": "MVP Deluxe Room",
-							  "capacity": 2
+							  "capacity": 2,
+							  "nightlyPrice": 120000.00
 							}
 							"""))
 				.andExpect(status().isCreated())

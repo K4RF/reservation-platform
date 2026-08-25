@@ -11,7 +11,8 @@
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
-> 동시성 제어는 아직 구현되지 않았습니다.
+> 숙소명 검색과 객실 조건 조회도 지원합니다. 동시성 제어는 아직 구현되지
+> 않았습니다.
 
 ---
 
@@ -85,7 +86,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA, MySQL 8.4 | 회원·소셜 계정·숙소·객실·예약 정보 저장 |
+| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실 가격·예약 정보 저장 및 동적 조회 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -153,19 +154,26 @@ Spring Boot API
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/accommodations` | `ADMIN` | 숙소 등록 |
 | `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
-| `GET` | `/api/v1/accommodations?page=0&size=20` | 인증 사용자 | 숙소 목록 조회 |
+| `GET` | `/api/v1/accommodations?name=hotel&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소명 검색·정렬·페이지 조회 |
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
-| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?page=0&size=20` | 인증 사용자 | 숙소별 객실 목록 조회 |
+| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·정렬·페이지 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
 | `GET` | `/api/v1/reservations?page=0&size=20` | 인증 사용자 | 본인 예약 목록 조회 |
 | `PATCH` | `/api/v1/reservations/{reservationId}/cancel` | 예약 소유자 | 본인 예약 취소 |
 
-목록은 각 리소스 ID 오름차순으로 반환하며 `page`는 0부터 시작합니다. `size`는
-1 이상 100 이하만 허용합니다. 검색, 임의 정렬, 복합 필터와 날짜별 객실 재고는
-현재 MVP 범위에 포함되지 않습니다.
+`page`는 0부터 시작하고 `size`는 1 이상 100 이하만 허용합니다. 검색 조건을
+생략하면 기존처럼 ID 오름차순 목록을 반환합니다. 숙소 정렬은 `ID`, `NAME`,
+객실 정렬은 `ID`, `NAME`, `CAPACITY`, `NIGHTLY_PRICE`만 허용하며 방향은 `ASC`,
+`DESC`입니다. 숙소명은 대소문자를 구분하지 않는 부분 일치 검색입니다. 객실은
+최소 수용 인원, 1박 최소·최대 가격, `ACTIVE/INACTIVE` 상태를 선택적으로 조합할
+수 있습니다.
+
+객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
+기존 개발 DB 객실은 Schema 갱신 시 `0.00`으로 보존됩니다. 예약 시점 가격
+Snapshot과 총 예약 금액 계산은 아직 구현되지 않았습니다.
 
 예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
 경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
@@ -263,6 +271,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 조회
 * [x] 예약 취소
 * [x] 날짜·인원 기준 예약 가능 객실 조회
+* [x] 숙소명 검색 및 객실 조건·정렬 조회
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -466,6 +475,7 @@ docs: add concurrency test results
 * [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
 * [x] Backend와 Redis Refresh Token 저장 연동
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
+* [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 
 ---
 

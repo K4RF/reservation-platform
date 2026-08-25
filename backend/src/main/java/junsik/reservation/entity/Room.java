@@ -1,5 +1,7 @@
 package junsik.reservation.entity;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,6 +41,10 @@ public class Room {
 	@Column(nullable = false)
 	private int capacity;
 
+	@Column(nullable = false, precision = 12, scale = 2)
+	@ColumnDefault("0.00")
+	private BigDecimal nightlyPrice;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	@ColumnDefault("'ACTIVE'")
@@ -47,15 +53,25 @@ public class Room {
 	protected Room() {
 	}
 
-	private Room(Accommodation accommodation, String name, int capacity) {
+	private Room(Accommodation accommodation, String name, int capacity, BigDecimal nightlyPrice) {
 		this.accommodation = accommodation;
 		this.name = name;
 		this.capacity = capacity;
+		this.nightlyPrice = nightlyPrice;
 		this.status = RoomStatus.ACTIVE;
 	}
 
 	public static Room create(Accommodation accommodation, String name, int capacity) {
-		return new Room(accommodation, name, capacity);
+		return create(accommodation, name, capacity, BigDecimal.ZERO);
+	}
+
+	public static Room create(
+			Accommodation accommodation,
+			String name,
+			int capacity,
+			BigDecimal nightlyPrice
+	) {
+		return new Room(accommodation, name, capacity, nightlyPrice);
 	}
 
 	public Long getId() {
@@ -72,6 +88,10 @@ public class Room {
 
 	public int getCapacity() {
 		return capacity;
+	}
+
+	public BigDecimal getNightlyPrice() {
+		return nightlyPrice;
 	}
 
 	public RoomStatus getStatus() {

@@ -47,6 +47,24 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.paths['/api/v1/members'].post.security").doesNotExist())
 				.andExpect(jsonPath("$.paths['/api/v1/reservations'].post.security[0].bearerAuth").isArray())
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations'].get.parameters[*].name",
+						containsInAnyOrder("name", "page", "size", "sortBy", "direction")
+				))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/rooms'].get.parameters[*].name",
+						containsInAnyOrder(
+								"accommodationId",
+								"minCapacity",
+								"minPrice",
+								"maxPrice",
+								"status",
+								"page",
+								"size",
+								"sortBy",
+								"direction"
+						)
+				))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security[0].bearerAuth"
 				).isArray())
 				.andExpect(jsonPath(
@@ -74,6 +92,12 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.SignUpRequest.properties.email.maxLength").value(255))
 				.andExpect(jsonPath("$.components.schemas.SignUpRequest.properties.password.minLength").value(8))
 				.andExpect(jsonPath("$.components.schemas.SignUpRequest.properties.password.maxLength").value(72))
+				.andExpect(jsonPath("$.components.schemas.CreateRoomRequest.required", containsInAnyOrder(
+						"name",
+						"capacity",
+						"nightlyPrice"
+				)))
+				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse").exists());
 	}
 }
