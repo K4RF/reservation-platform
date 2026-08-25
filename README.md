@@ -11,8 +11,9 @@
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
-> 숙소명 검색과 객실 조건 조회도 지원합니다. 동시성 제어는 아직 구현되지
-> 않았습니다.
+> 숙소명 검색과 객실 조건 조회도 지원합니다. 예약 생성 시 객실의 1박 가격을
+> Snapshot으로 저장하고 숙박 일수에 따른 총 예약 금액을 계산합니다. 동시성
+> 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -86,7 +87,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실 가격·예약 정보 저장 및 동적 조회 |
+| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실 가격·예약 가격 Snapshot 저장 및 동적 조회 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -172,8 +173,11 @@ Spring Boot API
 수 있습니다.
 
 객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
-기존 개발 DB 객실은 Schema 갱신 시 `0.00`으로 보존됩니다. 예약 시점 가격
-Snapshot과 총 예약 금액 계산은 아직 구현되지 않았습니다.
+기존 개발 DB 객실은 Schema 갱신 시 `0.00`으로 보존됩니다. 예약 생성 시점의
+객실 가격은 `nightlyPriceSnapshot`에 복사하고, `[checkInDate, checkOutDate)`의
+숙박 일수는 `stayNights`로 계산합니다. `totalAmount`는
+`nightlyPriceSnapshot × stayNights`이며, 이후 객실 가격이 변경되어도 기존 예약
+금액은 바뀌지 않습니다. 기존 개발 DB 예약의 새 금액 컬럼은 `0.00`으로 보존됩니다.
 
 예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
 경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
@@ -272,6 +276,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 취소
 * [x] 날짜·인원 기준 예약 가능 객실 조회
 * [x] 숙소명 검색 및 객실 조건·정렬 조회
+* [x] 객실 1박 가격 및 예약 가격 Snapshot·총 금액 계산
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -476,6 +481,7 @@ docs: add concurrency test results
 * [x] Backend와 Redis Refresh Token 저장 연동
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
+* [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
 
 ---
 
