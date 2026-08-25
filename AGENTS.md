@@ -157,6 +157,9 @@ Before completing a change:
   their own reservation details and ID-ordered paginated lists. Reservation
   periods use `[check-in, check-out)` semantics and member identity comes from
   the JWT principal, not the request body.
+- Reservation creation snapshots the room's nightly price and calculates the
+  total amount by multiplying it by the `[check-in, check-out)` stay length.
+  Later room-price changes do not alter an existing reservation's amount.
 - Reservation owners can cancel a `CONFIRMED` reservation by changing its state
   to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
   are not implemented.
@@ -170,8 +173,8 @@ Before completing a change:
   to `ACTIVE`. Status management APIs and inactive-room reservation blocking are
   deferred to the accommodation and room management work.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  room inventory, reservation filtering, reservation price snapshots, total
-  amount calculation, and concurrency control are not implemented.
+  room inventory, reservation filtering, and concurrency control are not
+  implemented.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
   validated for Access Token reissue.

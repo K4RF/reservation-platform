@@ -1,6 +1,8 @@
 package junsik.reservation.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,6 +17,8 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+
+import org.hibernate.annotations.ColumnDefault;
 
 import junsik.reservation.enums.ReservationStatus;
 
@@ -57,6 +61,14 @@ public class Reservation {
 	@Column(name = "check_out_date", nullable = false)
 	private LocalDate checkOutDate;
 
+	@Column(name = "nightly_price_snapshot", nullable = false, precision = 12, scale = 2)
+	@ColumnDefault("0.00")
+	private BigDecimal nightlyPriceSnapshot;
+
+	@Column(name = "total_amount", nullable = false, precision = 19, scale = 2)
+	@ColumnDefault("0.00")
+	private BigDecimal totalAmount;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private ReservationStatus status;
@@ -69,6 +81,8 @@ public class Reservation {
 		this.room = room;
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
+		this.nightlyPriceSnapshot = room.getNightlyPrice();
+		this.totalAmount = calculateTotalAmount(nightlyPriceSnapshot, checkInDate, checkOutDate);
 		this.status = ReservationStatus.CONFIRMED;
 	}
 
@@ -101,6 +115,18 @@ public class Reservation {
 		return checkOutDate;
 	}
 
+	public BigDecimal getNightlyPriceSnapshot() {
+		return nightlyPriceSnapshot;
+	}
+
+	public long getStayNights() {
+		return ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+	}
+
+	public BigDecimal getTotalAmount() {
+		return totalAmount;
+	}
+
 	public ReservationStatus getStatus() {
 		return status;
 	}
@@ -114,5 +140,17 @@ public class Reservation {
 			throw new IllegalStateException("확정 상태의 예약만 취소할 수 있습니다.");
 		}
 		this.status = ReservationStatus.CANCELLED;
+	}
+
+	private BigDecimal calculateTotalAmount(
+			BigDecimal nightlyPrice,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		long stayNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+		if (stayNights <= 0) {
+			throw new IllegalArgumentException("체크인 날짜는 체크아웃 날짜보다 이전이어야 합니다.");
+		}
+		return nightlyPrice.multiply(BigDecimal.valueOf(stayNights));
 	}
 }

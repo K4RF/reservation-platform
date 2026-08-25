@@ -1,5 +1,6 @@
 package junsik.reservation.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import junsik.reservation.entity.Reservation;
@@ -11,6 +12,9 @@ public record ReservationResponse(
 		Long roomId,
 		LocalDate checkInDate,
 		LocalDate checkOutDate,
+		BigDecimal nightlyPriceSnapshot,
+		long stayNights,
+		BigDecimal totalAmount,
 		ReservationStatus status
 ) {
 
@@ -21,6 +25,9 @@ public record ReservationResponse(
 				reservation.getRoom().getId(),
 				reservation.getCheckInDate(),
 				reservation.getCheckOutDate(),
+				reservation.getNightlyPriceSnapshot(),
+				reservation.getStayNights(),
+				reservation.getTotalAmount(),
 				reservation.getStatus()
 		);
 	}

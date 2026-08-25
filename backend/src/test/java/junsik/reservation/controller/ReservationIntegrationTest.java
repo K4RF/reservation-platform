@@ -9,13 +9,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import jakarta.persistence.EntityManager;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +43,7 @@ class ReservationIntegrationTest {
 	private static final String RESERVATIONS_URL = "/api/v1/reservations";
 	private static final LocalDate CHECK_IN = LocalDate.of(2030, 1, 10);
 	private static final LocalDate CHECK_OUT = LocalDate.of(2030, 1, 15);
+	private static final BigDecimal NIGHTLY_PRICE = new BigDecimal("125000.00");
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -54,6 +59,12 @@ class ReservationIntegrationTest {
 
 	@Autowired
 	private ReservationRepository reservationRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
@@ -77,12 +88,50 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.roomId").value(room.getId()))
 				.andExpect(jsonPath("$.checkInDate").value("2030-01-10"))
 				.andExpect(jsonPath("$.checkOutDate").value("2030-01-15"))
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
+				.andExpect(jsonPath("$.stayNights").value(5))
+				.andExpect(jsonPath("$.totalAmount").value(625000.00))
 				.andExpect(jsonPath("$.status").value("CONFIRMED"));
 
 		Reservation reservation = reservationRepository.findAll().getFirst();
 		assertThat(reservation.getMember().getId()).isEqualTo(member.getId());
 		assertThat(reservation.getRoom().getId()).isEqualTo(room.getId());
+		assertThat(reservation.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
+		assertThat(reservation.getStayNights()).isEqualTo(5);
+		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("625000.00");
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+	}
+
+	@Test
+	void calculatesOneNightReservationAmount() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+
+		performCreate(member.getId(), room.getId(), CHECK_IN, CHECK_IN.plusDays(1))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
+				.andExpect(jsonPath("$.stayNights").value(1))
+				.andExpect(jsonPath("$.totalAmount").value(125000.00));
+	}
+
+	@Test
+	void keepsReservationPriceSnapshotWhenRoomPriceChanges() {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+
+		jdbcTemplate.update(
+				"update rooms set nightly_price = ? where id = ?",
+				new BigDecimal("200000.00"),
+				room.getId()
+		);
+		entityManager.clear();
+
+		Reservation reloaded = reservationRepository.findById(reservation.getId()).orElseThrow();
+		assertThat(reloaded.getRoom().getNightlyPrice()).isEqualByComparingTo("200000.00");
+		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
+		assertThat(reloaded.getStayNights()).isEqualTo(5);
+		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("625000.00");
 	}
 
 	@Test
@@ -329,7 +378,12 @@ class ReservationIntegrationTest {
 				"Accommodation description",
 				"Accommodation address"
 		));
-		return roomRepository.saveAndFlush(Room.create(accommodation, "Deluxe Room", 4));
+		return roomRepository.saveAndFlush(Room.create(
+				accommodation,
+				"Deluxe Room",
+				4,
+				NIGHTLY_PRICE
+		));
 	}
 
 	private Reservation saveReservation(
