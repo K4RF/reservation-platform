@@ -146,9 +146,13 @@ Before completing a change:
 - Google accounts are linked to existing members by verified email; otherwise a
   new member and provider-specific social account are created.
 - Accommodation creation is restricted to `ADMIN`; authenticated users can read
-  accommodation details and ID-ordered paginated lists.
-- Room creation under an accommodation is restricted to `ADMIN`; authenticated
-  users can read room details and accommodation-scoped paginated room lists.
+  details and paginated lists, search names case-insensitively, and sort only by
+  the allowed `ID` or `NAME` fields.
+- Room creation under an accommodation is restricted to `ADMIN` and requires a
+  positive nightly price. Authenticated users can read room details and filter
+  accommodation-scoped paginated lists by minimum capacity, nightly-price range,
+  and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
+  `NIGHTLY_PRICE`.
 - Authenticated members can create `CONFIRMED` room reservations and query only
   their own reservation details and ID-ordered paginated lists. Reservation
   periods use `[check-in, check-out)` semantics and member identity comes from
@@ -165,8 +169,9 @@ Before completing a change:
 - Room status has `ACTIVE` and `INACTIVE` values and newly created rooms default
   to `ACTIVE`. Status management APIs and inactive-room reservation blocking are
   deferred to the accommodation and room management work.
-- Accommodation search, custom sorting, general filtering, room inventory,
-  reservation filtering, and concurrency control are not implemented.
+- Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
+  room inventory, reservation filtering, reservation price snapshots, total
+  amount calculation, and concurrency control are not implemented.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
   validated for Access Token reissue.
