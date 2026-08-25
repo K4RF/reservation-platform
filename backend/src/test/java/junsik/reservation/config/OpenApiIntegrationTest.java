@@ -47,6 +47,20 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.paths['/api/v1/members'].post.security").doesNotExist())
 				.andExpect(jsonPath("$.paths['/api/v1/reservations'].post.security[0].bearerAuth").isArray())
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.parameters[*].name",
+						containsInAnyOrder(
+								"accommodationId",
+								"checkInDate",
+								"checkOutDate",
+								"guestCount",
+								"page",
+								"size"
+						)
+				))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations'].post.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/CreateReservationRequest")))
 				.andExpect(jsonPath(
