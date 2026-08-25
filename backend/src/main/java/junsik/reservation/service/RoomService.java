@@ -10,6 +10,7 @@ import junsik.reservation.dto.AvailableRoomRequest;
 import junsik.reservation.dto.CreateRoomRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.RoomResponse;
+import junsik.reservation.dto.RoomSearchRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationErrorCode;
@@ -19,6 +20,7 @@ import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
+import junsik.reservation.repository.RoomSpecifications;
 
 @Service
 public class RoomService {
@@ -34,7 +36,12 @@ public class RoomService {
 	@Transactional
 	public RoomResponse create(Long accommodationId, CreateRoomRequest request) {
 		Accommodation accommodation = getAccommodation(accommodationId);
-		Room room = Room.create(accommodation, request.name().trim(), request.capacity());
+		Room room = Room.create(
+				accommodation,
+				request.name().trim(),
+				request.capacity(),
+				request.nightlyPrice()
+		);
 		return RoomResponse.from(roomRepository.save(room));
 	}
 
@@ -46,14 +53,23 @@ public class RoomService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<RoomResponse> getAllByAccommodation(Long accommodationId, int page, int size) {
+	public PageResponse<RoomResponse> getAllByAccommodation(Long accommodationId, RoomSearchRequest request) {
 		if (!accommodationRepository.existsById(accommodationId)) {
 			throw new BusinessException(AccommodationErrorCode.NOT_FOUND);
 		}
+		validatePriceRange(request);
 
-		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
+				.and(Sort.by(Sort.Direction.ASC, "id"));
+		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
 		Page<RoomResponse> rooms = roomRepository
-				.findAllByAccommodationId(accommodationId, pageRequest)
+				.findAll(RoomSpecifications.withFilters(
+						accommodationId,
+						request.minCapacity(),
+						request.minPrice(),
+						request.maxPrice(),
+						request.status()
+				), pageRequest)
 				.map(RoomResponse::from);
 		return PageResponse.from(rooms);
 	}
@@ -86,6 +102,14 @@ public class RoomService {
 	private void validatePeriod(AvailableRoomRequest request) {
 		if (!request.checkInDate().isBefore(request.checkOutDate())) {
 			throw new BusinessException(RoomErrorCode.INVALID_PERIOD);
+		}
+	}
+
+	private void validatePriceRange(RoomSearchRequest request) {
+		if (request.minPrice() != null
+				&& request.maxPrice() != null
+				&& request.minPrice().compareTo(request.maxPrice()) > 0) {
+			throw new BusinessException(RoomErrorCode.INVALID_PRICE_RANGE);
 		}
 	}
 

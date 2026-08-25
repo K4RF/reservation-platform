@@ -30,6 +30,7 @@ import junsik.reservation.dto.AvailableRoomRequest;
 import junsik.reservation.dto.CreateRoomRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.RoomResponse;
+import junsik.reservation.dto.RoomSearchRequest;
 import junsik.reservation.service.RoomService;
 
 @Tag(name = "Rooms", description = "객실 API")
@@ -77,12 +78,9 @@ public class RoomController {
 	@GetMapping("/accommodations/{accommodationId}/rooms")
 	public ResponseEntity<PageResponse<RoomResponse>> getAllByAccommodation(
 			@PathVariable Long accommodationId,
-			@RequestParam(defaultValue = "0") @Min(value = 0, message = "페이지는 0 이상이어야 합니다.") int page,
-			@RequestParam(defaultValue = "20")
-			@Min(value = 1, message = "페이지 크기는 1 이상이어야 합니다.")
-			@Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.") int size
+			@Valid @ModelAttribute @ParameterObject RoomSearchRequest request
 	) {
-		return ResponseEntity.ok(roomService.getAllByAccommodation(accommodationId, page, size));
+		return ResponseEntity.ok(roomService.getAllByAccommodation(accommodationId, request));
 	}
 
 	@Operation(

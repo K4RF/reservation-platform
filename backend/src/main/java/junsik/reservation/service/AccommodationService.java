@@ -7,12 +7,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.dto.AccommodationResponse;
+import junsik.reservation.dto.AccommodationSearchRequest;
 import junsik.reservation.dto.CreateAccommodationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.AccommodationSpecifications;
 
 @Service
 public class AccommodationService {
@@ -41,10 +43,12 @@ public class AccommodationService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<AccommodationResponse> getAll(int page, int size) {
-		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+	public PageResponse<AccommodationResponse> getAll(AccommodationSearchRequest request) {
+		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
+				.and(Sort.by(Sort.Direction.ASC, "id"));
+		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
 		Page<AccommodationResponse> accommodations = accommodationRepository
-				.findAll(pageRequest)
+				.findAll(AccommodationSpecifications.nameContains(request.name()), pageRequest)
 				.map(AccommodationResponse::from);
 		return PageResponse.from(accommodations);
 	}
