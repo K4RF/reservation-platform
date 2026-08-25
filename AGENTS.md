@@ -158,7 +158,14 @@ Before completing a change:
   are not implemented.
 - Reservation overlap prevention currently uses a normal read-before-write query
   inside one transaction and does not prevent races between concurrent requests.
-- Accommodation search, custom sorting, filtering, room inventory, availability,
+- Authenticated users can query ID-ordered paginated available rooms for an
+  accommodation by check-in, check-out, and guest count. The query includes only
+  `ACTIVE` rooms with sufficient capacity and excludes rooms with overlapping
+  `CONFIRMED` reservations using `[check-in, check-out)` semantics.
+- Room status has `ACTIVE` and `INACTIVE` values and newly created rooms default
+  to `ACTIVE`. Status management APIs and inactive-room reservation blocking are
+  deferred to the accommodation and room management work.
+- Accommodation search, custom sorting, general filtering, room inventory,
   reservation filtering, and concurrency control are not implemented.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are

@@ -6,7 +6,8 @@ import junsik.reservation.global.exception.ErrorCode;
 
 public enum RoomErrorCode implements ErrorCode {
 
-	NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_001", "존재하지 않는 객실입니다.");
+	NOT_FOUND(HttpStatus.NOT_FOUND, "ROOM_001", "존재하지 않는 객실입니다."),
+	INVALID_PERIOD(HttpStatus.BAD_REQUEST, "ROOM_002", "체크인 날짜는 체크아웃 날짜보다 이전이어야 합니다.");
 
 	private final HttpStatus status;
 	private final String code;

@@ -10,7 +10,8 @@
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
-> Token 재발급과 로그아웃이 구현됐으며 동시성 제어는 아직 구현되지 않았습니다.
+> Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
+> 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -156,6 +157,7 @@ Spring Boot API
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms?page=0&size=20` | 인증 사용자 | 숙소별 객실 목록 조회 |
+| `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
 | `GET` | `/api/v1/reservations?page=0&size=20` | 인증 사용자 | 본인 예약 목록 조회 |
@@ -164,6 +166,12 @@ Spring Boot API
 목록은 각 리소스 ID 오름차순으로 반환하며 `page`는 0부터 시작합니다. `size`는
 1 이상 100 이하만 허용합니다. 검색, 임의 정렬, 복합 필터와 날짜별 객실 재고는
 현재 MVP 범위에 포함되지 않습니다.
+
+예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
+경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
+요청 기간과 겹치는 `CONFIRMED` 예약이 없는 객실을 반환합니다. `CANCELLED` 예약은
+가용성을 막지 않으며 기간은 `[checkInDate, checkOutDate)`로 비교합니다. 조회와 실제
+예약 생성 사이의 Race Condition은 아직 방지하지 않습니다.
 
 예약 생성 요청은 `memberId`를 받지 않고 JWT 인증 정보의 회원 ID를 사용합니다.
 예약 기간은 체크아웃 날짜를 점유하지 않는 `[checkInDate, checkOutDate)` 구간으로
@@ -254,6 +262,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 생성
 * [x] 예약 조회
 * [x] 예약 취소
+* [x] 날짜·인원 기준 예약 가능 객실 조회
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -456,6 +465,7 @@ docs: add concurrency test results
 * [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
 * [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
 * [x] Backend와 Redis Refresh Token 저장 연동
+* [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 
 ---
 
