@@ -98,6 +98,8 @@ class OpenApiIntegrationTest {
 						"nightlyPrice"
 				)))
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
-				.andExpect(jsonPath("$.components.schemas.ReservationResponse").exists());
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.nightlyPriceSnapshot").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists());
 	}
 }

@@ -146,6 +146,9 @@ class BasicReservationMvpIntegrationTest {
 							""".formatted(roomId)))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.memberId").value(userId))
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(120000.00))
+				.andExpect(jsonPath("$.stayNights").value(3))
+				.andExpect(jsonPath("$.totalAmount").value(360000.00))
 				.andExpect(jsonPath("$.status").value("CONFIRMED"))
 				.andReturn();
 		Long reservationId = readLong(reservationResult, "$.reservationId");
