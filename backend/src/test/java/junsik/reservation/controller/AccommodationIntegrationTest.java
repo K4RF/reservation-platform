@@ -149,6 +149,41 @@ class AccommodationIntegrationTest {
 	}
 
 	@Test
+	void searchesAccommodationNameAndAppliesAllowedSort() throws Exception {
+		Accommodation cityHotel = saveAccommodation("City HOTEL");
+		Accommodation oceanHotel = saveAccommodation("Ocean Hotel");
+		saveAccommodation("Mountain Guesthouse");
+
+		mockMvc.perform(get(ACCOMMODATIONS_URL)
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("name", " hotel ")
+					.param("sortBy", "NAME")
+					.param("direction", "DESC")
+					.param("page", "0")
+					.param("size", "2"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(oceanHotel.getId()))
+				.andExpect(jsonPath("$.content[1].accommodationId").value(cityHotel.getId()))
+				.andExpect(jsonPath("$.totalElements").value(2));
+
+		mockMvc.perform(get(ACCOMMODATIONS_URL)
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("name", "not-found"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(0))
+				.andExpect(jsonPath("$.totalElements").value(0));
+	}
+
+	@Test
+	void rejectsUnsupportedAccommodationSortField() throws Exception {
+		mockMvc.perform(get(ACCOMMODATIONS_URL)
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("sortBy", "ADDRESS"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void rejectsInvalidPaginationParameters() throws Exception {
 		mockMvc.perform(get(ACCOMMODATIONS_URL)
 					.header("Authorization", bearerToken(MemberRole.USER))
@@ -163,6 +198,14 @@ class AccommodationIntegrationTest {
 				"Accommodation " + index,
 				"Description " + index,
 				"Address " + index
+		));
+	}
+
+	private Accommodation saveAccommodation(String name) {
+		return accommodationRepository.saveAndFlush(Accommodation.create(
+				name,
+				"Description",
+				"Address"
 		));
 	}
 
