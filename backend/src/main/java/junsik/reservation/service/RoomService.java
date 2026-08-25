@@ -6,13 +6,16 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.dto.AvailableRoomRequest;
 import junsik.reservation.dto.CreateRoomRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.RoomResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationErrorCode;
+import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomErrorCode;
+import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
@@ -53,6 +56,37 @@ public class RoomService {
 				.findAllByAccommodationId(accommodationId, pageRequest)
 				.map(RoomResponse::from);
 		return PageResponse.from(rooms);
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<RoomResponse> getAvailableRooms(
+			Long accommodationId,
+			AvailableRoomRequest request,
+			int page,
+			int size
+	) {
+		validatePeriod(request);
+		if (!accommodationRepository.existsById(accommodationId)) {
+			throw new BusinessException(AccommodationErrorCode.NOT_FOUND);
+		}
+
+		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+		Page<RoomResponse> rooms = roomRepository.findAvailableRooms(
+				accommodationId,
+				RoomStatus.ACTIVE,
+				ReservationStatus.CONFIRMED,
+				request.checkInDate(),
+				request.checkOutDate(),
+				request.guestCount(),
+				pageRequest
+		).map(RoomResponse::from);
+		return PageResponse.from(rooms);
+	}
+
+	private void validatePeriod(AvailableRoomRequest request) {
+		if (!request.checkInDate().isBefore(request.checkOutDate())) {
+			throw new BusinessException(RoomErrorCode.INVALID_PERIOD);
+		}
 	}
 
 	private Accommodation getAccommodation(Long accommodationId) {
