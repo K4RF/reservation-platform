@@ -89,9 +89,6 @@ public class ReservationService {
 	public ReservationResponse cancel(Long memberId, Long reservationId) {
 		Reservation reservation = getReservation(reservationId);
 		validateOwner(reservation, memberId);
-		if (!reservation.isCancellable()) {
-			throw new BusinessException(ReservationErrorCode.ALREADY_CANCELLED);
-		}
 		reservation.cancel();
 		return ReservationResponse.from(reservation);
 	}
@@ -104,9 +101,7 @@ public class ReservationService {
 	) {
 		Reservation reservation = getReservation(reservationId);
 		validateOwner(reservation, memberId);
-		if (!reservation.isScheduleChangeable()) {
-			throw new BusinessException(ReservationErrorCode.SCHEDULE_CHANGE_NOT_ALLOWED);
-		}
+		reservation.verifyScheduleChangeAllowed();
 		validatePeriod(request.checkInDate(), request.checkOutDate());
 
 		boolean overlaps = reservationRepository

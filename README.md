@@ -198,7 +198,9 @@ Spring Boot API
 다시 계산합니다. `CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는
 데이터를 삭제하지 않고 `CONFIRMED` 상태를 `CANCELLED`로 변경하며, 이미 취소된
 예약은 다시 취소할 수 없습니다. 세부 취소 가능 시간과 환불 정책은 현재 MVP
-범위에 포함되지 않습니다.
+범위에 포함되지 않습니다. 상태별 허용 동작과 전이 규칙은
+[`docs/architecture/reservation-status-policy.md`](docs/architecture/reservation-status-policy.md)에
+정리되어 있습니다.
 
 초기에는 하나의 애플리케이션 내부에서 도메인 경계를 분리한 **모듈러 모놀리스** 형태로 개발합니다.
 
@@ -282,6 +284,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 숙소명 검색 및 객실 조건·정렬 조회
 * [x] 객실 1박 가격 및 예약 가격 Snapshot·총 금액 계산
 * [x] 본인 예약 일정 변경 및 금액 재계산
+* [x] 예약 상태별 허용 동작 및 도메인 상태 전이 규칙
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -488,6 +491,7 @@ docs: add concurrency test results
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
 * [x] 소유권·상태·기간 중복 검증을 적용한 예약 일정 변경
+* [x] `CONFIRMED`·`CANCELLED` 예약 상태 전이 정책 및 도메인 예외 구성
 
 ---
 

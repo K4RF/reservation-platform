@@ -167,6 +167,9 @@ Before completing a change:
 - Reservation owners can cancel a `CONFIRMED` reservation by changing its state
   to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
   are not implemented.
+- `Reservation` owns schedule-change and cancellation state rules. Invalid
+  operations on `CANCELLED` reservations raise a domain state-transition
+  exception that the API maps to the existing reservation error responses.
 - Reservation creation and schedule changes currently use normal
   read-before-write overlap queries inside one transaction and do not prevent
   races between concurrent requests.
