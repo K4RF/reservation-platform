@@ -15,6 +15,7 @@ import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
+import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.enums.MemberErrorCode;
 import junsik.reservation.enums.ReservationErrorCode;
 import junsik.reservation.enums.ReservationStatus;
@@ -48,6 +49,12 @@ public class ReservationService {
 				.orElseThrow(() -> new BusinessException(MemberErrorCode.NOT_FOUND));
 		Room room = roomRepository.findById(request.roomId())
 				.orElseThrow(() -> new BusinessException(RoomErrorCode.NOT_FOUND));
+		if (!room.getAccommodation().isActive()) {
+			throw new BusinessException(AccommodationErrorCode.INACTIVE);
+		}
+		if (!room.isActive()) {
+			throw new BusinessException(RoomErrorCode.INACTIVE);
+		}
 
 		boolean overlaps = reservationRepository
 				.existsByRoomIdAndStatusAndCheckInDateLessThanAndCheckOutDateGreaterThan(

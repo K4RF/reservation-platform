@@ -97,4 +97,18 @@ public class Room {
 	public RoomStatus getStatus() {
 		return status;
 	}
+
+	public boolean isActive() {
+		return status == RoomStatus.ACTIVE;
+	}
+
+	public void update(String name, int capacity, BigDecimal nightlyPrice) {
+		this.name = name;
+		this.capacity = capacity;
+		this.nightlyPrice = nightlyPrice;
+	}
+
+	public void changeStatus(RoomStatus status) {
+		this.status = status;
+	}
 }
