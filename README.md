@@ -13,7 +13,8 @@
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
 > 숙소명 검색과 객실 조건 조회도 지원합니다. 예약 생성 시 객실의 1박 가격을
 > Snapshot으로 저장하고 숙박 일수에 따른 총 예약 금액을 계산하며, 본인 예약의
-> 일정 변경도 지원합니다. 동시성 제어는 아직 구현되지 않았습니다.
+> 일정 변경도 지원합니다. 관리자는 숙소·객실 정보와 운영 상태를 관리할 수
+> 있습니다. 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -154,9 +155,13 @@ Spring Boot API
 | Method | Endpoint | 권한 | 기능 |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/accommodations` | `ADMIN` | 숙소 등록 |
+| `PUT` | `/api/v1/accommodations/{accommodationId}` | `ADMIN` | 숙소 정보 수정 |
+| `PATCH` | `/api/v1/accommodations/{accommodationId}/status` | `ADMIN` | 숙소 운영 상태 변경 |
 | `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
 | `GET` | `/api/v1/accommodations?name=hotel&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소명 검색·정렬·페이지 조회 |
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
+| `PUT` | `/api/v1/rooms/{roomId}` | `ADMIN` | 객실 정보 수정 |
+| `PATCH` | `/api/v1/rooms/{roomId}/status` | `ADMIN` | 객실 운영 상태 변경 |
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·정렬·페이지 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
@@ -174,6 +179,10 @@ Spring Boot API
 수 있습니다.
 
 객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
+숙소와 객실은 생성 시 `ACTIVE` 상태이며 관리자는 정보와 `ACTIVE/INACTIVE` 상태를
+변경할 수 있습니다. `INACTIVE` 숙소 또는 객실은 예약 가능 객실 목록에서 제외되고
+신규 예약 생성도 차단됩니다. 물리적으로 삭제하지 않으므로 기존 예약 이력과 예약
+조회는 유지됩니다.
 기존 개발 DB 객실은 Schema 갱신 시 `0.00`으로 보존됩니다. 예약 생성 시점의
 객실 가격은 `nightlyPriceSnapshot`에 복사하고, `[checkInDate, checkOutDate)`의
 숙박 일수는 `stayNights`로 계산합니다. `totalAmount`는
@@ -285,6 +294,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 객실 1박 가격 및 예약 가격 Snapshot·총 금액 계산
 * [x] 본인 예약 일정 변경 및 금액 재계산
 * [x] 예약 상태별 허용 동작 및 도메인 상태 전이 규칙
+* [x] 숙소·객실 정보 수정 및 운영 상태 관리
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -492,6 +502,7 @@ docs: add concurrency test results
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
 * [x] 소유권·상태·기간 중복 검증을 적용한 예약 일정 변경
 * [x] `CONFIRMED`·`CANCELLED` 예약 상태 전이 정책 및 도메인 예외 구성
+* [x] 관리자 숙소·객실 정보 수정 및 비활성 리소스 신규 예약 차단
 
 ---
 
