@@ -135,6 +135,24 @@ public class Reservation {
 		return status == ReservationStatus.CONFIRMED;
 	}
 
+	public boolean isScheduleChangeable() {
+		return status == ReservationStatus.CONFIRMED;
+	}
+
+	public void changeSchedule(LocalDate checkInDate, LocalDate checkOutDate) {
+		if (!isScheduleChangeable()) {
+			throw new IllegalStateException("확정 상태의 예약만 일정을 변경할 수 있습니다.");
+		}
+		BigDecimal recalculatedTotalAmount = calculateTotalAmount(
+				nightlyPriceSnapshot,
+				checkInDate,
+				checkOutDate
+		);
+		this.checkInDate = checkInDate;
+		this.checkOutDate = checkOutDate;
+		this.totalAmount = recalculatedTotalAmount;
+	}
+
 	public void cancel() {
 		if (!isCancellable()) {
 			throw new IllegalStateException("확정 상태의 예약만 취소할 수 있습니다.");

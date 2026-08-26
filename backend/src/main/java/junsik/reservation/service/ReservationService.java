@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.ReservationResponse;
+import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
@@ -92,6 +93,35 @@ public class ReservationService {
 			throw new BusinessException(ReservationErrorCode.ALREADY_CANCELLED);
 		}
 		reservation.cancel();
+		return ReservationResponse.from(reservation);
+	}
+
+	@Transactional
+	public ReservationResponse updateSchedule(
+			Long memberId,
+			Long reservationId,
+			UpdateReservationScheduleRequest request
+	) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		if (!reservation.isScheduleChangeable()) {
+			throw new BusinessException(ReservationErrorCode.SCHEDULE_CHANGE_NOT_ALLOWED);
+		}
+		validatePeriod(request.checkInDate(), request.checkOutDate());
+
+		boolean overlaps = reservationRepository
+				.existsByRoomIdAndStatusAndIdNotAndCheckInDateLessThanAndCheckOutDateGreaterThan(
+						reservation.getRoom().getId(),
+						ReservationStatus.CONFIRMED,
+						reservation.getId(),
+						request.checkOutDate(),
+						request.checkInDate()
+				);
+		if (overlaps) {
+			throw new BusinessException(ReservationErrorCode.PERIOD_OVERLAP);
+		}
+
+		reservation.changeSchedule(request.checkInDate(), request.checkOutDate());
 		return ReservationResponse.from(reservation);
 	}
 

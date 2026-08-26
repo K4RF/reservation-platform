@@ -153,10 +153,27 @@ class BasicReservationMvpIntegrationTest {
 				.andReturn();
 		Long reservationId = readLong(reservationResult, "$.reservationId");
 
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}", reservationId)
+					.header("Authorization", bearer(userToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "checkInDate": "2035-06-11",
+							  "checkOutDate": "2035-06-15"
+							}
+							"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.checkInDate").value("2035-06-11"))
+				.andExpect(jsonPath("$.checkOutDate").value("2035-06-15"))
+				.andExpect(jsonPath("$.stayNights").value(4))
+				.andExpect(jsonPath("$.totalAmount").value(480000.00));
+
 		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservationId)
 					.header("Authorization", bearer(userToken)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.reservationId").value(reservationId));
+				.andExpect(jsonPath("$.reservationId").value(reservationId))
+				.andExpect(jsonPath("$.checkInDate").value("2035-06-11"))
+				.andExpect(jsonPath("$.checkOutDate").value("2035-06-15"));
 
 		mockMvc.perform(get(RESERVATIONS_URL)
 					.header("Authorization", bearer(userToken)))

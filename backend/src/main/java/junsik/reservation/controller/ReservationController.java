@@ -29,6 +29,7 @@ import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.ReservationResponse;
+import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.security.MemberPrincipal;
 import junsik.reservation.service.ReservationService;
 
@@ -86,6 +87,18 @@ public class ReservationController {
 			@Max(value = 100, message = "페이지 크기는 100 이하여야 합니다.") int size
 	) {
 		return ResponseEntity.ok(reservationService.getAllByMember(principal.memberId(), page, size));
+	}
+
+	@Operation(summary = "본인 예약 일정 변경")
+	@PatchMapping("/{reservationId}")
+	public ResponseEntity<ReservationResponse> updateSchedule(
+			@AuthenticationPrincipal MemberPrincipal principal,
+			@PathVariable Long reservationId,
+			@Valid @RequestBody UpdateReservationScheduleRequest request
+	) {
+		return ResponseEntity.ok(
+				reservationService.updateSchedule(principal.memberId(), reservationId, request)
+		);
 	}
 
 	@Operation(summary = "본인 예약 취소")
