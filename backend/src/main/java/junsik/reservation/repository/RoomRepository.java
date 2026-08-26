@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import junsik.reservation.entity.Room;
+import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomStatus;
 
@@ -21,6 +22,7 @@ public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificat
 			select room
 			from Room room
 			where room.accommodation.id = :accommodationId
+			  and room.accommodation.status = :accommodationStatus
 			  and room.status = :roomStatus
 			  and room.capacity >= :guestCount
 			  and not exists (
@@ -34,6 +36,7 @@ public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificat
 			""")
 	Page<Room> findAvailableRooms(
 			@Param("accommodationId") Long accommodationId,
+			@Param("accommodationStatus") AccommodationStatus accommodationStatus,
 			@Param("roomStatus") RoomStatus roomStatus,
 			@Param("reservationStatus") ReservationStatus reservationStatus,
 			@Param("checkInDate") LocalDate checkInDate,

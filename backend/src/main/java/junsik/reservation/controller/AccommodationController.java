@@ -10,8 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,6 +29,8 @@ import junsik.reservation.dto.AccommodationResponse;
 import junsik.reservation.dto.AccommodationSearchRequest;
 import junsik.reservation.dto.CreateAccommodationRequest;
 import junsik.reservation.dto.PageResponse;
+import junsik.reservation.dto.UpdateAccommodationRequest;
+import junsik.reservation.dto.UpdateAccommodationStatusRequest;
 import junsik.reservation.service.AccommodationService;
 
 @Tag(name = "Accommodations", description = "숙소 API")
@@ -75,5 +79,23 @@ public class AccommodationController {
 			@Valid @ModelAttribute @ParameterObject AccommodationSearchRequest request
 	) {
 		return ResponseEntity.ok(accommodationService.getAll(request));
+	}
+
+	@Operation(summary = "숙소 정보 수정")
+	@PutMapping("/{accommodationId}")
+	public ResponseEntity<AccommodationResponse> update(
+			@PathVariable Long accommodationId,
+			@Valid @RequestBody UpdateAccommodationRequest request
+	) {
+		return ResponseEntity.ok(accommodationService.update(accommodationId, request));
+	}
+
+	@Operation(summary = "숙소 운영 상태 변경")
+	@PatchMapping("/{accommodationId}/status")
+	public ResponseEntity<AccommodationResponse> updateStatus(
+			@PathVariable Long accommodationId,
+			@Valid @RequestBody UpdateAccommodationStatusRequest request
+	) {
+		return ResponseEntity.ok(accommodationService.updateStatus(accommodationId, request));
 	}
 }

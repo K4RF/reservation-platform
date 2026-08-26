@@ -6,7 +6,8 @@ import junsik.reservation.global.exception.ErrorCode;
 
 public enum AccommodationErrorCode implements ErrorCode {
 
-	NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOMMODATION_001", "존재하지 않는 숙소입니다.");
+	NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOMMODATION_001", "존재하지 않는 숙소입니다."),
+	INACTIVE(HttpStatus.CONFLICT, "ACCOMMODATION_002", "운영 중지된 숙소는 예약할 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String code;

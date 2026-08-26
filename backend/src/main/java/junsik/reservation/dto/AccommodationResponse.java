@@ -1,12 +1,14 @@
 package junsik.reservation.dto;
 
 import junsik.reservation.entity.Accommodation;
+import junsik.reservation.enums.AccommodationStatus;
 
 public record AccommodationResponse(
 		Long accommodationId,
 		String name,
 		String description,
-		String address
+		String address,
+		AccommodationStatus status
 ) {
 
 	public static AccommodationResponse from(Accommodation accommodation) {
@@ -14,7 +16,8 @@ public record AccommodationResponse(
 				accommodation.getId(),
 				accommodation.getName(),
 				accommodation.getDescription(),
-				accommodation.getAddress()
+				accommodation.getAddress(),
+				accommodation.getStatus()
 		);
 	}
 }

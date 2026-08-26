@@ -20,6 +20,7 @@ import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
@@ -102,6 +103,19 @@ class AvailableRoomIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
 				.andExpect(jsonPath("$.content[0].roomId").value(room.getId()));
+	}
+
+	@Test
+	void excludesRoomsWhenAccommodationIsInactive() throws Exception {
+		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+		saveRoom(accommodation, "Available Room", 2);
+		accommodation.changeStatus(AccommodationStatus.INACTIVE);
+		accommodationRepository.flush();
+
+		performAvailable(accommodation.getId(), CHECK_IN, CHECK_OUT, 2, 0, 20)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(0))
+				.andExpect(jsonPath("$.totalElements").value(0));
 	}
 
 	@Test

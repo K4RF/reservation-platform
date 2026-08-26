@@ -145,13 +145,15 @@ Before completing a change:
   are implemented.
 - Google accounts are linked to existing members by verified email; otherwise a
   new member and provider-specific social account are created.
-- Accommodation creation is restricted to `ADMIN`; authenticated users can read
-  details and paginated lists, search names case-insensitively, and sort only by
-  the allowed `ID` or `NAME` fields.
-- Room creation under an accommodation is restricted to `ADMIN` and requires a
-  positive nightly price. Authenticated users can read room details and filter
-  accommodation-scoped paginated lists by minimum capacity, nightly-price range,
-  and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
+- Accommodation creation, information updates, and `ACTIVE/INACTIVE` status
+  changes are restricted to `ADMIN`; newly created accommodations are `ACTIVE`.
+  Authenticated users can read details and paginated lists, search names
+  case-insensitively, and sort only by the allowed `ID` or `NAME` fields.
+- Room creation, information updates, and `ACTIVE/INACTIVE` status changes are
+  restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
+  nightly price. Authenticated users can read room details and filter
+  accommodation-scoped paginated lists by minimum capacity, nightly-price
+  range, and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
   `NIGHTLY_PRICE`.
 - Authenticated members can create `CONFIRMED` room reservations and query only
   their own reservation details and ID-ordered paginated lists. Reservation
@@ -175,11 +177,10 @@ Before completing a change:
   races between concurrent requests.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
-  `ACTIVE` rooms with sufficient capacity and excludes rooms with overlapping
-  `CONFIRMED` reservations using `[check-in, check-out)` semantics.
-- Room status has `ACTIVE` and `INACTIVE` values and newly created rooms default
-  to `ACTIVE`. Status management APIs and inactive-room reservation blocking are
-  deferred to the accommodation and room management work.
+  rooms whose room and accommodation are both `ACTIVE`, have sufficient
+  capacity, and have no overlapping `CONFIRMED` reservation using
+  `[check-in, check-out)` semantics. New reservations for inactive rooms or
+  accommodations are rejected, while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
   room inventory, reservation filtering, and concurrency control are not
   implemented.

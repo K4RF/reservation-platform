@@ -11,9 +11,12 @@ import junsik.reservation.dto.CreateRoomRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.RoomResponse;
 import junsik.reservation.dto.RoomSearchRequest;
+import junsik.reservation.dto.UpdateRoomRequest;
+import junsik.reservation.dto.UpdateRoomStatusRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationErrorCode;
+import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomErrorCode;
 import junsik.reservation.enums.RoomStatus;
@@ -89,6 +92,7 @@ public class RoomService {
 		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
 		Page<RoomResponse> rooms = roomRepository.findAvailableRooms(
 				accommodationId,
+				AccommodationStatus.ACTIVE,
 				RoomStatus.ACTIVE,
 				ReservationStatus.CONFIRMED,
 				request.checkInDate(),
@@ -97,6 +101,20 @@ public class RoomService {
 				pageRequest
 		).map(RoomResponse::from);
 		return PageResponse.from(rooms);
+	}
+
+	@Transactional
+	public RoomResponse update(Long roomId, UpdateRoomRequest request) {
+		Room room = getRoom(roomId);
+		room.update(request.name().trim(), request.capacity(), request.nightlyPrice());
+		return RoomResponse.from(room);
+	}
+
+	@Transactional
+	public RoomResponse updateStatus(Long roomId, UpdateRoomStatusRequest request) {
+		Room room = getRoom(roomId);
+		room.changeStatus(request.status());
+		return RoomResponse.from(room);
 	}
 
 	private void validatePeriod(AvailableRoomRequest request) {
@@ -116,5 +134,10 @@ public class RoomService {
 	private Accommodation getAccommodation(Long accommodationId) {
 		return accommodationRepository.findById(accommodationId)
 				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
+	}
+
+	private Room getRoom(Long roomId) {
+		return roomRepository.findById(roomId)
+				.orElseThrow(() -> new BusinessException(RoomErrorCode.NOT_FOUND));
 	}
 }

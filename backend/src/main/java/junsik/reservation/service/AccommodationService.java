@@ -10,6 +10,8 @@ import junsik.reservation.dto.AccommodationResponse;
 import junsik.reservation.dto.AccommodationSearchRequest;
 import junsik.reservation.dto.CreateAccommodationRequest;
 import junsik.reservation.dto.PageResponse;
+import junsik.reservation.dto.UpdateAccommodationRequest;
+import junsik.reservation.dto.UpdateAccommodationStatusRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.global.exception.BusinessException;
@@ -51,5 +53,31 @@ public class AccommodationService {
 				.findAll(AccommodationSpecifications.nameContains(request.name()), pageRequest)
 				.map(AccommodationResponse::from);
 		return PageResponse.from(accommodations);
+	}
+
+	@Transactional
+	public AccommodationResponse update(Long accommodationId, UpdateAccommodationRequest request) {
+		Accommodation accommodation = getAccommodation(accommodationId);
+		accommodation.update(
+				request.name().trim(),
+				request.description().trim(),
+				request.address().trim()
+		);
+		return AccommodationResponse.from(accommodation);
+	}
+
+	@Transactional
+	public AccommodationResponse updateStatus(
+			Long accommodationId,
+			UpdateAccommodationStatusRequest request
+	) {
+		Accommodation accommodation = getAccommodation(accommodationId);
+		accommodation.changeStatus(request.status());
+		return AccommodationResponse.from(accommodation);
+	}
+
+	private Accommodation getAccommodation(Long accommodationId) {
+		return accommodationRepository.findById(accommodationId)
+				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
 	}
 }
