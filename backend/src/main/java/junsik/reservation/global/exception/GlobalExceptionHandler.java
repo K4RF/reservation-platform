@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import junsik.reservation.enums.ReservationErrorCode;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -26,6 +28,20 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request
 	) {
 		ErrorCode errorCode = exception.getErrorCode();
+		return ResponseEntity
+				.status(errorCode.getStatus())
+				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+	}
+
+	@ExceptionHandler(InvalidReservationStateTransitionException.class)
+	public ResponseEntity<ErrorResponse> handleInvalidReservationStateTransitionException(
+			InvalidReservationStateTransitionException exception,
+			HttpServletRequest request
+	) {
+		ErrorCode errorCode = switch (exception.getOperation()) {
+			case CANCEL -> ReservationErrorCode.ALREADY_CANCELLED;
+			case CHANGE_SCHEDULE -> ReservationErrorCode.SCHEDULE_CHANGE_NOT_ALLOWED;
+		};
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode, request.getRequestURI()));

@@ -21,6 +21,8 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.ColumnDefault;
 
 import junsik.reservation.enums.ReservationStatus;
+import junsik.reservation.global.exception.InvalidReservationStateTransitionException;
+import junsik.reservation.global.exception.InvalidReservationStateTransitionException.Operation;
 
 @Entity
 @Table(
@@ -131,18 +133,12 @@ public class Reservation {
 		return status;
 	}
 
-	public boolean isCancellable() {
-		return status == ReservationStatus.CONFIRMED;
-	}
-
-	public boolean isScheduleChangeable() {
-		return status == ReservationStatus.CONFIRMED;
+	public void verifyScheduleChangeAllowed() {
+		requireConfirmed(Operation.CHANGE_SCHEDULE);
 	}
 
 	public void changeSchedule(LocalDate checkInDate, LocalDate checkOutDate) {
-		if (!isScheduleChangeable()) {
-			throw new IllegalStateException("확정 상태의 예약만 일정을 변경할 수 있습니다.");
-		}
+		verifyScheduleChangeAllowed();
 		BigDecimal recalculatedTotalAmount = calculateTotalAmount(
 				nightlyPriceSnapshot,
 				checkInDate,
@@ -154,10 +150,14 @@ public class Reservation {
 	}
 
 	public void cancel() {
-		if (!isCancellable()) {
-			throw new IllegalStateException("확정 상태의 예약만 취소할 수 있습니다.");
-		}
+		requireConfirmed(Operation.CANCEL);
 		this.status = ReservationStatus.CANCELLED;
+	}
+
+	private void requireConfirmed(Operation operation) {
+		if (status != ReservationStatus.CONFIRMED) {
+			throw new InvalidReservationStateTransitionException(status, operation);
+		}
 	}
 
 	private BigDecimal calculateTotalAmount(
