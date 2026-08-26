@@ -29,6 +29,8 @@ import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.ReservationStatus;
+import junsik.reservation.enums.RoomStatus;
+import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
@@ -287,6 +289,54 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.code").value("AUTH_001"));
 
 		assertThat(reservationRepository.count()).isZero();
+	}
+
+	@Test
+	void rejectsReservationCreationForInactiveRoom() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		room.changeStatus(RoomStatus.INACTIVE);
+		roomRepository.flush();
+
+		performCreate(member.getId(), room.getId(), CHECK_IN, CHECK_OUT)
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("ROOM_004"));
+
+		assertThat(reservationRepository.count()).isZero();
+	}
+
+	@Test
+	void rejectsReservationCreationForInactiveAccommodation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		room.getAccommodation().changeStatus(AccommodationStatus.INACTIVE);
+		accommodationRepository.flush();
+
+		performCreate(member.getId(), room.getId(), CHECK_IN, CHECK_OUT)
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("ACCOMMODATION_002"));
+
+		assertThat(reservationRepository.count()).isZero();
+	}
+
+	@Test
+	void keepsExistingReservationAfterRoomAndAccommodationDeactivation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+
+		room.changeStatus(RoomStatus.INACTIVE);
+		room.getAccommodation().changeStatus(AccommodationStatus.INACTIVE);
+		roomRepository.flush();
+		accommodationRepository.flush();
+
+		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
+				.andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+		assertThat(reservationRepository.count()).isOne();
 	}
 
 	@Test

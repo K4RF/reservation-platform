@@ -3,7 +3,9 @@ package junsik.reservation.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
@@ -73,13 +76,93 @@ class RoomIntegrationTest {
 				.andExpect(jsonPath("$.accommodationId").value(accommodation.getId()))
 				.andExpect(jsonPath("$.name").value("Deluxe Twin Room"))
 				.andExpect(jsonPath("$.capacity").value(4))
-				.andExpect(jsonPath("$.nightlyPrice").value(150000.00));
+				.andExpect(jsonPath("$.nightlyPrice").value(150000.00))
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Room savedRoom = roomRepository.findAll().getFirst();
 		assertThat(savedRoom.getAccommodation().getId()).isEqualTo(accommodation.getId());
 		assertThat(savedRoom.getName()).isEqualTo("Deluxe Twin Room");
 		assertThat(savedRoom.getCapacity()).isEqualTo(4);
 		assertThat(savedRoom.getNightlyPrice()).isEqualByComparingTo("150000.00");
+		assertThat(savedRoom.getStatus()).isEqualTo(RoomStatus.ACTIVE);
+	}
+
+	@Test
+	void updatesRoomInformationWithAdminRole() throws Exception {
+		Room room = saveRoom(saveAccommodation("Ocean View Hotel"), 1);
+
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "name": "  Updated Suite  ",
+							  "capacity": 6,
+							  "nightlyPrice": 250000.00
+							}
+							"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Updated Suite"))
+				.andExpect(jsonPath("$.capacity").value(6))
+				.andExpect(jsonPath("$.nightlyPrice").value(250000.00))
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+
+		assertThat(room.getName()).isEqualTo("Updated Suite");
+		assertThat(room.getNightlyPrice()).isEqualByComparingTo("250000.00");
+	}
+
+	@Test
+	void changesRoomStatusWithAdminRole() throws Exception {
+		Room room = saveRoom(saveAccommodation("Ocean View Hotel"), 1);
+
+		mockMvc.perform(patch(ROOMS_URL + "/{roomId}/status", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"status\":\"INACTIVE\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("INACTIVE"));
+
+		assertThat(room.getStatus()).isEqualTo(RoomStatus.INACTIVE);
+	}
+
+	@Test
+	void rejectsRoomManagementFromUserRole() throws Exception {
+		Room room = saveRoom(saveAccommodation("Ocean View Hotel"), 1);
+
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest()))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("AUTH_002"));
+
+		mockMvc.perform(patch(ROOMS_URL + "/{roomId}/status", room.getId())
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"status\":\"INACTIVE\"}"))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("AUTH_002"));
+	}
+
+	@Test
+	void rejectsInvalidAndUnknownRoomUpdate() throws Exception {
+		Room room = saveRoom(saveAccommodation("Ocean View Hotel"), 1);
+
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"\",\"capacity\":0,\"nightlyPrice\":0}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
+						"name", "capacity", "nightlyPrice"
+				)));
+
+		mockMvc.perform(put(ROOMS_URL + "/999999")
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest()))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("ROOM_001"));
 	}
 
 	@Test

@@ -3,7 +3,9 @@ package junsik.reservation.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -18,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.security.JwtTokenProvider;
 
@@ -57,12 +60,89 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.accommodationId").isNumber())
 				.andExpect(jsonPath("$.name").value("Ocean View Hotel"))
 				.andExpect(jsonPath("$.description").value("A hotel overlooking the ocean."))
-				.andExpect(jsonPath("$.address").value("123 Beach Road"));
+				.andExpect(jsonPath("$.address").value("123 Beach Road"))
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Accommodation saved = accommodationRepository.findAll().getFirst();
 		assertThat(saved.getName()).isEqualTo("Ocean View Hotel");
 		assertThat(saved.getDescription()).isEqualTo("A hotel overlooking the ocean.");
 		assertThat(saved.getAddress()).isEqualTo("123 Beach Road");
+		assertThat(saved.getStatus()).isEqualTo(AccommodationStatus.ACTIVE);
+	}
+
+	@Test
+	void updatesAccommodationInformationWithAdminRole() throws Exception {
+		Accommodation accommodation = saveAccommodation(1);
+
+		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}", accommodation.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "name": "  Updated Hotel  ",
+							  "description": "  Updated description  ",
+							  "address": "  Updated address  "
+							}
+							"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.name").value("Updated Hotel"))
+				.andExpect(jsonPath("$.description").value("Updated description"))
+				.andExpect(jsonPath("$.address").value("Updated address"))
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+
+		assertThat(accommodation.getName()).isEqualTo("Updated Hotel");
+	}
+
+	@Test
+	void changesAccommodationStatusWithAdminRole() throws Exception {
+		Accommodation accommodation = saveAccommodation(1);
+
+		mockMvc.perform(patch(ACCOMMODATIONS_URL + "/{accommodationId}/status", accommodation.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"status\":\"INACTIVE\"}"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("INACTIVE"));
+
+		assertThat(accommodation.getStatus()).isEqualTo(AccommodationStatus.INACTIVE);
+	}
+
+	@Test
+	void rejectsAccommodationManagementFromUserRole() throws Exception {
+		Accommodation accommodation = saveAccommodation(1);
+
+		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}", accommodation.getId())
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest()))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("AUTH_002"));
+
+		mockMvc.perform(patch(ACCOMMODATIONS_URL + "/{accommodationId}/status", accommodation.getId())
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"status\":\"INACTIVE\"}"))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("AUTH_002"));
+	}
+
+	@Test
+	void rejectsInvalidAndUnknownAccommodationUpdate() throws Exception {
+		Accommodation accommodation = saveAccommodation(1);
+
+		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}", accommodation.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"name\":\"\",\"description\":\"\",\"address\":\"\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("name", "description", "address")));
+
+		mockMvc.perform(put(ACCOMMODATIONS_URL + "/999999")
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest()))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("ACCOMMODATION_001"));
 	}
 
 	@Test
