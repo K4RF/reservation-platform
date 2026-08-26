@@ -135,6 +135,148 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
+	void updatesOwnConfirmedReservationScheduleAndRecalculatesAmountFromSnapshot() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+		jdbcTemplate.update(
+				"update rooms set nightly_price = ? where id = ?",
+				new BigDecimal("200000.00"),
+				room.getId()
+		);
+		entityManager.clear();
+
+		performUpdate(
+				member.getId(),
+				reservation.getId(),
+				LocalDate.of(2030, 2, 10),
+				LocalDate.of(2030, 2, 13)
+		)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
+				.andExpect(jsonPath("$.checkInDate").value("2030-02-10"))
+				.andExpect(jsonPath("$.checkOutDate").value("2030-02-13"))
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
+				.andExpect(jsonPath("$.stayNights").value(3))
+				.andExpect(jsonPath("$.totalAmount").value(375000.00))
+				.andExpect(jsonPath("$.status").value("CONFIRMED"));
+
+		reservationRepository.flush();
+		entityManager.clear();
+		Reservation reloaded = reservationRepository.findById(reservation.getId()).orElseThrow();
+		assertThat(reloaded.getCheckInDate()).isEqualTo(LocalDate.of(2030, 2, 10));
+		assertThat(reloaded.getCheckOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
+		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
+		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("375000.00");
+	}
+
+	@Test
+	void excludesCurrentReservationFromScheduleOverlapCheck() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		performUpdate(member.getId(), reservation.getId(), CHECK_IN, CHECK_OUT)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.checkInDate").value("2030-01-10"))
+				.andExpect(jsonPath("$.checkOutDate").value("2030-01-15"));
+	}
+
+	@Test
+	void rejectsScheduleUpdateOverlappingAnotherConfirmedReservation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+		saveReservation(
+				otherMember,
+				room,
+				LocalDate.of(2030, 2, 10),
+				LocalDate.of(2030, 2, 15)
+		);
+
+		performUpdate(
+				member.getId(),
+				reservation.getId(),
+				LocalDate.of(2030, 2, 12),
+				LocalDate.of(2030, 2, 17)
+		)
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("RESERVATION_002"));
+
+		assertThat(reservation.getCheckInDate()).isEqualTo(CHECK_IN);
+		assertThat(reservation.getCheckOutDate()).isEqualTo(CHECK_OUT);
+	}
+
+	@Test
+	void rejectsOtherMembersReservationScheduleUpdate() throws Exception {
+		Member owner = saveMember("owner@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Reservation reservation = saveReservation(owner, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		performUpdate(otherMember.getId(), reservation.getId(), CHECK_IN.plusDays(1), CHECK_OUT.plusDays(1))
+				.andExpect(status().isForbidden())
+				.andExpect(jsonPath("$.code").value("RESERVATION_004"));
+	}
+
+	@Test
+	void rejectsCancelledReservationScheduleUpdate() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+		reservation.cancel();
+		reservationRepository.flush();
+
+		performUpdate(member.getId(), reservation.getId(), CHECK_IN.plusDays(1), CHECK_OUT.plusDays(1))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("RESERVATION_006"))
+				.andExpect(jsonPath("$.message").value("취소된 예약은 일정을 변경할 수 없습니다."));
+	}
+
+	@Test
+	void rejectsInvalidReservationScheduleUpdatePeriod() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		performUpdate(member.getId(), reservation.getId(), CHECK_IN, CHECK_IN)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_001"));
+
+		performUpdate(member.getId(), reservation.getId(), CHECK_OUT, CHECK_IN)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_001"));
+	}
+
+	@Test
+	void rejectsMissingReservationScheduleUpdateFields() throws Exception {
+		Member member = saveMember("member@example.com");
+		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}", reservation.getId())
+					.header("Authorization", bearerToken(member.getId()))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "checkInDate": null,
+							  "checkOutDate": null
+							}
+							"""))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
+						"checkInDate",
+						"checkOutDate"
+				)));
+	}
+
+	@Test
+	void rejectsUnknownReservationScheduleUpdate() throws Exception {
+		Member member = saveMember("member@example.com");
+
+		performUpdate(member.getId(), 999999L, CHECK_IN, CHECK_OUT)
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("RESERVATION_003"));
+	}
+
+	@Test
 	void rejectsReservationCreationWithoutAuthentication() throws Exception {
 		Room room = saveRoom();
 
@@ -368,6 +510,18 @@ class ReservationIntegrationTest {
 				.content(createRequest(roomId, checkInDate, checkOutDate)));
 	}
 
+	private org.springframework.test.web.servlet.ResultActions performUpdate(
+			Long memberId,
+			Long reservationId,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) throws Exception {
+		return mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}", reservationId)
+				.header("Authorization", bearerToken(memberId))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(updateRequest(checkInDate, checkOutDate)));
+	}
+
 	private Member saveMember(String email) {
 		return memberRepository.saveAndFlush(Member.createUser(email, "encoded-password"));
 	}
@@ -409,5 +563,14 @@ class ReservationIntegrationTest {
 				  "checkOutDate": "%s"
 				}
 				""".formatted(roomId, checkInDate, checkOutDate);
+	}
+
+	private String updateRequest(LocalDate checkInDate, LocalDate checkOutDate) {
+		return """
+				{
+				  "checkInDate": "%s",
+				  "checkOutDate": "%s"
+				}
+				""".formatted(checkInDate, checkOutDate);
 	}
 }
