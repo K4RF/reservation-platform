@@ -160,11 +160,16 @@ Before completing a change:
 - Reservation creation snapshots the room's nightly price and calculates the
   total amount by multiplying it by the `[check-in, check-out)` stay length.
   Later room-price changes do not alter an existing reservation's amount.
+- Reservation owners can change the dates of a `CONFIRMED` reservation. The
+  update excludes the reservation itself from overlap checks and recalculates
+  the total using the stored nightly-price snapshot, not the room's current
+  price. `CANCELLED` reservations cannot be changed.
 - Reservation owners can cancel a `CONFIRMED` reservation by changing its state
   to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
   are not implemented.
-- Reservation overlap prevention currently uses a normal read-before-write query
-  inside one transaction and does not prevent races between concurrent requests.
+- Reservation creation and schedule changes currently use normal
+  read-before-write overlap queries inside one transaction and do not prevent
+  races between concurrent requests.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   `ACTIVE` rooms with sufficient capacity and excludes rooms with overlapping
@@ -192,7 +197,8 @@ Before completing a change:
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, and reservation creation,
-  period overlap, owner-scoped queries, pagination, cancellation, and generated
-  OpenAPI/Swagger UI access using H2. A dedicated MVP integration test connects
-  sign-up, login, admin accommodation and room creation, user queries,
-  reservation creation, owner queries, and cancellation in one transaction.
+  period overlap, schedule changes, amount recalculation, owner-scoped queries,
+  pagination, cancellation, and generated OpenAPI/Swagger UI access using H2. A
+  dedicated MVP integration test connects sign-up, login, admin accommodation
+  and room creation, user queries, reservation creation and schedule change,
+  owner queries, and cancellation in one transaction.
