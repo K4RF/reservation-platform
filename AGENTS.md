@@ -156,9 +156,11 @@ Before completing a change:
   range, and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
   `NIGHTLY_PRICE`.
 - Authenticated members can create `CONFIRMED` room reservations and query only
-  their own reservation details and ID-ordered paginated lists. Reservation
-  periods use `[check-in, check-out)` semantics and member identity comes from
-  the JWT principal, not the request body.
+  their own reservation details and paginated lists. Lists support optional
+  status and inclusive check-in/check-out `From/To` filters. Allowed sort fields
+  are `ID`, `CHECK_IN_DATE`, `CHECK_OUT_DATE`, and `TOTAL_AMOUNT`; the default is
+  ID ascending. Reservation periods use `[check-in, check-out)` semantics and
+  member identity comes from the JWT principal, not the request body.
 - Reservation creation snapshots the room's nightly price and calculates the
   total amount by multiplying it by the `[check-in, check-out)` stay length.
   Later room-price changes do not alter an existing reservation's amount.
@@ -182,8 +184,7 @@ Before completing a change:
   `[check-in, check-out)` semantics. New reservations for inactive rooms or
   accommodations are rejected, while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  room inventory, reservation filtering, and concurrency control are not
-  implemented.
+  room inventory, and concurrency control are not implemented.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
   validated for Access Token reissue.
@@ -202,7 +203,8 @@ Before completing a change:
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, and reservation creation,
   period overlap, schedule changes, amount recalculation, owner-scoped queries,
-  pagination, cancellation, and generated OpenAPI/Swagger UI access using H2. A
+  pagination, status/period filtering, allowed sorting, cancellation, and
+  generated OpenAPI/Swagger UI access using H2. A
   dedicated MVP integration test connects sign-up, login, admin accommodation
   and room creation, user queries, reservation creation and schedule change,
   owner queries, and cancellation in one transaction.
