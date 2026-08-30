@@ -484,6 +484,139 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
+	void filtersOwnReservationsByStatus() throws Exception {
+		Member member = saveMember("member@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Room room = saveRoom();
+		Reservation confirmed = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+		Reservation cancelled = saveReservation(member, room, CHECK_OUT, CHECK_OUT.plusDays(2));
+		cancelled.cancel();
+		Reservation otherCancelled = saveReservation(
+				otherMember,
+				room,
+				CHECK_OUT.plusDays(2),
+				CHECK_OUT.plusDays(4)
+		);
+		otherCancelled.cancel();
+		reservationRepository.flush();
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("status", "CANCELLED"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].reservationId").value(cancelled.getId()))
+				.andExpect(jsonPath("$.content[0].memberId").value(member.getId()))
+				.andExpect(jsonPath("$.content[0].status").value("CANCELLED"))
+				.andExpect(jsonPath("$.totalElements").value(1));
+
+		assertThat(confirmed.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+	}
+
+	@Test
+	void filtersReservationDatesWithInclusiveBoundaries() throws Exception {
+		Member member = saveMember("member@example.com");
+		Member otherMember = saveMember("other@example.com");
+		Room room = saveRoom();
+		saveReservation(member, room, LocalDate.of(2030, 1, 1), LocalDate.of(2030, 1, 3));
+		Reservation firstMatch = saveReservation(
+				member,
+				room,
+				LocalDate.of(2030, 1, 5),
+				LocalDate.of(2030, 1, 10)
+		);
+		Reservation secondMatch = saveReservation(
+				member,
+				room,
+				LocalDate.of(2030, 1, 10),
+				LocalDate.of(2030, 1, 20)
+		);
+		saveReservation(otherMember, room, LocalDate.of(2030, 1, 7), LocalDate.of(2030, 1, 12));
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("checkInFrom", "2030-01-05")
+					.param("checkInTo", "2030-01-10")
+					.param("checkOutFrom", "2030-01-10")
+					.param("checkOutTo", "2030-01-20"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content[0].reservationId").value(firstMatch.getId()))
+				.andExpect(jsonPath("$.content[1].reservationId").value(secondMatch.getId()))
+				.andExpect(jsonPath("$.totalElements").value(2));
+	}
+
+	@Test
+	void combinesReservationFiltersSortingAndPagination() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation shortest = saveReservation(
+				member,
+				room,
+				LocalDate.of(2030, 2, 1),
+				LocalDate.of(2030, 2, 3)
+		);
+		Reservation middle = saveReservation(
+				member,
+				room,
+				LocalDate.of(2030, 2, 4),
+				LocalDate.of(2030, 2, 7)
+		);
+		Reservation longest = saveReservation(
+				member,
+				room,
+				LocalDate.of(2030, 2, 8),
+				LocalDate.of(2030, 2, 12)
+		);
+		shortest.cancel();
+		middle.cancel();
+		longest.cancel();
+		reservationRepository.flush();
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("status", "CANCELLED")
+					.param("checkInFrom", "2030-02-01")
+					.param("checkInTo", "2030-02-10")
+					.param("page", "1")
+					.param("size", "1")
+					.param("sortBy", "TOTAL_AMOUNT")
+					.param("direction", "DESC"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].reservationId").value(middle.getId()))
+				.andExpect(jsonPath("$.content[0].totalAmount").value(375000.00))
+				.andExpect(jsonPath("$.page").value(1))
+				.andExpect(jsonPath("$.size").value(1))
+				.andExpect(jsonPath("$.totalElements").value(3))
+				.andExpect(jsonPath("$.totalPages").value(3));
+	}
+
+	@Test
+	void rejectsInvalidReservationSearchConditions() throws Exception {
+		Member member = saveMember("member@example.com");
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("checkInFrom", "2030-01-11")
+					.param("checkInTo", "2030-01-10"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_007"));
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("checkOutFrom", "2030-01-11")
+					.param("checkOutTo", "2030-01-10"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_007"));
+
+		mockMvc.perform(get(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.param("sortBy", "MEMBER_ID"))
+				.andExpect(status().isBadRequest());
+	}
+
+	@Test
 	void cancelsOwnConfirmedReservation() throws Exception {
 		Member member = saveMember("member@example.com");
 		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
