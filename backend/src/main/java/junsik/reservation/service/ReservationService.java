@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
 import junsik.reservation.dto.ReservationResponse;
+import junsik.reservation.dto.ReservationSearchRequest;
 import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
@@ -23,6 +24,7 @@ import junsik.reservation.enums.RoomErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.ReservationSpecifications;
 import junsik.reservation.repository.RoomRepository;
 
 @Service
@@ -84,10 +86,23 @@ public class ReservationService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<ReservationResponse> getAllByMember(Long memberId, int page, int size) {
-		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+	public PageResponse<ReservationResponse> getAllByMember(Long memberId, ReservationSearchRequest request) {
+		validateSearchPeriod(request);
+
+		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty());
+		if (!"id".equals(request.sortBy().getProperty())) {
+			sort = sort.and(Sort.by(Sort.Direction.ASC, "id"));
+		}
+		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
 		Page<ReservationResponse> reservations = reservationRepository
-				.findAllByMemberId(memberId, pageRequest)
+				.findAll(ReservationSpecifications.withFilters(
+						memberId,
+						request.status(),
+						request.checkInFrom(),
+						request.checkInTo(),
+						request.checkOutFrom(),
+						request.checkOutTo()
+				), pageRequest)
 				.map(ReservationResponse::from);
 		return PageResponse.from(reservations);
 	}
@@ -142,5 +157,16 @@ public class ReservationService {
 		if (!checkInDate.isBefore(checkOutDate)) {
 			throw new BusinessException(ReservationErrorCode.INVALID_PERIOD);
 		}
+	}
+
+	private void validateSearchPeriod(ReservationSearchRequest request) {
+		if (isReversed(request.checkInFrom(), request.checkInTo())
+				|| isReversed(request.checkOutFrom(), request.checkOutTo())) {
+			throw new BusinessException(ReservationErrorCode.INVALID_SEARCH_PERIOD);
+		}
+	}
+
+	private boolean isReversed(LocalDate from, LocalDate to) {
+		return from != null && to != null && from.isAfter(to);
 	}
 }

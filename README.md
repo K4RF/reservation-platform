@@ -9,7 +9,7 @@
 > 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
-> 예약 생성·본인 예약 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
+> 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
 > 숙소명 검색과 객실 조건 조회도 지원합니다. 예약 생성 시 객실의 1박 가격을
 > Snapshot으로 저장하고 숙박 일수에 따른 총 예약 금액을 계산하며, 본인 예약의
@@ -167,16 +167,20 @@ Spring Boot API
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
-| `GET` | `/api/v1/reservations?page=0&size=20` | 인증 사용자 | 본인 예약 목록 조회 |
+| `GET` | `/api/v1/reservations?status=CONFIRMED&checkInFrom=2030-01-01&checkInTo=2030-12-31&checkOutFrom=2030-01-02&checkOutTo=2031-01-01&sortBy=CHECK_IN_DATE&direction=ASC&page=0&size=20` | 인증 사용자 | 본인 예약 조건·정렬·페이지 조회 |
 | `PATCH` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 체크인·체크아웃 일정 변경 |
 | `PATCH` | `/api/v1/reservations/{reservationId}/cancel` | 예약 소유자 | 본인 예약 취소 |
 
 `page`는 0부터 시작하고 `size`는 1 이상 100 이하만 허용합니다. 검색 조건을
 생략하면 기존처럼 ID 오름차순 목록을 반환합니다. 숙소 정렬은 `ID`, `NAME`,
-객실 정렬은 `ID`, `NAME`, `CAPACITY`, `NIGHTLY_PRICE`만 허용하며 방향은 `ASC`,
+객실 정렬은 `ID`, `NAME`, `CAPACITY`, `NIGHTLY_PRICE`, 예약 정렬은 `ID`,
+`CHECK_IN_DATE`, `CHECK_OUT_DATE`, `TOTAL_AMOUNT`만 허용하며 방향은 `ASC`,
 `DESC`입니다. 숙소명은 대소문자를 구분하지 않는 부분 일치 검색입니다. 객실은
 최소 수용 인원, 1박 최소·최대 가격, `ACTIVE/INACTIVE` 상태를 선택적으로 조합할
-수 있습니다.
+수 있습니다. 예약은 `CONFIRMED/CANCELLED` 상태와 체크인·체크아웃 날짜의
+`From/To` 조건을 선택적으로 조합할 수 있으며 각 날짜 경계는 포함됩니다.
+`From`과 `To`를 함께 전달하면 `From`은 `To` 이하여야 합니다. 모든 예약 목록
+조건에는 JWT 회원 ID가 적용되므로 다른 회원의 예약은 반환되지 않습니다.
 
 객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
 숙소와 객실은 생성 시 `ACTIVE` 상태이며 관리자는 정보와 `ACTIVE/INACTIVE` 상태를
@@ -295,6 +299,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 본인 예약 일정 변경 및 금액 재계산
 * [x] 예약 상태별 허용 동작 및 도메인 상태 전이 규칙
 * [x] 숙소·객실 정보 수정 및 운영 상태 관리
+* [x] 본인 예약 상태·기간 조건 조회 및 제한된 정렬·Pagination
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -503,6 +508,7 @@ docs: add concurrency test results
 * [x] 소유권·상태·기간 중복 검증을 적용한 예약 일정 변경
 * [x] `CONFIRMED`·`CANCELLED` 예약 상태 전이 정책 및 도메인 예외 구성
 * [x] 관리자 숙소·객실 정보 수정 및 비활성 리소스 신규 예약 차단
+* [x] 본인 예약 상태·체크인·체크아웃 조건 조합 및 제한된 정렬·Pagination
 
 ---
 
