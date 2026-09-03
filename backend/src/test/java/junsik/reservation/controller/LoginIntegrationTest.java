@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.MemberFixture.member;
+import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import java.util.Map;
 
@@ -101,7 +103,7 @@ class LoginIntegrationTest {
 				.andReturn();
 		String accessToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.accessToken");
 
-		mockMvc.perform(get(PROTECTED_URL).header("Authorization", "Bearer " + accessToken))
+		mockMvc.perform(get(PROTECTED_URL).header("Authorization", bearer(accessToken)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.memberId").value(member.getId()))
 				.andExpect(jsonPath("$.role").value("USER"));
@@ -148,7 +150,7 @@ class LoginIntegrationTest {
 
 	private Member saveMember() {
 		String encodedPassword = passwordEncoder.encode(PASSWORD);
-		return memberRepository.saveAndFlush(Member.createUser(EMAIL, encodedPassword));
+		return memberRepository.saveAndFlush(member(EMAIL, encodedPassword));
 	}
 
 	private org.springframework.test.web.servlet.ResultActions performLogin(String email, String password)

@@ -2,6 +2,8 @@ package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.RoomFixture.room;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -9,8 +11,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.math.BigDecimal;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -334,24 +334,15 @@ class RoomIntegrationTest {
 	}
 
 	private Accommodation saveAccommodation(String name) {
-		return accommodationRepository.saveAndFlush(Accommodation.create(
-				name,
-				"Accommodation description",
-				"Accommodation address"
-		));
+		return accommodationRepository.saveAndFlush(accommodation(name));
 	}
 
 	private Room saveRoom(Accommodation accommodation, int index) {
-		return roomRepository.saveAndFlush(Room.create(accommodation, "Room " + index, index + 1));
+		return roomRepository.saveAndFlush(room(accommodation, index));
 	}
 
 	private Room saveRoom(Accommodation accommodation, String name, int capacity, String nightlyPrice) {
-		return roomRepository.saveAndFlush(Room.create(
-				accommodation,
-				name,
-				capacity,
-				new BigDecimal(nightlyPrice)
-		));
+		return roomRepository.saveAndFlush(room(accommodation, name, capacity, nightlyPrice));
 	}
 
 	private String roomsUrl(Long accommodationId) {
@@ -359,7 +350,7 @@ class RoomIntegrationTest {
 	}
 
 	private String bearerToken(MemberRole role) {
-		return "Bearer " + jwtTokenProvider.createAccessToken(1L, role);
+		return junsik.reservation.support.AuthenticationTestSupport.bearerToken(jwtTokenProvider, role);
 	}
 
 	private String validCreateRequest() {

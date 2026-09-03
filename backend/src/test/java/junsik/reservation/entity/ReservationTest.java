@@ -2,8 +2,11 @@ package junsik.reservation.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.MemberFixture.member;
+import static junsik.reservation.support.ReservationFixture.reservation;
+import static junsik.reservation.support.RoomFixture.room;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
@@ -65,18 +68,9 @@ class ReservationTest {
 	}
 
 	private Reservation createReservation() {
-		Member member = Member.createUser("member@example.com", "encoded-password");
-		Accommodation accommodation = Accommodation.create(
-				"Ocean View Hotel",
-				"Accommodation description",
-				"Accommodation address"
-		);
-		Room room = Room.create(
-				accommodation,
-				"Deluxe Room",
-				4,
-				new BigDecimal("125000.00")
-		);
-		return Reservation.create(member, room, CHECK_IN, CHECK_OUT);
+		Member member = member();
+		Accommodation accommodation = accommodation();
+		Room room = room(accommodation, "Deluxe Room", 4, "125000.00");
+		return reservation(member, room, CHECK_IN, CHECK_OUT);
 	}
 }

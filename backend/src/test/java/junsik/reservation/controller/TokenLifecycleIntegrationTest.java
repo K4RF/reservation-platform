@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -92,7 +93,7 @@ class TokenLifecycleIntegrationTest {
 		String refreshToken = jwtTokenProvider.createRefreshToken(MEMBER_ID, MemberRole.USER);
 
 		mockMvc.perform(get("/api/v1/accommodations")
-					.header("Authorization", "Bearer " + refreshToken))
+					.header("Authorization", bearer(refreshToken)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_001"));
 	}
@@ -132,7 +133,7 @@ class TokenLifecycleIntegrationTest {
 		String refreshToken = jwtTokenProvider.createRefreshToken(MEMBER_ID, MemberRole.USER);
 		when(refreshTokenStore.findByMemberId(MEMBER_ID)).thenReturn(Optional.of(refreshToken));
 
-		mockMvc.perform(post(LOGOUT_URL).header("Authorization", "Bearer " + accessToken))
+		mockMvc.perform(post(LOGOUT_URL).header("Authorization", bearer(accessToken)))
 				.andExpect(status().isNoContent());
 		verify(refreshTokenStore).delete(MEMBER_ID);
 
@@ -142,7 +143,7 @@ class TokenLifecycleIntegrationTest {
 				.andExpect(jsonPath("$.code").value("AUTH_006"));
 
 		mockMvc.perform(get("/api/v1/accommodations")
-					.header("Authorization", "Bearer " + accessToken))
+					.header("Authorization", bearer(accessToken)))
 				.andExpect(status().isOk());
 	}
 
@@ -151,7 +152,7 @@ class TokenLifecycleIntegrationTest {
 		String accessToken = jwtTokenProvider.createAccessToken(MEMBER_ID, MemberRole.USER);
 		when(refreshTokenStore.findByMemberId(MEMBER_ID)).thenReturn(Optional.empty());
 
-		mockMvc.perform(post(LOGOUT_URL).header("Authorization", "Bearer " + accessToken))
+		mockMvc.perform(post(LOGOUT_URL).header("Authorization", bearer(accessToken)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_006"));
 	}

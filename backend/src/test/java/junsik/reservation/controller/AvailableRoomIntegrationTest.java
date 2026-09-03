@@ -3,6 +3,10 @@ package junsik.reservation.controller;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.MemberFixture.member;
+import static junsik.reservation.support.ReservationFixture.reservation;
+import static junsik.reservation.support.RoomFixture.room;
 
 import java.time.LocalDate;
 
@@ -183,19 +187,15 @@ class AvailableRoomIntegrationTest {
 	}
 
 	private Accommodation saveAccommodation(String name) {
-		return accommodationRepository.saveAndFlush(Accommodation.create(
-				name,
-				"Accommodation description",
-				"Accommodation address"
-		));
+		return accommodationRepository.saveAndFlush(accommodation(name));
 	}
 
 	private Room saveRoom(Accommodation accommodation, String name, int capacity) {
-		return roomRepository.saveAndFlush(Room.create(accommodation, name, capacity));
+		return roomRepository.saveAndFlush(room(accommodation, name, capacity));
 	}
 
 	private Member saveMember() {
-		return memberRepository.saveAndFlush(Member.createUser("available-room@example.com", "encoded-password"));
+		return memberRepository.saveAndFlush(member("available-room@example.com"));
 	}
 
 	private Reservation saveReservation(
@@ -204,7 +204,7 @@ class AvailableRoomIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		return reservationRepository.saveAndFlush(Reservation.create(member, room, checkInDate, checkOutDate));
+		return reservationRepository.saveAndFlush(reservation(member, room, checkInDate, checkOutDate));
 	}
 
 	private String availableRoomsUrl(Long accommodationId) {
@@ -212,6 +212,9 @@ class AvailableRoomIntegrationTest {
 	}
 
 	private String bearerToken() {
-		return "Bearer " + jwtTokenProvider.createAccessToken(1L, MemberRole.USER);
+		return junsik.reservation.support.AuthenticationTestSupport.bearerToken(
+				jwtTokenProvider,
+				MemberRole.USER
+		);
 	}
 }

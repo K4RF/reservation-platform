@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import java.time.Instant;
 import java.util.Map;
@@ -76,7 +77,7 @@ class SecurityIntegrationTest {
 	void authenticatesRequestWithValidJwt() throws Exception {
 		String token = jwtTokenProvider.createAccessToken(15L, MemberRole.USER);
 
-		mockMvc.perform(get(PROTECTED_URL).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get(PROTECTED_URL).header("Authorization", bearer(token)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.memberId").value(15))
 				.andExpect(jsonPath("$.role").value("USER"));
@@ -92,7 +93,7 @@ class SecurityIntegrationTest {
 	void rejectsExpiredJwt() throws Exception {
 		String token = createExpiredToken(15L, MemberRole.USER);
 
-		mockMvc.perform(get(PROTECTED_URL).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get(PROTECTED_URL).header("Authorization", bearer(token)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_001"));
 	}
@@ -102,7 +103,7 @@ class SecurityIntegrationTest {
 		String validToken = jwtTokenProvider.createAccessToken(15L, MemberRole.USER);
 		String tamperedToken = tamperSignature(validToken);
 
-		mockMvc.perform(get(PROTECTED_URL).header("Authorization", "Bearer " + tamperedToken))
+		mockMvc.perform(get(PROTECTED_URL).header("Authorization", bearer(tamperedToken)))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.code").value("AUTH_001"));
 	}
@@ -111,7 +112,7 @@ class SecurityIntegrationTest {
 	void rejectsRequestWhenMemberDoesNotHaveRequiredRole() throws Exception {
 		String token = jwtTokenProvider.createAccessToken(15L, MemberRole.USER);
 
-		mockMvc.perform(get(ADMIN_URL).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get(ADMIN_URL).header("Authorization", bearer(token)))
 				.andExpect(status().isForbidden())
 				.andExpect(jsonPath("$.status").value(403))
 				.andExpect(jsonPath("$.code").value("AUTH_002"))
