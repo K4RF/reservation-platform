@@ -1,24 +1,26 @@
 package junsik.reservation.entity;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.MemberFixture.member;
+import static junsik.reservation.support.RoomFixture.room;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.RoomRepository;
+import junsik.reservation.support.MySqlIntegrationTestSupport;
 
-@SpringBootTest
 @Transactional
-class DatabaseConstraintIntegrationTest {
+class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -146,24 +148,15 @@ class DatabaseConstraintIntegrationTest {
 	}
 
 	private Member saveMember(String email) {
-		return memberRepository.saveAndFlush(Member.createUser(email, "encoded-password"));
+		return memberRepository.saveAndFlush(member(email));
 	}
 
 	private Accommodation saveAccommodation() {
-		return accommodationRepository.saveAndFlush(Accommodation.create(
-				"Ocean View Hotel",
-				"Accommodation description",
-				"Accommodation address"
-		));
+		return accommodationRepository.saveAndFlush(accommodation());
 	}
 
 	private Room saveRoom(Accommodation accommodation) {
-		return roomRepository.saveAndFlush(Room.create(
-				accommodation,
-				"Deluxe Room",
-				2,
-				new BigDecimal("100000.00")
-		));
+		return roomRepository.saveAndFlush(room(accommodation));
 	}
 
 	private void insertRoom(Long accommodationId, String name, int capacity, BigDecimal nightlyPrice) {
@@ -204,6 +197,6 @@ class DatabaseConstraintIntegrationTest {
 
 	private void assertConstraintViolation(Runnable operation) {
 		assertThatThrownBy(operation::run)
-				.isInstanceOf(DataIntegrityViolationException.class);
+				.isInstanceOf(DataAccessException.class);
 	}
 }

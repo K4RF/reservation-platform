@@ -2,6 +2,7 @@ package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -284,23 +285,15 @@ class AccommodationIntegrationTest {
 	}
 
 	private Accommodation saveAccommodation(int index) {
-		return accommodationRepository.saveAndFlush(Accommodation.create(
-				"Accommodation " + index,
-				"Description " + index,
-				"Address " + index
-		));
+		return accommodationRepository.saveAndFlush(accommodation(index));
 	}
 
 	private Accommodation saveAccommodation(String name) {
-		return accommodationRepository.saveAndFlush(Accommodation.create(
-				name,
-				"Description",
-				"Address"
-		));
+		return accommodationRepository.saveAndFlush(accommodation(name, "Description", "Address"));
 	}
 
 	private String bearerToken(MemberRole role) {
-		return "Bearer " + jwtTokenProvider.createAccessToken(1L, role);
+		return junsik.reservation.support.AuthenticationTestSupport.bearerToken(jwtTokenProvider, role);
 	}
 
 	private String validCreateRequest() {

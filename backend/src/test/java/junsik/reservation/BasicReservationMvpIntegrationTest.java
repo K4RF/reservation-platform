@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -216,7 +217,4 @@ class BasicReservationMvpIntegrationTest {
 				""".formatted(email, password);
 	}
 
-	private String bearer(String token) {
-		return "Bearer " + token;
-	}
 }

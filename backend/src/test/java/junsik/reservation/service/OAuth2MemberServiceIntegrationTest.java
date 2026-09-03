@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.MemberFixture.member;
 
 import java.util.Map;
 
@@ -100,7 +101,7 @@ class OAuth2MemberServiceIntegrationTest {
 	@Test
 	void linksGoogleAccountToExistingMemberWithVerifiedEmail() {
 		String encodedPassword = passwordEncoder.encode("password123!");
-		Member existingMember = memberRepository.saveAndFlush(Member.createUser(EMAIL, encodedPassword));
+		Member existingMember = memberRepository.saveAndFlush(member(EMAIL, encodedPassword));
 
 		OAuth2MemberPrincipal principal = provision(EMAIL, true);
 

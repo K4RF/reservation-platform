@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.MemberFixture.member;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,10 +98,10 @@ class MemberSignUpIntegrationTest {
 
 	@Test
 	void enforcesDatabaseUniqueConstraintOnEmail() {
-		memberRepository.saveAndFlush(Member.createUser("member@example.com", "encoded-password-1"));
+		memberRepository.saveAndFlush(member("member@example.com", "encoded-password-1"));
 
 		assertThatThrownBy(() ->
-				memberRepository.saveAndFlush(Member.createUser("member@example.com", "encoded-password-2"))
+				memberRepository.saveAndFlush(member("member@example.com", "encoded-password-2"))
 		).isInstanceOf(DataIntegrityViolationException.class);
 	}
 

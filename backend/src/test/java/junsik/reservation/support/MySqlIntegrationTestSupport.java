@@ -1,0 +1,16 @@
+package junsik.reservation.support;
+
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
+
+@Testcontainers
+@SpringBootTest(properties = "spring.jpa.hibernate.ddl-auto=create")
+public abstract class MySqlIntegrationTestSupport {
+
+	@Container
+	@ServiceConnection
+	protected static final MySQLContainer MYSQL = new MySQLContainer("mysql:8.4");
+}

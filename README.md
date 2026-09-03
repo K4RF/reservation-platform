@@ -99,7 +99,7 @@
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
-| Test | JUnit Platform, H2 | 단위 및 통합 테스트 |
+| Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4 | 단위·API 통합 테스트와 실제 DB 제약 검증 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
@@ -307,6 +307,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 공통 예외 처리와 API Validation·Error Response 정책 정리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
+* [x] 공통 테스트 Fixture 및 MySQL Testcontainers 기반 DB 제약 테스트
 
 ### Phase 2 — Concurrency Control
 
@@ -519,6 +520,8 @@ docs: add concurrency test results
 * [x] 본인 예약 상태·체크인·체크아웃 조건 조합 및 제한된 정렬·Pagination
 * [x] 회원·숙소·객실·예약 DB 제약조건과 조회 패턴 기반 인덱스 검토
 * [x] API Validation·HTTP Status·ErrorCode 및 Swagger 오류 응답 일관성 정리
+* [x] 회원·숙소·객실·예약 Fixture와 공통 인증 테스트 지원 구조 구성
+* [x] MySQL 8.4 Testcontainers 기반 Database Constraint 테스트 구성
 
 ---
 
@@ -676,6 +679,13 @@ cd backend
 
 GitHub Actions의 `Backend CI`는 `develop` 브랜치의 Backend 관련 push와
 Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
+
+일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
+테스트는 개발 DB와 동일한 MySQL 8.4 Testcontainer를 사용합니다. 전체 테스트와
+빌드를 실행하려면 Docker 호환 Container Runtime이 실행 중이어야 하며, 테스트는
+로컬 Docker Compose DB와 Volume을 사용하거나 변경하지 않습니다. Fixture 구성과
+테스트 DB 선택 기준은
+[`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md)에 정리되어 있습니다.
 
 ## 14. 주요 기술 과제
 

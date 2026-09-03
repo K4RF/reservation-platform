@@ -8,6 +8,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.MemberFixture.member;
+import static junsik.reservation.support.ReservationFixture.reservation;
+import static junsik.reservation.support.RoomFixture.room;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -405,7 +409,7 @@ class ReservationIntegrationTest {
 		Member firstMember = saveMember("first@example.com");
 		Member secondMember = saveMember("second@example.com");
 		Room room = saveRoom();
-		reservationRepository.saveAndFlush(Reservation.create(firstMember, room, CHECK_IN, CHECK_OUT));
+		reservationRepository.saveAndFlush(reservation(firstMember, room, CHECK_IN, CHECK_OUT));
 
 		performCreate(secondMember.getId(), room.getId(), CHECK_IN.plusDays(2), CHECK_OUT.plusDays(2))
 				.andExpect(status().isConflict())
@@ -421,7 +425,7 @@ class ReservationIntegrationTest {
 		Member firstMember = saveMember("first@example.com");
 		Member secondMember = saveMember("second@example.com");
 		Room room = saveRoom();
-		reservationRepository.saveAndFlush(Reservation.create(firstMember, room, CHECK_IN, CHECK_OUT));
+		reservationRepository.saveAndFlush(reservation(firstMember, room, CHECK_IN, CHECK_OUT));
 
 		performCreate(secondMember.getId(), room.getId(), CHECK_OUT, CHECK_OUT.plusDays(3))
 				.andExpect(status().isCreated())
@@ -706,21 +710,12 @@ class ReservationIntegrationTest {
 	}
 
 	private Member saveMember(String email) {
-		return memberRepository.saveAndFlush(Member.createUser(email, "encoded-password"));
+		return memberRepository.saveAndFlush(member(email));
 	}
 
 	private Room saveRoom() {
-		Accommodation accommodation = accommodationRepository.saveAndFlush(Accommodation.create(
-				"Ocean View Hotel",
-				"Accommodation description",
-				"Accommodation address"
-		));
-		return roomRepository.saveAndFlush(Room.create(
-				accommodation,
-				"Deluxe Room",
-				4,
-				NIGHTLY_PRICE
-		));
+		Accommodation accommodation = accommodationRepository.saveAndFlush(accommodation());
+		return roomRepository.saveAndFlush(room(accommodation, "Deluxe Room", 4, NIGHTLY_PRICE));
 	}
 
 	private Reservation saveReservation(
@@ -729,13 +724,15 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		return reservationRepository.saveAndFlush(
-				Reservation.create(member, room, checkInDate, checkOutDate)
-		);
+		return reservationRepository.saveAndFlush(reservation(member, room, checkInDate, checkOutDate));
 	}
 
 	private String bearerToken(Long memberId) {
-		return "Bearer " + jwtTokenProvider.createAccessToken(memberId, MemberRole.USER);
+		return junsik.reservation.support.AuthenticationTestSupport.bearerToken(
+				jwtTokenProvider,
+				memberId,
+				MemberRole.USER
+		);
 	}
 
 	private String createRequest(Long roomId, LocalDate checkInDate, LocalDate checkOutDate) {

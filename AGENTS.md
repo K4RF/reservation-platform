@@ -50,7 +50,8 @@ The Gradle project root is `backend/`, not the repository root.
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
-- JUnit Platform and H2 for tests
+- JUnit Platform and H2 for fast tests
+- Testcontainers 2.0.5 with MySQL 8.4 for database constraint integration tests
 
 Additional OAuth2 providers, Access Token blacklisting, Kafka, Prometheus,
 Grafana, k6, CD, and a frontend framework are planned but are not currently
@@ -81,6 +82,10 @@ cd backend
 Run the narrowest relevant tests while developing. Run the full `test` task
 before handing off backend changes, and run `build` for backend-wide or build
 configuration changes.
+
+The full test and build tasks require a Docker-compatible container runtime for
+the MySQL Testcontainers suite. Tests must not use or mutate the local Docker
+Compose database or its volumes.
 
 `docker-compose.yml` defines MySQL 8.4 and Redis 7.4 for local development.
 Do not report application integration as available until the corresponding
@@ -213,6 +218,11 @@ Before completing a change:
   binding, method-parameter, and constraint validation share `COMMON_001` and
   field details; malformed or unbindable requests use `COMMON_002`.
 - The frontend is a placeholder with no selected technology stack.
+- Test fixtures for members, accommodations, rooms, reservations, and JWT
+  Bearer headers live under `backend/src/test/java/junsik/reservation/support`.
+  Regular integration tests use isolated H2 transactions, while database
+  constraint tests use an ephemeral MySQL 8.4 Testcontainer. The shared MySQL
+  support is the extension point for Phase 2 concurrency tests.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
