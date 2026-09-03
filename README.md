@@ -14,7 +14,8 @@
 > 숙소명 검색과 객실 조건 조회도 지원합니다. 예약 생성 시 객실의 1박 가격을
 > Snapshot으로 저장하고 숙박 일수에 따른 총 예약 금액을 계산하며, 본인 예약의
 > 일정 변경도 지원합니다. 관리자는 숙소·객실 정보와 운영 상태를 관리할 수
-> 있습니다. 동시성 제어는 아직 구현되지 않았습니다.
+> 있습니다. 주요 테이블의 NOT NULL·UNIQUE·FK·CHECK 제약과 현재 조회 패턴 기반
+> 인덱스를 검토하고 문서화했습니다. 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -88,7 +89,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실 가격·예약 가격 Snapshot 저장 및 동적 조회 |
+| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -300,6 +301,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 예약 상태별 허용 동작 및 도메인 상태 전이 규칙
 * [x] 숙소·객실 정보 수정 및 운영 상태 관리
 * [x] 본인 예약 상태·기간 조건 조회 및 제한된 정렬·Pagination
+* [x] 주요 테이블 제약조건·인덱스 검토 및 DB 정합성 강화
 * [ ] 기본 예외 처리
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
@@ -403,8 +405,10 @@ docs/
 └── performance/        # 성능 테스트 결과
 ```
 
-현재 `architecture`와 `adr`에는 문서 작성 원칙이 정리되어 있으며,
-`api`, `erd`, `performance`는 placeholder 상태입니다. 문제 원인과 해결 과정은
+현재 `architecture`와 `adr`에는 문서 작성 원칙이 정리되어 있으며, 실제 Entity와
+Schema의 관계·제약조건·인덱스는
+[`docs/erd/database-schema.md`](docs/erd/database-schema.md)에 정리되어 있습니다.
+`api`, `performance`는 placeholder 상태입니다. 문제 원인과 해결 과정은
 필요 시 `docs/troubleshooting`을 추가하여 관리할 예정입니다.
 
 장기적인 개발일지, 작업 계획 및 회고는 Notion에서 관리하고, 포트폴리오 평가에 필요한 핵심 문서는 GitHub에 정리합니다.
@@ -509,6 +513,7 @@ docs: add concurrency test results
 * [x] `CONFIRMED`·`CANCELLED` 예약 상태 전이 정책 및 도메인 예외 구성
 * [x] 관리자 숙소·객실 정보 수정 및 비활성 리소스 신규 예약 차단
 * [x] 본인 예약 상태·체크인·체크아웃 조건 조합 및 제한된 정렬·Pagination
+* [x] 회원·숙소·객실·예약 DB 제약조건과 조회 패턴 기반 인덱스 검토
 
 ---
 
