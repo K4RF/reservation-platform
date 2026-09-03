@@ -1,6 +1,7 @@
 package junsik.reservation.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,7 +16,11 @@ import junsik.reservation.enums.MemberRole;
 @Entity
 @Table(
 		name = "members",
-		uniqueConstraints = @UniqueConstraint(name = "uk_members_email", columnNames = "email")
+		uniqueConstraints = @UniqueConstraint(name = "uk_members_email", columnNames = "email"),
+		check = @CheckConstraint(
+				name = "chk_members_required_text",
+				constraint = "char_length(trim(email)) > 0 and char_length(password) > 0"
+		)
 )
 public class Member {
 

@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -33,7 +34,13 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 						columnList = "room_id,status,check_in_date,check_out_date"
 				),
 				@Index(name = "idx_reservations_member", columnList = "member_id")
-		}
+		},
+		check = @CheckConstraint(
+				name = "chk_reservations_business_values",
+				constraint = "check_in_date < check_out_date"
+						+ " and nightly_price_snapshot >= 0"
+						+ " and total_amount >= 0"
+		)
 )
 public class Reservation {
 

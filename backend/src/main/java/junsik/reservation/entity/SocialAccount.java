@@ -1,10 +1,12 @@
 package junsik.reservation.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,7 +29,11 @@ import junsik.reservation.enums.OAuthProvider;
 						name = "uk_social_accounts_member_provider",
 						columnNames = {"member_id", "provider"}
 				)
-		}
+		},
+		check = @CheckConstraint(
+				name = "chk_social_accounts_provider_user_id",
+				constraint = "char_length(trim(provider_user_id)) > 0"
+		)
 )
 public class SocialAccount {
 
@@ -36,7 +42,11 @@ public class SocialAccount {
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "member_id", nullable = false)
+	@JoinColumn(
+			name = "member_id",
+			nullable = false,
+			foreignKey = @ForeignKey(name = "fk_social_accounts_member")
+	)
 	private Member member;
 
 	@Enumerated(EnumType.STRING)

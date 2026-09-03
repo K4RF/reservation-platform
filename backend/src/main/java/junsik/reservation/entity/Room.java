@@ -3,6 +3,7 @@ package junsik.reservation.entity;
 import java.math.BigDecimal;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,7 +21,13 @@ import org.hibernate.annotations.ColumnDefault;
 import junsik.reservation.enums.RoomStatus;
 
 @Entity
-@Table(name = "rooms")
+@Table(
+		name = "rooms",
+		check = @CheckConstraint(
+				name = "chk_rooms_business_values",
+				constraint = "char_length(trim(name)) > 0 and capacity >= 1 and nightly_price >= 0"
+		)
+)
 public class Room {
 
 	@Id

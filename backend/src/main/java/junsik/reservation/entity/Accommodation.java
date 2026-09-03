@@ -1,6 +1,7 @@
 package junsik.reservation.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -14,7 +15,15 @@ import org.hibernate.annotations.ColumnDefault;
 import junsik.reservation.enums.AccommodationStatus;
 
 @Entity
-@Table(name = "accommodations")
+@Table(
+		name = "accommodations",
+		check = @CheckConstraint(
+				name = "chk_accommodations_required_text",
+				constraint = "char_length(trim(name)) > 0"
+						+ " and char_length(trim(description)) > 0"
+						+ " and char_length(trim(address)) > 0"
+		)
+)
 public class Accommodation {
 
 	@Id
