@@ -185,6 +185,15 @@ Before completing a change:
   accommodations are rejected, while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
   room inventory, and concurrency control are not implemented.
+- Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
+  and CHECK constraints for required text, positive capacity, non-negative
+  monetary values, and valid reservation periods. The existing reservation
+  room/status/period and member indexes match the current overlap and owner
+  query patterns; speculative indexes were not added.
+- Hibernate `ddl-auto=update` does not backfill CHECK constraints into an
+  existing database. Existing local volumes require the reviewed one-time SQL
+  under `docs/erd/mysql-schema-hardening.sql`. A formal migration tool and
+  `ddl-auto=validate` production policy are not implemented yet.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
   validated for Access Token reissue.
@@ -203,8 +212,8 @@ Before completing a change:
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, and reservation creation,
   period overlap, schedule changes, amount recalculation, owner-scoped queries,
-  pagination, status/period filtering, allowed sorting, cancellation, and
-  generated OpenAPI/Swagger UI access using H2. A
+  pagination, status/period filtering, allowed sorting, cancellation, database
+  constraint violations, and generated OpenAPI/Swagger UI access using H2. A
   dedicated MVP integration test connects sign-up, login, admin accommodation
   and room creation, user queries, reservation creation and schedule change,
   owner queries, and cancellation in one transaction.
