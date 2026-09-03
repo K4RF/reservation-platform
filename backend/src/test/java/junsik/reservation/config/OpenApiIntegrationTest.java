@@ -99,6 +99,27 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/reservations'].post.responses['201'].content['application/json'].schema['$ref']"
 				).value(endsWith("/ReservationResponse")))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/members'].post.responses['400'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/members'].post.responses['409'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/auth/login'].post.responses['401'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations'].post.responses['403'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}'].get.responses['404'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/reservations'].post.responses['409'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/reservations/{reservationId}'].get.responses['403'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations/{reservationId}'].patch.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/UpdateReservationScheduleRequest")))
 				.andExpect(jsonPath(
@@ -143,6 +164,12 @@ class OpenApiIntegrationTest {
 				))
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.nightlyPriceSnapshot").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
-				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists());
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.timestamp").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.status").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.code").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.message").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.path").exists())
+				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.errors.type").value("array"));
 	}
 }

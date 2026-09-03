@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
@@ -93,7 +96,18 @@ class GlobalExceptionHandlerTest {
 		mockMvc.perform(get("/test/query").param("page", "0"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("COMMON_001"))
-				.andExpect(jsonPath("$.path").value("/test/query"));
+				.andExpect(jsonPath("$.path").value("/test/query"))
+				.andExpect(jsonPath("$.errors[0].field").value("page"))
+				.andExpect(jsonPath("$.errors[0].message").value("페이지는 1 이상이어야 합니다."));
+	}
+
+	@Test
+	void handlesConstraintViolationWithFieldErrors() throws Exception {
+		mockMvc.perform(get("/test/constraint-violation"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("name"))
+				.andExpect(jsonPath("$.errors[0].message").value("이름은 필수입니다."));
 	}
 
 	@Test
@@ -110,6 +124,7 @@ class GlobalExceptionHandlerTest {
 	@RestController
 	@RequestMapping("/test")
 	private static class TestController {
+		private static final Validator VALIDATOR = Validation.buildDefaultValidatorFactory().getValidator();
 
 		@GetMapping("/business-error")
 		void businessError() {
@@ -125,7 +140,12 @@ class GlobalExceptionHandlerTest {
 		}
 
 		@GetMapping("/query")
-		void query(@RequestParam @Positive int page) {
+		void query(@RequestParam @Positive(message = "페이지는 1 이상이어야 합니다.") int page) {
+		}
+
+		@GetMapping("/constraint-violation")
+		void constraintViolation() {
+			throw new ConstraintViolationException(VALIDATOR.validate(new TestRequest("")));
 		}
 
 		@GetMapping("/unexpected-error")

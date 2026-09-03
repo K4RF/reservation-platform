@@ -117,6 +117,16 @@ class TokenLifecycleIntegrationTest {
 	}
 
 	@Test
+	void rejectsOversizedRefreshTokenRequest() throws Exception {
+		mockMvc.perform(post(REISSUE_URL)
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("{\"refreshToken\":\"%s\"}".formatted("x".repeat(4097))))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("refreshToken"));
+	}
+
+	@Test
 	void logoutDeletesRefreshTokenAndPreventsFurtherReissue() throws Exception {
 		String accessToken = jwtTokenProvider.createAccessToken(MEMBER_ID, MemberRole.USER);
 		String refreshToken = jwtTokenProvider.createRefreshToken(MEMBER_ID, MemberRole.USER);

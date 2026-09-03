@@ -205,7 +205,13 @@ Before completing a change:
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
   accessible for development and API verification. Protected controller
-  operations declare the `bearerAuth` JWT security requirement.
+  operations declare the `bearerAuth` JWT security requirement. Documented API
+  errors use the common `ErrorResponse` schema with `application/json` content.
+- API errors consistently use 400 for validation/request input, 401 for
+  authentication, 403 for role/ownership denial, 404 for missing resources, 409
+  for duplicate/state conflicts, and 500 for unexpected failures. Bean,
+  binding, method-parameter, and constraint validation share `COMMON_001` and
+  field details; malformed or unbindable requests use `COMMON_002`.
 - The frontend is a placeholder with no selected technology stack.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
@@ -213,7 +219,8 @@ Before completing a change:
   behavior, room registration and query behavior, and reservation creation,
   period overlap, schedule changes, amount recalculation, owner-scoped queries,
   pagination, status/period filtering, allowed sorting, cancellation, database
-  constraint violations, and generated OpenAPI/Swagger UI access using H2. A
+  constraint violations, validation error details, HTTP error policy, and
+  generated OpenAPI/Swagger UI error responses using H2. A
   dedicated MVP integration test connects sign-up, login, admin accommodation
   and room creation, user queries, reservation creation and schedule change,
   owner queries, and cancellation in one transaction.
