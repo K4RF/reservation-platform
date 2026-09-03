@@ -1,6 +1,7 @@
 package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -134,6 +135,15 @@ class LoginIntegrationTest {
 		performLogin("invalid-email", "")
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.code").value("COMMON_001"));
+	}
+
+	@Test
+	void rejectsOversizedLoginCredentials() throws Exception {
+		performLogin("x".repeat(244) + "@example.com", "x".repeat(73))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors.length()").value(3))
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("email", "email", "password")));
 	}
 
 	private Member saveMember() {

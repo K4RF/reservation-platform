@@ -273,6 +273,16 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.code").value("COMMON_001"));
 	}
 
+	@Test
+	void rejectsNonPositiveAccommodationIdAsInvalidInput() throws Exception {
+		mockMvc.perform(get(ACCOMMODATIONS_URL + "/{accommodationId}", 0)
+					.header("Authorization", bearerToken(MemberRole.USER)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("accommodationId"))
+				.andExpect(jsonPath("$.errors[0].message").value("숙소 ID는 양수여야 합니다."));
+	}
+
 	private Accommodation saveAccommodation(int index) {
 		return accommodationRepository.saveAndFlush(Accommodation.create(
 				"Accommodation " + index,

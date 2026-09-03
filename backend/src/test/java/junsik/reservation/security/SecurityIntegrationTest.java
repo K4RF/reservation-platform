@@ -68,7 +68,8 @@ class SecurityIntegrationTest {
 				.andExpect(jsonPath("$.status").value(401))
 				.andExpect(jsonPath("$.code").value("AUTH_001"))
 				.andExpect(jsonPath("$.message").value("인증이 필요합니다."))
-				.andExpect(jsonPath("$.path").value(PROTECTED_URL));
+				.andExpect(jsonPath("$.path").value(PROTECTED_URL))
+				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
 	@Test
@@ -115,7 +116,8 @@ class SecurityIntegrationTest {
 				.andExpect(jsonPath("$.status").value(403))
 				.andExpect(jsonPath("$.code").value("AUTH_002"))
 				.andExpect(jsonPath("$.message").value("접근 권한이 없습니다."))
-				.andExpect(jsonPath("$.path").value(ADMIN_URL));
+				.andExpect(jsonPath("$.path").value(ADMIN_URL))
+				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
 	private String createExpiredToken(Long memberId, MemberRole role) {
