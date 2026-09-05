@@ -18,7 +18,8 @@ The reusable support code lives under
 | `RoomFixture` | Creates default, indexed, capacity-specific, or priced rooms |
 | `ReservationFixture` | Creates reservations with a default or explicit period |
 | `AuthenticationTestSupport` | Creates Bearer headers from raw or generated JWTs |
-| `MvpTestFixture` | Creates the SQL-backed admin required by the end-to-end MVP flow |
+| `RoomInventoryFixture` | Creates daily room inventory with default or explicit date and quantity |
+| `MvpTestFixture` | Creates the SQL-backed admin and date inventory required by the end-to-end MVP flow |
 | `MySqlIntegrationTestSupport` | Provides one MySQL 8.4 Testcontainer and Spring datasource connection details |
 
 Fixture methods create entities only. A test that needs persisted data must call

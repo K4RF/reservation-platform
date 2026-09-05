@@ -175,38 +175,37 @@ Before completing a change:
   reservation; schedule changes keep it immutable and revalidate it against the
   room's current capacity.
 - Reservation owners can change the dates of a `CONFIRMED` reservation. The
-  update excludes the reservation itself from overlap checks and recalculates
-  the total using the stored nightly-price snapshot, not the room's current
-  price. `CANCELLED` reservations cannot be changed.
+  update retains inventory for shared dates, releases removed dates, reserves
+  added dates, and recalculates the total using the stored nightly-price
+  snapshot, not the room's current price. `CANCELLED` reservations cannot be
+  changed.
 - Reservation owners can cancel a `CONFIRMED` reservation by changing its state
   to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
   are not implemented.
 - `Reservation` owns schedule-change and cancellation state rules. Invalid
   operations on `CANCELLED` reservations raise a domain state-transition
   exception that the API maps to the existing reservation error responses.
-- Reservation creation and schedule changes currently use normal
-  read-before-write overlap queries inside one transaction and do not prevent
-  races between concurrent requests.
 - Daily room inventory is modeled by `RoomInventory` with one row per room and
   date. It stores total and reserved quantities, derives the available quantity,
   and enforces a room/date UNIQUE constraint plus non-negative quantity CHECKs.
 - `RoomInventoryService` supports creation, lookup, total changes, reservation,
-  and release. These rules prevent negative inventory for sequential requests,
-  but reservation APIs are not connected to inventory yet and concurrent
-  updates are not protected by a database or distributed lock.
+  and release. Reservation creation, cancellation, and schedule changes update
+  every `[check-in, check-out)` inventory date and the reservation in one
+  transaction. These rules prevent negative inventory for sequential requests,
+  but concurrent updates are not protected by a database or distributed lock.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
-  capacity, and have no overlapping `CONFIRMED` reservation using
-  `[check-in, check-out)` semantics. New reservations for inactive rooms or
-  accommodations are rejected, while existing reservation history is retained.
+  capacity, and have available inventory on every `[check-in, check-out)` stay
+  date. New reservations for inactive rooms or accommodations are rejected,
+  while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  room inventory, and concurrency control are not implemented.
+  concurrency control, and inventory management APIs are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
-  monetary values, and valid reservation periods. The existing reservation
-  room/status/period and member indexes match the current overlap and owner
-  query patterns; speculative indexes were not added.
+  monetary values, and valid reservation periods. Room/date inventory UNIQUE
+  and member reservation indexes match the current availability and owner query
+  patterns; speculative indexes were not added.
 - Hibernate `ddl-auto=update` does not backfill CHECK constraints into an
   existing database. Existing local volumes require the reviewed one-time SQL
   under `docs/erd/mysql-schema-hardening.sql`. A formal migration tool and
@@ -230,19 +229,23 @@ Before completing a change:
   binding, method-parameter, and constraint validation share `COMMON_001` and
   field details; malformed or unbindable requests use `COMMON_002`.
 - The frontend is a placeholder with no selected technology stack.
-- Test fixtures for members, accommodations, rooms, reservations, and JWT
-  Bearer headers live under `backend/src/test/java/junsik/reservation/support`.
+- Test fixtures for members, accommodations, rooms, daily room inventories,
+  reservations, and JWT Bearer headers live under
+  `backend/src/test/java/junsik/reservation/support`.
   Regular integration tests use isolated H2 transactions, while database
   constraint tests use an ephemeral MySQL 8.4 Testcontainer. The shared MySQL
   support is the extension point for Phase 2 concurrency tests.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
-  behavior, room registration and query behavior, and reservation creation,
-  period overlap, schedule changes, amount recalculation, owner-scoped queries,
-  pagination, status/period filtering, allowed sorting, cancellation, database
-  constraint violations, validation error details, HTTP error policy, and
-  generated OpenAPI/Swagger UI error responses using H2. A
+  behavior, room registration and query behavior, and inventory-backed
+  reservation creation, missing and insufficient inventory, checkout exclusion,
+  schedule inventory adjustment, transaction rollback, amount recalculation,
+  owner-scoped queries, pagination, status/period filtering, allowed sorting,
+  cancellation inventory release, database constraint violations, validation
+  error details, HTTP error policy, and generated OpenAPI/Swagger UI error
+  responses using H2. A
   dedicated MVP integration test connects sign-up, login, admin accommodation
-  and room creation, user queries, reservation creation and schedule change,
-  owner queries, and cancellation in one transaction.
+  and room creation, inventory setup, user queries, reservation creation and
+  schedule change, owner queries, cancellation, and inventory restoration in
+  one transaction.
