@@ -109,6 +109,10 @@ public class Room {
 		return status == RoomStatus.ACTIVE;
 	}
 
+	public boolean canAccommodate(int guestCount) {
+		return guestCount >= 1 && guestCount <= capacity;
+	}
+
 	public void update(String name, int capacity, BigDecimal nightlyPrice) {
 		this.name = name;
 		this.capacity = capacity;
