@@ -133,7 +133,7 @@ public class RoomController {
 
 	@Operation(
 			summary = "예약 가능 객실 조회",
-			description = "체크인·체크아웃 기간에 확정 예약과 겹치지 않고 요청 인원을 수용할 수 있는 운영 중 객실을 조회합니다."
+			description = "모든 숙박 날짜에 남은 재고가 있고 요청 인원을 수용할 수 있는 운영 중 객실을 조회합니다."
 	)
 	@ApiResponse(
 			responseCode = "404",

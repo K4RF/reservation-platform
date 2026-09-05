@@ -68,7 +68,7 @@ public class ReservationController {
 
 	@Operation(
 			summary = "예약 생성",
-			description = "예약 인원은 1명 이상이며 객실 최대 수용 인원을 초과할 수 없습니다.",
+			description = "예약 인원과 체크인부터 체크아웃 전날까지의 날짜별 객실 재고를 검증하고 재고를 차감합니다.",
 			responses = @ApiResponse(
 					responseCode = "201",
 					description = "예약 생성 성공",
@@ -82,12 +82,12 @@ public class ReservationController {
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "404",
-					description = "회원 또는 객실을 찾을 수 없음",
+					description = "회원, 객실 또는 숙박일 재고를 찾을 수 없음",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			),
 			@ApiResponse(
 					responseCode = "409",
-					description = "예약 기간 중복 또는 비활성 숙소·객실",
+					description = "재고 부족 또는 비활성 숙소·객실",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			)
 	})
@@ -133,7 +133,7 @@ public class ReservationController {
 
 	@Operation(
 			summary = "본인 예약 일정 변경",
-			description = "예약 인원은 변경하지 않으며 현재 객실 최대 수용 인원을 다시 검증합니다."
+			description = "예약 인원은 유지하며 기존 기간 재고를 복구하고 신규 기간 재고를 검증·차감합니다."
 	)
 	@ApiResponses({
 			@ApiResponse(
@@ -143,12 +143,12 @@ public class ReservationController {
 			),
 			@ApiResponse(
 					responseCode = "404",
-					description = "예약을 찾을 수 없음",
+					description = "예약 또는 숙박일 재고를 찾을 수 없음",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			),
 			@ApiResponse(
 					responseCode = "409",
-					description = "예약 기간 중복 또는 변경할 수 없는 상태",
+					description = "재고 부족, 비활성 숙소·객실 또는 변경할 수 없는 상태",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			)
 	})
@@ -163,7 +163,7 @@ public class ReservationController {
 		);
 	}
 
-	@Operation(summary = "본인 예약 취소")
+	@Operation(summary = "본인 예약 취소", description = "예약 상태를 취소로 변경하고 사용한 날짜별 객실 재고를 복구합니다.")
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "403",
@@ -172,7 +172,7 @@ public class ReservationController {
 			),
 			@ApiResponse(
 					responseCode = "404",
-					description = "예약을 찾을 수 없음",
+					description = "예약 또는 기존 숙박일 재고를 찾을 수 없음",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			),
 			@ApiResponse(

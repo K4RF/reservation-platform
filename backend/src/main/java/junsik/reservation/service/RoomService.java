@@ -14,10 +14,10 @@ import junsik.reservation.dto.RoomSearchRequest;
 import junsik.reservation.dto.UpdateRoomRequest;
 import junsik.reservation.dto.UpdateRoomStatusRequest;
 import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.enums.AccommodationStatus;
-import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomErrorCode;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.global.exception.BusinessException;
@@ -94,10 +94,10 @@ public class RoomService {
 				accommodationId,
 				AccommodationStatus.ACTIVE,
 				RoomStatus.ACTIVE,
-				ReservationStatus.CONFIRMED,
 				request.checkInDate(),
 				request.checkOutDate(),
 				request.guestCount(),
+				new ReservationPeriod(request.checkInDate(), request.checkOutDate()).stayNights(),
 				pageRequest
 		).map(RoomResponse::from);
 		return PageResponse.from(rooms);
