@@ -187,6 +187,13 @@ Before completing a change:
 - Reservation creation and schedule changes currently use normal
   read-before-write overlap queries inside one transaction and do not prevent
   races between concurrent requests.
+- Daily room inventory is modeled by `RoomInventory` with one row per room and
+  date. It stores total and reserved quantities, derives the available quantity,
+  and enforces a room/date UNIQUE constraint plus non-negative quantity CHECKs.
+- `RoomInventoryService` supports creation, lookup, total changes, reservation,
+  and release. These rules prevent negative inventory for sequential requests,
+  but reservation APIs are not connected to inventory yet and concurrent
+  updates are not protected by a database or distributed lock.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient

@@ -19,7 +19,8 @@
 > 인덱스를 검토하고 문서화했습니다. API Validation·ErrorCode·HTTP Status와
 > 공통 오류 응답 정책도 실제 Swagger 명세에 반영했습니다. H2 기반 빠른 통합
 > 테스트와 MySQL 8.4 Testcontainers 기반 DB 제약 테스트 환경도 구성했습니다.
-> 동시성 제어는 아직 구현되지 않았습니다.
+> 날짜별 객실 전체·예약 재고 모델과 순차 요청 기준의 증감 규칙도 구성했습니다.
+> 예약 API와 재고의 Transaction 연동 및 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -93,7 +94,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
+| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -315,10 +316,12 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 동일 객실에 대한 동시 예약 문제를 재현하고 해결합니다.
 
-> 다음 진행 예정 단계입니다. v0.1.1에서 정리한 예약 생성·일정 변경·상태 모델,
+> 현재 진행 중인 단계입니다. v0.1.1에서 정리한 예약 생성·일정 변경·상태 모델,
 > DB Constraint·Index, 공통 Fixture와 MySQL Testcontainers 환경을 기준선으로
-> 사용합니다. 아래 항목은 아직 구현되지 않았습니다.
+> 사용합니다. 날짜별 재고 모델을 먼저 추가했으며 예약 흐름 연동과 동시성 제어는
+> 아직 구현되지 않았습니다.
 
+* [x] 날짜별 객실 재고 모델과 순차 요청 기준 증감 규칙 구성
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
 * [ ] Redis 분산 락 적용
@@ -529,6 +532,7 @@ docs: add concurrency test results
 * [x] API Validation·HTTP Status·ErrorCode 및 Swagger 오류 응답 일관성 정리
 * [x] 회원·숙소·객실·예약 Fixture와 공통 인증 테스트 지원 구조 구성
 * [x] MySQL 8.4 Testcontainers 기반 Database Constraint 테스트 구성
+* [x] 날짜별 객실 재고 Entity·Service 및 UNIQUE·CHECK 제약 구성
 
 ---
 

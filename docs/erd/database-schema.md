@@ -12,6 +12,7 @@ erDiagram
     MEMBERS ||--o{ RESERVATIONS : creates
     ACCOMMODATIONS ||--o{ ROOMS : contains
     ROOMS ||--o{ RESERVATIONS : receives
+    ROOMS ||--o{ ROOM_INVENTORIES : owns
 
     MEMBERS {
         bigint id PK
@@ -44,6 +45,14 @@ erDiagram
         enum status
     }
 
+    ROOM_INVENTORIES {
+        bigint id PK
+        bigint room_id FK
+        date inventory_date
+        int total_quantity
+        int reserved_quantity
+    }
+
     RESERVATIONS {
         bigint id PK
         bigint member_id FK
@@ -65,6 +74,7 @@ erDiagram
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
 | `accommodations` | name/description/address/status, 100/1000/255/20 | - | - | 세 문자열은 trim 후 비어 있지 않음 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
+| `room_inventories` | room/date/total/reserved | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `reservations` | member/room/guest count/dates/prices/status, guest count `INT`, snapshot `DECIMAL(12,2)`, total `DECIMAL(19,2)` | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, snapshot·total ≥ 0 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
@@ -80,6 +90,12 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
 검증하고, Service는 객실의 `capacity`를 초과하지 않는지 생성과 일정 변경 시점에
 검증합니다. 일정 변경은 예약 인원을 변경하지 않습니다.
+
+날짜별 객실 재고는 전체 수량과 예약 수량만 저장하고 잔여 수량은 둘의 차이로
+계산합니다. 전체 수량 0은 판매할 수 없는 날짜를 표현할 수 있도록 허용합니다.
+동일 객실·날짜의 중복 행은 UNIQUE로 막으며, Service는 순차 요청에서 예약 수량이
+전체 수량을 넘거나 반환 후 음수가 되지 않도록 검증합니다. 예약 API와 재고의
+Transaction 연동 및 동시 요청 제어는 아직 구현되지 않았습니다.
 
 ## Validation Responsibilities
 
@@ -100,6 +116,7 @@ DB CHECK는 예약 총액이 `Snapshot × 숙박 일수`인지 또는 예약이 
 | `uk_members_email(email)` | 회원가입 중복 확인, 이메일 로그인 | UNIQUE가 인덱스를 제공하므로 별도 email 인덱스 없음 |
 | 소셜 계정 UNIQUE 2개 | provider 계정 조회, 회원별 provider 중복 방지 | 조회와 정합성에 모두 필요 |
 | rooms의 accommodation FK 인덱스 | 숙소별 객실 목록과 예약 가능 객실 후보 축소 | MySQL이 FK 인덱스를 제공하므로 중복 인덱스 없음 |
+| `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `idx_reservations_room_status_period(room_id,status,check_in_date,check_out_date)` | 객실·상태·기간 중복 및 가용 객실 조회 | 현재 핵심 조회의 선두 equality 조건과 기간 조건을 반영하므로 유지 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
 
@@ -129,3 +146,8 @@ DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 �
 기존 Volume의 `social_accounts.member_id` FK는 Hibernate가 과거에 생성한 이름을
 유지할 수 있습니다. 제약의 대상과 동작은 동일하며, 새 Schema에서는 Entity에
 명시한 `fk_social_accounts_member` 이름으로 생성됩니다.
+
+`room_inventories`는 기존 테이블 변경이 아닌 새 테이블이므로 현재 개발 설정의
+`ddl-auto=update`에서 생성됩니다. 데이터가 있는 환경이나 운영 환경에는 자동
+Schema 갱신을 의존하지 말고 정식 Migration 도입 후 동일한 FK·UNIQUE·CHECK를
+명시적으로 적용해야 합니다.
