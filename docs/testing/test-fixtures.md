@@ -16,6 +16,7 @@ The reusable support code lives under
 | `MemberFixture` | Creates default or email/password-specific user members |
 | `AccommodationFixture` | Creates default, named, indexed, or fully specified accommodations |
 | `RoomFixture` | Creates default, indexed, capacity-specific, or priced rooms |
+| `RoomDailyPriceFixture` | Creates a daily room price with a default or explicit room, date, and amount |
 | `ReservationFixture` | Creates reservations with a default or explicit period |
 | `AuthenticationTestSupport` | Creates Bearer headers from raw or generated JWTs |
 | `RoomInventoryFixture` | Creates daily room inventory with default or explicit date and quantity |

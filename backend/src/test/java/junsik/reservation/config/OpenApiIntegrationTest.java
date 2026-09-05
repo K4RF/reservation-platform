@@ -93,6 +93,21 @@ class OpenApiIntegrationTest {
 						)
 				))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/prices'].post.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].get.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/prices'].post.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/CreateRoomDailyPriceRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].put.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/UpdateRoomDailyPriceRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].get.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/RoomDailyPriceResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations'].post.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/CreateReservationRequest")))
 				.andExpect(jsonPath(
@@ -156,6 +171,11 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.CreateReservationRequest.properties.guestCount.minimum")
 						.value(1))
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
+				.andExpect(jsonPath(
+						"$.components.schemas.CreateRoomDailyPriceRequest.required",
+						containsInAnyOrder("stayDate", "nightlyPrice")
+				))
+				.andExpect(jsonPath("$.components.schemas.RoomDailyPriceResponse.properties.source").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
 				.andExpect(jsonPath(

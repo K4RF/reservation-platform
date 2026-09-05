@@ -63,8 +63,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/reissue").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations/*/rooms").hasRole("ADMIN")
+						.requestMatchers(HttpMethod.POST, "/api/v1/rooms/*/prices").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.PUT, "/api/v1/accommodations/*", "/api/v1/rooms/*")
 						.hasRole("ADMIN")
+						.requestMatchers(HttpMethod.PUT, "/api/v1/rooms/*/prices/*").hasRole("ADMIN")
 						.requestMatchers(
 								HttpMethod.PATCH,
 								"/api/v1/accommodations/*/status",

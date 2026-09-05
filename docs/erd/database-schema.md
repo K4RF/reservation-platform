@@ -13,6 +13,7 @@ erDiagram
     ACCOMMODATIONS ||--o{ ROOMS : contains
     ROOMS ||--o{ RESERVATIONS : receives
     ROOMS ||--o{ ROOM_INVENTORIES : owns
+    ROOMS ||--o{ ROOM_DAILY_PRICES : prices
 
     MEMBERS {
         bigint id PK
@@ -53,6 +54,13 @@ erDiagram
         int reserved_quantity
     }
 
+    ROOM_DAILY_PRICES {
+        bigint id PK
+        bigint room_id FK
+        date stay_date
+        decimal_12_2 nightly_price
+    }
+
     RESERVATIONS {
         bigint id PK
         bigint member_id FK
@@ -75,6 +83,7 @@ erDiagram
 | `accommodations` | name/description/address/status, 100/1000/255/20 | - | - | 세 문자열은 trim 후 비어 있지 않음 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
 | `room_inventories` | room/date/total/reserved | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
+| `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
 | `reservations` | member/room/guest count/dates/prices/status, guest count `INT`, snapshot `DECIMAL(12,2)`, total `DECIMAL(19,2)` | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, snapshot·total ≥ 0 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
@@ -85,6 +94,10 @@ Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 en
 데이터 및 내부 호환성을 위해 `nightly_price >= 0`을 허용합니다. 예약 가격
 Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계산과 Snapshot 유지
 규칙은 도메인 로직의 책임입니다.
+
+날짜별 객실 가격은 공개 API와 DB 모두 양수만 허용합니다. 특정 객실·숙박일의
+행이 없으면 객실의 기본 `nightly_price`로 fallback하며, 현재 예약 금액 계산은
+날짜별 가격을 아직 사용하지 않습니다.
 
 객실 `capacity`는 성인과 아동을 구분하지 않은 전체 최대 수용 인원이며, 예약
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
@@ -118,6 +131,7 @@ DB CHECK는 예약 총액이 `Snapshot × 숙박 일수`인지 또는 날짜별 
 | 소셜 계정 UNIQUE 2개 | provider 계정 조회, 회원별 provider 중복 방지 | 조회와 정합성에 모두 필요 |
 | rooms의 accommodation FK 인덱스 | 숙소별 객실 목록과 예약 가능 객실 후보 축소 | MySQL이 FK 인덱스를 제공하므로 중복 인덱스 없음 |
 | `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
+| `uk_room_daily_prices_room_date(room_id,stay_date)` | 객실·날짜 적용 가격 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
@@ -152,7 +166,7 @@ DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 �
 유지할 수 있습니다. 제약의 대상과 동작은 동일하며, 새 Schema에서는 Entity에
 명시한 `fk_social_accounts_member` 이름으로 생성됩니다.
 
-`room_inventories`는 기존 테이블 변경이 아닌 새 테이블이므로 현재 개발 설정의
-`ddl-auto=update`에서 생성됩니다. 데이터가 있는 환경이나 운영 환경에는 자동
-Schema 갱신을 의존하지 말고 정식 Migration 도입 후 동일한 FK·UNIQUE·CHECK를
-명시적으로 적용해야 합니다.
+`room_inventories`와 `room_daily_prices`는 기존 테이블 변경이 아닌 새 테이블이므로
+현재 개발 설정의 `ddl-auto=update`에서 생성됩니다. 데이터가 있는 환경이나 운영
+환경에는 자동 Schema 갱신을 의존하지 말고 정식 Migration 도입 후 동일한
+FK·UNIQUE·CHECK를 명시적으로 적용해야 합니다.
