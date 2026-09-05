@@ -130,6 +130,29 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesRoomDailyPriceForeignKeyUniqueAndPositivePriceConstraints() {
+		Room room = saveRoom(saveAccommodation());
+		LocalDate stayDate = LocalDate.of(2030, 7, 20);
+		insertRoomDailyPrice(room.getId(), stayDate, new BigDecimal("180000.00"));
+
+		assertConstraintViolation(() -> insertRoomDailyPrice(
+				room.getId(), stayDate, new BigDecimal("190000.00")
+		));
+		assertConstraintViolation(() -> insertRoomDailyPrice(
+				999999L, stayDate.plusDays(1), new BigDecimal("180000.00")
+		));
+		assertConstraintViolation(() -> insertRoomDailyPrice(
+				room.getId(), stayDate.plusDays(1), BigDecimal.ZERO
+		));
+		assertConstraintViolation(() -> insertRoomDailyPrice(
+				room.getId(), stayDate.plusDays(1), new BigDecimal("-0.01")
+		));
+		assertConstraintViolation(() -> insertRoomDailyPrice(
+				room.getId(), null, new BigDecimal("180000.00")
+		));
+	}
+
+	@Test
 	void enforcesReservationForeignKeysPeriodAndAmountConstraints() {
 		Member member = saveMember("member@example.com");
 		Room room = saveRoom(saveAccommodation());
@@ -207,6 +230,15 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				inventoryDate,
 				totalQuantity,
 				reservedQuantity
+		);
+	}
+
+	private void insertRoomDailyPrice(Long roomId, LocalDate stayDate, BigDecimal nightlyPrice) {
+		jdbcTemplate.update(
+				"insert into room_daily_prices (room_id, stay_date, nightly_price) values (?, ?, ?)",
+				roomId,
+				stayDate,
+				nightlyPrice
 		);
 	}
 
