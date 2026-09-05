@@ -6,7 +6,8 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> 현재 **Phase 1 — Basic Reservation** 단계입니다. Spring Boot 프로젝트,
+> **v0.1.1 — Reservation Service Enhancement**를 완료했으며, 다음 단계는
+> **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -16,8 +17,9 @@
 > 일정 변경도 지원합니다. 관리자는 숙소·객실 정보와 운영 상태를 관리할 수
 > 있습니다. 주요 테이블의 NOT NULL·UNIQUE·FK·CHECK 제약과 현재 조회 패턴 기반
 > 인덱스를 검토하고 문서화했습니다. API Validation·ErrorCode·HTTP Status와
-> 공통 오류 응답 정책도 실제 Swagger 명세에 반영했습니다. 동시성 제어는 아직
-> 구현되지 않았습니다.
+> 공통 오류 응답 정책도 실제 Swagger 명세에 반영했습니다. H2 기반 빠른 통합
+> 테스트와 MySQL 8.4 Testcontainers 기반 DB 제약 테스트 환경도 구성했습니다.
+> 동시성 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -282,7 +284,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 프로젝트 문서 구조 설정
 * [x] 최상위 README 작성
 
-### Phase 1 — Basic Reservation
+### Phase 1 — Basic Reservation (`v0.1.0`, `v0.1.1` 완료)
 
 기본 예약 서비스를 구현합니다.
 
@@ -312,6 +314,10 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 ### Phase 2 — Concurrency Control
 
 동일 객실에 대한 동시 예약 문제를 재현하고 해결합니다.
+
+> 다음 진행 예정 단계입니다. v0.1.1에서 정리한 예약 생성·일정 변경·상태 모델,
+> DB Constraint·Index, 공통 Fixture와 MySQL Testcontainers 환경을 기준선으로
+> 사용합니다. 아래 항목은 아직 구현되지 않았습니다.
 
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
@@ -485,7 +491,8 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-현재는 **Phase 1 — Basic Reservation** 단계입니다.
+**v0.1.1 — Reservation Service Enhancement**까지 완료했으며,
+**v0.2.0 — Concurrency Control** 시작을 준비하고 있습니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용
@@ -588,7 +595,7 @@ GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 Google Cloud Console의 OAuth Client에는 로컬 Redirect URI로
 `http://localhost:8080/login/oauth2/code/google`을 등록합니다. Backend 실행 후
 `http://localhost:8080/oauth2/authorization/google`로 접속하면 Google 로그인을
-시작하며, 성공한 Callback 응답으로 서비스 JWT Access Token을 반환합니다.
+시작하며, 성공한 Callback 응답으로 서비스 JWT Access Token과 Refresh Token을 반환합니다.
 
 Google이 검증한 이메일과 동일한 기존 회원이 있으면 해당 회원에 Google 계정을
 연결하며 기존 비밀번호 로그인은 유지합니다. 동일 이메일 회원이 없으면 `USER`
