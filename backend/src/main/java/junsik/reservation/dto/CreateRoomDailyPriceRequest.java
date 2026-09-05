@@ -1,0 +1,23 @@
+package junsik.reservation.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record CreateRoomDailyPriceRequest(
+		@NotNull(message = "숙박 날짜는 필수입니다.")
+		@Schema(description = "날짜별 가격을 적용할 숙박 날짜", example = "2030-07-20")
+		LocalDate stayDate,
+
+		@NotNull(message = "날짜별 객실 가격은 필수입니다.")
+		@DecimalMin(value = "0.00", inclusive = false, message = "날짜별 객실 가격은 0보다 커야 합니다.")
+		@Digits(integer = 10, fraction = 2, message = "날짜별 객실 가격은 정수 10자리와 소수 2자리 이하여야 합니다.")
+		@Schema(description = "해당 날짜의 1박 가격", example = "180000.00", minimum = "0", exclusiveMinimum = true)
+		BigDecimal nightlyPrice
+) {
+}
