@@ -117,6 +117,19 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesRoomInventoryForeignKeyUniqueAndQuantityConstraints() {
+		Room room = saveRoom(saveAccommodation());
+		LocalDate inventoryDate = LocalDate.of(2030, 1, 1);
+		insertRoomInventory(room.getId(), inventoryDate, 3, 1);
+
+		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate, 3, 0));
+		assertConstraintViolation(() -> insertRoomInventory(999999L, inventoryDate.plusDays(1), 3, 0));
+		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), -1, 0));
+		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), 1, 2));
+		assertConstraintViolation(() -> insertRoomInventory(room.getId(), null, 1, 0));
+	}
+
+	@Test
 	void enforcesReservationForeignKeysPeriodAndAmountConstraints() {
 		Member member = saveMember("member@example.com");
 		Room room = saveRoom(saveAccommodation());
@@ -176,6 +189,24 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				capacity,
 				nightlyPrice,
 				"ACTIVE"
+		);
+	}
+
+	private void insertRoomInventory(
+			Long roomId,
+			LocalDate inventoryDate,
+			int totalQuantity,
+			int reservedQuantity
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into room_inventories (room_id, inventory_date, total_quantity, reserved_quantity)
+				values (?, ?, ?, ?)
+				""",
+				roomId,
+				inventoryDate,
+				totalQuantity,
+				reservedQuantity
 		);
 	}
 
