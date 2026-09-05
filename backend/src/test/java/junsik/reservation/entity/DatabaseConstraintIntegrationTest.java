@@ -145,6 +145,15 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				new BigDecimal("-0.01"),
 				new BigDecimal("-0.01")
 		));
+		assertConstraintViolation(() -> insertReservation(
+				member.getId(),
+				room.getId(),
+				0,
+				LocalDate.of(2030, 1, 1),
+				LocalDate.of(2030, 1, 2),
+				new BigDecimal("100000.00"),
+				new BigDecimal("100000.00")
+		));
 	}
 
 	private Member saveMember(String email) {
@@ -178,15 +187,36 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 			BigDecimal nightlyPriceSnapshot,
 			BigDecimal totalAmount
 	) {
+		insertReservation(
+				memberId,
+				roomId,
+				1,
+				checkInDate,
+				checkOutDate,
+				nightlyPriceSnapshot,
+				totalAmount
+		);
+	}
+
+	private void insertReservation(
+			Long memberId,
+			Long roomId,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			BigDecimal nightlyPriceSnapshot,
+			BigDecimal totalAmount
+	) {
 		jdbcTemplate.update(
 				"""
 				insert into reservations (
-				    member_id, room_id, check_in_date, check_out_date,
+				    member_id, room_id, guest_count, check_in_date, check_out_date,
 				    nightly_price_snapshot, total_amount, status
-				) values (?, ?, ?, ?, ?, ?, ?)
+				) values (?, ?, ?, ?, ?, ?, ?, ?)
 				""",
 				memberId,
 				roomId,
+				guestCount,
 				checkInDate,
 				checkOutDate,
 				nightlyPriceSnapshot,

@@ -141,12 +141,14 @@ class BasicReservationMvpIntegrationTest {
 					.content("""
 							{
 							  "roomId": %d,
+							  "guestCount": 2,
 							  "checkInDate": "2035-06-10",
 							  "checkOutDate": "2035-06-13"
 							}
 							""".formatted(roomId)))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.memberId").value(userId))
+				.andExpect(jsonPath("$.guestCount").value(2))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(120000.00))
 				.andExpect(jsonPath("$.stayNights").value(3))
 				.andExpect(jsonPath("$.totalAmount").value(360000.00))

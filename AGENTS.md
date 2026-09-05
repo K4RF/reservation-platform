@@ -169,6 +169,11 @@ Before completing a change:
 - Reservation creation snapshots the room's nightly price and calculates the
   total amount by multiplying it by the `[check-in, check-out)` stay length.
   Later room-price changes do not alter an existing reservation's amount.
+- Room capacity and reservation guest count both represent total guests without
+  adult/child separation. Reservation creation requires at least one guest and
+  rejects counts above room capacity. The accepted count is stored on the
+  reservation; schedule changes keep it immutable and revalidate it against the
+  room's current capacity.
 - Reservation owners can change the dates of a `CONFIRMED` reservation. The
   update excludes the reservation itself from overlap checks and recalculates
   the total using the stored nightly-price snapshot, not the room's current

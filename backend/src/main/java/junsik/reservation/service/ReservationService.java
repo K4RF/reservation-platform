@@ -57,6 +57,7 @@ public class ReservationService {
 		if (!room.isActive()) {
 			throw new BusinessException(RoomErrorCode.INACTIVE);
 		}
+		validateGuestCount(room, request.guestCount());
 
 		boolean overlaps = reservationRepository
 				.existsByRoomIdAndStatusAndCheckInDateLessThanAndCheckOutDateGreaterThan(
@@ -72,6 +73,7 @@ public class ReservationService {
 		Reservation reservation = Reservation.create(
 				member,
 				room,
+				request.guestCount(),
 				request.checkInDate(),
 				request.checkOutDate()
 		);
@@ -125,6 +127,7 @@ public class ReservationService {
 		validateOwner(reservation, memberId);
 		reservation.verifyScheduleChangeAllowed();
 		validatePeriod(request.checkInDate(), request.checkOutDate());
+		validateGuestCount(reservation.getRoom(), reservation.getGuestCount());
 
 		boolean overlaps = reservationRepository
 				.existsByRoomIdAndStatusAndIdNotAndCheckInDateLessThanAndCheckOutDateGreaterThan(
@@ -156,6 +159,12 @@ public class ReservationService {
 	private void validatePeriod(LocalDate checkInDate, LocalDate checkOutDate) {
 		if (!checkInDate.isBefore(checkOutDate)) {
 			throw new BusinessException(ReservationErrorCode.INVALID_PERIOD);
+		}
+	}
+
+	private void validateGuestCount(Room room, int guestCount) {
+		if (!room.canAccommodate(guestCount)) {
+			throw new BusinessException(ReservationErrorCode.CAPACITY_EXCEEDED);
 		}
 	}
 

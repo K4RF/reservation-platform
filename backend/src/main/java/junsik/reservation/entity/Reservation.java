@@ -35,12 +35,18 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 				),
 				@Index(name = "idx_reservations_member", columnList = "member_id")
 		},
-		check = @CheckConstraint(
-				name = "chk_reservations_business_values",
-				constraint = "check_in_date < check_out_date"
-						+ " and nightly_price_snapshot >= 0"
-						+ " and total_amount >= 0"
-		)
+		check = {
+				@CheckConstraint(
+						name = "chk_reservations_business_values",
+						constraint = "check_in_date < check_out_date"
+								+ " and nightly_price_snapshot >= 0"
+								+ " and total_amount >= 0"
+				),
+				@CheckConstraint(
+						name = "chk_reservations_guest_count",
+						constraint = "guest_count >= 1"
+				)
+		}
 )
 public class Reservation {
 
@@ -64,6 +70,10 @@ public class Reservation {
 	)
 	private Room room;
 
+	@Column(name = "guest_count", nullable = false)
+	@ColumnDefault("1")
+	private int guestCount;
+
 	@Column(name = "check_in_date", nullable = false)
 	private LocalDate checkInDate;
 
@@ -85,9 +95,19 @@ public class Reservation {
 	protected Reservation() {
 	}
 
-	private Reservation(Member member, Room room, LocalDate checkInDate, LocalDate checkOutDate) {
+	private Reservation(
+			Member member,
+			Room room,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		if (!room.canAccommodate(guestCount)) {
+			throw new IllegalArgumentException("예약 인원은 1명 이상이며 객실 최대 수용 인원 이하여야 합니다.");
+		}
 		this.member = member;
 		this.room = room;
+		this.guestCount = guestCount;
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
 		this.nightlyPriceSnapshot = room.getNightlyPrice();
@@ -98,10 +118,11 @@ public class Reservation {
 	public static Reservation create(
 			Member member,
 			Room room,
+			int guestCount,
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		return new Reservation(member, room, checkInDate, checkOutDate);
+		return new Reservation(member, room, guestCount, checkInDate, checkOutDate);
 	}
 
 	public Long getId() {
@@ -114,6 +135,10 @@ public class Reservation {
 
 	public Room getRoom() {
 		return room;
+	}
+
+	public int getGuestCount() {
+		return guestCount;
 	}
 
 	public LocalDate getCheckInDate() {

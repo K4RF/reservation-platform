@@ -68,6 +68,7 @@ public class ReservationController {
 
 	@Operation(
 			summary = "예약 생성",
+			description = "예약 인원은 1명 이상이며 객실 최대 수용 인원을 초과할 수 없습니다.",
 			responses = @ApiResponse(
 					responseCode = "201",
 					description = "예약 생성 성공",
@@ -130,7 +131,10 @@ public class ReservationController {
 		return ResponseEntity.ok(reservationService.getAllByMember(principal.memberId(), request));
 	}
 
-	@Operation(summary = "본인 예약 일정 변경")
+	@Operation(
+			summary = "본인 예약 일정 변경",
+			description = "예약 인원은 변경하지 않으며 현재 객실 최대 수용 인원을 다시 검증합니다."
+	)
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "403",
