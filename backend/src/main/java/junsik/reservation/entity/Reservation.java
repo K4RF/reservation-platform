@@ -2,7 +2,6 @@ package junsik.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
@@ -28,13 +27,7 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 @Entity
 @Table(
 		name = "reservations",
-		indexes = {
-				@Index(
-						name = "idx_reservations_room_status_period",
-						columnList = "room_id,status,check_in_date,check_out_date"
-				),
-				@Index(name = "idx_reservations_member", columnList = "member_id")
-		},
+		indexes = @Index(name = "idx_reservations_member", columnList = "member_id"),
 		check = {
 				@CheckConstraint(
 						name = "chk_reservations_business_values",
@@ -154,7 +147,11 @@ public class Reservation {
 	}
 
 	public long getStayNights() {
-		return ChronoUnit.DAYS.between(checkInDate, checkOutDate);
+		return getPeriod().stayNights();
+	}
+
+	public ReservationPeriod getPeriod() {
+		return new ReservationPeriod(checkInDate, checkOutDate);
 	}
 
 	public BigDecimal getTotalAmount() {
@@ -167,6 +164,10 @@ public class Reservation {
 
 	public void verifyScheduleChangeAllowed() {
 		requireConfirmed(Operation.CHANGE_SCHEDULE);
+	}
+
+	public void verifyCancellationAllowed() {
+		requireConfirmed(Operation.CANCEL);
 	}
 
 	public void changeSchedule(LocalDate checkInDate, LocalDate checkOutDate) {
@@ -182,7 +183,7 @@ public class Reservation {
 	}
 
 	public void cancel() {
-		requireConfirmed(Operation.CANCEL);
+		verifyCancellationAllowed();
 		this.status = ReservationStatus.CANCELLED;
 	}
 
@@ -197,10 +198,7 @@ public class Reservation {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		long stayNights = ChronoUnit.DAYS.between(checkInDate, checkOutDate);
-		if (stayNights <= 0) {
-			throw new IllegalArgumentException("체크인 날짜는 체크아웃 날짜보다 이전이어야 합니다.");
-		}
-		return nightlyPrice.multiply(BigDecimal.valueOf(stayNights));
+		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
+		return nightlyPrice.multiply(BigDecimal.valueOf(period.stayNights()));
 	}
 }

@@ -10,9 +10,11 @@
 일반 사용자 회원가입·로그인
 → 관리자 로그인
 → 관리자 숙소·객실 등록
+→ 테스트용 날짜별 객실 재고 준비
 → 일반 사용자 숙소·객실 조회
-→ 일반 사용자 예약 생성·단건·목록 조회
-→ 예약 취소 및 CANCELLED 상태 확인
+→ 일반 사용자 예약 생성·재고 차감·단건·목록 조회
+→ 일정 변경 재고 조정
+→ 예약 취소, CANCELLED 상태 및 재고 복구 확인
 ```
 
 관리자 가입 API는 현재 구현 범위에 없으므로 공유 테스트 Fixture가 암호화된
@@ -28,7 +30,8 @@
 | 로그인 실패 정규화·JWT 발급 | `LoginIntegrationTest` |
 | 미인증 접근·역할 권한 | `SecurityIntegrationTest`, `AccommodationIntegrationTest`, `RoomIntegrationTest` |
 | 숙소·객실 Validation, Not Found, Pagination | `AccommodationIntegrationTest`, `RoomIntegrationTest` |
-| 예약 기간 검증·중복 거부·타인 접근·재취소 | `ReservationIntegrationTest` |
+| 예약 기간·날짜별 재고 검증, 재고 부족·타인 접근·재취소 | `ReservationIntegrationTest` |
+| 예약 저장 실패 시 재고 Rollback | `ReservationInventoryRollbackIntegrationTest` |
 | Google OAuth2 계정 연결 | `OAuth2MemberServiceIntegrationTest` |
 
 위 실패 시나리오는 이미 기능별 테스트에서 더 좁고 명확하게 검증하므로 MVP
@@ -41,7 +44,6 @@
 - 운영 코드와 동일한 Repository, Security Filter, Service, Controller를 로드한다.
 - MySQL 고유 동작과 동시성 검증은 이 테스트의 목적이 아니다.
 
-Testcontainers MySQL은 실제 DB 호환성 검증에 유용하지만 현재 CI 테스트의 실행
-환경 의존성과 시간을 늘린다. #23에서는 기존 H2 기반 MVP 흐름을 완성하고,
-MySQL Lock·격리 수준이 검증 대상이 되는 동시성 단계에서 Testcontainers 도입을
-다시 검토한다.
+MySQL 제약조건은 별도의 Testcontainers 테스트가 담당합니다. MVP 테스트는 기능
+연결을 빠르게 검증하는 H2 테스트로 유지하며, MySQL Lock·격리 수준은 이후
+동시성 전용 Testcontainers 테스트에서 검증합니다.

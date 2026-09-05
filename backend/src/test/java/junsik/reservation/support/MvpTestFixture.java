@@ -1,5 +1,7 @@
 package junsik.reservation.support;
 
+import java.time.LocalDate;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -19,5 +21,22 @@ public final class MvpTestFixture {
 				email,
 				passwordEncoder.encode(rawPassword)
 		);
+	}
+
+	public void createRoomInventory(
+			Long roomId,
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			int totalQuantity
+	) {
+		checkInDate.datesUntil(checkOutDate).forEach(date -> jdbcTemplate.update(
+				"""
+				insert into room_inventories (room_id, inventory_date, total_quantity, reserved_quantity)
+				values (?, ?, ?, 0)
+				""",
+				roomId,
+				date,
+				totalQuantity
+		));
 	}
 }

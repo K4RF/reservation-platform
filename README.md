@@ -19,8 +19,9 @@
 > 인덱스를 검토하고 문서화했습니다. API Validation·ErrorCode·HTTP Status와
 > 공통 오류 응답 정책도 실제 Swagger 명세에 반영했습니다. H2 기반 빠른 통합
 > 테스트와 MySQL 8.4 Testcontainers 기반 DB 제약 테스트 환경도 구성했습니다.
-> 날짜별 객실 전체·예약 재고 모델과 순차 요청 기준의 증감 규칙도 구성했습니다.
-> 예약 API와 재고의 Transaction 연동 및 동시성 제어는 아직 구현되지 않았습니다.
+> 날짜별 객실 전체·예약 재고 모델을 예약 생성·취소·일정 변경 및 예약 가능 객실
+> 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 동시 요청 Lock과
+> Race Condition 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -201,22 +202,24 @@ Spring Boot API
 
 예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
 경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
-요청 기간과 겹치는 `CONFIRMED` 예약이 없는 객실을 반환합니다. `CANCELLED` 예약은
-가용성을 막지 않으며 기간은 `[checkInDate, checkOutDate)`로 비교합니다. 조회와 실제
-예약 생성 사이의 Race Condition은 아직 방지하지 않습니다.
+`[checkInDate, checkOutDate)`의 모든 숙박일에 재고 행과 잔여 수량이 있는 객실을
+반환합니다. 체크아웃 날짜의 재고는 조회·차감하지 않습니다. 조회와 실제 예약 생성
+사이의 Race Condition은 아직 방지하지 않습니다.
 
 예약 생성 요청은 `memberId`를 받지 않고 JWT 인증 정보의 회원 ID를 사용합니다.
 예약 기간은 체크아웃 날짜를 점유하지 않는 `[checkInDate, checkOutDate)` 구간으로
 처리하므로 기존 예약의 체크아웃 날짜와 다음 예약의 체크인 날짜가 같을 수
-있습니다. 현재 중복 검증은 `CONFIRMED` 예약을 일반 조회한 뒤 저장하는 방식이며,
-동시 요청 Race Condition과 DB·Redis Lock은 Phase 2에서 다룹니다.
+있습니다. 예약 생성은 모든 숙박일 재고의 존재와 잔여 수량을 검증한 뒤 날짜마다
+객실 재고 한 개를 차감하며 Reservation 저장과 같은 Transaction에서 처리합니다.
+동시 요청 Race Condition과 DB·Redis Lock은 후속 작업에서 다룹니다.
 
 예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
-있습니다. `CONFIRMED` 예약의 일정 변경은 현재 예약 자신을 제외한 동일 객실의
-기간 중복을 검사하며, 변경된 숙박 일수와 예약 시점 가격 Snapshot으로 총액을
-다시 계산합니다. `CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는
-데이터를 삭제하지 않고 `CONFIRMED` 상태를 `CANCELLED`로 변경하며, 이미 취소된
-예약은 다시 취소할 수 없습니다. 세부 취소 가능 시간과 환불 정책은 현재 MVP
+있습니다. `CONFIRMED` 예약의 일정 변경은 기존·신규 기간에 공통인 날짜의 차감은
+유지하고, 빠지는 날짜의 재고를 반환하며 추가되는 날짜의 재고를 검증·차감합니다.
+변경된 숙박 일수와 예약 시점 가격 Snapshot으로 총액도 다시 계산합니다.
+`CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 사용한 모든 숙박일
+재고를 반환하고 `CONFIRMED` 상태를 `CANCELLED`로 변경하며, 이미 취소된 예약은
+다시 취소할 수 없습니다. 세부 취소 가능 시간과 환불 정책은 현재 MVP
 범위에 포함되지 않습니다. 상태별 허용 동작과 전이 규칙은
 [`docs/architecture/reservation-status-policy.md`](docs/architecture/reservation-status-policy.md)에
 정리되어 있습니다.
@@ -318,10 +321,12 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 > 현재 진행 중인 단계입니다. v0.1.1에서 정리한 예약 생성·일정 변경·상태 모델,
 > DB Constraint·Index, 공통 Fixture와 MySQL Testcontainers 환경을 기준선으로
-> 사용합니다. 날짜별 재고 모델을 먼저 추가했으며 예약 흐름 연동과 동시성 제어는
-> 아직 구현되지 않았습니다.
+> 사용합니다. 날짜별 재고 모델과 예약 흐름 연동을 완료했으며 동시성 제어는 아직
+> 구현되지 않았습니다.
 
 * [x] 날짜별 객실 재고 모델과 순차 요청 기준 증감 규칙 구성
+* [x] 예약 생성·취소·일정 변경 및 가용 객실 조회와 재고 연동
+* [x] 여러 날짜 재고와 Reservation 저장의 Transaction·Rollback 검증
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
 * [ ] Redis 분산 락 적용
@@ -515,7 +520,7 @@ docs: add concurrency test results
 * [x] Google OAuth2 로그인 및 기존 회원 연결
 * [x] 숙소 등록 및 페이지 기반 목록·단건 조회
 * [x] 객실 등록 및 숙소별 페이지 목록·단건 조회
-* [x] 인증 회원의 객실 예약 생성 및 일반 조회 기반 기간 중복 검증
+* [x] 인증 회원의 객실 예약 생성 및 날짜별 재고 기반 가용성 검증
 * [x] 인증 회원의 예약 단건·페이지 목록 조회 및 상태 기반 취소
 * [x] Backend와 MySQL 연동
 * [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
@@ -524,7 +529,7 @@ docs: add concurrency test results
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
-* [x] 소유권·상태·기간 중복 검증을 적용한 예약 일정 변경
+* [x] 소유권·상태·날짜별 재고 검증을 적용한 예약 일정 변경
 * [x] `CONFIRMED`·`CANCELLED` 예약 상태 전이 정책 및 도메인 예외 구성
 * [x] 관리자 숙소·객실 정보 수정 및 비활성 리소스 신규 예약 차단
 * [x] 본인 예약 상태·체크인·체크아웃 조건 조합 및 제한된 정렬·Pagination
@@ -533,6 +538,7 @@ docs: add concurrency test results
 * [x] 회원·숙소·객실·예약 Fixture와 공통 인증 테스트 지원 구조 구성
 * [x] MySQL 8.4 Testcontainers 기반 Database Constraint 테스트 구성
 * [x] 날짜별 객실 재고 Entity·Service 및 UNIQUE·CHECK 제약 구성
+* [x] 예약 생성·취소·일정 변경·가용 객실 조회의 재고 Transaction 연동
 
 ---
 

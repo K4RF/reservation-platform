@@ -4,8 +4,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
-import static junsik.reservation.support.MemberFixture.member;
-import static junsik.reservation.support.ReservationFixture.reservation;
 import static junsik.reservation.support.RoomFixture.room;
 
 import java.time.LocalDate;
@@ -20,14 +18,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.Member;
-import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
-import junsik.reservation.enums.MemberRole;
+import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.enums.MemberRole;
 import junsik.reservation.repository.AccommodationRepository;
-import junsik.reservation.repository.MemberRepository;
-import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
 
@@ -49,10 +45,7 @@ class AvailableRoomIntegrationTest {
 	private RoomRepository roomRepository;
 
 	@Autowired
-	private MemberRepository memberRepository;
-
-	@Autowired
-	private ReservationRepository reservationRepository;
+	private RoomInventoryRepository roomInventoryRepository;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -64,19 +57,19 @@ class AvailableRoomIntegrationTest {
 	void returnsOnlyActiveAvailableRoomsForCapacityWithPagination() throws Exception {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
 		Accommodation otherAccommodation = saveAccommodation("Mountain Hotel");
-		Member member = saveMember();
-
 		Room firstAvailable = saveRoom(accommodation, "Available Twin", 2);
-		Room secondAvailable = saveRoom(accommodation, "Cancelled Reservation Room", 4);
-		saveRoom(accommodation, "Single Room", 1);
+		Room secondAvailable = saveRoom(accommodation, "Remaining Inventory Room", 4);
+		Room tooSmall = saveRoom(accommodation, "Single Room", 1);
 		Room reserved = saveRoom(accommodation, "Reserved Suite", 4);
 		Room inactive = saveRoom(accommodation, "Inactive Room", 4);
-		saveRoom(otherAccommodation, "Other Accommodation Room", 4);
+		Room other = saveRoom(otherAccommodation, "Other Accommodation Room", 4);
 
-		saveReservation(member, reserved, CHECK_IN.plusDays(1), CHECK_OUT.plusDays(1));
-		Reservation cancelled = saveReservation(member, secondAvailable, CHECK_IN, CHECK_OUT);
-		cancelled.cancel();
-		reservationRepository.flush();
+		saveInventory(firstAvailable, CHECK_IN, CHECK_OUT, 1, 0);
+		saveInventory(secondAvailable, CHECK_IN, CHECK_OUT, 2, 1);
+		saveInventory(tooSmall, CHECK_IN, CHECK_OUT, 1, 0);
+		saveInventory(reserved, CHECK_IN, CHECK_OUT, 1, 1);
+		saveInventory(inactive, CHECK_IN, CHECK_OUT, 1, 0);
+		saveInventory(other, CHECK_IN, CHECK_OUT, 1, 0);
 		jdbcTemplate.update("update rooms set status = 'INACTIVE' where id = ?", inactive.getId());
 
 		performAvailable(accommodation.getId(), CHECK_IN, CHECK_OUT, 2, 0, 1)
@@ -101,7 +94,8 @@ class AvailableRoomIntegrationTest {
 	void includesRoomWhenRequestedCheckInMatchesExistingCheckout() throws Exception {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
 		Room room = saveRoom(accommodation, "Boundary Room", 2);
-		saveReservation(saveMember(), room, CHECK_IN, CHECK_OUT);
+		saveInventory(room, CHECK_IN, CHECK_OUT, 1, 1);
+		saveInventory(room, CHECK_OUT, CHECK_OUT.plusDays(3), 1, 0);
 
 		performAvailable(accommodation.getId(), CHECK_OUT, CHECK_OUT.plusDays(3), 2, 0, 20)
 				.andExpect(status().isOk())
@@ -112,7 +106,8 @@ class AvailableRoomIntegrationTest {
 	@Test
 	void excludesRoomsWhenAccommodationIsInactive() throws Exception {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
-		saveRoom(accommodation, "Available Room", 2);
+		Room room = saveRoom(accommodation, "Available Room", 2);
+		saveInventory(room, CHECK_IN, CHECK_OUT, 1, 0);
 		accommodation.changeStatus(AccommodationStatus.INACTIVE);
 		accommodationRepository.flush();
 
@@ -194,17 +189,39 @@ class AvailableRoomIntegrationTest {
 		return roomRepository.saveAndFlush(room(accommodation, name, capacity));
 	}
 
-	private Member saveMember() {
-		return memberRepository.saveAndFlush(member("available-room@example.com"));
-	}
-
-	private Reservation saveReservation(
-			Member member,
+	private void saveInventory(
 			Room room,
 			LocalDate checkInDate,
-			LocalDate checkOutDate
+			LocalDate checkOutDate,
+			int totalQuantity,
+			int reservedQuantity
 	) {
-		return reservationRepository.saveAndFlush(reservation(member, room, checkInDate, checkOutDate));
+		checkInDate.datesUntil(checkOutDate).forEach(date -> {
+			RoomInventory inventory = RoomInventory.create(room, date, totalQuantity);
+			if (reservedQuantity > 0) {
+				inventory.reserve(reservedQuantity);
+			}
+			roomInventoryRepository.save(inventory);
+		});
+		roomInventoryRepository.flush();
+	}
+
+	@Test
+	void excludesRoomWhenAnyStayDateInventoryIsMissingOrSoldOut() throws Exception {
+		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+		Room missingDate = saveRoom(accommodation, "Missing Date Room", 2);
+		Room soldOutDate = saveRoom(accommodation, "Sold Out Date Room", 2);
+		saveInventory(missingDate, CHECK_IN, CHECK_OUT.minusDays(1), 1, 0);
+		saveInventory(soldOutDate, CHECK_IN, CHECK_OUT, 1, 0);
+		RoomInventory soldOutInventory = roomInventoryRepository
+				.findByRoomIdAndInventoryDate(soldOutDate.getId(), CHECK_IN.plusDays(2))
+				.orElseThrow();
+		soldOutInventory.reserve(1);
+
+		performAvailable(accommodation.getId(), CHECK_IN, CHECK_OUT, 2, 0, 20)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(0))
+				.andExpect(jsonPath("$.totalElements").value(0));
 	}
 
 	private String availableRoomsUrl(Long accommodationId) {
