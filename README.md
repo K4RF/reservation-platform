@@ -20,8 +20,10 @@
 > 공통 오류 응답 정책도 실제 Swagger 명세에 반영했습니다. H2 기반 빠른 통합
 > 테스트와 MySQL 8.4 Testcontainers 기반 DB 제약 테스트 환경도 구성했습니다.
 > 날짜별 객실 전체·예약 재고 모델을 예약 생성·취소·일정 변경 및 예약 가능 객실
-> 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 동시 요청 Lock과
-> Race Condition 제어는 아직 구현되지 않았습니다.
+> 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
+> 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
+> 가격 fallback 여부를 조회할 수 있습니다. 예약 금액과 날짜별 가격의 연결,
+> 동시 요청 Lock과 Race Condition 제어는 아직 구현되지 않았습니다.
 
 ---
 
@@ -95,7 +97,7 @@
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
-| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
+| Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
 | Password | Spring Security Crypto | 회원 비밀번호 해시 저장 |
 | Security | Spring Security 7.0.6 | Stateless 인증·인가 및 API 접근 규칙 |
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
@@ -151,7 +153,7 @@ Spring Boot API
        └── Notification Event Consumer
 ```
 
-### 현재 인증·숙소·객실·예약 API
+### 현재 인증·숙소·객실 가격·예약 API
 
 | Method | Endpoint | 권한 | 기능 |
 | --- | --- | --- | --- |
@@ -172,6 +174,9 @@ Spring Boot API
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·정렬·페이지 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
+| `POST` | `/api/v1/rooms/{roomId}/prices` | `ADMIN` | 날짜별 객실 가격 등록 |
+| `PUT` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | `ADMIN` | 날짜별 객실 가격 수정 |
+| `GET` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | 인증 사용자 | 날짜별 적용 가격과 기본 가격 fallback 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
 | `GET` | `/api/v1/reservations?status=CONFIRMED&checkInFrom=2030-01-01&checkInTo=2030-12-31&checkOutFrom=2030-01-02&checkOutTo=2031-01-01&sortBy=CHECK_IN_DATE&direction=ASC&page=0&size=20` | 인증 사용자 | 본인 예약 조건·정렬·페이지 조회 |
@@ -190,6 +195,14 @@ Spring Boot API
 조건에는 JWT 회원 ID가 적용되므로 다른 회원의 예약은 반환되지 않습니다.
 
 객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
+날짜별 객실 가격도 양수만 등록할 수 있고 동일 객실·날짜는 하나만 존재합니다.
+날짜별 가격이 있으면 `DAILY`, 없으면 객실 기본 가격과 `DEFAULT`를 적용 가격 조회
+응답으로 반환합니다. 관리자는 판매 준비를 위해 비활성 객실에도 가격을 미리
+설정할 수 있지만, 비활성 객실의 조회·예약 가능 여부는 기존 정책을 따릅니다.
+현재 예약 금액 계산은 날짜별 가격이 아닌 객실 기본 가격을 사용하며, 숙박일별
+가격 합산과 Snapshot 정책 연결은 Issue #63의 범위입니다. 세부 정책은
+[`docs/architecture/room-daily-price-policy.md`](docs/architecture/room-daily-price-policy.md)에
+정리되어 있습니다.
 숙소와 객실은 생성 시 `ACTIVE` 상태이며 관리자는 정보와 `ACTIVE/INACTIVE` 상태를
 변경할 수 있습니다. `INACTIVE` 숙소 또는 객실은 예약 가능 객실 목록에서 제외되고
 신규 예약 생성도 차단됩니다. 물리적으로 삭제하지 않으므로 기존 예약 이력과 예약
@@ -327,6 +340,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 날짜별 객실 재고 모델과 순차 요청 기준 증감 규칙 구성
 * [x] 예약 생성·취소·일정 변경 및 가용 객실 조회와 재고 연동
 * [x] 여러 날짜 재고와 Reservation 저장의 Transaction·Rollback 검증
+* [x] 날짜별 객실 가격 등록·수정 및 기본 가격 fallback 조회
+* [ ] 숙박일별 가격 합산과 예약 가격 Snapshot 정책 연결
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
 * [ ] Redis 분산 락 적용
@@ -539,6 +554,7 @@ docs: add concurrency test results
 * [x] MySQL 8.4 Testcontainers 기반 Database Constraint 테스트 구성
 * [x] 날짜별 객실 재고 Entity·Service 및 UNIQUE·CHECK 제약 구성
 * [x] 예약 생성·취소·일정 변경·가용 객실 조회의 재고 Transaction 연동
+* [x] 날짜별 객실 가격 Entity·관리 API 및 기본 가격 fallback 조회
 
 ---
 

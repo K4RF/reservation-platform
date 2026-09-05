@@ -160,6 +160,11 @@ Before completing a change:
   accommodation-scoped paginated lists by minimum capacity, nightly-price
   range, and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
   `NIGHTLY_PRICE`.
+- Administrators can create and update a positive daily price for one room and
+  stay date, including preparing prices for inactive rooms. Authenticated users
+  can query the effective price: a stored override reports `DAILY`, while a
+  missing override falls back to the room's base nightly price and reports
+  `DEFAULT`. A room/date UNIQUE constraint prevents duplicate overrides.
 - Authenticated members can create `CONFIRMED` room reservations and query only
   their own reservation details and paginated lists. Lists support optional
   status and inclusive check-in/check-out `From/To` filters. Allowed sort fields
@@ -169,6 +174,8 @@ Before completing a change:
 - Reservation creation snapshots the room's nightly price and calculates the
   total amount by multiplying it by the `[check-in, check-out)` stay length.
   Later room-price changes do not alter an existing reservation's amount.
+  Daily room prices are not yet included in reservation amount calculation;
+  per-stay-date summation and snapshot integration are reserved for Issue #63.
 - Room capacity and reservation guest count both represent total guests without
   adult/child separation. Reservation creation requires at least one guest and
   rejects counts above room capacity. The accepted count is stored on the
@@ -203,9 +210,9 @@ Before completing a change:
   concurrency control, and inventory management APIs are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
-  monetary values, and valid reservation periods. Room/date inventory UNIQUE
-  and member reservation indexes match the current availability and owner query
-  patterns; speculative indexes were not added.
+  monetary values, positive daily prices, and valid reservation periods.
+  Room/date inventory and daily-price UNIQUE indexes plus the member reservation
+  index match current query patterns; speculative indexes were not added.
 - Hibernate `ddl-auto=update` does not backfill CHECK constraints into an
   existing database. Existing local volumes require the reviewed one-time SQL
   under `docs/erd/mysql-schema-hardening.sql`. A formal migration tool and
@@ -230,7 +237,7 @@ Before completing a change:
   field details; malformed or unbindable requests use `COMMON_002`.
 - The frontend is a placeholder with no selected technology stack.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
-  reservations, and JWT Bearer headers live under
+  daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
   Regular integration tests use isolated H2 transactions, while database
   constraint tests use an ephemeral MySQL 8.4 Testcontainer. The shared MySQL
@@ -238,7 +245,8 @@ Before completing a change:
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
-  behavior, room registration and query behavior, and inventory-backed
+  behavior, room registration and query behavior, daily-price creation, update,
+  fallback, validation and authorization, and inventory-backed
   reservation creation, missing and insufficient inventory, checkout exclusion,
   schedule inventory adjustment, transaction rollback, amount recalculation,
   owner-scoped queries, pagination, status/period filtering, allowed sorting,

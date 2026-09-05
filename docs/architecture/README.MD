@@ -6,6 +6,7 @@ Reservation Platform의 시스템 및 애플리케이션 아키텍처 문서를 
 
 - [예약 상태 및 상태 전이 정책](reservation-status-policy.md)
 - [날짜별 객실 재고 정책](room-inventory-policy.md)
+- [날짜별 객실 가격 정책](room-daily-price-policy.md)
 - 전체 시스템 구성
 - 모듈 구조
 - 요청 처리 흐름
