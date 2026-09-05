@@ -48,6 +48,7 @@ erDiagram
         bigint id PK
         bigint member_id FK
         bigint room_id FK
+        int guest_count
         date check_in_date
         date check_out_date
         decimal_12_2 nightly_price_snapshot
@@ -64,7 +65,7 @@ erDiagram
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
 | `accommodations` | name/description/address/status, 100/1000/255/20 | - | - | 세 문자열은 trim 후 비어 있지 않음 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
-| `reservations` | member/room/dates/prices/status, snapshot `DECIMAL(12,2)`, total `DECIMAL(19,2)` | - | member → members, room → rooms | check-in < check-out, snapshot·total ≥ 0 |
+| `reservations` | member/room/guest count/dates/prices/status, guest count `INT`, snapshot `DECIMAL(12,2)`, total `DECIMAL(19,2)` | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, snapshot·total ≥ 0 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
 `ENUM`, H2 테스트 Schema에서는 허용 값 CHECK가 생성됩니다. 숫자 enum ordinal은
@@ -75,12 +76,17 @@ Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 en
 Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계산과 Snapshot 유지
 규칙은 도메인 로직의 책임입니다.
 
+객실 `capacity`는 성인과 아동을 구분하지 않은 전체 최대 수용 인원이며, 예약
+`guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
+검증하고, Service는 객실의 `capacity`를 초과하지 않는지 생성과 일정 변경 시점에
+검증합니다. 일정 변경은 예약 인원을 변경하지 않습니다.
+
 ## Validation Responsibilities
 
 | Layer | Responsibility |
 | --- | --- |
 | Request DTO | 필수 입력, 이메일 형식, 문자열 최대 길이, 페이지 범위, 공개 API의 양수 가격처럼 사용자에게 즉시 설명할 수 있는 입력 검증 |
-| Domain and Service | 예약 `[check-in, check-out)` 규칙, 가격 Snapshot·총액 계산, 상태 전이, 소유권, 운영 상태, 예약 기간 중복처럼 여러 값·Entity·현재 상태가 필요한 비즈니스 규칙 |
+| Domain and Service | 예약 `[check-in, check-out)` 규칙, 가격 Snapshot·총액 계산, 상태 전이, 소유권, 운영 상태, 예약 기간 중복, 예약 인원과 객실 수용 인원 비교처럼 여러 값·Entity·현재 상태가 필요한 비즈니스 규칙 |
 | Database | NOT NULL, UNIQUE, FK, 컬럼 길이, enum 허용값, 음수 금액·잘못된 날짜처럼 어떤 쓰기 경로에서도 깨지면 안 되는 최종 정합성 보장 |
 
 DB CHECK는 예약 총액이 `Snapshot × 숙박 일수`인지 또는 예약이 다른 행과 겹치는지
@@ -108,6 +114,12 @@ DB CHECK는 예약 총액이 `Snapshot × 숙박 일수`인지 또는 예약이 
 존재하는 테이블에 CHECK를 소급 적용하지 않습니다. 기존 Docker Volume에는 먼저
 잘못된 데이터가 없는지 확인한 다음
 [`mysql-schema-hardening.sql`](mysql-schema-hardening.sql)을 한 번 적용합니다.
+
+`guest_count` 추가 전 생성된 기존 예약 테이블은 애플리케이션 갱신 전에
+[`mysql-guest-count-upgrade.sql`](mysql-guest-count-upgrade.sql)을 한 번 적용합니다.
+기존 예약은 과거 API에 인원 정보가 없었으므로 보수적인 호환값인 1명으로
+Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, 이미 컬럼 또는
+제약조건이 존재하면 해당 ALTER 문을 다시 실행하지 않습니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지
