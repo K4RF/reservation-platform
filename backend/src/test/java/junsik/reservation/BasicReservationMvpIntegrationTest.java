@@ -9,6 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
+import java.time.LocalDate;
+
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.support.MvpTestFixture;
 
 @SpringBootTest
@@ -55,6 +58,9 @@ class BasicReservationMvpIntegrationTest {
 
 	@Autowired
 	private ReservationRepository reservationRepository;
+
+	@Autowired
+	private RoomInventoryRepository roomInventoryRepository;
 
 	@Autowired
 	private JwtDecoder jwtDecoder;
@@ -123,6 +129,12 @@ class BasicReservationMvpIntegrationTest {
 				.andExpect(status().isCreated())
 				.andReturn();
 		Long roomId = readLong(roomResult, "$.roomId");
+		fixture.createRoomInventory(
+				roomId,
+				LocalDate.of(2035, 6, 10),
+				LocalDate.of(2035, 6, 15),
+				1
+		);
 
 		mockMvc.perform(get("/api/v1/rooms/{roomId}", roomId)
 					.header("Authorization", bearer(userToken)))
@@ -190,6 +202,13 @@ class BasicReservationMvpIntegrationTest {
 
 		assertThat(reservationRepository.findById(reservationId).orElseThrow().getStatus())
 				.isEqualTo(ReservationStatus.CANCELLED);
+		roomInventoryRepository.flush();
+		Integer reservedQuantity = jdbcTemplate.queryForObject(
+				"select sum(reserved_quantity) from room_inventories where room_id = ?",
+				Integer.class,
+				roomId
+		);
+		assertThat(reservedQuantity).isZero();
 	}
 
 	private String login(String email, String password, String expectedRole) throws Exception {

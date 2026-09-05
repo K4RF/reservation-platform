@@ -15,6 +15,7 @@ import static junsik.reservation.support.RoomFixture.room;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import jakarta.persistence.EntityManager;
 
@@ -31,6 +32,7 @@ import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
+import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomStatus;
@@ -38,6 +40,7 @@ import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
 
@@ -68,6 +71,9 @@ class ReservationIntegrationTest {
 	private ReservationRepository reservationRepository;
 
 	@Autowired
+	private RoomInventoryRepository roomInventoryRepository;
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
@@ -80,6 +86,7 @@ class ReservationIntegrationTest {
 	void createsConfirmedReservationForAuthenticatedMember() throws Exception {
 		Member member = saveMember("member@example.com");
 		Room room = saveRoom();
+		ensureInventories(room, CHECK_IN, CHECK_OUT);
 
 		mockMvc.perform(post(RESERVATIONS_URL)
 					.header("Authorization", bearerToken(member.getId()))
@@ -109,6 +116,11 @@ class ReservationIntegrationTest {
 		assertThat(reservation.getStayNights()).isEqualTo(5);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("625000.00");
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(1);
+		assertThat(roomInventoryRepository.findByRoomIdAndInventoryDate(room.getId(), CHECK_OUT))
+				.isEmpty();
 	}
 
 	@Test
@@ -215,6 +227,12 @@ class ReservationIntegrationTest {
 		assertThat(reloaded.getCheckOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
 		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
 		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("375000.00");
+		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
+		assertThat(inventories(room, LocalDate.of(2030, 2, 10), LocalDate.of(2030, 2, 13)))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(1);
 	}
 
 	@Test
@@ -250,7 +268,7 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
-	void rejectsScheduleUpdateOverlappingAnotherConfirmedReservation() throws Exception {
+	void rejectsScheduleUpdateWhenNewPeriodInventoryIsInsufficient() throws Exception {
 		Member member = saveMember("member@example.com");
 		Member otherMember = saveMember("other@example.com");
 		Room room = saveRoom();
@@ -261,6 +279,13 @@ class ReservationIntegrationTest {
 				LocalDate.of(2030, 2, 10),
 				LocalDate.of(2030, 2, 15)
 		);
+		roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateGreaterThanEqualAndInventoryDateLessThanOrderByInventoryDateAsc(
+						room.getId(),
+						LocalDate.of(2030, 2, 12),
+						LocalDate.of(2030, 2, 15)
+				)
+				.forEach(inventory -> inventory.changeTotalQuantity(inventory.getReservedQuantity()));
 
 		performUpdate(
 				member.getId(),
@@ -269,7 +294,7 @@ class ReservationIntegrationTest {
 				LocalDate.of(2030, 2, 17)
 		)
 				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("RESERVATION_002"));
+				.andExpect(jsonPath("$.code").value("INVENTORY_005"));
 
 		assertThat(reservation.getCheckInDate()).isEqualTo(CHECK_IN);
 		assertThat(reservation.getCheckOutDate()).isEqualTo(CHECK_OUT);
@@ -469,19 +494,69 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
-	void rejectsReservationThatOverlapsConfirmedReservation() throws Exception {
+	void rejectsReservationWhenExistingReservationConsumesAllInventory() throws Exception {
 		Member firstMember = saveMember("first@example.com");
 		Member secondMember = saveMember("second@example.com");
 		Room room = saveRoom();
-		reservationRepository.saveAndFlush(reservation(firstMember, room, CHECK_IN, CHECK_OUT));
+		saveReservation(firstMember, room, CHECK_IN, CHECK_OUT);
+		roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateGreaterThanEqualAndInventoryDateLessThanOrderByInventoryDateAsc(
+						room.getId(),
+						CHECK_IN,
+						CHECK_OUT
+				)
+				.forEach(inventory -> inventory.changeTotalQuantity(inventory.getReservedQuantity()));
 
 		performCreate(secondMember.getId(), room.getId(), CHECK_IN.plusDays(2), CHECK_OUT.plusDays(2))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.status").value(409))
-				.andExpect(jsonPath("$.code").value("RESERVATION_002"))
-				.andExpect(jsonPath("$.message").value("해당 기간에 이미 예약된 객실입니다."));
+				.andExpect(jsonPath("$.code").value("INVENTORY_005"))
+				.andExpect(jsonPath("$.message").value("예약 가능한 객실 재고가 부족합니다."));
 
 		assertThat(reservationRepository.count()).isOne();
+	}
+
+	@Test
+	void adjustsOnlyChangedInventoryDatesWhenSchedulePartiallyOverlaps() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
+		LocalDate changedCheckIn = CHECK_IN.plusDays(2);
+		LocalDate changedCheckOut = CHECK_OUT.plusDays(2);
+
+		performUpdate(member.getId(), reservation.getId(), changedCheckIn, changedCheckOut)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.checkInDate").value(changedCheckIn.toString()))
+				.andExpect(jsonPath("$.checkOutDate").value(changedCheckOut.toString()));
+
+		assertThat(inventories(room, CHECK_IN, changedCheckIn))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
+		assertThat(inventories(room, changedCheckIn, CHECK_OUT))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(1);
+		assertThat(inventories(room, CHECK_OUT, changedCheckOut))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(1);
+	}
+
+	@Test
+	void rejectsReservationWhenAnyStayDateInventoryIsMissing() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		ensureInventories(room, CHECK_IN, CHECK_OUT.minusDays(1));
+
+		mockMvc.perform(post(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(createRequest(room.getId(), CHECK_IN, CHECK_OUT)))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.code").value("INVENTORY_001"));
+
+		assertThat(reservationRepository.count()).isZero();
+		assertThat(inventories(room, CHECK_IN, CHECK_OUT.minusDays(1)))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
 	}
 
 	@Test
@@ -489,7 +564,7 @@ class ReservationIntegrationTest {
 		Member firstMember = saveMember("first@example.com");
 		Member secondMember = saveMember("second@example.com");
 		Room room = saveRoom();
-		reservationRepository.saveAndFlush(reservation(firstMember, room, CHECK_IN, CHECK_OUT));
+		saveReservation(firstMember, room, CHECK_IN, CHECK_OUT);
 
 		performCreate(secondMember.getId(), room.getId(), CHECK_OUT, CHECK_OUT.plusDays(3))
 				.andExpect(status().isCreated())
@@ -687,7 +762,8 @@ class ReservationIntegrationTest {
 	@Test
 	void cancelsOwnConfirmedReservation() throws Exception {
 		Member member = saveMember("member@example.com");
-		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
 
 		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
 					.header("Authorization", bearerToken(member.getId())))
@@ -697,6 +773,9 @@ class ReservationIntegrationTest {
 
 		assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
 				.isEqualTo(ReservationStatus.CANCELLED);
+		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
 	}
 
 	@Test
@@ -755,6 +834,7 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) throws Exception {
+		roomRepository.findById(roomId).ifPresent(room -> ensureInventories(room, checkInDate, checkOutDate));
 		return mockMvc.perform(post(RESERVATIONS_URL)
 				.header("Authorization", bearerToken(memberId))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -768,6 +848,7 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) throws Exception {
+		roomRepository.findById(roomId).ifPresent(room -> ensureInventories(room, checkInDate, checkOutDate));
 		return mockMvc.perform(post(RESERVATIONS_URL)
 				.header("Authorization", bearerToken(memberId))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -780,6 +861,11 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) throws Exception {
+		if (checkInDate.isBefore(checkOutDate)) {
+			reservationRepository.findById(reservationId)
+					.map(Reservation::getRoom)
+					.ifPresent(room -> ensureInventories(room, checkInDate, checkOutDate));
+		}
 		return mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}", reservationId)
 				.header("Authorization", bearerToken(memberId))
 				.contentType(MediaType.APPLICATION_JSON)
@@ -815,9 +901,39 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
+		ensureInventories(room, checkInDate, checkOutDate).forEach(inventory -> inventory.reserve(1));
 		return reservationRepository.saveAndFlush(
 				reservation(member, room, guestCount, checkInDate, checkOutDate)
 		);
+	}
+
+	private List<RoomInventory> ensureInventories(
+			Room room,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		if (!checkInDate.isBefore(checkOutDate)) {
+			return List.of();
+		}
+		List<RoomInventory> inventories = checkInDate.datesUntil(checkOutDate)
+				.map(date -> roomInventoryRepository.findByRoomIdAndInventoryDate(room.getId(), date)
+						.orElseGet(() -> roomInventoryRepository.save(RoomInventory.create(room, date, 100))))
+				.toList();
+		roomInventoryRepository.flush();
+		return inventories;
+	}
+
+	private List<RoomInventory> inventories(
+			Room room,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		return roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateGreaterThanEqualAndInventoryDateLessThanOrderByInventoryDateAsc(
+						room.getId(),
+						checkInDate,
+						checkOutDate
+				);
 	}
 
 	private String bearerToken(Long memberId) {
