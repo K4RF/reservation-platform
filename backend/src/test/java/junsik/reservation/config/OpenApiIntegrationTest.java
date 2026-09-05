@@ -147,6 +147,14 @@ class OpenApiIntegrationTest {
 						"capacity",
 						"nightlyPrice"
 				)))
+				.andExpect(jsonPath("$.components.schemas.CreateReservationRequest.required", containsInAnyOrder(
+						"roomId",
+						"guestCount",
+						"checkInDate",
+						"checkOutDate"
+				)))
+				.andExpect(jsonPath("$.components.schemas.CreateReservationRequest.properties.guestCount.minimum")
+						.value(1))
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
@@ -163,6 +171,7 @@ class OpenApiIntegrationTest {
 						containsInAnyOrder("checkInDate", "checkOutDate")
 				))
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.nightlyPriceSnapshot").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.guestCount").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists())
 				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.timestamp").exists())

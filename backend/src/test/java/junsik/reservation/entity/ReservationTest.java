@@ -1,6 +1,7 @@
 package junsik.reservation.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.MemberFixture.member;
@@ -25,6 +26,7 @@ class ReservationTest {
 		Reservation reservation = createReservation();
 
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		assertThat(reservation.getGuestCount()).isEqualTo(2);
 
 		reservation.cancel();
 
@@ -42,6 +44,19 @@ class ReservationTest {
 		assertThat(reservation.getStayNights()).isEqualTo(2);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("250000.00");
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		assertThat(reservation.getGuestCount()).isEqualTo(2);
+	}
+
+	@Test
+	void rejectsGuestCountOutsideRoomCapacity() {
+		Member member = member();
+		Accommodation accommodation = accommodation();
+		Room room = room(accommodation, "Deluxe Room", 2, "125000.00");
+
+		assertThatThrownBy(() -> reservation(member, room, 0, CHECK_IN, CHECK_OUT))
+				.isInstanceOf(IllegalArgumentException.class);
+		assertThatThrownBy(() -> reservation(member, room, 3, CHECK_IN, CHECK_OUT))
+				.isInstanceOf(IllegalArgumentException.class);
 	}
 
 	@Test

@@ -50,6 +50,7 @@ class ReservationIntegrationTest {
 	private static final LocalDate CHECK_IN = LocalDate.of(2030, 1, 10);
 	private static final LocalDate CHECK_OUT = LocalDate.of(2030, 1, 15);
 	private static final BigDecimal NIGHTLY_PRICE = new BigDecimal("125000.00");
+	private static final int GUEST_COUNT = 2;
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -92,6 +93,7 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.reservationId").isNumber())
 				.andExpect(jsonPath("$.memberId").value(member.getId()))
 				.andExpect(jsonPath("$.roomId").value(room.getId()))
+				.andExpect(jsonPath("$.guestCount").value(GUEST_COUNT))
 				.andExpect(jsonPath("$.checkInDate").value("2030-01-10"))
 				.andExpect(jsonPath("$.checkOutDate").value("2030-01-15"))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
@@ -102,10 +104,49 @@ class ReservationIntegrationTest {
 		Reservation reservation = reservationRepository.findAll().getFirst();
 		assertThat(reservation.getMember().getId()).isEqualTo(member.getId());
 		assertThat(reservation.getRoom().getId()).isEqualTo(room.getId());
+		assertThat(reservation.getGuestCount()).isEqualTo(GUEST_COUNT);
 		assertThat(reservation.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
 		assertThat(reservation.getStayNights()).isEqualTo(5);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("625000.00");
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+	}
+
+	@Test
+	void createsReservationWhenGuestCountMatchesRoomCapacity() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom(4);
+
+		performCreate(member.getId(), room.getId(), 4, CHECK_IN, CHECK_OUT)
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.guestCount").value(4));
+
+		assertThat(reservationRepository.findAll().getFirst().getGuestCount()).isEqualTo(4);
+	}
+
+	@Test
+	void rejectsReservationWhenGuestCountExceedsRoomCapacity() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom(4);
+
+		performCreate(member.getId(), room.getId(), 5, CHECK_IN, CHECK_OUT)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_008"))
+				.andExpect(jsonPath("$.message").value("예약 인원이 객실 최대 수용 인원을 초과했습니다."));
+
+		assertThat(reservationRepository.count()).isZero();
+	}
+
+	@Test
+	void rejectsNonPositiveReservationGuestCount() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom(4);
+
+		performCreate(member.getId(), room.getId(), 0, CHECK_IN, CHECK_OUT)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("guestCount"));
+
+		assertThat(reservationRepository.count()).isZero();
 	}
 
 	@Test
@@ -174,6 +215,27 @@ class ReservationIntegrationTest {
 		assertThat(reloaded.getCheckOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
 		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
 		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("375000.00");
+	}
+
+	@Test
+	void revalidatesStoredGuestCountWhenReservationScheduleChanges() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom(4);
+		Reservation reservation = saveReservation(member, room, 4, CHECK_IN, CHECK_OUT);
+		room.update(room.getName(), 3, room.getNightlyPrice());
+		roomRepository.flush();
+
+		performUpdate(
+				member.getId(),
+				reservation.getId(),
+				LocalDate.of(2030, 2, 10),
+				LocalDate.of(2030, 2, 13)
+		)
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("RESERVATION_008"));
+
+		assertThat(reservation.getCheckInDate()).isEqualTo(CHECK_IN);
+		assertThat(reservation.getCheckOutDate()).isEqualTo(CHECK_OUT);
 	}
 
 	@Test
@@ -353,6 +415,7 @@ class ReservationIntegrationTest {
 					.content("""
 							{
 							  "roomId": null,
+							  "guestCount": null,
 							  "checkInDate": null,
 							  "checkOutDate": null
 							}
@@ -361,6 +424,7 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.code").value("COMMON_001"))
 				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
 						"roomId",
+						"guestCount",
 						"checkInDate",
 						"checkOutDate"
 				)));
@@ -697,6 +761,19 @@ class ReservationIntegrationTest {
 				.content(createRequest(roomId, checkInDate, checkOutDate)));
 	}
 
+	private org.springframework.test.web.servlet.ResultActions performCreate(
+			Long memberId,
+			Long roomId,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) throws Exception {
+		return mockMvc.perform(post(RESERVATIONS_URL)
+				.header("Authorization", bearerToken(memberId))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(createRequest(roomId, guestCount, checkInDate, checkOutDate)));
+	}
+
 	private org.springframework.test.web.servlet.ResultActions performUpdate(
 			Long memberId,
 			Long reservationId,
@@ -714,8 +791,12 @@ class ReservationIntegrationTest {
 	}
 
 	private Room saveRoom() {
+		return saveRoom(4);
+	}
+
+	private Room saveRoom(int capacity) {
 		Accommodation accommodation = accommodationRepository.saveAndFlush(accommodation());
-		return roomRepository.saveAndFlush(room(accommodation, "Deluxe Room", 4, NIGHTLY_PRICE));
+		return roomRepository.saveAndFlush(room(accommodation, "Deluxe Room", capacity, NIGHTLY_PRICE));
 	}
 
 	private Reservation saveReservation(
@@ -724,7 +805,19 @@ class ReservationIntegrationTest {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		return reservationRepository.saveAndFlush(reservation(member, room, checkInDate, checkOutDate));
+		return saveReservation(member, room, GUEST_COUNT, checkInDate, checkOutDate);
+	}
+
+	private Reservation saveReservation(
+			Member member,
+			Room room,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
+		return reservationRepository.saveAndFlush(
+				reservation(member, room, guestCount, checkInDate, checkOutDate)
+		);
 	}
 
 	private String bearerToken(Long memberId) {
@@ -736,13 +829,23 @@ class ReservationIntegrationTest {
 	}
 
 	private String createRequest(Long roomId, LocalDate checkInDate, LocalDate checkOutDate) {
+		return createRequest(roomId, GUEST_COUNT, checkInDate, checkOutDate);
+	}
+
+	private String createRequest(
+			Long roomId,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate
+	) {
 		return """
 				{
 				  "roomId": %d,
+				  "guestCount": %d,
 				  "checkInDate": "%s",
 				  "checkOutDate": "%s"
 				}
-				""".formatted(roomId, checkInDate, checkOutDate);
+				""".formatted(roomId, guestCount, checkInDate, checkOutDate);
 	}
 
 	private String updateRequest(LocalDate checkInDate, LocalDate checkOutDate) {
