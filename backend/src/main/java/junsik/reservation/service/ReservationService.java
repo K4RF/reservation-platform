@@ -13,11 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
+import junsik.reservation.dto.ReservationCancellationResponse;
 import junsik.reservation.dto.ReservationResponse;
 import junsik.reservation.dto.ReservationSearchRequest;
 import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
+import junsik.reservation.entity.ReservationCancellationQuote;
 import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.ReservationPriceSnapshot;
 import junsik.reservation.entity.Room;
@@ -42,19 +44,22 @@ public class ReservationService {
 	private final RoomRepository roomRepository;
 	private final RoomInventoryRepository roomInventoryRepository;
 	private final RoomDailyPriceService roomDailyPriceService;
+	private final ReservationCancellationPolicy cancellationPolicy;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
 			MemberRepository memberRepository,
 			RoomRepository roomRepository,
 			RoomInventoryRepository roomInventoryRepository,
-			RoomDailyPriceService roomDailyPriceService
+			RoomDailyPriceService roomDailyPriceService,
+			ReservationCancellationPolicy cancellationPolicy
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
 		this.roomRepository = roomRepository;
 		this.roomInventoryRepository = roomInventoryRepository;
 		this.roomDailyPriceService = roomDailyPriceService;
+		this.cancellationPolicy = cancellationPolicy;
 	}
 
 	@Transactional
@@ -114,10 +119,11 @@ public class ReservationService {
 	}
 
 	@Transactional
-	public ReservationResponse cancel(Long memberId, Long reservationId) {
+	public ReservationCancellationResponse cancel(Long memberId, Long reservationId) {
 		Reservation reservation = getReservation(reservationId);
 		validateOwner(reservation, memberId);
 		reservation.verifyCancellationAllowed();
+		ReservationCancellationQuote cancellationQuote = cancellationPolicy.evaluate(reservation);
 		Map<LocalDate, RoomInventory> inventories = getInventories(
 				reservation.getRoom().getId(),
 				reservation.getPeriod()
@@ -125,7 +131,7 @@ public class ReservationService {
 		validateReserved(inventories.values());
 		inventories.values().forEach(inventory -> inventory.release(1));
 		reservation.cancel();
-		return ReservationResponse.from(reservation);
+		return ReservationCancellationResponse.from(reservation, cancellationQuote);
 	}
 
 	@Transactional
