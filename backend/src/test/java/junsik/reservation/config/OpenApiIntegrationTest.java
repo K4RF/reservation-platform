@@ -62,7 +62,21 @@ class OpenApiIntegrationTest {
 				))
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations'].get.parameters[*].name",
-						containsInAnyOrder("name", "page", "size", "sortBy", "direction")
+						containsInAnyOrder(
+								"name",
+								"region",
+								"checkInDate",
+								"checkOutDate",
+								"guestCount",
+								"minPrice",
+								"maxPrice",
+								"status",
+								"available",
+								"page",
+								"size",
+								"sortBy",
+								"direction"
+						)
 				))
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms'].get.parameters[*].name",
