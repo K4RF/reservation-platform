@@ -47,3 +47,8 @@
 MySQL 제약조건은 별도의 Testcontainers 테스트가 담당합니다. MVP 테스트는 기능
 연결을 빠르게 검증하는 H2 테스트로 유지하며, MySQL Lock·격리 수준은 이후
 동시성 전용 Testcontainers 테스트에서 검증합니다.
+
+v0.1.2의 숙소 통합 검색, 날짜별 가격 합산, 상세 재고 변화와 취소 수수료까지
+연결한 실제 MySQL 성공 흐름은
+[`reservation-domain-baseline.md`](reservation-domain-baseline.md)의
+`ReservationDomainBaselineIntegrationTest`가 담당합니다.

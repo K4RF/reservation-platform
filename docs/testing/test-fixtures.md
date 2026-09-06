@@ -41,14 +41,19 @@ tests.
 
 ## MySQL Testcontainers decision
 
-Fast API and service integration tests remain on H2. Database constraint tests
-run against an ephemeral MySQL 8.4 Testcontainer because CHECK constraints and
-Spring JDBC exception translation differ from H2. Spring Boot's
-`@ServiceConnection` supplies the generated JDBC connection details, so the
-developer's Docker Compose database, `.env`, and volumes are never used.
+Fast API and service integration tests remain on H2. Database constraint,
+reservation-domain baseline, and transaction rollback tests run against an
+ephemeral MySQL 8.4 Testcontainer because CHECK constraints, transaction
+behavior, and Spring JDBC exception translation differ from H2.
+`MySqlIntegrationTestSupport` starts one singleton container per test JVM and
+supplies its JDBC connection details through `@DynamicPropertySource`, so
+multiple MySQL test classes can share it without one class stopping the
+container used by another. The developer's Docker Compose database, `.env`, and
+volumes are never used.
 
-The MySQL test uses `ddl-auto=create`. The container is disposable, so a delayed
-schema drop is unnecessary and would race with container shutdown.
+MySQL test contexts use `ddl-auto=create`. The container is disposable, so a
+delayed schema drop is unnecessary. Each test class uses transaction rollback
+or explicit cleanup, while a new Spring context recreates the schema before use.
 
 GitHub-hosted Ubuntu runners provide Docker, so the existing `./gradlew test`
 CI step also runs the MySQL-backed constraint suite. A local full test therefore
@@ -61,6 +66,7 @@ Windows PowerShell:
 ```powershell
 cd backend
 .\gradlew.bat test --tests junsik.reservation.entity.DatabaseConstraintIntegrationTest
+.\gradlew.bat test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
 .\gradlew.bat test
 .\gradlew.bat build
 ```
@@ -70,6 +76,7 @@ macOS/Linux:
 ```bash
 cd backend
 ./gradlew test --tests junsik.reservation.entity.DatabaseConstraintIntegrationTest
+./gradlew test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
 ./gradlew test
 ./gradlew build
 ```

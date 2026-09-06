@@ -6,8 +6,8 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.2 — Reservation Domain Completion**의 기능 구현을 진행 중이며, 완료 후
-> 다음 단계는 **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
+> **v0.1.2 — Reservation Domain Completion**을 완료했으며, 다음 단계는
+> **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -108,7 +108,7 @@
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
-| Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4 | 단위·API 통합 테스트와 실제 DB 제약 검증 |
+| Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback 검증 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
@@ -347,10 +347,9 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 동일 객실에 대한 동시 예약 문제를 재현하고 해결합니다.
 
-> 현재 진행 중인 단계입니다. v0.1.1에서 정리한 예약 생성·일정 변경·상태 모델,
-> DB Constraint·Index, 공통 Fixture와 MySQL Testcontainers 환경을 기준선으로
-> 사용합니다. 날짜별 재고 모델과 예약 흐름 연동을 완료했으며 동시성 제어는 아직
-> 구현되지 않았습니다.
+> v0.1.2에서 예약 생성·일정 변경·취소, 날짜별 재고·가격, 숙소 통합 검색을
+> 실제 MySQL 전체 흐름으로 검증해 순차 요청의 Baseline을 확립했습니다. 이제 같은
+> 마지막 재고에 대한 동시 요청 Race Condition을 재현하고 제어 전략을 비교합니다.
 
 * [x] 날짜별 객실 재고 모델과 순차 요청 기준 증감 규칙 구성
 * [x] 예약 생성·취소·일정 변경 및 가용 객실 조회와 재고 연동
@@ -359,6 +358,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 숙박일별 가격 합산과 예약 가격 Snapshot 정책 연결
 * [x] 체크인 잔여 일수 기반 취소 제한·수수료 및 예상 환불액 계산
 * [x] 기간·인원·객실 가격·상태·재고 기반 숙소 통합 검색
+* [x] MySQL 기반 Reservation Domain Completion 전체 흐름·Rollback Baseline 검증
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
 * [ ] Redis 분산 락 적용
@@ -531,7 +531,7 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.1.1 — Reservation Service Enhancement**까지 완료했으며,
+**v0.1.2 — Reservation Domain Completion**까지 완료했으며,
 **v0.2.0 — Concurrency Control** 시작을 준비하고 있습니다.
 
 * [x] Repository 생성
@@ -575,6 +575,7 @@ docs: add concurrency test results
 * [x] 예약 생성·일정 변경의 숙박일별 가격 합산 및 금액 Snapshot 고도화
 * [x] 예약 취소 정책·수수료 계산 및 재고 복구 연동
 * [x] 숙소명·지역·기간·인원·가격·상태·예약 가능 여부 통합 검색
+* [x] v0.1.2 전체 예약 흐름과 MySQL Transaction Rollback Baseline 검증
 
 ---
 
@@ -734,11 +735,14 @@ GitHub Actions의 `Backend CI`는 `develop` 브랜치의 Backend 관련 push와
 Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
-테스트는 개발 DB와 동일한 MySQL 8.4 Testcontainer를 사용합니다. 전체 테스트와
-빌드를 실행하려면 Docker 호환 Container Runtime이 실행 중이어야 하며, 테스트는
-로컬 Docker Compose DB와 Volume을 사용하거나 변경하지 않습니다. Fixture 구성과
-테스트 DB 선택 기준은
-[`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md)에 정리되어 있습니다.
+테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
+MySQL 8.4 Testcontainer를 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
+호환 Container Runtime이 실행 중이어야 하며, 테스트는 로컬 Docker Compose DB와
+Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트 DB 선택 기준은
+[`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.2의 전체 흐름과
+동시성 적용 전 기준선은
+[`docs/testing/reservation-domain-baseline.md`](docs/testing/reservation-domain-baseline.md)에
+정리되어 있습니다.
 
 ## 14. 주요 기술 과제
 
