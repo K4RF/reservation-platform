@@ -138,6 +138,9 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/reservations/{reservationId}'].patch.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/UpdateReservationScheduleRequest")))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/reservations/{reservationId}/cancel'].patch.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ReservationCancellationResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}'].put.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/UpdateAccommodationRequest")))
 				.andExpect(jsonPath(
@@ -194,6 +197,9 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.guestCount").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.cancellationFeeRate").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.cancellationFeeAmount").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.estimatedRefundAmount").exists())
 				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.timestamp").exists())
 				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.status").exists())
 				.andExpect(jsonPath("$.components.schemas.ErrorResponse.properties.code").exists())
