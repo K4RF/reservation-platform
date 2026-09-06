@@ -5,8 +5,9 @@
 `Reservation Platform` is a personal backend portfolio project focused on
 preventing reservation conflicts under concurrent traffic.
 
-The repository is in Phase 1 of the backend implementation. Features listed in
-`README.md` include roadmap items and must not be treated as already implemented.
+The backend is completing the sequential reservation-domain baseline before
+concurrency-control work. Features listed in `README.md` include roadmap items
+and must not be treated as already implemented.
 
 ## Source of Truth
 
@@ -152,8 +153,12 @@ Before completing a change:
   new member and provider-specific social account are created.
 - Accommodation creation, information updates, and `ACTIVE/INACTIVE` status
   changes are restricted to `ADMIN`; newly created accommodations are `ACTIVE`.
-  Authenticated users can read details and paginated lists, search names
-  case-insensitively, and sort only by the allowed `ID` or `NAME` fields.
+  Authenticated users can read details and search paginated lists by optional
+  name, address-region, status, active-room capacity/base-nightly-price, and
+  stay-period inventory availability conditions. Dates default to available
+  search and availability requires a valid `[check-in, check-out)` pair. Only
+  `ID` and `NAME` sorting is allowed; dated search prices do not use daily-price
+  overrides or total-stay amounts.
 - Room creation, information updates, and `ACTIVE/INACTIVE` status changes are
   restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
   nightly price. Authenticated users can read room details and filter
@@ -212,7 +217,8 @@ Before completing a change:
   date. New reservations for inactive rooms or accommodations are rejected,
   while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  concurrency control, and inventory management APIs are not implemented.
+  full-text/Elasticsearch search, concurrency control, and inventory management
+  APIs are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
   monetary values, positive daily prices, and valid reservation periods.
@@ -251,7 +257,8 @@ Before completing a change:
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, daily-price creation, update,
-  fallback, validation and authorization, one-night and mixed daily reservation
+  fallback, validation and authorization, accommodation integrated search by
+  name/region/room/inventory conditions, one-night and mixed daily reservation
   pricing, price snapshot stability, schedule repricing, cancellation fee
   boundaries and denied-cancellation inventory retention, and inventory-backed
   reservation creation, missing and insufficient inventory, checkout exclusion,
