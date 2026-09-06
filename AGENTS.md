@@ -171,11 +171,12 @@ Before completing a change:
   are `ID`, `CHECK_IN_DATE`, `CHECK_OUT_DATE`, and `TOTAL_AMOUNT`; the default is
   ID ascending. Reservation periods use `[check-in, check-out)` semantics and
   member identity comes from the JWT principal, not the request body.
-- Reservation creation snapshots the room's nightly price and calculates the
-  total amount by multiplying it by the `[check-in, check-out)` stay length.
-  Later room-price changes do not alter an existing reservation's amount.
-  Daily room prices are not yet included in reservation amount calculation;
-  per-stay-date summation and snapshot integration are reserved for Issue #63.
+- Reservation creation resolves every `[check-in, check-out)` stay date from a
+  daily override or the room base-price fallback and sums those `BigDecimal`
+  values. `nightlyPriceSnapshot` stores the first stay date's effective price,
+  while `totalAmount` is the authoritative aggregate snapshot. Later source
+  price changes do not alter an existing reservation's amount. Per-date price
+  snapshot rows are not stored.
 - Room capacity and reservation guest count both represent total guests without
   adult/child separation. Reservation creation requires at least one guest and
   rejects counts above room capacity. The accepted count is stored on the
@@ -183,9 +184,9 @@ Before completing a change:
   room's current capacity.
 - Reservation owners can change the dates of a `CONFIRMED` reservation. The
   update retains inventory for shared dates, releases removed dates, reserves
-  added dates, and recalculates the total using the stored nightly-price
-  snapshot, not the room's current price. `CANCELLED` reservations cannot be
-  changed.
+  added dates, and reprices the complete new stay using the current daily-price
+  and fallback policy. Both first-night and total snapshots are replaced.
+  `CANCELLED` reservations cannot be changed.
 - Reservation owners can cancel a `CONFIRMED` reservation by changing its state
   to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
   are not implemented.
@@ -246,7 +247,8 @@ Before completing a change:
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, daily-price creation, update,
-  fallback, validation and authorization, and inventory-backed
+  fallback, validation and authorization, one-night and mixed daily reservation
+  pricing, price snapshot stability and schedule repricing, and inventory-backed
   reservation creation, missing and insufficient inventory, checkout exclusion,
   schedule inventory adjustment, transaction rollback, amount recalculation,
   owner-scoped queries, pagination, status/period filtering, allowed sorting,

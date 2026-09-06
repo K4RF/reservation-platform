@@ -32,6 +32,7 @@ import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.Room;
+import junsik.reservation.entity.RoomDailyPrice;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.ReservationStatus;
@@ -40,6 +41,7 @@ import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.RoomDailyPriceRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
@@ -72,6 +74,9 @@ class ReservationIntegrationTest {
 
 	@Autowired
 	private RoomInventoryRepository roomInventoryRepository;
+
+	@Autowired
+	private RoomDailyPriceRepository roomDailyPriceRepository;
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -174,6 +179,21 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
+	void sumsDifferentDailyPricesAndFallsBackToRoomPrice() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		saveDailyPrice(room, CHECK_IN, "150000.00");
+		saveDailyPrice(room, CHECK_IN.plusDays(2), "175000.00");
+		saveDailyPrice(room, CHECK_OUT, "999999.00");
+
+		performCreate(member.getId(), room.getId(), CHECK_IN, CHECK_OUT)
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(150000.00))
+				.andExpect(jsonPath("$.stayNights").value(5))
+				.andExpect(jsonPath("$.totalAmount").value(700000.00));
+	}
+
+	@Test
 	void keepsReservationPriceSnapshotWhenRoomPriceChanges() {
 		Member member = saveMember("member@example.com");
 		Room room = saveRoom();
@@ -194,7 +214,30 @@ class ReservationIntegrationTest {
 	}
 
 	@Test
-	void updatesOwnConfirmedReservationScheduleAndRecalculatesAmountFromSnapshot() throws Exception {
+	void keepsReservationAmountWhenDailyPricesChangeAfterCreation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		RoomDailyPrice firstNight = saveDailyPrice(room, CHECK_IN, "150000.00");
+
+		performCreate(member.getId(), room.getId(), CHECK_IN, CHECK_IN.plusDays(2))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(150000.00))
+				.andExpect(jsonPath("$.totalAmount").value(275000.00));
+		Reservation reservation = reservationRepository.findAll().getFirst();
+
+		firstNight.changeNightlyPrice(new BigDecimal("300000.00"));
+		room.update(room.getName(), room.getCapacity(), new BigDecimal("250000.00"));
+		roomDailyPriceRepository.flush();
+		roomRepository.flush();
+		entityManager.clear();
+
+		Reservation reloaded = reservationRepository.findById(reservation.getId()).orElseThrow();
+		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("150000.00");
+		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("275000.00");
+	}
+
+	@Test
+	void updatesOwnConfirmedReservationScheduleWithCurrentDailyPricePolicy() throws Exception {
 		Member member = saveMember("member@example.com");
 		Room room = saveRoom();
 		Reservation reservation = saveReservation(member, room, CHECK_IN, CHECK_OUT);
@@ -204,6 +247,9 @@ class ReservationIntegrationTest {
 				room.getId()
 		);
 		entityManager.clear();
+		Room reloadedRoom = roomRepository.findById(room.getId()).orElseThrow();
+		saveDailyPrice(reloadedRoom, LocalDate.of(2030, 2, 10), "210000.00");
+		saveDailyPrice(reloadedRoom, LocalDate.of(2030, 2, 12), "230000.00");
 
 		performUpdate(
 				member.getId(),
@@ -215,9 +261,9 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
 				.andExpect(jsonPath("$.checkInDate").value("2030-02-10"))
 				.andExpect(jsonPath("$.checkOutDate").value("2030-02-13"))
-				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
+				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(210000.00))
 				.andExpect(jsonPath("$.stayNights").value(3))
-				.andExpect(jsonPath("$.totalAmount").value(375000.00))
+				.andExpect(jsonPath("$.totalAmount").value(640000.00))
 				.andExpect(jsonPath("$.status").value("CONFIRMED"));
 
 		reservationRepository.flush();
@@ -225,8 +271,8 @@ class ReservationIntegrationTest {
 		Reservation reloaded = reservationRepository.findById(reservation.getId()).orElseThrow();
 		assertThat(reloaded.getCheckInDate()).isEqualTo(LocalDate.of(2030, 2, 10));
 		assertThat(reloaded.getCheckOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
-		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
-		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("375000.00");
+		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("210000.00");
+		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("640000.00");
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);
@@ -934,6 +980,14 @@ class ReservationIntegrationTest {
 						checkInDate,
 						checkOutDate
 				);
+	}
+
+	private RoomDailyPrice saveDailyPrice(Room room, LocalDate stayDate, String nightlyPrice) {
+		return roomDailyPriceRepository.saveAndFlush(RoomDailyPrice.create(
+				room,
+				stayDate,
+				new BigDecimal(nightlyPrice)
+		));
 	}
 
 	private String bearerToken(Long memberId) {

@@ -27,9 +27,11 @@ API와 Domain에서 0보다 커야 하며, DB에는 `DECIMAL(12,2)`와 양수 CH
   다만 비활성 객실·숙소는 기존 정책대로 예약 가능 조회에서 제외되고 신규 예약도
   차단됩니다.
 
-## Reservation Boundary
+## Reservation Integration
 
-이 Issue의 범위는 날짜별 가격의 저장·관리·조회와 명시적인 기본 가격 fallback까지
-입니다. 현재 예약 생성과 일정 변경의 금액 계산은 여전히 `Room.nightlyPrice`를
-Snapshot으로 사용합니다. 숙박일별 가격 합산과 예약 Snapshot 정책의 연결은
-Issue #63에서 별도로 다룹니다.
+예약 생성과 일정 변경은 `[check-in, check-out)`의 모든 숙박일 가격을 한 번의
+기간 조회로 가져옵니다. 날짜별 행은 해당 금액을 사용하고, 누락된 날짜는 객실
+기본 가격으로 fallback한 뒤 합산합니다. 예약 이후 원본 가격 변경은 기존 예약
+금액에 영향을 주지 않으며, 일정 변경은 새 기간 전체를 변경 시점 가격으로 다시
+계산합니다. Snapshot 저장 수준은
+[`ADR-004`](../adr/004-reservation-price-snapshot.md)에 정리되어 있습니다.

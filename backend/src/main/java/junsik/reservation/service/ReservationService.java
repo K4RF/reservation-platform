@@ -19,6 +19,7 @@ import junsik.reservation.dto.UpdateReservationScheduleRequest;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.ReservationPeriod;
+import junsik.reservation.entity.ReservationPriceSnapshot;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationErrorCode;
@@ -40,17 +41,20 @@ public class ReservationService {
 	private final MemberRepository memberRepository;
 	private final RoomRepository roomRepository;
 	private final RoomInventoryRepository roomInventoryRepository;
+	private final RoomDailyPriceService roomDailyPriceService;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
 			MemberRepository memberRepository,
 			RoomRepository roomRepository,
-			RoomInventoryRepository roomInventoryRepository
+			RoomInventoryRepository roomInventoryRepository,
+			RoomDailyPriceService roomDailyPriceService
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
 		this.roomRepository = roomRepository;
 		this.roomInventoryRepository = roomInventoryRepository;
+		this.roomDailyPriceService = roomDailyPriceService;
 	}
 
 	@Transactional
@@ -66,13 +70,16 @@ public class ReservationService {
 		Map<LocalDate, RoomInventory> inventories = getInventories(room.getId(), period);
 		validateAvailable(inventories.values());
 		inventories.values().forEach(inventory -> inventory.reserve(1));
+		ReservationPriceSnapshot priceSnapshot = roomDailyPriceService
+				.resolveReservationPriceSnapshot(room, period);
 
 		Reservation reservation = Reservation.create(
 				member,
 				room,
 				request.guestCount(),
 				request.checkInDate(),
-				request.checkOutDate()
+				request.checkOutDate(),
+				priceSnapshot
 		);
 		return ReservationResponse.from(reservationRepository.save(reservation));
 	}
@@ -154,8 +161,10 @@ public class ReservationService {
 		validateAvailable(inventoriesToReserve);
 		inventoriesToRelease.forEach(inventory -> inventory.release(1));
 		inventoriesToReserve.forEach(inventory -> inventory.reserve(1));
+		ReservationPriceSnapshot priceSnapshot = roomDailyPriceService
+				.resolveReservationPriceSnapshot(room, newPeriod);
 
-		reservation.changeSchedule(request.checkInDate(), request.checkOutDate());
+		reservation.changeSchedule(request.checkInDate(), request.checkOutDate(), priceSnapshot);
 		return ReservationResponse.from(reservation);
 	}
 
