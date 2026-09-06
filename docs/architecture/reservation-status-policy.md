@@ -13,8 +13,8 @@
 | `CANCELLED` | Rejected | Rejected | 상태와 예약 일정 유지 |
 
 예약은 생성 시 `CONFIRMED` 상태로 시작합니다. 일정 변경은 상태 전이가 아니며,
-예약 시점의 1박 가격 Snapshot을 유지한 채 변경된 숙박 일수로 총액만 다시
-계산합니다.
+새 기간 전체의 날짜별 가격과 기본 가격 fallback을 변경 시점 기준으로 다시
+계산해 첫 숙박일 가격과 총액 Snapshot을 교체합니다.
 
 ## Domain Ownership
 

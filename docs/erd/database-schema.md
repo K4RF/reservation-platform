@@ -95,9 +95,15 @@ Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 en
 Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계산과 Snapshot 유지
 규칙은 도메인 로직의 책임입니다.
 
-날짜별 객실 가격은 공개 API와 DB 모두 양수만 허용합니다. 특정 객실·숙박일의
-행이 없으면 객실의 기본 `nightly_price`로 fallback하며, 현재 예약 금액 계산은
-날짜별 가격을 아직 사용하지 않습니다.
+날짜별 객실 가격은 공개 API와 DB 모두 양수만 허용합니다. 예약 금액은 특정
+객실·숙박일의 행이 있으면 해당 가격을, 없으면 객실 기본 `nightly_price`를
+사용하여 모든 `[check-in, check-out)` 숙박일 금액을 합산합니다.
+
+예약의 `nightly_price_snapshot`은 예약 또는 일정 변경 시점의 첫 숙박일 적용
+가격이고, `total_amount`는 전체 숙박일 가격을 합한 확정 금액 Snapshot입니다.
+원본 가격이 변경되어도 두 값은 자동으로 바뀌지 않습니다. 날짜별 세부 Snapshot은
+별도 행으로 저장하지 않으며, 일정 변경 시 새 기간 전체를 현재 가격으로 다시
+계산합니다.
 
 객실 `capacity`는 성인과 아동을 구분하지 않은 전체 최대 수용 인원이며, 예약
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
@@ -119,7 +125,7 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 | Domain and Service | 예약 `[check-in, check-out)` 규칙, 가격 Snapshot·총액 계산, 상태 전이, 소유권, 운영 상태, 전체 숙박일 재고 존재·잔여 수량, 예약 인원과 객실 수용 인원 비교처럼 여러 값·Entity·현재 상태가 필요한 비즈니스 규칙 |
 | Database | NOT NULL, UNIQUE, FK, 컬럼 길이, enum 허용값, 음수 금액·잘못된 날짜처럼 어떤 쓰기 경로에서도 깨지면 안 되는 최종 정합성 보장 |
 
-DB CHECK는 예약 총액이 `Snapshot × 숙박 일수`인지 또는 날짜별 예약 수량 합계가
+DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날짜별 예약 수량 합계가
 전체 재고를 넘는지 검증하지 않습니다. 현재 Service Transaction은 순차 요청의
 정합성을 보장하며 동시 요청 Race Condition은 이후 Lock 전략으로 다룹니다.
 
