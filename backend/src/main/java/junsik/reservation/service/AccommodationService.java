@@ -46,11 +46,12 @@ public class AccommodationService {
 
 	@Transactional(readOnly = true)
 	public PageResponse<AccommodationResponse> getAll(AccommodationSearchRequest request) {
+		validateSearchRequest(request);
 		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
 				.and(Sort.by(Sort.Direction.ASC, "id"));
 		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
 		Page<AccommodationResponse> accommodations = accommodationRepository
-				.findAll(AccommodationSpecifications.nameContains(request.name()), pageRequest)
+				.findAll(AccommodationSpecifications.withFilters(request), pageRequest)
 				.map(AccommodationResponse::from);
 		return PageResponse.from(accommodations);
 	}
@@ -79,5 +80,22 @@ public class AccommodationService {
 	private Accommodation getAccommodation(Long accommodationId) {
 		return accommodationRepository.findById(accommodationId)
 				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
+	}
+
+	private void validateSearchRequest(AccommodationSearchRequest request) {
+		boolean hasCheckIn = request.checkInDate() != null;
+		boolean hasCheckOut = request.checkOutDate() != null;
+		if (hasCheckIn != hasCheckOut
+				|| (hasCheckIn && !request.checkInDate().isBefore(request.checkOutDate()))) {
+			throw new BusinessException(AccommodationErrorCode.INVALID_SEARCH_PERIOD);
+		}
+		if (request.available() != null && !hasCheckIn) {
+			throw new BusinessException(AccommodationErrorCode.AVAILABILITY_REQUIRES_PERIOD);
+		}
+		if (request.minPrice() != null
+				&& request.maxPrice() != null
+				&& request.minPrice().compareTo(request.maxPrice()) > 0) {
+			throw new BusinessException(AccommodationErrorCode.INVALID_PRICE_RANGE);
+		}
 	}
 }

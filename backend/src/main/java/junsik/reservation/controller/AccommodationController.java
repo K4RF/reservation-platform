@@ -105,7 +105,10 @@ public class AccommodationController {
 		return ResponseEntity.ok(accommodationService.getById(accommodationId));
 	}
 
-	@Operation(summary = "숙소 목록 조회")
+	@Operation(
+			summary = "숙소 통합 검색",
+			description = "숙소명·지역·운영 상태와 예약 가능한 활성 객실의 기간·인원·기본 1박 가격을 조합해 검색합니다."
+	)
 	@GetMapping
 	public ResponseEntity<PageResponse<AccommodationResponse>> getAll(
 			@Valid @ModelAttribute @ParameterObject AccommodationSearchRequest request
