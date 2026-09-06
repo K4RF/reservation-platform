@@ -1,5 +1,6 @@
 package junsik.reservation.entity;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.MemberFixture.member;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
+import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.support.MySqlIntegrationTestSupport;
 
@@ -33,6 +35,9 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 
 	@Autowired
 	private RoomRepository roomRepository;
+
+	@Autowired
+	private RoomInventoryRepository roomInventoryRepository;
 
 	@Test
 	void enforcesMemberRequiredUniqueAndEnumConstraints() {
@@ -190,6 +195,64 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				new BigDecimal("100000.00"),
 				new BigDecimal("100000.00")
 		));
+	}
+
+	@Test
+	void explainsIntegratedAccommodationSearchUsingCurrentIndexes() {
+		LocalDate checkInDate = LocalDate.of(2030, 1, 10);
+		LocalDate checkOutDate = LocalDate.of(2030, 1, 13);
+		Accommodation accommodation = accommodationRepository.saveAndFlush(
+				accommodation("Ocean Hotel", "Description", "서울 강남구")
+		);
+		Room room = saveRoom(accommodation);
+		checkInDate.datesUntil(checkOutDate).forEach(date -> roomInventoryRepository.save(
+				RoomInventory.create(room, date, 2)
+		));
+		roomInventoryRepository.flush();
+
+		String plan = jdbcTemplate.queryForObject(
+				"""
+				EXPLAIN FORMAT=TREE
+				SELECT accommodation.id, accommodation.name
+				FROM accommodations accommodation
+				WHERE lower(accommodation.name) LIKE ?
+				  AND lower(accommodation.address) LIKE ?
+				  AND accommodation.status = 'ACTIVE'
+				  AND EXISTS (
+				      SELECT 1
+				      FROM rooms room
+				      WHERE room.accommodation_id = accommodation.id
+				        AND room.status = 'ACTIVE'
+				        AND room.capacity >= ?
+				        AND room.nightly_price BETWEEN ? AND ?
+				        AND ? = (
+				            SELECT count(*)
+				            FROM room_inventories inventory
+				            WHERE inventory.room_id = room.id
+				              AND inventory.inventory_date >= ?
+				              AND inventory.inventory_date < ?
+				              AND inventory.total_quantity > inventory.reserved_quantity
+				        )
+				  )
+				ORDER BY accommodation.name, accommodation.id
+				LIMIT 20
+				""",
+				String.class,
+				"%hotel%",
+				"%서울%",
+				2,
+				100_000,
+				200_000,
+				3,
+				checkInDate,
+				checkOutDate
+		);
+
+		assertThat(plan)
+				.contains("Table scan on room")
+				.contains("Single-row index lookup on accommodation using PRIMARY")
+				.contains("inventory")
+				.contains("uk_room_inventories_room_date");
 	}
 
 	private Member saveMember(String email) {
