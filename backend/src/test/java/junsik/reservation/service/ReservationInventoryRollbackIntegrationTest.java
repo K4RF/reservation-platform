@@ -13,7 +13,6 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import junsik.reservation.dto.CreateReservationRequest;
@@ -27,9 +26,9 @@ import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
+import junsik.reservation.support.MySqlIntegrationTestSupport;
 
-@SpringBootTest
-class ReservationInventoryRollbackIntegrationTest {
+class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSupport {
 
 	private static final LocalDate CHECK_IN = LocalDate.of(2030, 3, 10);
 	private static final LocalDate CHECK_OUT = LocalDate.of(2030, 3, 13);

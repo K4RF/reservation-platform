@@ -5,9 +5,9 @@
 `Reservation Platform` is a personal backend portfolio project focused on
 preventing reservation conflicts under concurrent traffic.
 
-The backend is completing the sequential reservation-domain baseline before
-concurrency-control work. Features listed in `README.md` include roadmap items
-and must not be treated as already implemented.
+The sequential reservation-domain baseline is complete and the backend is ready
+for concurrency-control work. Features listed in `README.md` include roadmap
+items and must not be treated as already implemented.
 
 ## Source of Truth
 
@@ -251,8 +251,9 @@ Before completing a change:
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
   Regular integration tests use isolated H2 transactions, while database
-  constraint tests use an ephemeral MySQL 8.4 Testcontainer. The shared MySQL
-  support is the extension point for Phase 2 concurrency tests.
+  constraint, reservation-domain baseline, and transaction rollback tests share
+  an ephemeral MySQL 8.4 Testcontainer. The singleton MySQL support is the
+  extension point for Phase 2 concurrency tests.
 - Automated tests cover the application context, global exception handling,
   member sign-up, login failure normalization, Google OAuth2 member mapping,
   JWT issuance, authenticated access, and accommodation registration and query
@@ -270,4 +271,8 @@ Before completing a change:
   dedicated MVP integration test connects sign-up, login, admin accommodation
   and room creation, inventory setup, user queries, reservation creation and
   schedule change, owner queries, cancellation, and inventory restoration in
-  one transaction.
+  one transaction. A separate MySQL 8.4 baseline test connects integrated
+  accommodation search, available-room and effective-price queries, mixed
+  daily/default price reservation, schedule repricing and inventory movement,
+  cancellation fees, and complete inventory restoration. MySQL rollback testing
+  verifies that forced reservation persistence failure restores all inventory.
