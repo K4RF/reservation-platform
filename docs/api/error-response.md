@@ -101,6 +101,7 @@ Validation 상세는 필드명과 메시지 순으로 정렬하여 같은 입력
 | `RESERVATION_006` | 409 | 취소된 예약 일정 변경 |
 | `RESERVATION_007` | 400 | 예약 검색 From/To 범위 오류 |
 | `RESERVATION_008` | 400 | 예약 인원이 객실 최대 수용 인원을 초과함 |
+| `RESERVATION_009` | 409 | 체크인 당일 또는 이후여서 취소할 수 없음 |
 
 ### Room Inventory
 

@@ -9,12 +9,18 @@
 
 | Current status | Change schedule | Cancel | Result |
 | --- | --- | --- | --- |
-| `CONFIRMED` | Allowed | Allowed | 일정 변경은 `CONFIRMED` 유지, 취소는 `CANCELLED`로 전이 |
+| `CONFIRMED` | Allowed | Policy dependent | 일정 변경은 `CONFIRMED` 유지, 허용된 취소는 `CANCELLED`로 전이 |
 | `CANCELLED` | Rejected | Rejected | 상태와 예약 일정 유지 |
 
 예약은 생성 시 `CONFIRMED` 상태로 시작합니다. 일정 변경은 상태 전이가 아니며,
 새 기간 전체의 날짜별 가격과 기본 가격 fallback을 변경 시점 기준으로 다시
 계산해 첫 숙박일 가격과 총액 Snapshot을 교체합니다.
+
+취소는 상태 검증 후 체크인까지 남은 일수를 기준으로 별도 정책을 적용합니다.
+체크인 당일 또는 이후에는 취소할 수 없으며, 그 전에는 구간별 수수료를 계산한 뒤
+재고를 반환하고 상태를 변경합니다. 세부 구간은
+[`reservation-cancellation-policy.md`](reservation-cancellation-policy.md)에
+정리되어 있습니다.
 
 ## Domain Ownership
 
@@ -29,6 +35,7 @@ API 계층에서는 도메인 예외의 동작을 기존 오류 응답으로 변
 | --- | --- | --- |
 | `CANCELLED` 예약 재취소 | `409 Conflict` | `RESERVATION_005` |
 | `CANCELLED` 예약 일정 변경 | `409 Conflict` | `RESERVATION_006` |
+| 체크인 당일·이후 예약 취소 | `409 Conflict` | `RESERVATION_009` |
 
 동시 예약 생성·일정 변경의 Race Condition은 이 정책의 범위가 아니며 Phase 2에서
 처리합니다.
