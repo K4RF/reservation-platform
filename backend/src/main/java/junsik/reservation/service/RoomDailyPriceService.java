@@ -1,6 +1,9 @@
 package junsik.reservation.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.dto.CreateRoomDailyPriceRequest;
 import junsik.reservation.dto.RoomDailyPriceResponse;
 import junsik.reservation.dto.UpdateRoomDailyPriceRequest;
+import junsik.reservation.entity.ReservationPeriod;
+import junsik.reservation.entity.ReservationPriceSnapshot;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomDailyPrice;
 import junsik.reservation.enums.RoomDailyPriceErrorCode;
@@ -64,6 +69,22 @@ public class RoomDailyPriceService {
 		return roomDailyPriceRepository.findByRoomIdAndStayDate(roomId, stayDate)
 				.map(RoomDailyPriceResponse::daily)
 				.orElseGet(() -> RoomDailyPriceResponse.fallback(room, stayDate));
+	}
+
+	@Transactional(readOnly = true)
+	public ReservationPriceSnapshot resolveReservationPriceSnapshot(
+			Room room,
+			ReservationPeriod period
+	) {
+		Map<LocalDate, BigDecimal> dailyPrices = new LinkedHashMap<>();
+		roomDailyPriceRepository
+				.findAllByRoomIdAndStayDateGreaterThanEqualAndStayDateLessThanOrderByStayDateAsc(
+						room.getId(),
+						period.checkInDate(),
+						period.checkOutDate()
+				)
+				.forEach(price -> dailyPrices.put(price.getStayDate(), price.getNightlyPrice()));
+		return ReservationPriceSnapshot.calculate(period, room.getNightlyPrice(), dailyPrices);
 	}
 
 	private Room getRoom(Long roomId) {

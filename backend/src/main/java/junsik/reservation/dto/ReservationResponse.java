@@ -15,8 +15,10 @@ public record ReservationResponse(
 		int guestCount,
 		LocalDate checkInDate,
 		LocalDate checkOutDate,
+		@Schema(description = "예약 또는 일정 변경 시점의 첫 숙박일 적용 가격", example = "125000.00")
 		BigDecimal nightlyPriceSnapshot,
 		long stayNights,
+		@Schema(description = "모든 숙박일 적용 가격을 합산한 확정 금액 Snapshot", example = "625000.00")
 		BigDecimal totalAmount,
 		ReservationStatus status
 ) {

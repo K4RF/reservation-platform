@@ -2,6 +2,7 @@ package junsik.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Map;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
@@ -93,18 +94,20 @@ public class Reservation {
 			Room room,
 			int guestCount,
 			LocalDate checkInDate,
-			LocalDate checkOutDate
+			LocalDate checkOutDate,
+			ReservationPriceSnapshot priceSnapshot
 	) {
 		if (!room.canAccommodate(guestCount)) {
 			throw new IllegalArgumentException("예약 인원은 1명 이상이며 객실 최대 수용 인원 이하여야 합니다.");
 		}
+		new ReservationPeriod(checkInDate, checkOutDate);
+		requirePriceSnapshot(priceSnapshot);
 		this.member = member;
 		this.room = room;
 		this.guestCount = guestCount;
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
-		this.nightlyPriceSnapshot = room.getNightlyPrice();
-		this.totalAmount = calculateTotalAmount(nightlyPriceSnapshot, checkInDate, checkOutDate);
+		applyPriceSnapshot(priceSnapshot);
 		this.status = ReservationStatus.CONFIRMED;
 	}
 
@@ -115,7 +118,24 @@ public class Reservation {
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
-		return new Reservation(member, room, guestCount, checkInDate, checkOutDate);
+		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
+		ReservationPriceSnapshot priceSnapshot = ReservationPriceSnapshot.calculate(
+				period,
+				room.getNightlyPrice(),
+				Map.of()
+		);
+		return create(member, room, guestCount, checkInDate, checkOutDate, priceSnapshot);
+	}
+
+	public static Reservation create(
+			Member member,
+			Room room,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			ReservationPriceSnapshot priceSnapshot
+	) {
+		return new Reservation(member, room, guestCount, checkInDate, checkOutDate, priceSnapshot);
 	}
 
 	public Long getId() {
@@ -172,14 +192,34 @@ public class Reservation {
 
 	public void changeSchedule(LocalDate checkInDate, LocalDate checkOutDate) {
 		verifyScheduleChangeAllowed();
-		BigDecimal recalculatedTotalAmount = calculateTotalAmount(
+		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
+		ReservationPriceSnapshot priceSnapshot = ReservationPriceSnapshot.calculate(
+				period,
 				nightlyPriceSnapshot,
-				checkInDate,
-				checkOutDate
+				Map.of()
 		);
+		applySchedule(checkInDate, checkOutDate, priceSnapshot);
+	}
+
+	public void changeSchedule(
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			ReservationPriceSnapshot priceSnapshot
+	) {
+		verifyScheduleChangeAllowed();
+		new ReservationPeriod(checkInDate, checkOutDate);
+		requirePriceSnapshot(priceSnapshot);
+		applySchedule(checkInDate, checkOutDate, priceSnapshot);
+	}
+
+	private void applySchedule(
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			ReservationPriceSnapshot priceSnapshot
+	) {
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
-		this.totalAmount = recalculatedTotalAmount;
+		applyPriceSnapshot(priceSnapshot);
 	}
 
 	public void cancel() {
@@ -193,12 +233,15 @@ public class Reservation {
 		}
 	}
 
-	private BigDecimal calculateTotalAmount(
-			BigDecimal nightlyPrice,
-			LocalDate checkInDate,
-			LocalDate checkOutDate
-	) {
-		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
-		return nightlyPrice.multiply(BigDecimal.valueOf(period.stayNights()));
+	private void applyPriceSnapshot(ReservationPriceSnapshot priceSnapshot) {
+		requirePriceSnapshot(priceSnapshot);
+		this.nightlyPriceSnapshot = priceSnapshot.firstNightPrice();
+		this.totalAmount = priceSnapshot.totalAmount();
+	}
+
+	private void requirePriceSnapshot(ReservationPriceSnapshot priceSnapshot) {
+		if (priceSnapshot == null) {
+			throw new IllegalArgumentException("가격 Snapshot은 필수입니다.");
+		}
 	}
 }
