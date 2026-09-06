@@ -187,9 +187,13 @@ Before completing a change:
   added dates, and reprices the complete new stay using the current daily-price
   and fallback policy. Both first-night and total snapshots are replaced.
   `CANCELLED` reservations cannot be changed.
-- Reservation owners can cancel a `CONFIRMED` reservation by changing its state
-  to `CANCELLED`; physical deletion, cancellation deadlines, and refund policies
-  are not implemented.
+- Reservation cancellation uses the `Asia/Seoul` calendar date. It is free at
+  least 7 days before check-in, charges 30% at 3-6 days and 50% at 1-2 days,
+  and is rejected on or after check-in. Fees use the stored `totalAmount` and
+  `HALF_UP` rounding to two decimals. An allowed cancellation restores every
+  stay-date inventory and changes the state to `CANCELLED` in one transaction.
+  The API returns the fee and estimated refund, but no payment cancellation,
+  refund, or cancellation-fee persistence is implemented.
 - `Reservation` owns schedule-change and cancellation state rules. Invalid
   operations on `CANCELLED` reservations raise a domain state-transition
   exception that the API maps to the existing reservation error responses.
@@ -248,7 +252,8 @@ Before completing a change:
   JWT issuance, authenticated access, and accommodation registration and query
   behavior, room registration and query behavior, daily-price creation, update,
   fallback, validation and authorization, one-night and mixed daily reservation
-  pricing, price snapshot stability and schedule repricing, and inventory-backed
+  pricing, price snapshot stability, schedule repricing, cancellation fee
+  boundaries and denied-cancellation inventory retention, and inventory-backed
   reservation creation, missing and insufficient inventory, checkout exclusion,
   schedule inventory adjustment, transaction rollback, amount recalculation,
   owner-scoped queries, pagination, status/period filtering, allowed sorting,

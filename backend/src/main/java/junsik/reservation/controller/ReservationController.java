@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.CreateReservationRequest;
 import junsik.reservation.dto.PageResponse;
+import junsik.reservation.dto.ReservationCancellationResponse;
 import junsik.reservation.dto.ReservationResponse;
 import junsik.reservation.dto.ReservationSearchRequest;
 import junsik.reservation.dto.UpdateReservationScheduleRequest;
@@ -163,7 +164,18 @@ public class ReservationController {
 		);
 	}
 
-	@Operation(summary = "본인 예약 취소", description = "예약 상태를 취소로 변경하고 사용한 날짜별 객실 재고를 복구합니다.")
+	@Operation(
+			summary = "본인 예약 취소",
+			description = "Asia/Seoul 기준 체크인까지 남은 일수로 수수료를 계산하고 재고를 복구합니다. 실제 결제 취소나 환불은 수행하지 않습니다.",
+			responses = @ApiResponse(
+					responseCode = "200",
+					description = "예약 취소와 예상 수수료 계산 성공",
+					content = @Content(
+							mediaType = MediaType.APPLICATION_JSON_VALUE,
+							schema = @Schema(implementation = ReservationCancellationResponse.class)
+					)
+			)
+	)
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "403",
@@ -177,12 +189,12 @@ public class ReservationController {
 			),
 			@ApiResponse(
 					responseCode = "409",
-					description = "이미 취소된 예약",
+					description = "이미 취소됐거나 체크인 당일·이후인 예약",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			)
 	})
 	@PatchMapping("/{reservationId}/cancel")
-	public ResponseEntity<ReservationResponse> cancel(
+	public ResponseEntity<ReservationCancellationResponse> cancel(
 			@AuthenticationPrincipal MemberPrincipal principal,
 			@PathVariable @Positive(message = "예약 ID는 양수여야 합니다.") Long reservationId
 	) {

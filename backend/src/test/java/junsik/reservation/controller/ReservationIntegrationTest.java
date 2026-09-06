@@ -2,6 +2,7 @@ package junsik.reservation.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,12 +20,14 @@ import java.util.List;
 
 import jakarta.persistence.EntityManager;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +48,7 @@ import junsik.reservation.repository.RoomDailyPriceRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
+import junsik.reservation.service.ReservationDateProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -56,6 +60,7 @@ class ReservationIntegrationTest {
 	private static final LocalDate CHECK_OUT = LocalDate.of(2030, 1, 15);
 	private static final BigDecimal NIGHTLY_PRICE = new BigDecimal("125000.00");
 	private static final int GUEST_COUNT = 2;
+	private static final LocalDate CANCELLATION_DATE = LocalDate.of(2030, 1, 1);
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -86,6 +91,14 @@ class ReservationIntegrationTest {
 
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
+
+	@MockitoBean
+	private ReservationDateProvider reservationDateProvider;
+
+	@BeforeEach
+	void setUpCancellationDate() {
+		given(reservationDateProvider.today()).willReturn(CANCELLATION_DATE);
+	}
 
 	@Test
 	void createsConfirmedReservationForAuthenticatedMember() throws Exception {
@@ -815,13 +828,67 @@ class ReservationIntegrationTest {
 					.header("Authorization", bearerToken(member.getId())))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
-				.andExpect(jsonPath("$.status").value("CANCELLED"));
+				.andExpect(jsonPath("$.status").value("CANCELLED"))
+				.andExpect(jsonPath("$.cancellationDate").value("2030-01-01"))
+				.andExpect(jsonPath("$.daysBeforeCheckIn").value(9))
+				.andExpect(jsonPath("$.totalAmount").value(625000.00))
+				.andExpect(jsonPath("$.cancellationFeeRate").value(0))
+				.andExpect(jsonPath("$.cancellationFeeAmount").value(0.00))
+				.andExpect(jsonPath("$.estimatedRefundAmount").value(625000.00));
 
 		assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
 				.isEqualTo(ReservationStatus.CANCELLED);
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);
+	}
+
+	@Test
+	void cancelsWithThirtyPercentFeeThreeDaysBeforeCheckIn() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		LocalDate checkInDate = CANCELLATION_DATE.plusDays(3);
+		Reservation reservation = saveReservation(
+				member,
+				room,
+				checkInDate,
+				checkInDate.plusDays(2)
+		);
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.daysBeforeCheckIn").value(3))
+				.andExpect(jsonPath("$.totalAmount").value(250000.00))
+				.andExpect(jsonPath("$.cancellationFeeRate").value(30))
+				.andExpect(jsonPath("$.cancellationFeeAmount").value(75000.00))
+				.andExpect(jsonPath("$.estimatedRefundAmount").value(175000.00));
+
+		assertThat(inventories(room, checkInDate, checkInDate.plusDays(2)))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
+	}
+
+	@Test
+	void rejectsCancellationOnCheckInDateWithoutRestoringInventory() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+		Reservation reservation = saveReservation(
+				member,
+				room,
+				CANCELLATION_DATE,
+				CANCELLATION_DATE.plusDays(1)
+		);
+
+		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}/cancel", reservation.getId())
+					.header("Authorization", bearerToken(member.getId())))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("RESERVATION_009"));
+
+		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+		assertThat(inventories(room, CANCELLATION_DATE, CANCELLATION_DATE.plusDays(1)))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(1);
 	}
 
 	@Test

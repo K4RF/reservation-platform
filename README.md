@@ -24,7 +24,8 @@
 > 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
 > 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
 > 가격 fallback 여부를 조회할 수 있습니다. 동시 요청 Lock과 Race Condition
-> 제어는 아직 구현되지 않았습니다.
+> 제어는 아직 구현되지 않았습니다. 예약 취소에는 체크인까지 남은 일수에 따른
+> 무료·부분 수수료·취소 제한 정책이 적용됩니다.
 
 ---
 
@@ -234,10 +235,13 @@ Spring Boot API
 유지하고, 빠지는 날짜의 재고를 반환하며 추가되는 날짜의 재고를 검증·차감합니다.
 새 기간 전체의 날짜별 가격과 기본 가격 fallback을 변경 시점 기준으로 적용해
 첫 숙박일 가격과 총액 Snapshot도 다시 계산합니다.
-`CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 사용한 모든 숙박일
-재고를 반환하고 `CONFIRMED` 상태를 `CANCELLED`로 변경하며, 이미 취소된 예약은
-다시 취소할 수 없습니다. 세부 취소 가능 시간과 환불 정책은 현재 MVP
-범위에 포함되지 않습니다. 상태별 허용 동작과 전이 규칙은
+`CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 `Asia/Seoul` 기준
+체크인까지 7일 이상이면 무료, 3~6일이면 확정 금액의 30%, 1~2일이면 50%의
+수수료를 적용합니다. 체크인 당일과 이후에는 취소할 수 없습니다. 허용된 취소는
+사용한 모든 숙박일 재고를 반환하고 상태를 `CANCELLED`로 변경합니다. 응답의
+수수료와 환불액은 예상값이며 실제 결제 취소·환불은 수행하지 않습니다. 세부 정책은
+[`docs/architecture/reservation-cancellation-policy.md`](docs/architecture/reservation-cancellation-policy.md),
+상태별 허용 동작과 전이 규칙은
 [`docs/architecture/reservation-status-policy.md`](docs/architecture/reservation-status-policy.md)에
 정리되어 있습니다.
 
@@ -346,6 +350,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 여러 날짜 재고와 Reservation 저장의 Transaction·Rollback 검증
 * [x] 날짜별 객실 가격 등록·수정 및 기본 가격 fallback 조회
 * [x] 숙박일별 가격 합산과 예약 가격 Snapshot 정책 연결
+* [x] 체크인 잔여 일수 기반 취소 제한·수수료 및 예상 환불액 계산
 * [ ] 동시 예약 테스트 환경 구성
 * [ ] 데이터베이스 기반 동시성 제어 검토
 * [ ] Redis 분산 락 적용
@@ -560,6 +565,7 @@ docs: add concurrency test results
 * [x] 예약 생성·취소·일정 변경·가용 객실 조회의 재고 Transaction 연동
 * [x] 날짜별 객실 가격 Entity·관리 API 및 기본 가격 fallback 조회
 * [x] 예약 생성·일정 변경의 숙박일별 가격 합산 및 금액 Snapshot 고도화
+* [x] 예약 취소 정책·수수료 계산 및 재고 복구 연동
 
 ---
 
