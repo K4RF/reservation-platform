@@ -1,5 +1,7 @@
 package junsik.reservation.repository;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -13,6 +15,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import junsik.reservation.dto.AccommodationSearchRequest;
 import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
@@ -24,7 +27,10 @@ public final class AccommodationSpecifications {
 	private AccommodationSpecifications() {
 	}
 
-	public static Specification<Accommodation> withFilters(AccommodationSearchRequest request) {
+	public static Specification<Accommodation> withFilters(
+			AccommodationSearchRequest request,
+			LocalDate today
+	) {
 		return (root, query, criteriaBuilder) -> {
 			List<Predicate> predicates = new ArrayList<>();
 			addContains(predicates, criteriaBuilder, root, "name", request.name());
@@ -93,21 +99,54 @@ public final class AccommodationSpecifications {
 				matchingRoom.select(room.get("id"));
 				matchingRoom.where(roomPredicates.toArray(Predicate[]::new));
 				Predicate hasMatchingRoom = criteriaBuilder.exists(matchingRoom);
+				Predicate policyAllowsPeriod = bookingPolicyAllows(
+						root,
+						query.subquery(Long.class),
+						criteriaBuilder,
+						request,
+						today
+				);
+				Predicate isAvailable = criteriaBuilder.and(
+						criteriaBuilder.equal(root.get("status"), AccommodationStatus.ACTIVE),
+						hasMatchingRoom,
+						policyAllowsPeriod
+				);
 				if (Boolean.FALSE.equals(request.available())) {
-					predicates.add(criteriaBuilder.or(
-							criteriaBuilder.notEqual(root.get("status"), AccommodationStatus.ACTIVE),
-							criteriaBuilder.not(hasMatchingRoom)
-					));
+					predicates.add(criteriaBuilder.not(isAvailable));
 				} else {
-					if (Boolean.TRUE.equals(request.available())) {
-						predicates.add(criteriaBuilder.equal(root.get("status"), AccommodationStatus.ACTIVE));
-					}
-					predicates.add(hasMatchingRoom);
+					predicates.add(Boolean.TRUE.equals(request.available()) ? isAvailable : hasMatchingRoom);
 				}
 			}
 
 			return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
 		};
+	}
+
+	private static Predicate bookingPolicyAllows(
+			Root<Accommodation> accommodation,
+			Subquery<Long> incompatiblePolicy,
+			CriteriaBuilder criteriaBuilder,
+			AccommodationSearchRequest request,
+			LocalDate today
+	) {
+		if (request.checkInDate() == null) {
+			return criteriaBuilder.conjunction();
+		}
+
+		long stayNights = ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
+		long advanceBookingDays = ChronoUnit.DAYS.between(today, request.checkInDate());
+		Root<AccommodationBookingPolicy> policy = incompatiblePolicy.from(AccommodationBookingPolicy.class);
+		incompatiblePolicy.select(policy.get("id"));
+		incompatiblePolicy.where(
+				criteriaBuilder.equal(policy.get("accommodation"), accommodation),
+				criteriaBuilder.or(
+						criteriaBuilder.greaterThan(policy.get("minStayNights"), stayNights),
+						criteriaBuilder.lessThan(policy.get("maxStayNights"), stayNights),
+						criteriaBuilder.greaterThan(policy.get("minAdvanceBookingDays"), advanceBookingDays),
+						criteriaBuilder.lessThan(policy.get("maxAdvanceBookingDays"), advanceBookingDays)
+				)
+		);
+		return criteriaBuilder.not(criteriaBuilder.exists(incompatiblePolicy));
 	}
 
 	private static void addContains(

@@ -45,6 +45,7 @@ public class ReservationService {
 	private final RoomInventoryRepository roomInventoryRepository;
 	private final RoomDailyPriceService roomDailyPriceService;
 	private final ReservationCancellationPolicy cancellationPolicy;
+	private final AccommodationBookingPolicyService bookingPolicyService;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
@@ -52,7 +53,8 @@ public class ReservationService {
 			RoomRepository roomRepository,
 			RoomInventoryRepository roomInventoryRepository,
 			RoomDailyPriceService roomDailyPriceService,
-			ReservationCancellationPolicy cancellationPolicy
+			ReservationCancellationPolicy cancellationPolicy,
+			AccommodationBookingPolicyService bookingPolicyService
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
@@ -60,6 +62,7 @@ public class ReservationService {
 		this.roomInventoryRepository = roomInventoryRepository;
 		this.roomDailyPriceService = roomDailyPriceService;
 		this.cancellationPolicy = cancellationPolicy;
+		this.bookingPolicyService = bookingPolicyService;
 	}
 
 	@Transactional
@@ -72,6 +75,7 @@ public class ReservationService {
 		validateOperationalStatus(room);
 		validateGuestCount(room, request.guestCount());
 		ReservationPeriod period = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
+		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), period);
 		Map<LocalDate, RoomInventory> inventories = getInventories(room.getId(), period);
 		validateAvailable(inventories.values());
 		inventories.values().forEach(inventory -> inventory.reserve(1));
@@ -147,12 +151,13 @@ public class ReservationService {
 		Room room = reservation.getRoom();
 		validateOperationalStatus(room);
 		validateGuestCount(room, reservation.getGuestCount());
+		ReservationPeriod newPeriod = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
+		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), newPeriod);
 
 		Map<LocalDate, RoomInventory> previousInventories = getInventories(
 				room.getId(),
 				reservation.getPeriod()
 		);
-		ReservationPeriod newPeriod = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
 		Map<LocalDate, RoomInventory> newInventories = getInventories(room.getId(), newPeriod);
 		List<RoomInventory> inventoriesToRelease = previousInventories.entrySet().stream()
 				.filter(entry -> !newInventories.containsKey(entry.getKey()))

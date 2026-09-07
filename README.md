@@ -6,8 +6,9 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.2 — Reservation Domain Completion**을 완료했으며, 다음 단계는
-> **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
+> **v0.1.2 — Reservation Domain Completion**을 완료했으며, 다음 기능 단계는
+> **v0.1.3 — Booking Policy & Catalog Completion**입니다. 이후
+> **v0.2.0 — Concurrency Control**로 이동합니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -316,7 +317,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 프로젝트 문서 구조 설정
 * [x] 최상위 README 작성
 
-### Phase 1 — Basic Reservation (`v0.1.0`, `v0.1.1` 완료)
+### Phase 1 — Basic Reservation (`v0.1.0`, `v0.1.1`, `v0.1.2` 완료)
 
 기본 예약 서비스를 구현합니다.
 
@@ -342,6 +343,21 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] Swagger/OpenAPI 기반 API 문서화
 * [x] Basic Reservation MVP 종단간 통합 테스트
 * [x] 공통 테스트 Fixture 및 MySQL Testcontainers 기반 DB 제약 테스트
+
+### Phase 1.3 — Booking Policy & Catalog Completion (예정)
+
+동시성 제어에 들어가기 전 실제 숙박 예약 서비스에 필요한 정책과 Catalog를
+마지막으로 보완합니다. GitHub Milestone의 Issue는 모두 계획 상태이며 아직
+구현되지 않았습니다.
+
+* [ ] 숙소 TimeZone 기반 날짜·시간 정책
+* [ ] 숙소별 Booking Policy와 예약 가능 조건
+* [ ] 숙소별 Cancellation Policy와 예약 시점 Snapshot
+* [ ] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
+* [ ] 숙박일별 가격 및 취소 결과 Snapshot 고도화
+* [ ] 구조화된 숙소 위치와 편의시설
+* [ ] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
+* [ ] Booking Policy & Catalog Completion 통합 테스트
 
 ### Phase 2 — Concurrency Control
 
@@ -532,7 +548,8 @@ docs: add concurrency test results
 ## 11. 현재 진행 상태
 
 **v0.1.2 — Reservation Domain Completion**까지 완료했으며,
-**v0.2.0 — Concurrency Control** 시작을 준비하고 있습니다.
+**v0.1.3 — Booking Policy & Catalog Completion**을 다음 기능 단계로 준비하고
+있습니다. v0.1.3 완료 후 **v0.2.0 — Concurrency Control**로 이동할 예정입니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용

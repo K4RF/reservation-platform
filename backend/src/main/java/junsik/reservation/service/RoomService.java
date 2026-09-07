@@ -30,10 +30,16 @@ public class RoomService {
 
 	private final RoomRepository roomRepository;
 	private final AccommodationRepository accommodationRepository;
+	private final AccommodationBookingPolicyService bookingPolicyService;
 
-	public RoomService(RoomRepository roomRepository, AccommodationRepository accommodationRepository) {
+	public RoomService(
+			RoomRepository roomRepository,
+			AccommodationRepository accommodationRepository,
+			AccommodationBookingPolicyService bookingPolicyService
+	) {
 		this.roomRepository = roomRepository;
 		this.accommodationRepository = accommodationRepository;
+		this.bookingPolicyService = bookingPolicyService;
 	}
 
 	@Transactional
@@ -85,9 +91,9 @@ public class RoomService {
 			int size
 	) {
 		validatePeriod(request);
-		if (!accommodationRepository.existsById(accommodationId)) {
-			throw new BusinessException(AccommodationErrorCode.NOT_FOUND);
-		}
+		Accommodation accommodation = getAccommodation(accommodationId);
+		ReservationPeriod period = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
+		bookingPolicyService.validateReservationPeriod(accommodation, period);
 
 		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
 		Page<RoomResponse> rooms = roomRepository.findAvailableRooms(
@@ -97,7 +103,7 @@ public class RoomService {
 				request.checkInDate(),
 				request.checkOutDate(),
 				request.guestCount(),
-				new ReservationPeriod(request.checkInDate(), request.checkOutDate()).stayNights(),
+				period.stayNights(),
 				pageRequest
 		).map(RoomResponse::from);
 		return PageResponse.from(rooms);
