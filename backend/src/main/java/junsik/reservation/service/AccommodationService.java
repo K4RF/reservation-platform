@@ -22,9 +22,14 @@ import junsik.reservation.repository.AccommodationSpecifications;
 public class AccommodationService {
 
 	private final AccommodationRepository accommodationRepository;
+	private final AccommodationBookingPolicyService bookingPolicyService;
 
-	public AccommodationService(AccommodationRepository accommodationRepository) {
+	public AccommodationService(
+			AccommodationRepository accommodationRepository,
+			AccommodationBookingPolicyService bookingPolicyService
+	) {
 		this.accommodationRepository = accommodationRepository;
+		this.bookingPolicyService = bookingPolicyService;
 	}
 
 	@Transactional
@@ -51,7 +56,10 @@ public class AccommodationService {
 				.and(Sort.by(Sort.Direction.ASC, "id"));
 		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
 		Page<AccommodationResponse> accommodations = accommodationRepository
-				.findAll(AccommodationSpecifications.withFilters(request), pageRequest)
+				.findAll(AccommodationSpecifications.withFilters(
+						request,
+						bookingPolicyService.today()
+				), pageRequest)
 				.map(AccommodationResponse::from);
 		return PageResponse.from(accommodations);
 	}
