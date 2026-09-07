@@ -18,12 +18,14 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.AccommodationBookingPolicyRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
@@ -42,6 +44,9 @@ class AccommodationIntegratedSearchIntegrationTest {
 
 	@Autowired
 	private AccommodationRepository accommodationRepository;
+
+	@Autowired
+	private AccommodationBookingPolicyRepository bookingPolicyRepository;
 
 	@Autowired
 	private RoomRepository roomRepository;
@@ -108,6 +113,41 @@ class AccommodationIntegratedSearchIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
 				.andExpect(jsonPath("$.content[0].accommodationId").value(expected.getId()));
+	}
+
+	@Test
+	void excludesAccommodationWhenStayPeriodViolatesItsBookingPolicy() throws Exception {
+		Accommodation allowed = saveAccommodation("Flexible Hotel", "서울 종로구");
+		Accommodation blocked = saveAccommodation("Long Stay Hotel", "서울 종로구");
+		Room allowedRoom = saveRoom(allowed, "Flexible Room", 2, "100000.00", RoomStatus.ACTIVE);
+		Room blockedRoom = saveRoom(blocked, "Long Stay Room", 2, "100000.00", RoomStatus.ACTIVE);
+		saveInventory(allowedRoom, CHECK_IN, CHECK_OUT, false);
+		saveInventory(blockedRoom, CHECK_IN, CHECK_OUT, false);
+		bookingPolicyRepository.saveAndFlush(AccommodationBookingPolicy.create(
+				blocked,
+				4,
+				10,
+				0,
+				10_000
+		));
+
+		performSearch(
+				"checkInDate", CHECK_IN.toString(),
+				"checkOutDate", CHECK_OUT.toString(),
+				"available", "true"
+		)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(allowed.getId()));
+
+		performSearch(
+				"checkInDate", CHECK_IN.toString(),
+				"checkOutDate", CHECK_OUT.toString(),
+				"available", "false"
+		)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(blocked.getId()));
 	}
 
 	@Test

@@ -122,6 +122,27 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesBookingPolicyForeignKeyUniqueAndRangeConstraints() {
+		Accommodation accommodation = saveAccommodation();
+		insertBookingPolicy(accommodation.getId(), 2, 14, 1, 365);
+
+		assertConstraintViolation(() -> insertBookingPolicy(accommodation.getId(), 1, 10, 0, 180));
+		assertConstraintViolation(() -> insertBookingPolicy(999999L, 1, 10, 0, 180));
+		assertConstraintViolation(() -> insertBookingPolicy(
+				saveAccommodation().getId(), 0, 10, 0, 180
+		));
+		assertConstraintViolation(() -> insertBookingPolicy(
+				saveAccommodation().getId(), 5, 4, 0, 180
+		));
+		assertConstraintViolation(() -> insertBookingPolicy(
+				saveAccommodation().getId(), 1, 10, -1, 180
+		));
+		assertConstraintViolation(() -> insertBookingPolicy(
+				saveAccommodation().getId(), 1, 10, 30, 29
+		));
+	}
+
+	@Test
 	void enforcesRoomInventoryForeignKeyUniqueAndQuantityConstraints() {
 		Room room = saveRoom(saveAccommodation());
 		LocalDate inventoryDate = LocalDate.of(2030, 1, 1);
@@ -275,6 +296,28 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				capacity,
 				nightlyPrice,
 				"ACTIVE"
+		);
+	}
+
+	private void insertBookingPolicy(
+			Long accommodationId,
+			int minStayNights,
+			int maxStayNights,
+			int minAdvanceBookingDays,
+			int maxAdvanceBookingDays
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into accommodation_booking_policies (
+				    accommodation_id, min_stay_nights, max_stay_nights,
+				    min_advance_booking_days, max_advance_booking_days
+				) values (?, ?, ?, ?, ?)
+				""",
+				accommodationId,
+				minStayNights,
+				maxStayNights,
+				minAdvanceBookingDays,
+				maxAdvanceBookingDays
 		);
 	}
 

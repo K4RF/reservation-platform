@@ -96,6 +96,15 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security[0].bearerAuth"
 				).isArray())
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].post.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].post.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/AccommodationBookingPolicyRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].put.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/AccommodationBookingPolicyResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.parameters[*].name",
 						containsInAnyOrder(
 								"accommodationId",
@@ -191,6 +200,15 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath(
 						"$.components.schemas.CreateRoomDailyPriceRequest.required",
 						containsInAnyOrder("stayDate", "nightlyPrice")
+				))
+				.andExpect(jsonPath(
+						"$.components.schemas.AccommodationBookingPolicyRequest.required",
+						containsInAnyOrder(
+								"minStayNights",
+								"maxStayNights",
+								"minAdvanceBookingDays",
+								"maxAdvanceBookingDays"
+						)
 				))
 				.andExpect(jsonPath("$.components.schemas.RoomDailyPriceResponse.properties.source").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
