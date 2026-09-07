@@ -11,6 +11,7 @@ erDiagram
     MEMBERS ||--o{ SOCIAL_ACCOUNTS : links
     MEMBERS ||--o{ RESERVATIONS : creates
     ACCOMMODATIONS ||--o{ ROOMS : contains
+    ACCOMMODATIONS ||--o| ACCOMMODATION_BOOKING_POLICIES : configures
     ROOMS ||--o{ RESERVATIONS : receives
     ROOMS ||--o{ ROOM_INVENTORIES : owns
     ROOMS ||--o{ ROOM_DAILY_PRICES : prices
@@ -35,6 +36,15 @@ erDiagram
         varchar_1000 description
         varchar_255 address
         enum status
+    }
+
+    ACCOMMODATION_BOOKING_POLICIES {
+        bigint id PK
+        bigint accommodation_id FK,UK
+        int min_stay_nights
+        int max_stay_nights
+        int min_advance_booking_days
+        int max_advance_booking_days
     }
 
     ROOMS {
@@ -81,6 +91,7 @@ erDiagram
 | `members` | email/password/role, email·password 255, role 20 | `uk_members_email(email)` | - | email은 trim 후 비어 있지 않고 password 길이는 1 이상 |
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
 | `accommodations` | name/description/address/status, 100/1000/255/20 | - | - | 세 문자열은 trim 후 비어 있지 않음 |
+| `accommodation_booking_policies` | accommodation과 네 정책 경계값 | `uk_booking_policies_accommodation(accommodation_id)` | accommodation → accommodations | 최소 숙박일 ≥ 1, 최대 숙박일 ≥ 최소 숙박일, 최소 사전 예약일 ≥ 0, 최대 사전 예약일 ≥ 최소 사전 예약일 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
 | `room_inventories` | room/date/total/reserved | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
@@ -136,6 +147,7 @@ DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날�
 | `uk_members_email(email)` | 회원가입 중복 확인, 이메일 로그인 | UNIQUE가 인덱스를 제공하므로 별도 email 인덱스 없음 |
 | 소셜 계정 UNIQUE 2개 | provider 계정 조회, 회원별 provider 중복 방지 | 조회와 정합성에 모두 필요 |
 | rooms의 accommodation FK 인덱스 | 숙소별 객실 목록과 예약 가능 객실 후보 축소 | MySQL이 FK 인덱스를 제공하므로 중복 인덱스 없음 |
+| `uk_booking_policies_accommodation(accommodation_id)` | 숙소별 선택 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
 | `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_room_daily_prices_room_date(room_id,stay_date)` | 객실·날짜 적용 가격 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
@@ -176,3 +188,7 @@ DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 �
 현재 개발 설정의 `ddl-auto=update`에서 생성됩니다. 데이터가 있는 환경이나 운영
 환경에는 자동 Schema 갱신을 의존하지 말고 정식 Migration 도입 후 동일한
 FK·UNIQUE·CHECK를 명시적으로 적용해야 합니다.
+
+`accommodation_booking_policies`도 기존 테이블을 변경하지 않는 새 테이블입니다.
+현재 개발 환경에서는 `ddl-auto=update`로 생성되지만, 운영 환경에서는 위와 같은
+정식 Migration 정책을 따른 뒤 Entity의 UNIQUE·FK·CHECK와 일치시켜야 합니다.

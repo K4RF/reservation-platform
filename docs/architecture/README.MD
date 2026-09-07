@@ -8,6 +8,7 @@ Reservation Platform의 시스템 및 애플리케이션 아키텍처 문서를 
 - [날짜별 객실 재고 정책](room-inventory-policy.md)
 - [날짜별 객실 가격 정책](room-daily-price-policy.md)
 - [예약 취소 및 수수료 정책](reservation-cancellation-policy.md)
+- [숙소별 예약 정책](accommodation-booking-policy.md)
 - 전체 시스템 구성
 - 모듈 구조
 - 요청 처리 흐름
