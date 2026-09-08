@@ -20,6 +20,7 @@ import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 
 public final class AccommodationSpecifications {
@@ -83,6 +84,10 @@ public final class AccommodationSpecifications {
 							criteriaBuilder.lessThan(
 									inventory.get("inventoryDate"),
 									request.checkOutDate()
+							),
+							criteriaBuilder.equal(
+									inventory.get("saleStatus"),
+									RoomInventorySaleStatus.OPEN
 							),
 							criteriaBuilder.greaterThan(
 									inventory.get("totalQuantity"),

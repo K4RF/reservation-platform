@@ -6,6 +6,8 @@ import java.util.Objects;
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +21,7 @@ import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.ColumnDefault;
 
 import junsik.reservation.enums.RoomInventoryErrorCode;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.global.exception.BusinessException;
 
 @Entity
@@ -60,6 +63,11 @@ public class RoomInventory {
 	@ColumnDefault("0")
 	private int reservedQuantity;
 
+	@Enumerated(EnumType.STRING)
+	@Column(name = "sale_status", nullable = false, length = 20)
+	@ColumnDefault("'OPEN'")
+	private RoomInventorySaleStatus saleStatus;
+
 	protected RoomInventory() {
 	}
 
@@ -69,6 +77,7 @@ public class RoomInventory {
 		validateTotalQuantity(totalQuantity);
 		this.totalQuantity = totalQuantity;
 		this.reservedQuantity = 0;
+		this.saleStatus = RoomInventorySaleStatus.OPEN;
 	}
 
 	public static RoomInventory create(Room room, LocalDate inventoryDate, int totalQuantity) {
@@ -99,6 +108,14 @@ public class RoomInventory {
 		return totalQuantity - reservedQuantity;
 	}
 
+	public RoomInventorySaleStatus getSaleStatus() {
+		return saleStatus;
+	}
+
+	public boolean isOpen() {
+		return saleStatus == RoomInventorySaleStatus.OPEN;
+	}
+
 	public void changeTotalQuantity(int totalQuantity) {
 		validateTotalQuantity(totalQuantity);
 		if (totalQuantity < reservedQuantity) {
@@ -107,8 +124,17 @@ public class RoomInventory {
 		this.totalQuantity = totalQuantity;
 	}
 
+	public void update(int totalQuantity, RoomInventorySaleStatus saleStatus) {
+		Objects.requireNonNull(saleStatus, "saleStatus must not be null");
+		changeTotalQuantity(totalQuantity);
+		this.saleStatus = saleStatus;
+	}
+
 	public void reserve(int quantity) {
 		validateChangeQuantity(quantity);
+		if (!isOpen()) {
+			throw new BusinessException(RoomInventoryErrorCode.CLOSED);
+		}
 		if (quantity > getAvailableQuantity()) {
 			throw new BusinessException(RoomInventoryErrorCode.INSUFFICIENT_QUANTITY);
 		}

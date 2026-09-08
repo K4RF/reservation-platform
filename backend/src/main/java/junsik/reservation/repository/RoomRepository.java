@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 
 public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificationExecutor<Room> {
@@ -30,6 +31,7 @@ public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificat
 			      where inventory.room = room
 			        and inventory.inventoryDate >= :checkInDate
 			        and inventory.inventoryDate < :checkOutDate
+			        and inventory.saleStatus = :saleStatus
 			        and inventory.reservedQuantity < inventory.totalQuantity
 			  )
 			""")
@@ -37,6 +39,7 @@ public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificat
 			@Param("accommodationId") Long accommodationId,
 			@Param("accommodationStatus") AccommodationStatus accommodationStatus,
 			@Param("roomStatus") RoomStatus roomStatus,
+			@Param("saleStatus") RoomInventorySaleStatus saleStatus,
 			@Param("checkInDate") LocalDate checkInDate,
 			@Param("checkOutDate") LocalDate checkOutDate,
 			@Param("guestCount") int guestCount,

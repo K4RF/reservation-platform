@@ -19,4 +19,10 @@ public interface RoomInventoryRepository extends JpaRepository<RoomInventory, Lo
 			LocalDate startDate,
 			LocalDate endDate
 	);
+
+	List<RoomInventory> findAllByRoomIdAndInventoryDateBetweenOrderByInventoryDateAsc(
+			Long roomId,
+			LocalDate startDate,
+			LocalDate endDate
+	);
 }

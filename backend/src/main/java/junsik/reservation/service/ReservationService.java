@@ -239,6 +239,9 @@ public class ReservationService {
 
 	private void validateAvailable(Iterable<RoomInventory> inventories) {
 		for (RoomInventory inventory : inventories) {
+			if (!inventory.isOpen()) {
+				throw new BusinessException(RoomInventoryErrorCode.CLOSED);
+			}
 			if (inventory.getAvailableQuantity() < 1) {
 				throw new BusinessException(RoomInventoryErrorCode.INSUFFICIENT_QUANTITY);
 			}
