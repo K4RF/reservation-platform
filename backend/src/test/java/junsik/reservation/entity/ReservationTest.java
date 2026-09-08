@@ -9,6 +9,8 @@ import static junsik.reservation.support.ReservationFixture.reservation;
 import static junsik.reservation.support.RoomFixture.room;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,6 +47,33 @@ class ReservationTest {
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("250000.00");
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(reservation.getGuestCount()).isEqualTo(2);
+	}
+
+	@Test
+	void keepsCancellationPolicySnapshotWhenScheduleChanges() {
+		Member member = member();
+		Room room = room(accommodation(), "Deluxe Room", 4, "125000.00");
+		ReservationPeriod period = new ReservationPeriod(CHECK_IN, CHECK_OUT);
+		CancellationPolicySnapshot policySnapshot = new CancellationPolicySnapshot(
+				10,
+				2,
+				List.of(CancellationFeeRule.create(2, 65))
+		);
+		Reservation reservation = Reservation.create(
+				member,
+				room,
+				2,
+				CHECK_IN,
+				CHECK_OUT,
+				ReservationPriceSnapshot.calculate(period, room.getNightlyPrice(), Map.of()),
+				policySnapshot
+		);
+
+		reservation.changeSchedule(CHECK_IN.plusDays(1), CHECK_OUT.plusDays(1));
+
+		assertThat(reservation.getCancellationPolicySnapshot())
+				.usingRecursiveComparison()
+				.isEqualTo(policySnapshot);
 	}
 
 	@Test
