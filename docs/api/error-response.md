@@ -131,6 +131,8 @@ Validation 상세는 필드명과 메시지 순으로 정렬하여 같은 입력
 | `INVENTORY_006` | 409 | 예약 수량보다 작은 전체 재고로 변경 |
 | `INVENTORY_007` | 409 | 예약 수량보다 많은 재고 반환 |
 | `INVENTORY_008` | 409 | 비활성 객실 재고 생성·변경 |
+| `INVENTORY_009` | 409 | 판매 중지된 날짜의 신규 재고 점유 시도 |
+| `INVENTORY_010` | 400 | 시작일이 종료일보다 늦은 재고 Calendar 조회 |
 
 ### Room Daily Price
 

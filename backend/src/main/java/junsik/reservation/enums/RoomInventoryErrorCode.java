@@ -13,7 +13,9 @@ public enum RoomInventoryErrorCode implements ErrorCode {
 	INSUFFICIENT_QUANTITY(HttpStatus.CONFLICT, "INVENTORY_005", "예약 가능한 객실 재고가 부족합니다."),
 	TOTAL_BELOW_RESERVED(HttpStatus.CONFLICT, "INVENTORY_006", "전체 재고는 예약된 수량보다 작게 변경할 수 없습니다."),
 	RELEASE_EXCEEDS_RESERVED(HttpStatus.CONFLICT, "INVENTORY_007", "예약된 수량보다 많은 재고를 반환할 수 없습니다."),
-	INACTIVE_ROOM(HttpStatus.CONFLICT, "INVENTORY_008", "운영 중지된 객실의 재고는 생성하거나 변경할 수 없습니다.");
+	INACTIVE_ROOM(HttpStatus.CONFLICT, "INVENTORY_008", "운영 중지된 객실의 재고는 생성하거나 변경할 수 없습니다."),
+	CLOSED(HttpStatus.CONFLICT, "INVENTORY_009", "판매 중지된 날짜의 객실 재고는 예약할 수 없습니다."),
+	INVALID_CALENDAR_PERIOD(HttpStatus.BAD_REQUEST, "INVENTORY_010", "재고 Calendar 시작일은 종료일보다 늦을 수 없습니다.");
 
 	private final HttpStatus status;
 	private final String code;

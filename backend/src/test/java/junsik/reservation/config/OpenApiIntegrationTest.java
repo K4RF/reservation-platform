@@ -140,6 +140,22 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].get.responses['200'].content['application/json'].schema['$ref']"
 				).value(endsWith("/RoomDailyPriceResponse")))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/inventories'].post.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/inventories'].get.parameters[*].name",
+						containsInAnyOrder("roomId", "startDate", "endDate")
+				))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/inventories'].post.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/CreateRoomInventoryRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/inventories/{inventoryDate}'].put.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/UpdateRoomInventoryRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/rooms/{roomId}/inventories'].get.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/RoomInventoryCalendarResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations'].post.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/CreateReservationRequest")))
 				.andExpect(jsonPath(
@@ -211,6 +227,14 @@ class OpenApiIntegrationTest {
 						containsInAnyOrder("stayDate", "nightlyPrice")
 				))
 				.andExpect(jsonPath(
+						"$.components.schemas.CreateRoomInventoryRequest.required",
+						containsInAnyOrder("inventoryDate", "totalQuantity")
+				))
+				.andExpect(jsonPath(
+						"$.components.schemas.UpdateRoomInventoryRequest.required",
+						containsInAnyOrder("totalQuantity", "saleStatus")
+				))
+				.andExpect(jsonPath(
 						"$.components.schemas.AccommodationBookingPolicyRequest.required",
 						containsInAnyOrder(
 								"minStayNights",
@@ -228,6 +252,7 @@ class OpenApiIntegrationTest {
 						)
 				))
 				.andExpect(jsonPath("$.components.schemas.RoomDailyPriceResponse.properties.source").exists())
+				.andExpect(jsonPath("$.components.schemas.RoomInventoryResponse.properties.saleStatus").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
 				.andExpect(jsonPath(

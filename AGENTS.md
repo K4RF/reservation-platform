@@ -213,10 +213,15 @@ Before completing a change:
   operations on `CANCELLED` reservations raise a domain state-transition
   exception that the API maps to the existing reservation error responses.
 - Daily room inventory is modeled by `RoomInventory` with one row per room and
-  date. It stores total and reserved quantities, derives the available quantity,
-  and enforces a room/date UNIQUE constraint plus non-negative quantity CHECKs.
-- `RoomInventoryService` supports creation, lookup, total changes, reservation,
-  and release. Reservation creation, cancellation, and schedule changes update
+  date. It stores total and reserved quantities plus `OPEN/CLOSED` sale status,
+  derives the available quantity, and enforces a room/date UNIQUE constraint plus
+  non-negative quantity CHECKs. New inventory defaults to `OPEN`.
+- Administrators can create date inventory, update total quantity and sale
+  status, and read an inclusive date-range inventory Calendar. `CLOSED` dates are
+  excluded from availability and new inventory reservation, while existing
+  reservations and cancellation releases remain intact.
+- `RoomInventoryService` supports creation, Calendar lookup, total/status changes,
+  reservation, and release. Reservation creation, cancellation, and schedule changes update
   every `[check-in, check-out)` inventory date and the reservation in one
   transaction. These rules prevent negative inventory for sequential requests,
   but concurrent updates are not protected by a database or distributed lock.
@@ -227,8 +232,7 @@ Before completing a change:
   date. New reservations for inactive rooms or accommodations are rejected,
   while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  full-text/Elasticsearch search, concurrency control, and inventory management
-  APIs are not implemented.
+  full-text/Elasticsearch search and concurrency control are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
   monetary values, positive daily prices, and valid reservation periods.

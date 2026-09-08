@@ -10,6 +10,7 @@ import static junsik.reservation.support.RoomInventoryFixture.roomInventory;
 import org.junit.jupiter.api.Test;
 
 import junsik.reservation.enums.RoomInventoryErrorCode;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.global.exception.BusinessException;
 
 class RoomInventoryTest {
@@ -25,6 +26,33 @@ class RoomInventoryTest {
 		assertThat(inventory.getTotalQuantity()).isEqualTo(3);
 		assertThat(inventory.getReservedQuantity()).isZero();
 		assertThat(inventory.getAvailableQuantity()).isEqualTo(3);
+		assertThat(inventory.getSaleStatus()).isEqualTo(RoomInventorySaleStatus.OPEN);
+		assertThat(inventory.isOpen()).isTrue();
+	}
+
+	@Test
+	void closesInventoryAndRejectsNewReservationsWithoutChangingQuantity() {
+		RoomInventory inventory = roomInventory(room(accommodation()), DEFAULT_DATE, 3);
+		inventory.reserve(1);
+
+		inventory.update(3, RoomInventorySaleStatus.CLOSED);
+
+		assertThat(inventory.isOpen()).isFalse();
+		assertThat(inventory.getReservedQuantity()).isOne();
+		assertThat(inventory.getAvailableQuantity()).isEqualTo(2);
+		assertErrorCode(() -> inventory.reserve(1), RoomInventoryErrorCode.CLOSED);
+	}
+
+	@Test
+	void closedInventoryStillAllowsExistingReservationRelease() {
+		RoomInventory inventory = roomInventory(room(accommodation()), DEFAULT_DATE, 2);
+		inventory.reserve(1);
+		inventory.update(2, RoomInventorySaleStatus.CLOSED);
+
+		inventory.release(1);
+
+		assertThat(inventory.getReservedQuantity()).isZero();
+		assertThat(inventory.getSaleStatus()).isEqualTo(RoomInventorySaleStatus.CLOSED);
 	}
 
 	@Test

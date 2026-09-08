@@ -23,6 +23,7 @@ import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.AccommodationBookingPolicyRepository;
@@ -95,15 +96,21 @@ class AccommodationIntegratedSearchIntegrationTest {
 		Accommodation expected = saveAccommodation("Available Hotel", "서울 종로구");
 		Accommodation soldOut = saveAccommodation("Sold Out Hotel", "서울 종로구");
 		Accommodation missingInventory = saveAccommodation("Missing Inventory Hotel", "서울 종로구");
+		Accommodation closedInventory = saveAccommodation("Closed Inventory Hotel", "서울 종로구");
 		Room availableRoom = saveRoom(expected, "Available Room", 2, "100000.00", RoomStatus.ACTIVE);
 		Room soldOutRoom = saveRoom(soldOut, "Sold Out Room", 2, "100000.00", RoomStatus.ACTIVE);
 		Room missingRoom = saveRoom(missingInventory, "Missing Room", 2, "100000.00", RoomStatus.ACTIVE);
+		Room closedRoom = saveRoom(closedInventory, "Closed Room", 2, "100000.00", RoomStatus.ACTIVE);
 		saveInventory(availableRoom, CHECK_IN, CHECK_OUT, false);
 		saveInventory(soldOutRoom, CHECK_IN, CHECK_OUT, false);
 		roomInventoryRepository.findByRoomIdAndInventoryDate(soldOutRoom.getId(), CHECK_IN.plusDays(1))
 				.orElseThrow()
 				.reserve(1);
 		saveInventory(missingRoom, CHECK_IN, CHECK_OUT.minusDays(1), false);
+		saveInventory(closedRoom, CHECK_IN, CHECK_OUT, false);
+		roomInventoryRepository.findByRoomIdAndInventoryDate(closedRoom.getId(), CHECK_IN.plusDays(1))
+				.orElseThrow()
+				.update(1, RoomInventorySaleStatus.CLOSED);
 
 		performSearch(
 				"checkInDate", CHECK_IN.toString(),

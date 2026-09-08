@@ -19,6 +19,7 @@ import junsik.reservation.entity.Room;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.RoomErrorCode;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
@@ -100,6 +101,7 @@ public class RoomService {
 				accommodationId,
 				AccommodationStatus.ACTIVE,
 				RoomStatus.ACTIVE,
+				RoomInventorySaleStatus.OPEN,
 				request.checkInDate(),
 				request.checkOutDate(),
 				request.guestCount(),

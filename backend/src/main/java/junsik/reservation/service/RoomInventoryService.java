@@ -1,11 +1,15 @@
 package junsik.reservation.service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.dto.CreateRoomInventoryRequest;
+import junsik.reservation.dto.RoomInventoryCalendarResponse;
 import junsik.reservation.dto.RoomInventoryResponse;
+import junsik.reservation.dto.UpdateRoomInventoryRequest;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.RoomErrorCode;
@@ -40,6 +44,11 @@ public class RoomInventoryService {
 		return RoomInventoryResponse.from(roomInventoryRepository.save(inventory));
 	}
 
+	@Transactional
+	public RoomInventoryResponse create(Long roomId, CreateRoomInventoryRequest request) {
+		return create(roomId, request.inventoryDate(), request.totalQuantity());
+	}
+
 	@Transactional(readOnly = true)
 	public RoomInventoryResponse get(Long roomId, LocalDate inventoryDate) {
 		return RoomInventoryResponse.from(getInventory(roomId, inventoryDate));
@@ -55,6 +64,40 @@ public class RoomInventoryService {
 		validateActive(inventory.getRoom());
 		inventory.changeTotalQuantity(totalQuantity);
 		return RoomInventoryResponse.from(inventory);
+	}
+
+	@Transactional
+	public RoomInventoryResponse update(
+			Long roomId,
+			LocalDate inventoryDate,
+			UpdateRoomInventoryRequest request
+	) {
+		RoomInventory inventory = getInventory(roomId, inventoryDate);
+		validateActive(inventory.getRoom());
+		inventory.update(request.totalQuantity(), request.saleStatus());
+		return RoomInventoryResponse.from(inventory);
+	}
+
+	@Transactional(readOnly = true)
+	public RoomInventoryCalendarResponse getCalendar(
+			Long roomId,
+			LocalDate startDate,
+			LocalDate endDate
+	) {
+		getRoom(roomId);
+		if (startDate.isAfter(endDate)) {
+			throw new BusinessException(RoomInventoryErrorCode.INVALID_CALENDAR_PERIOD);
+		}
+		List<RoomInventoryResponse> inventories = roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateBetweenOrderByInventoryDateAsc(
+						roomId,
+						startDate,
+						endDate
+				)
+				.stream()
+				.map(RoomInventoryResponse::from)
+				.toList();
+		return new RoomInventoryCalendarResponse(roomId, startDate, endDate, inventories);
 	}
 
 	@Transactional

@@ -3,6 +3,7 @@ package junsik.reservation.dto;
 import java.time.LocalDate;
 
 import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.enums.RoomInventorySaleStatus;
 
 public record RoomInventoryResponse(
 		Long inventoryId,
@@ -10,7 +11,8 @@ public record RoomInventoryResponse(
 		LocalDate inventoryDate,
 		int totalQuantity,
 		int reservedQuantity,
-		int availableQuantity
+		int availableQuantity,
+		RoomInventorySaleStatus saleStatus
 ) {
 
 	public static RoomInventoryResponse from(RoomInventory inventory) {
@@ -20,7 +22,8 @@ public record RoomInventoryResponse(
 				inventory.getInventoryDate(),
 				inventory.getTotalQuantity(),
 				inventory.getReservedQuantity(),
-				inventory.getAvailableQuantity()
+				inventory.getAvailableQuantity(),
+				inventory.getSaleStatus()
 		);
 	}
 }

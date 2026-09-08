@@ -210,6 +210,18 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), -1, 0));
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), 1, 2));
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), null, 1, 0));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"""
+				insert into room_inventories (
+				    room_id, inventory_date, total_quantity, reserved_quantity, sale_status
+				) values (?, ?, ?, ?, ?)
+				""",
+				room.getId(),
+				inventoryDate.plusDays(2),
+				1,
+				0,
+				"PAUSED"
+		));
 	}
 
 	@Test
@@ -306,10 +318,11 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				        AND ? = (
 				            SELECT count(*)
 				            FROM room_inventories inventory
-				            WHERE inventory.room_id = room.id
-				              AND inventory.inventory_date >= ?
-				              AND inventory.inventory_date < ?
-				              AND inventory.total_quantity > inventory.reserved_quantity
+					            WHERE inventory.room_id = room.id
+					              AND inventory.inventory_date >= ?
+					              AND inventory.inventory_date < ?
+					              AND inventory.sale_status = 'OPEN'
+					              AND inventory.total_quantity > inventory.reserved_quantity
 				        )
 				  )
 				ORDER BY accommodation.name, accommodation.id
