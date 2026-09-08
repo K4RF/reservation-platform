@@ -9,20 +9,12 @@ import org.springframework.stereotype.Component;
 
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.ReservationCancellationQuote;
-import junsik.reservation.enums.ReservationErrorCode;
-import junsik.reservation.global.exception.BusinessException;
 
 @Component
 public class ReservationCancellationPolicy {
 
-	static final int FREE_CANCELLATION_MIN_DAYS = 7;
-	static final int THIRTY_PERCENT_FEE_MIN_DAYS = 3;
-	static final int FIFTY_PERCENT_FEE_MIN_DAYS = 1;
 	static final int MONEY_SCALE = 2;
-
-	private static final BigDecimal NO_FEE_RATE = BigDecimal.ZERO;
-	private static final BigDecimal THIRTY_PERCENT_FEE_RATE = new BigDecimal("0.30");
-	private static final BigDecimal FIFTY_PERCENT_FEE_RATE = new BigDecimal("0.50");
+	private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
 	private final ReservationDateProvider dateProvider;
 
@@ -36,7 +28,9 @@ public class ReservationCancellationPolicy {
 				cancellationDate,
 				reservation.getCheckInDate()
 		);
-		BigDecimal feeRate = resolveFeeRate(daysBeforeCheckIn);
+		int feeRatePercent = reservation.getCancellationPolicySnapshot()
+				.resolveFeeRatePercent(daysBeforeCheckIn);
+		BigDecimal feeRate = BigDecimal.valueOf(feeRatePercent).divide(ONE_HUNDRED);
 		BigDecimal cancellationFeeAmount = reservation.getTotalAmount()
 				.multiply(feeRate)
 				.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
@@ -47,22 +41,9 @@ public class ReservationCancellationPolicy {
 		return new ReservationCancellationQuote(
 				cancellationDate,
 				daysBeforeCheckIn,
-				feeRate.movePointRight(2).intValueExact(),
+				feeRatePercent,
 				cancellationFeeAmount,
 				estimatedRefundAmount
 		);
-	}
-
-	private BigDecimal resolveFeeRate(long daysBeforeCheckIn) {
-		if (daysBeforeCheckIn >= FREE_CANCELLATION_MIN_DAYS) {
-			return NO_FEE_RATE;
-		}
-		if (daysBeforeCheckIn >= THIRTY_PERCENT_FEE_MIN_DAYS) {
-			return THIRTY_PERCENT_FEE_RATE;
-		}
-		if (daysBeforeCheckIn >= FIFTY_PERCENT_FEE_MIN_DAYS) {
-			return FIFTY_PERCENT_FEE_RATE;
-		}
-		throw new BusinessException(ReservationErrorCode.CANCELLATION_NOT_ALLOWED);
 	}
 }

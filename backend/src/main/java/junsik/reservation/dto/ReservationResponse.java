@@ -20,6 +20,8 @@ public record ReservationResponse(
 		long stayNights,
 		@Schema(description = "모든 숙박일 적용 가격을 합산한 확정 금액 Snapshot", example = "625000.00")
 		BigDecimal totalAmount,
+		@Schema(description = "예약 생성 시점에 확정된 취소 정책")
+		CancellationPolicySnapshotResponse cancellationPolicySnapshot,
 		ReservationStatus status
 ) {
 
@@ -34,6 +36,7 @@ public record ReservationResponse(
 				reservation.getNightlyPriceSnapshot(),
 				reservation.getStayNights(),
 				reservation.getTotalAmount(),
+				CancellationPolicySnapshotResponse.from(reservation.getCancellationPolicySnapshot()),
 				reservation.getStatus()
 		);
 	}
