@@ -12,9 +12,12 @@ erDiagram
     MEMBERS ||--o{ RESERVATIONS : creates
     ACCOMMODATIONS ||--o{ ROOMS : contains
     ACCOMMODATIONS ||--o| ACCOMMODATION_BOOKING_POLICIES : configures
+    ACCOMMODATIONS ||--o| ACCOMMODATION_CANCELLATION_POLICIES : configures
+    ACCOMMODATION_CANCELLATION_POLICIES ||--|{ CANCELLATION_POLICY_FEE_RULES : contains
     ROOMS ||--o{ RESERVATIONS : receives
     ROOMS ||--o{ ROOM_INVENTORIES : owns
     ROOMS ||--o{ ROOM_DAILY_PRICES : prices
+    RESERVATIONS ||--|{ RESERVATION_CANCELLATION_FEE_SNAPSHOTS : snapshots
 
     MEMBERS {
         bigint id PK
@@ -45,6 +48,20 @@ erDiagram
         int max_stay_nights
         int min_advance_booking_days
         int max_advance_booking_days
+    }
+
+    ACCOMMODATION_CANCELLATION_POLICIES {
+        bigint id PK
+        bigint accommodation_id FK,UK
+        int free_cancellation_days_before_check_in
+        int cancellation_deadline_days_before_check_in
+    }
+
+    CANCELLATION_POLICY_FEE_RULES {
+        bigint cancellation_policy_id FK
+        int rule_order UK
+        int min_days_before_check_in
+        int fee_rate_percent
     }
 
     ROOMS {
@@ -80,7 +97,16 @@ erDiagram
         date check_out_date
         decimal_12_2 nightly_price_snapshot
         decimal_19_2 total_amount
+        int free_cancellation_days_before_check_in
+        int cancellation_deadline_days_before_check_in
         enum status
+    }
+
+    RESERVATION_CANCELLATION_FEE_SNAPSHOTS {
+        bigint reservation_id FK
+        int rule_order UK
+        int min_days_before_check_in
+        int fee_rate_percent
     }
 ```
 
@@ -92,10 +118,13 @@ erDiagram
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
 | `accommodations` | name/description/address/status, 100/1000/255/20 | - | - | 세 문자열은 trim 후 비어 있지 않음 |
 | `accommodation_booking_policies` | accommodation과 네 정책 경계값 | `uk_booking_policies_accommodation(accommodation_id)` | accommodation → accommodations | 최소 숙박일 ≥ 1, 최대 숙박일 ≥ 최소 숙박일, 최소 사전 예약일 ≥ 0, 최대 사전 예약일 ≥ 최소 사전 예약일 |
+| `accommodation_cancellation_policies` | accommodation, 무료 취소·취소 마감 기준 | `uk_cancellation_policies_accommodation(accommodation_id)` | accommodation → accommodations | 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
+| `cancellation_policy_fee_rules` | 정책, 순서, 구간 시작일, 정수 요율 | policy+order | policy → accommodation cancellation policies | 구간 시작일 ≥ 0, 요율 1~100 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
 | `room_inventories` | room/date/total/reserved | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
-| `reservations` | member/room/guest count/dates/prices/status, guest count `INT`, snapshot `DECIMAL(12,2)`, total `DECIMAL(19,2)` | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, snapshot·total ≥ 0 |
+| `reservations` | member/room/guest count/dates/prices/cancellation policy 기준/status | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, 가격 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
+| `reservation_cancellation_fee_snapshots` | 예약, 순서, 구간 시작일, 정수 요율 | reservation+order | reservation → reservations | 구간 시작일 ≥ 0, 요율 1~100 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
 `ENUM`, H2 테스트 Schema에서는 허용 값 CHECK가 생성됩니다. 숫자 enum ordinal은
@@ -115,6 +144,10 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 원본 가격이 변경되어도 두 값은 자동으로 바뀌지 않습니다. 날짜별 세부 Snapshot은
 별도 행으로 저장하지 않으며, 일정 변경 시 새 기간 전체를 현재 가격으로 다시
 계산합니다.
+
+예약 생성 시 숙소의 현재 취소 정책 기준값과 수수료 구간도 복제합니다. 숙소 정책
+수정은 기존 예약의 Snapshot을 변경하지 않으며 일정 변경도 Snapshot을 유지합니다.
+정책이 없는 숙소는 기존 전역 취소 규칙을 기본 Snapshot으로 사용합니다.
 
 객실 `capacity`는 성인과 아동을 구분하지 않은 전체 최대 수용 인원이며, 예약
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
@@ -148,6 +181,7 @@ DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날�
 | 소셜 계정 UNIQUE 2개 | provider 계정 조회, 회원별 provider 중복 방지 | 조회와 정합성에 모두 필요 |
 | rooms의 accommodation FK 인덱스 | 숙소별 객실 목록과 예약 가능 객실 후보 축소 | MySQL이 FK 인덱스를 제공하므로 중복 인덱스 없음 |
 | `uk_booking_policies_accommodation(accommodation_id)` | 숙소별 선택 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
+| `uk_cancellation_policies_accommodation(accommodation_id)` | 숙소별 현재 취소 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
 | `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_room_daily_prices_room_date(room_id,stay_date)` | 객실·날짜 적용 가격 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
@@ -174,6 +208,11 @@ DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날�
 기존 예약은 과거 API에 인원 정보가 없었으므로 보수적인 호환값인 1명으로
 Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, 이미 컬럼 또는
 제약조건이 존재하면 해당 ALTER 문을 다시 실행하지 않습니다.
+
+숙소별 취소 정책 도입 전 생성된 예약은
+[`mysql-cancellation-policy-upgrade.sql`](mysql-cancellation-policy-upgrade.sql)로
+기존 전역 정책을 Snapshot으로 Backfill할 수 있습니다. 실행 전에 예약 수와 생성될
+구간 행 수를 확인하고 이미 적용된 컬럼·제약은 중복 실행하지 않아야 합니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지

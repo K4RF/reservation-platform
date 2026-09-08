@@ -95,6 +95,11 @@ Validation 상세는 필드명과 메시지 순으로 정렬하여 같은 입력
 | `BOOKING_POLICY_006` | 409 | 최대 숙박일 초과 |
 | `BOOKING_POLICY_007` | 409 | 최소 사전 예약일 미충족 |
 | `BOOKING_POLICY_008` | 409 | 최대 사전 예약일 초과 |
+| `CANCELLATION_POLICY_001` | 404 | 수정할 숙소 취소 정책 미존재 |
+| `CANCELLATION_POLICY_002` | 409 | 숙소 취소 정책 중복 |
+| `CANCELLATION_POLICY_003` | 400 | 무료 취소·취소 마감 기준 범위 오류 |
+| `CANCELLATION_POLICY_004` | 400 | 부분 수수료 구간 누락·중복·범위 오류 |
+| `CANCELLATION_POLICY_005` | 400 | 1~100% 밖의 부분 취소 수수료율 |
 | `ROOM_001` | 404 | 객실 미존재 |
 | `ROOM_002` | 400 | 예약 가능 객실 조회 기간 오류 |
 | `ROOM_003` | 400 | 객실 가격 검색 범위 오류 |
