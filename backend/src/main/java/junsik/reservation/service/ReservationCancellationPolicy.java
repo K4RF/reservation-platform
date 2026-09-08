@@ -2,6 +2,7 @@ package junsik.reservation.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
@@ -23,7 +24,11 @@ public class ReservationCancellationPolicy {
 	}
 
 	public ReservationCancellationQuote evaluate(Reservation reservation) {
-		LocalDate cancellationDate = dateProvider.today();
+		Instant cancelledAt = dateProvider.now();
+		LocalDate cancellationDate = LocalDate.ofInstant(
+				cancelledAt,
+				ReservationDateProvider.BUSINESS_ZONE
+		);
 		long daysBeforeCheckIn = ChronoUnit.DAYS.between(
 				cancellationDate,
 				reservation.getCheckInDate()
@@ -39,6 +44,7 @@ public class ReservationCancellationPolicy {
 				.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
 
 		return new ReservationCancellationQuote(
+				cancelledAt,
 				cancellationDate,
 				daysBeforeCheckIn,
 				feeRatePercent,

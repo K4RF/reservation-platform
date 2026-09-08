@@ -1,6 +1,7 @@
 package junsik.reservation.service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
@@ -18,6 +19,10 @@ public class ReservationDateProvider {
 	}
 
 	public LocalDate today() {
-		return LocalDate.now(clock.withZone(BUSINESS_ZONE));
+		return LocalDate.ofInstant(now(), BUSINESS_ZONE);
+	}
+
+	public Instant now() {
+		return clock.instant();
 	}
 }

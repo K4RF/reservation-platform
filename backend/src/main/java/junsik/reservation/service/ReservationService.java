@@ -141,7 +141,7 @@ public class ReservationService {
 		);
 		validateReserved(inventories.values());
 		inventories.values().forEach(inventory -> inventory.release(1));
-		reservation.cancel();
+		reservation.cancel(cancellationQuote);
 		return ReservationCancellationResponse.from(reservation, cancellationQuote);
 	}
 

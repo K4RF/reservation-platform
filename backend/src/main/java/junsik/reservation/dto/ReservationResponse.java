@@ -1,7 +1,9 @@
 package junsik.reservation.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import junsik.reservation.entity.Reservation;
@@ -20,9 +22,17 @@ public record ReservationResponse(
 		long stayNights,
 		@Schema(description = "모든 숙박일 적용 가격을 합산한 확정 금액 Snapshot", example = "625000.00")
 		BigDecimal totalAmount,
+		@Schema(description = "날짜순 숙박일별 가격 Snapshot")
+		List<ReservationNightResponse> nights,
 		@Schema(description = "예약 생성 시점에 확정된 취소 정책")
 		CancellationPolicySnapshotResponse cancellationPolicySnapshot,
-		ReservationStatus status
+		ReservationStatus status,
+		@Schema(description = "취소 처리 시각(UTC). 확정 예약은 null", example = "2030-01-01T03:00:00Z")
+		Instant cancelledAt,
+		@Schema(description = "실제 적용된 취소 수수료 Snapshot. 확정 예약은 null", example = "75000.00")
+		BigDecimal cancellationFeeAmount,
+		@Schema(description = "예상 환불액 Snapshot. 확정 예약은 null", example = "175000.00")
+		BigDecimal refundAmount
 ) {
 
 	public static ReservationResponse from(Reservation reservation) {
@@ -36,8 +46,12 @@ public record ReservationResponse(
 				reservation.getNightlyPriceSnapshot(),
 				reservation.getStayNights(),
 				reservation.getTotalAmount(),
+				reservation.getNights().stream().map(ReservationNightResponse::from).toList(),
 				CancellationPolicySnapshotResponse.from(reservation.getCancellationPolicySnapshot()),
-				reservation.getStatus()
+				reservation.getStatus(),
+				reservation.getCancelledAt(),
+				reservation.getCancellationFeeAmount(),
+				reservation.getRefundAmount()
 		);
 	}
 }
