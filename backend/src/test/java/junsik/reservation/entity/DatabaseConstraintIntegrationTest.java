@@ -225,6 +225,40 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesReservationNightForeignKeyUniqueAndPriceConstraints() {
+		Member member = saveMember("reservation-night@example.com");
+		Room room = saveRoom(saveAccommodation());
+		LocalDate checkInDate = LocalDate.of(2030, 1, 10);
+		insertReservation(
+				member.getId(),
+				room.getId(),
+				checkInDate,
+				checkInDate.plusDays(2),
+				new BigDecimal("100000.00"),
+				new BigDecimal("200000.00")
+		);
+		Long reservationId = jdbcTemplate.queryForObject(
+				"select max(id) from reservations where member_id = ?",
+				Long.class,
+				member.getId()
+		);
+		insertReservationNight(reservationId, checkInDate, new BigDecimal("100000.00"));
+
+		assertConstraintViolation(() -> insertReservationNight(
+				reservationId, checkInDate, new BigDecimal("120000.00")
+		));
+		assertConstraintViolation(() -> insertReservationNight(
+				999999L, checkInDate.plusDays(1), new BigDecimal("100000.00")
+		));
+		assertConstraintViolation(() -> insertReservationNight(
+				reservationId, checkInDate.plusDays(1), new BigDecimal("-0.01")
+		));
+		assertConstraintViolation(() -> insertReservationNight(
+				reservationId, null, new BigDecimal("100000.00")
+		));
+	}
+
+	@Test
 	void enforcesRoomDailyPriceForeignKeyUniqueAndPositivePriceConstraints() {
 		Room room = saveRoom(saveAccommodation());
 		LocalDate stayDate = LocalDate.of(2030, 7, 20);
@@ -284,6 +318,30 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				LocalDate.of(2030, 1, 2),
 				new BigDecimal("100000.00"),
 				new BigDecimal("100000.00")
+		));
+
+		insertReservation(
+				member.getId(),
+				room.getId(),
+				LocalDate.of(2030, 1, 1),
+				LocalDate.of(2030, 1, 2),
+				new BigDecimal("100000.00"),
+				new BigDecimal("100000.00")
+		);
+		Long reservationId = jdbcTemplate.queryForObject(
+				"select max(id) from reservations where member_id = ?",
+				Long.class,
+				member.getId()
+		);
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"update reservations set cancellation_fee_amount = ? where id = ?",
+				new BigDecimal("-0.01"),
+				reservationId
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"update reservations set refund_amount = ? where id = ?",
+				new BigDecimal("-0.01"),
+				reservationId
 		));
 	}
 
@@ -471,6 +529,22 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				roomId,
 				stayDate,
 				nightlyPrice
+		);
+	}
+
+	private void insertReservationNight(
+			Long reservationId,
+			LocalDate stayDate,
+			BigDecimal priceSnapshot
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into reservation_nights (reservation_id, stay_date, price_snapshot)
+				values (?, ?, ?)
+				""",
+				reservationId,
+				stayDate,
+				priceSnapshot
 		);
 	}
 

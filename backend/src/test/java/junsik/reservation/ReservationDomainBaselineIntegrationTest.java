@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.time.LocalDate;
 
 import com.jayway.jsonpath.JsonPath;
@@ -48,6 +49,7 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	private static final LocalDate CHANGED_CHECK_IN = LocalDate.of(2035, 6, 11);
 	private static final LocalDate CHANGED_CHECK_OUT = LocalDate.of(2035, 6, 15);
 	private static final LocalDate CANCELLATION_DATE = LocalDate.of(2035, 6, 8);
+	private static final Instant CANCELLATION_INSTANT = Instant.parse("2035-06-08T03:00:00Z");
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -73,6 +75,7 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	void setUp() {
 		fixture = new MvpTestFixture(jdbcTemplate, passwordEncoder);
 		when(reservationDateProvider.today()).thenReturn(CANCELLATION_DATE);
+		when(reservationDateProvider.now()).thenReturn(CANCELLATION_INSTANT);
 	}
 
 	@Test

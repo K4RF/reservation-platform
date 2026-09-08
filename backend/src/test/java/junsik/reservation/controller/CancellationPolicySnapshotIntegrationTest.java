@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -49,6 +50,7 @@ import junsik.reservation.service.ReservationDateProvider;
 class CancellationPolicySnapshotIntegrationTest {
 
 	private static final LocalDate TODAY = LocalDate.of(2030, 1, 1);
+	private static final Instant NOW = Instant.parse("2030-01-01T03:00:00Z");
 	private static final LocalDate CHECK_IN = TODAY.plusDays(5);
 	private static final LocalDate CHECK_OUT = CHECK_IN.plusDays(2);
 
@@ -85,6 +87,7 @@ class CancellationPolicySnapshotIntegrationTest {
 	@BeforeEach
 	void setUpDate() {
 		given(dateProvider.today()).willReturn(TODAY);
+		given(dateProvider.now()).willReturn(NOW);
 	}
 
 	@Test

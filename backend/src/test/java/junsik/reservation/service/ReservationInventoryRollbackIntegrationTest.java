@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import junsik.reservation.dto.CreateReservationRequest;
@@ -47,6 +48,9 @@ class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSu
 
 	@Autowired
 	private RoomInventoryRepository roomInventoryRepository;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 	@MockitoBean
 	private ReservationRepository reservationRepository;
@@ -84,5 +88,9 @@ class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSu
 				))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);
+		assertThat(jdbcTemplate.queryForObject(
+				"select count(*) from reservation_nights",
+				Integer.class
+		)).isZero();
 	}
 }

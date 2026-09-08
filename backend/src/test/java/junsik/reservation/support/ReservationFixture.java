@@ -1,9 +1,12 @@
 package junsik.reservation.support;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
+import junsik.reservation.entity.ReservationCancellationQuote;
 import junsik.reservation.entity.Room;
 
 public final class ReservationFixture {
@@ -36,5 +39,17 @@ public final class ReservationFixture {
 			LocalDate checkOutDate
 	) {
 		return Reservation.create(member, room, guestCount, checkInDate, checkOutDate);
+	}
+
+	public static ReservationCancellationQuote freeCancellationQuote(Reservation reservation) {
+		LocalDate cancellationDate = reservation.getCheckInDate().minusDays(10);
+		return new ReservationCancellationQuote(
+				Instant.parse("2030-01-01T00:00:00Z"),
+				cancellationDate,
+				10,
+				0,
+				BigDecimal.ZERO.setScale(2),
+				reservation.getTotalAmount()
+		);
 	}
 }
