@@ -132,6 +132,9 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							{
 							  "name": "Baseline Seoul Hotel",
 							  "description": "Reservation domain completion baseline",
+							  "country": "대한민국",
+							  "city": "서울특별시",
+							  "region": "강남구",
 							  "address": "서울 강남구 테헤란로"
 							}
 							"""))
@@ -182,7 +185,7 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 		mockMvc.perform(get(ACCOMMODATIONS_URL)
 					.header("Authorization", bearer(userToken))
 					.param("name", "seoul")
-					.param("region", "강남")
+					.param("region", "강남구")
 					.param("checkInDate", ORIGINAL_CHECK_IN.toString())
 					.param("checkOutDate", ORIGINAL_CHECK_OUT.toString())
 					.param("guestCount", "4")

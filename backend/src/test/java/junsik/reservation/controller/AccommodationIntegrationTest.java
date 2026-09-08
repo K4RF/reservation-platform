@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Accommodation;
+import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.repository.AccommodationRepository;
@@ -50,7 +51,11 @@ class AccommodationIntegrationTest {
 							{
 							  "name": "  Ocean View Hotel  ",
 							  "description": "  A hotel overlooking the ocean.  ",
-							  "address": "  123 Beach Road  "
+							  "country": "  대한민국  ",
+							  "city": "  부산광역시  ",
+							  "region": "  해운대구  ",
+							  "address": "  123 Beach Road  ",
+							  "amenities": ["PARKING", "POOL"]
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -61,13 +66,24 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.accommodationId").isNumber())
 				.andExpect(jsonPath("$.name").value("Ocean View Hotel"))
 				.andExpect(jsonPath("$.description").value("A hotel overlooking the ocean."))
+				.andExpect(jsonPath("$.country").value("대한민국"))
+				.andExpect(jsonPath("$.city").value("부산광역시"))
+				.andExpect(jsonPath("$.region").value("해운대구"))
 				.andExpect(jsonPath("$.address").value("123 Beach Road"))
+				.andExpect(jsonPath("$.amenities[*]", containsInAnyOrder("PARKING", "POOL")))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Accommodation saved = accommodationRepository.findAll().getFirst();
 		assertThat(saved.getName()).isEqualTo("Ocean View Hotel");
 		assertThat(saved.getDescription()).isEqualTo("A hotel overlooking the ocean.");
+		assertThat(saved.getCountry()).isEqualTo("대한민국");
+		assertThat(saved.getCity()).isEqualTo("부산광역시");
+		assertThat(saved.getRegion()).isEqualTo("해운대구");
 		assertThat(saved.getAddress()).isEqualTo("123 Beach Road");
+		assertThat(saved.getAmenities()).containsExactlyInAnyOrder(
+				AccommodationAmenity.PARKING,
+				AccommodationAmenity.POOL
+		);
 		assertThat(saved.getStatus()).isEqualTo(AccommodationStatus.ACTIVE);
 	}
 
@@ -82,13 +98,20 @@ class AccommodationIntegrationTest {
 							{
 							  "name": "  Updated Hotel  ",
 							  "description": "  Updated description  ",
-							  "address": "  Updated address  "
+							  "country": "  대한민국  ",
+							  "city": "  서울특별시  ",
+							  "region": "  종로구  ",
+							  "address": "  Updated address  ",
+							  "amenities": ["BREAKFAST", "GYM"]
 							}
 							"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.name").value("Updated Hotel"))
 				.andExpect(jsonPath("$.description").value("Updated description"))
+				.andExpect(jsonPath("$.city").value("서울특별시"))
+				.andExpect(jsonPath("$.region").value("종로구"))
 				.andExpect(jsonPath("$.address").value("Updated address"))
+				.andExpect(jsonPath("$.amenities[*]", containsInAnyOrder("BREAKFAST", "GYM")))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		assertThat(accommodation.getName()).isEqualTo("Updated Hotel");
@@ -134,9 +157,11 @@ class AccommodationIntegrationTest {
 		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}", accommodation.getId())
 					.header("Authorization", bearerToken(MemberRole.ADMIN))
 					.contentType(MediaType.APPLICATION_JSON)
-					.content("{\"name\":\"\",\"description\":\"\",\"address\":\"\"}"))
+					.content("{\"name\":\"\",\"description\":\"\",\"country\":\"\",\"city\":\"\",\"region\":\"\",\"address\":\"\"}"))
 				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("name", "description", "address")));
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
+						"name", "description", "country", "city", "region", "address"
+				)));
 
 		mockMvc.perform(put(ACCOMMODATIONS_URL + "/999999")
 					.header("Authorization", bearerToken(MemberRole.ADMIN))
@@ -155,6 +180,9 @@ class AccommodationIntegrationTest {
 							{
 							  "name": "",
 							  "description": "",
+							  "country": "",
+							  "city": "",
+							  "region": "",
 							  "address": ""
 							}
 							"""))
@@ -163,6 +191,9 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
 						"name",
 						"description",
+						"country",
+						"city",
+						"region",
 						"address"
 				)));
 
@@ -301,6 +332,9 @@ class AccommodationIntegrationTest {
 				{
 				  "name": "Ocean View Hotel",
 				  "description": "A hotel overlooking the ocean.",
+				  "country": "대한민국",
+				  "city": "부산광역시",
+				  "region": "해운대구",
 				  "address": "123 Beach Road"
 				}
 				""";

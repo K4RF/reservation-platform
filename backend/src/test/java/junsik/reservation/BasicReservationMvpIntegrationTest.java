@@ -98,6 +98,9 @@ class BasicReservationMvpIntegrationTest {
 							{
 							  "name": "MVP Ocean Hotel",
 							  "description": "End-to-end test accommodation",
+							  "country": "대한민국",
+							  "city": "부산광역시",
+							  "region": "해운대구",
 							  "address": "100 Test Beach Road"
 							}
 							"""))

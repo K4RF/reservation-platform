@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +22,10 @@ import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
@@ -214,6 +217,73 @@ class AccommodationIntegratedSearchIntegrationTest {
 	}
 
 	@Test
+	void searchesStructuredLocationAndAllAccommodationAndRoomAmenities() throws Exception {
+		Accommodation expected = saveStructuredAccommodation(
+				"Complete Seoul Hotel",
+				"서울특별시",
+				"강남구",
+				Set.of(AccommodationAmenity.PARKING, AccommodationAmenity.POOL)
+		);
+		Accommodation missingAccommodationAmenity = saveStructuredAccommodation(
+				"No Pool Hotel",
+				"서울특별시",
+				"강남구",
+				Set.of(AccommodationAmenity.PARKING)
+		);
+		Accommodation wrongCity = saveStructuredAccommodation(
+				"Busan Hotel",
+				"부산광역시",
+				"해운대구",
+				Set.of(AccommodationAmenity.PARKING, AccommodationAmenity.POOL)
+		);
+		Room expectedRoom = roomRepository.saveAndFlush(Room.create(
+				expected,
+				"Complete Room",
+				4,
+				new BigDecimal("180000.00"),
+				Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
+		));
+		roomRepository.saveAndFlush(Room.create(
+				missingAccommodationAmenity,
+				"Complete Room",
+				4,
+				new BigDecimal("180000.00"),
+				Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
+		));
+		roomRepository.saveAndFlush(Room.create(
+				wrongCity,
+				"Complete Room",
+				4,
+				new BigDecimal("180000.00"),
+				Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
+		));
+		roomRepository.saveAndFlush(Room.create(
+				expected,
+				"Wifi Only Room",
+				4,
+				new BigDecimal("170000.00"),
+				Set.of(RoomAmenity.WIFI)
+		));
+
+		performSearch(
+				"city", " 서울특별시 ",
+				"region", " 강남구 ",
+				"accommodationAmenities", "PARKING",
+				"accommodationAmenities", "POOL",
+				"roomAmenities", "WIFI",
+				"roomAmenities", "AIR_CONDITIONER"
+		)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(expected.getId()))
+				.andExpect(jsonPath("$.content[0].city").value("서울특별시"))
+				.andExpect(jsonPath("$.content[0].region").value("강남구"));
+
+		org.assertj.core.api.Assertions.assertThat(expectedRoom.getAmenities())
+				.containsExactlyInAnyOrder(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER);
+	}
+
+	@Test
 	void returnsEmptyPageWhenNoAccommodationMatches() throws Exception {
 		saveAccommodation("Ocean Hotel", "부산 해운대구");
 
@@ -279,6 +349,23 @@ class AccommodationIntegratedSearchIntegrationTest {
 
 	private Accommodation saveAccommodation(String name, String address) {
 		return accommodationRepository.saveAndFlush(accommodation(name, "Description", address));
+	}
+
+	private Accommodation saveStructuredAccommodation(
+			String name,
+			String city,
+			String region,
+			Set<AccommodationAmenity> amenities
+	) {
+		return accommodationRepository.saveAndFlush(Accommodation.create(
+				name,
+				"Description",
+				"대한민국",
+				city,
+				region,
+				"테스트 상세 주소",
+				amenities
+		));
 	}
 
 	private Room saveRoom(
