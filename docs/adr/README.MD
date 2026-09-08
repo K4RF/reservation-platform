@@ -13,6 +13,7 @@ ADR 문서 예시:
 
 - [ADR-003: Redis 기반 Refresh Token 상태 관리](003-redis-refresh-token.md)
 - [ADR-004: 예약 가격 Snapshot을 첫 숙박일 가격과 총액으로 저장](004-reservation-price-snapshot.md)
+- [ADR-005: 취소 정책을 예약 생성 시 값으로 복제해 Snapshot 저장](005-cancellation-policy-snapshot.md)
 
 각 ADR은 다음 항목을 포함합니다.
 

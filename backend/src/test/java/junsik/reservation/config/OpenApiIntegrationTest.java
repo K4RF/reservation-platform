@@ -105,6 +105,15 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].put.responses['200'].content['application/json'].schema['$ref']"
 				).value(endsWith("/AccommodationBookingPolicyResponse")))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/cancellation-policy'].post.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/cancellation-policy'].post.requestBody.content['application/json'].schema['$ref']"
+				).value(endsWith("/AccommodationCancellationPolicyRequest")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/cancellation-policy'].put.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/AccommodationCancellationPolicyResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.parameters[*].name",
 						containsInAnyOrder(
 								"accommodationId",
@@ -210,6 +219,14 @@ class OpenApiIntegrationTest {
 								"maxAdvanceBookingDays"
 						)
 				))
+				.andExpect(jsonPath(
+						"$.components.schemas.AccommodationCancellationPolicyRequest.required",
+						containsInAnyOrder(
+								"freeCancellationDaysBeforeCheckIn",
+								"cancellationDeadlineDaysBeforeCheckIn",
+								"feeRules"
+						)
+				))
 				.andExpect(jsonPath("$.components.schemas.RoomDailyPriceResponse.properties.source").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
@@ -229,6 +246,7 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.guestCount").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.cancellationPolicySnapshot").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.cancellationFeeRate").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.cancellationFeeAmount").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationCancellationResponse.properties.estimatedRefundAmount").exists())

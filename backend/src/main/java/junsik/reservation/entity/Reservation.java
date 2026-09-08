@@ -2,10 +2,14 @@ package junsik.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -17,7 +21,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.ColumnDefault;
 
@@ -39,6 +45,12 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 				@CheckConstraint(
 						name = "chk_reservations_guest_count",
 						constraint = "guest_count >= 1"
+				),
+				@CheckConstraint(
+						name = "chk_reservations_cancellation_policy_snapshot",
+						constraint = "cancellation_deadline_days_before_check_in >= 0"
+								+ " and free_cancellation_days_before_check_in"
+								+ " > cancellation_deadline_days_before_check_in"
 				)
 		}
 )
@@ -82,6 +94,27 @@ public class Reservation {
 	@ColumnDefault("0.00")
 	private BigDecimal totalAmount;
 
+	@Column(name = "free_cancellation_days_before_check_in", nullable = false)
+	@ColumnDefault("7")
+	private int freeCancellationDaysBeforeCheckIn;
+
+	@Column(name = "cancellation_deadline_days_before_check_in", nullable = false)
+	@ColumnDefault("1")
+	private int cancellationDeadlineDaysBeforeCheckIn;
+
+	@ElementCollection
+	@CollectionTable(
+			name = "reservation_cancellation_fee_snapshots",
+			joinColumns = @JoinColumn(name = "reservation_id", nullable = false),
+			foreignKey = @ForeignKey(name = "fk_cancellation_fee_snapshots_reservation"),
+			uniqueConstraints = @UniqueConstraint(
+					name = "uk_cancellation_fee_snapshots_reservation_order",
+					columnNames = {"reservation_id", "rule_order"}
+			)
+	)
+	@OrderColumn(name = "rule_order", nullable = false)
+	private List<CancellationFeeRule> cancellationFeeRules = new ArrayList<>();
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private ReservationStatus status;
@@ -95,7 +128,8 @@ public class Reservation {
 			int guestCount,
 			LocalDate checkInDate,
 			LocalDate checkOutDate,
-			ReservationPriceSnapshot priceSnapshot
+			ReservationPriceSnapshot priceSnapshot,
+			CancellationPolicySnapshot cancellationPolicySnapshot
 	) {
 		if (!room.canAccommodate(guestCount)) {
 			throw new IllegalArgumentException("예약 인원은 1명 이상이며 객실 최대 수용 인원 이하여야 합니다.");
@@ -108,6 +142,7 @@ public class Reservation {
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
 		applyPriceSnapshot(priceSnapshot);
+		applyCancellationPolicySnapshot(cancellationPolicySnapshot);
 		this.status = ReservationStatus.CONFIRMED;
 	}
 
@@ -124,7 +159,15 @@ public class Reservation {
 				room.getNightlyPrice(),
 				Map.of()
 		);
-		return create(member, room, guestCount, checkInDate, checkOutDate, priceSnapshot);
+		return create(
+				member,
+				room,
+				guestCount,
+				checkInDate,
+				checkOutDate,
+				priceSnapshot,
+				CancellationPolicySnapshot.defaultPolicy()
+		);
 	}
 
 	public static Reservation create(
@@ -135,7 +178,35 @@ public class Reservation {
 			LocalDate checkOutDate,
 			ReservationPriceSnapshot priceSnapshot
 	) {
-		return new Reservation(member, room, guestCount, checkInDate, checkOutDate, priceSnapshot);
+		return create(
+				member,
+				room,
+				guestCount,
+				checkInDate,
+				checkOutDate,
+				priceSnapshot,
+				CancellationPolicySnapshot.defaultPolicy()
+		);
+	}
+
+	public static Reservation create(
+			Member member,
+			Room room,
+			int guestCount,
+			LocalDate checkInDate,
+			LocalDate checkOutDate,
+			ReservationPriceSnapshot priceSnapshot,
+			CancellationPolicySnapshot cancellationPolicySnapshot
+	) {
+		return new Reservation(
+				member,
+				room,
+				guestCount,
+				checkInDate,
+				checkOutDate,
+				priceSnapshot,
+				cancellationPolicySnapshot
+		);
 	}
 
 	public Long getId() {
@@ -180,6 +251,17 @@ public class Reservation {
 
 	public ReservationStatus getStatus() {
 		return status;
+	}
+
+	public CancellationPolicySnapshot getCancellationPolicySnapshot() {
+		if (cancellationFeeRules.isEmpty()) {
+			return CancellationPolicySnapshot.defaultPolicy();
+		}
+		return new CancellationPolicySnapshot(
+				freeCancellationDaysBeforeCheckIn,
+				cancellationDeadlineDaysBeforeCheckIn,
+				cancellationFeeRules
+		);
 	}
 
 	public void verifyScheduleChangeAllowed() {
@@ -243,5 +325,16 @@ public class Reservation {
 		if (priceSnapshot == null) {
 			throw new IllegalArgumentException("가격 Snapshot은 필수입니다.");
 		}
+	}
+
+	private void applyCancellationPolicySnapshot(CancellationPolicySnapshot policySnapshot) {
+		if (policySnapshot == null) {
+			throw new IllegalArgumentException("취소 정책 Snapshot은 필수입니다.");
+		}
+		this.freeCancellationDaysBeforeCheckIn = policySnapshot.freeCancellationDaysBeforeCheckIn();
+		this.cancellationDeadlineDaysBeforeCheckIn = policySnapshot.cancellationDeadlineDaysBeforeCheckIn();
+		policySnapshot.feeRules().stream()
+				.map(CancellationFeeRule::copy)
+				.forEach(this.cancellationFeeRules::add);
 	}
 }

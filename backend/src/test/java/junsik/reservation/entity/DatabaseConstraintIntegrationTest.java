@@ -143,6 +143,63 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesCancellationPolicyAndFeeRuleConstraints() {
+		Accommodation accommodation = saveAccommodation();
+		insertCancellationPolicy(accommodation.getId(), 7, 1);
+		Long policyId = jdbcTemplate.queryForObject(
+				"select id from accommodation_cancellation_policies where accommodation_id = ?",
+				Long.class,
+				accommodation.getId()
+		);
+		insertCancellationFeeRule(policyId, 0, 3, 30);
+
+		assertConstraintViolation(() -> insertCancellationPolicy(accommodation.getId(), 10, 1));
+		assertConstraintViolation(() -> insertCancellationPolicy(999999L, 7, 1));
+		assertConstraintViolation(() -> insertCancellationPolicy(
+				saveAccommodation().getId(), 1, 1
+		));
+		assertConstraintViolation(() -> insertCancellationPolicy(
+				saveAccommodation().getId(), 7, -1
+		));
+		assertConstraintViolation(() -> insertCancellationFeeRule(policyId, 1, -1, 30));
+		assertConstraintViolation(() -> insertCancellationFeeRule(policyId, 1, 1, 0));
+		assertConstraintViolation(() -> insertCancellationFeeRule(policyId, 1, 1, 101));
+		assertConstraintViolation(() -> insertCancellationFeeRule(999999L, 0, 1, 50));
+
+		Member member = saveMember("cancellation-snapshot@example.com");
+		Room room = saveRoom(saveAccommodation());
+		insertReservation(
+				member.getId(),
+				room.getId(),
+				LocalDate.of(2030, 1, 10),
+				LocalDate.of(2030, 1, 12),
+				new BigDecimal("100000.00"),
+				new BigDecimal("200000.00")
+		);
+		Long reservationId = jdbcTemplate.queryForObject(
+				"select max(id) from reservations where member_id = ?",
+				Long.class,
+				member.getId()
+		);
+		insertReservationCancellationFeeSnapshot(reservationId, 0, 3, 30);
+		assertConstraintViolation(() -> insertReservationCancellationFeeSnapshot(
+				reservationId, 0, 1, 50
+		));
+		assertConstraintViolation(() -> insertReservationCancellationFeeSnapshot(
+				999999L, 0, 1, 50
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"""
+				update reservations
+				set free_cancellation_days_before_check_in = 1,
+				    cancellation_deadline_days_before_check_in = 1
+				where id = ?
+				""",
+				reservationId
+		));
+	}
+
+	@Test
 	void enforcesRoomInventoryForeignKeyUniqueAndQuantityConstraints() {
 		Room room = saveRoom(saveAccommodation());
 		LocalDate inventoryDate = LocalDate.of(2030, 1, 1);
@@ -318,6 +375,62 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				maxStayNights,
 				minAdvanceBookingDays,
 				maxAdvanceBookingDays
+		);
+	}
+
+	private void insertCancellationPolicy(
+			Long accommodationId,
+			int freeCancellationDays,
+			int cancellationDeadlineDays
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into accommodation_cancellation_policies (
+				    accommodation_id, free_cancellation_days_before_check_in,
+				    cancellation_deadline_days_before_check_in
+				) values (?, ?, ?)
+				""",
+				accommodationId,
+				freeCancellationDays,
+				cancellationDeadlineDays
+		);
+	}
+
+	private void insertCancellationFeeRule(
+			Long policyId,
+			int ruleOrder,
+			int minDaysBeforeCheckIn,
+			int feeRatePercent
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into cancellation_policy_fee_rules (
+				    cancellation_policy_id, rule_order, min_days_before_check_in, fee_rate_percent
+				) values (?, ?, ?, ?)
+				""",
+				policyId,
+				ruleOrder,
+				minDaysBeforeCheckIn,
+				feeRatePercent
+		);
+	}
+
+	private void insertReservationCancellationFeeSnapshot(
+			Long reservationId,
+			int ruleOrder,
+			int minDaysBeforeCheckIn,
+			int feeRatePercent
+	) {
+		jdbcTemplate.update(
+				"""
+				insert into reservation_cancellation_fee_snapshots (
+				    reservation_id, rule_order, min_days_before_check_in, fee_rate_percent
+				) values (?, ?, ?, ?)
+				""",
+				reservationId,
+				ruleOrder,
+				minDaysBeforeCheckIn,
+				feeRatePercent
 		);
 	}
 

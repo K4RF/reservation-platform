@@ -26,8 +26,9 @@
 > 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
 > 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
 > 가격 fallback 여부를 조회할 수 있습니다. 동시 요청 Lock과 Race Condition
-> 제어는 아직 구현되지 않았습니다. 예약 취소에는 체크인까지 남은 일수에 따른
-> 무료·부분 수수료·취소 제한 정책이 적용됩니다.
+> 제어는 아직 구현되지 않았습니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
+> 관리할 수 있습니다. 신규 예약은 당시 취소 정책을 Snapshot으로 저장하므로 이후
+> 숙소 정책이 바뀌어도 기존 예약의 무료·부분 수수료·취소 제한 기준은 유지됩니다.
 
 ---
 
@@ -170,6 +171,8 @@ Spring Boot API
 | `POST` | `/api/v1/accommodations` | `ADMIN` | 숙소 등록 |
 | `PUT` | `/api/v1/accommodations/{accommodationId}` | `ADMIN` | 숙소 정보 수정 |
 | `PATCH` | `/api/v1/accommodations/{accommodationId}/status` | `ADMIN` | 숙소 운영 상태 변경 |
+| `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/booking-policy` | `ADMIN` | 숙소별 예약 가능 정책 등록·수정 |
+| `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/cancellation-policy` | `ADMIN` | 숙소별 취소 정책 등록·수정 |
 | `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
 | `GET` | `/api/v1/accommodations?region=서울&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소·지역·객실 조건·재고 기반 통합 검색 |
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
@@ -244,10 +247,11 @@ Spring Boot API
 새 기간 전체의 날짜별 가격과 기본 가격 fallback을 변경 시점 기준으로 적용해
 첫 숙박일 가격과 총액 Snapshot도 다시 계산합니다.
 `CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 `Asia/Seoul` 기준
-체크인까지 7일 이상이면 무료, 3~6일이면 확정 금액의 30%, 1~2일이면 50%의
-수수료를 적용합니다. 체크인 당일과 이후에는 취소할 수 없습니다. 허용된 취소는
-사용한 모든 숙박일 재고를 반환하고 상태를 `CANCELLED`로 변경합니다. 응답의
-수수료와 환불액은 예상값이며 실제 결제 취소·환불은 수행하지 않습니다. 세부 정책은
+체크인까지 남은 일수와 예약 생성 당시 저장한 숙소별 취소 정책 Snapshot으로
+수수료와 취소 가능 여부를 결정합니다. 숙소 정책이 없으면 기존의 7일 무료,
+3~6일 30%, 1~2일 50%, 당일 이후 취소 불가 규칙을 Snapshot으로 사용합니다.
+허용된 취소는 사용한 모든 숙박일 재고를 반환하고 상태를 `CANCELLED`로 변경합니다.
+응답의 수수료와 환불액은 예상값이며 실제 결제 취소·환불은 수행하지 않습니다. 세부 정책은
 [`docs/architecture/reservation-cancellation-policy.md`](docs/architecture/reservation-cancellation-policy.md),
 상태별 허용 동작과 전이 규칙은
 [`docs/architecture/reservation-status-policy.md`](docs/architecture/reservation-status-policy.md)에
@@ -347,12 +351,11 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 ### Phase 1.3 — Booking Policy & Catalog Completion (예정)
 
 동시성 제어에 들어가기 전 실제 숙박 예약 서비스에 필요한 정책과 Catalog를
-마지막으로 보완합니다. GitHub Milestone의 Issue는 모두 계획 상태이며 아직
-구현되지 않았습니다.
+마지막으로 보완합니다. 아래 항목은 저장소 구현 상태를 기준으로 표시합니다.
 
 * [ ] 숙소 TimeZone 기반 날짜·시간 정책
-* [ ] 숙소별 Booking Policy와 예약 가능 조건
-* [ ] 숙소별 Cancellation Policy와 예약 시점 Snapshot
+* [x] 숙소별 Booking Policy와 예약 가능 조건
+* [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
 * [ ] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
 * [ ] 숙박일별 가격 및 취소 결과 Snapshot 고도화
 * [ ] 구조화된 숙소 위치와 편의시설
@@ -593,6 +596,8 @@ docs: add concurrency test results
 * [x] 예약 취소 정책·수수료 계산 및 재고 복구 연동
 * [x] 숙소명·지역·기간·인원·가격·상태·예약 가능 여부 통합 검색
 * [x] v0.1.2 전체 예약 흐름과 MySQL Transaction Rollback Baseline 검증
+* [x] 숙소별 최소·최대 숙박일 및 사전 예약일 정책 관리·공통 검증
+* [x] 숙소별 취소 정책 관리 및 예약 생성 시점 정책 Snapshot 보존
 
 ---
 

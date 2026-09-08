@@ -17,6 +17,7 @@ import junsik.reservation.dto.ReservationCancellationResponse;
 import junsik.reservation.dto.ReservationResponse;
 import junsik.reservation.dto.ReservationSearchRequest;
 import junsik.reservation.dto.UpdateReservationScheduleRequest;
+import junsik.reservation.entity.CancellationPolicySnapshot;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.ReservationCancellationQuote;
@@ -46,6 +47,7 @@ public class ReservationService {
 	private final RoomDailyPriceService roomDailyPriceService;
 	private final ReservationCancellationPolicy cancellationPolicy;
 	private final AccommodationBookingPolicyService bookingPolicyService;
+	private final AccommodationCancellationPolicyService accommodationCancellationPolicyService;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
@@ -54,7 +56,8 @@ public class ReservationService {
 			RoomInventoryRepository roomInventoryRepository,
 			RoomDailyPriceService roomDailyPriceService,
 			ReservationCancellationPolicy cancellationPolicy,
-			AccommodationBookingPolicyService bookingPolicyService
+			AccommodationBookingPolicyService bookingPolicyService,
+			AccommodationCancellationPolicyService accommodationCancellationPolicyService
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
@@ -63,6 +66,7 @@ public class ReservationService {
 		this.roomDailyPriceService = roomDailyPriceService;
 		this.cancellationPolicy = cancellationPolicy;
 		this.bookingPolicyService = bookingPolicyService;
+		this.accommodationCancellationPolicyService = accommodationCancellationPolicyService;
 	}
 
 	@Transactional
@@ -76,6 +80,8 @@ public class ReservationService {
 		validateGuestCount(room, request.guestCount());
 		ReservationPeriod period = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
 		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), period);
+		CancellationPolicySnapshot cancellationPolicySnapshot = accommodationCancellationPolicyService
+				.resolveSnapshot(room.getAccommodation());
 		Map<LocalDate, RoomInventory> inventories = getInventories(room.getId(), period);
 		validateAvailable(inventories.values());
 		inventories.values().forEach(inventory -> inventory.reserve(1));
@@ -88,7 +94,8 @@ public class ReservationService {
 				request.guestCount(),
 				request.checkInDate(),
 				request.checkOutDate(),
-				priceSnapshot
+				priceSnapshot,
+				cancellationPolicySnapshot
 		);
 		return ReservationResponse.from(reservationRepository.save(reservation));
 	}

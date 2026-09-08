@@ -159,6 +159,11 @@ Before completing a change:
   search and availability requires a valid `[check-in, check-out)` pair. Only
   `ID` and `NAME` sorting is allowed; dated search prices do not use daily-price
   overrides or total-stay amounts.
+- Administrators can create and update one optional booking policy per
+  accommodation. Minimum/maximum stay nights and advance-booking days apply
+  consistently to accommodation availability search, available-room queries,
+  reservation creation, and schedule changes. Accommodations without a policy
+  retain the previous behavior.
 - Room creation, information updates, and `ACTIVE/INACTIVE` status changes are
   restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
   nightly price. Authenticated users can read room details and filter
@@ -192,9 +197,14 @@ Before completing a change:
   added dates, and reprices the complete new stay using the current daily-price
   and fallback policy. Both first-night and total snapshots are replaced.
   `CANCELLED` reservations cannot be changed.
-- Reservation cancellation uses the `Asia/Seoul` calendar date. It is free at
-  least 7 days before check-in, charges 30% at 3-6 days and 50% at 1-2 days,
-  and is rejected on or after check-in. Fees use the stored `totalAmount` and
+- Administrators can create and update one optional cancellation policy per
+  accommodation using a free-cancellation boundary, a cancellation deadline,
+  and ordered partial-fee tiers with integer rates from 1% to 100%. New
+  reservations copy the current policy into a value snapshot; later policy and
+  schedule changes do not alter that snapshot. Accommodations without a policy
+  use the former 7-day/30%/50% default as the reservation snapshot.
+- Reservation cancellation uses the `Asia/Seoul` calendar date and the
+  reservation's stored cancellation-policy snapshot. Fees use `totalAmount` and
   `HALF_UP` rounding to two decimals. An allowed cancellation restores every
   stay-date inventory and changes the state to `CANCELLED` in one transaction.
   The API returns the fee and estimated refund, but no payment cancellation,
@@ -226,7 +236,8 @@ Before completing a change:
   index match current query patterns; speculative indexes were not added.
 - Hibernate `ddl-auto=update` does not backfill CHECK constraints into an
   existing database. Existing local volumes require the reviewed one-time SQL
-  under `docs/erd/mysql-schema-hardening.sql`. A formal migration tool and
+  under `docs/erd/`, including the cancellation-policy snapshot upgrade for
+  pre-issue-76 reservations. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
@@ -260,8 +271,9 @@ Before completing a change:
   behavior, room registration and query behavior, daily-price creation, update,
   fallback, validation and authorization, accommodation integrated search by
   name/region/room/inventory conditions, one-night and mixed daily reservation
-  pricing, price snapshot stability, schedule repricing, cancellation fee
-  boundaries and denied-cancellation inventory retention, and inventory-backed
+  pricing, price snapshot stability, schedule repricing, booking-policy
+  boundaries, cancellation-policy management and snapshot stability,
+  cancellation fee boundaries and denied-cancellation inventory retention, and inventory-backed
   reservation creation, missing and insufficient inventory, checkout exclusion,
   schedule inventory adjustment, transaction rollback, amount recalculation,
   owner-scoped queries, pagination, status/period filtering, allowed sorting,
