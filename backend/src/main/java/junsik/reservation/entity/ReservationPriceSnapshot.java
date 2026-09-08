@@ -2,17 +2,33 @@ package junsik.reservation.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 public record ReservationPriceSnapshot(
 		BigDecimal firstNightPrice,
-		BigDecimal totalAmount
+		BigDecimal totalAmount,
+		List<ReservationNightPrice> nights
 ) {
 
 	public ReservationPriceSnapshot {
 		requireNonNegative(firstNightPrice, "firstNightPrice");
 		requireNonNegative(totalAmount, "totalAmount");
+		Objects.requireNonNull(nights, "nights must not be null");
+		nights = List.copyOf(nights);
+		if (nights.isEmpty()) {
+			throw new IllegalArgumentException("숙박일별 가격 Snapshot은 비어 있을 수 없습니다.");
+		}
+		if (firstNightPrice.compareTo(nights.getFirst().priceSnapshot()) != 0) {
+			throw new IllegalArgumentException("첫 숙박일 가격은 첫 번째 숙박일 Snapshot과 일치해야 합니다.");
+		}
+		BigDecimal nightTotal = nights.stream()
+				.map(ReservationNightPrice::priceSnapshot)
+				.reduce(BigDecimal.ZERO, BigDecimal::add);
+		if (totalAmount.compareTo(nightTotal) != 0) {
+			throw new IllegalArgumentException("예약 총액은 숙박일별 가격 Snapshot 합계와 일치해야 합니다.");
+		}
 	}
 
 	public static ReservationPriceSnapshot calculate(
@@ -24,15 +40,20 @@ public record ReservationPriceSnapshot(
 		requireNonNegative(defaultNightlyPrice, "defaultNightlyPrice");
 		Objects.requireNonNull(dailyPrices, "dailyPrices must not be null");
 
-		BigDecimal firstNightPrice = effectivePrice(
-				period.checkInDate(),
-				defaultNightlyPrice,
-				dailyPrices
-		);
-		BigDecimal totalAmount = period.stayDates().stream()
-				.map(stayDate -> effectivePrice(stayDate, defaultNightlyPrice, dailyPrices))
+		List<ReservationNightPrice> nights = period.stayDates().stream()
+				.map(stayDate -> new ReservationNightPrice(
+						stayDate,
+						effectivePrice(stayDate, defaultNightlyPrice, dailyPrices)
+				))
+				.toList();
+		BigDecimal totalAmount = nights.stream()
+				.map(ReservationNightPrice::priceSnapshot)
 				.reduce(BigDecimal.ZERO, BigDecimal::add);
-		return new ReservationPriceSnapshot(firstNightPrice, totalAmount);
+		return new ReservationPriceSnapshot(
+				nights.getFirst().priceSnapshot(),
+				totalAmount,
+				nights
+		);
 	}
 
 	private static BigDecimal effectivePrice(

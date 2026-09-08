@@ -1,11 +1,17 @@
 package junsik.reservation.entity;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
@@ -21,6 +27,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -51,6 +59,11 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 						constraint = "cancellation_deadline_days_before_check_in >= 0"
 								+ " and free_cancellation_days_before_check_in"
 								+ " > cancellation_deadline_days_before_check_in"
+				),
+				@CheckConstraint(
+						name = "chk_reservations_cancellation_result",
+						constraint = "(cancellation_fee_amount is null or cancellation_fee_amount >= 0)"
+								+ " and (refund_amount is null or refund_amount >= 0)"
 				)
 		}
 )
@@ -94,6 +107,10 @@ public class Reservation {
 	@ColumnDefault("0.00")
 	private BigDecimal totalAmount;
 
+	@OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OrderBy("stayDate ASC")
+	private List<ReservationNight> nights = new ArrayList<>();
+
 	@Column(name = "free_cancellation_days_before_check_in", nullable = false)
 	@ColumnDefault("7")
 	private int freeCancellationDaysBeforeCheckIn;
@@ -115,6 +132,15 @@ public class Reservation {
 	@OrderColumn(name = "rule_order", nullable = false)
 	private List<CancellationFeeRule> cancellationFeeRules = new ArrayList<>();
 
+	@Column(name = "cancelled_at")
+	private Instant cancelledAt;
+
+	@Column(name = "cancellation_fee_amount", precision = 19, scale = 2)
+	private BigDecimal cancellationFeeAmount;
+
+	@Column(name = "refund_amount", precision = 19, scale = 2)
+	private BigDecimal refundAmount;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private ReservationStatus status;
@@ -134,8 +160,8 @@ public class Reservation {
 		if (!room.canAccommodate(guestCount)) {
 			throw new IllegalArgumentException("예약 인원은 1명 이상이며 객실 최대 수용 인원 이하여야 합니다.");
 		}
-		new ReservationPeriod(checkInDate, checkOutDate);
-		requirePriceSnapshot(priceSnapshot);
+		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
+		validatePriceSnapshot(period, priceSnapshot);
 		this.member = member;
 		this.room = room;
 		this.guestCount = guestCount;
@@ -249,6 +275,22 @@ public class Reservation {
 		return totalAmount;
 	}
 
+	public List<ReservationNight> getNights() {
+		return List.copyOf(nights);
+	}
+
+	public Instant getCancelledAt() {
+		return cancelledAt;
+	}
+
+	public BigDecimal getCancellationFeeAmount() {
+		return cancellationFeeAmount;
+	}
+
+	public BigDecimal getRefundAmount() {
+		return refundAmount;
+	}
+
 	public ReservationStatus getStatus() {
 		return status;
 	}
@@ -289,8 +331,8 @@ public class Reservation {
 			ReservationPriceSnapshot priceSnapshot
 	) {
 		verifyScheduleChangeAllowed();
-		new ReservationPeriod(checkInDate, checkOutDate);
-		requirePriceSnapshot(priceSnapshot);
+		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
+		validatePriceSnapshot(period, priceSnapshot);
 		applySchedule(checkInDate, checkOutDate, priceSnapshot);
 	}
 
@@ -304,8 +346,17 @@ public class Reservation {
 		applyPriceSnapshot(priceSnapshot);
 	}
 
-	public void cancel() {
+	public void cancel(ReservationCancellationQuote quote) {
 		verifyCancellationAllowed();
+		if (quote == null) {
+			throw new IllegalArgumentException("취소 결과 Snapshot은 필수입니다.");
+		}
+		if (quote.cancellationFeeAmount().add(quote.estimatedRefundAmount()).compareTo(totalAmount) != 0) {
+			throw new IllegalArgumentException("취소 수수료와 환불액의 합은 예약 총액과 일치해야 합니다.");
+		}
+		this.cancelledAt = quote.cancelledAt();
+		this.cancellationFeeAmount = quote.cancellationFeeAmount();
+		this.refundAmount = quote.estimatedRefundAmount();
 		this.status = ReservationStatus.CANCELLED;
 	}
 
@@ -319,11 +370,39 @@ public class Reservation {
 		requirePriceSnapshot(priceSnapshot);
 		this.nightlyPriceSnapshot = priceSnapshot.firstNightPrice();
 		this.totalAmount = priceSnapshot.totalAmount();
+		Map<LocalDate, ReservationNight> existingNights = nights.stream()
+				.collect(Collectors.toMap(ReservationNight::getStayDate, Function.identity()));
+		Set<LocalDate> updatedDates = priceSnapshot.nights().stream()
+				.map(ReservationNightPrice::stayDate)
+				.collect(Collectors.toSet());
+		nights.removeIf(night -> !updatedDates.contains(night.getStayDate()));
+		for (ReservationNightPrice nightPrice : priceSnapshot.nights()) {
+			ReservationNight existing = existingNights.get(nightPrice.stayDate());
+			if (existing == null) {
+				nights.add(ReservationNight.create(this, nightPrice));
+			} else {
+				existing.changePriceSnapshot(nightPrice.priceSnapshot());
+			}
+		}
+		nights.sort(Comparator.comparing(ReservationNight::getStayDate));
 	}
 
 	private void requirePriceSnapshot(ReservationPriceSnapshot priceSnapshot) {
 		if (priceSnapshot == null) {
 			throw new IllegalArgumentException("가격 Snapshot은 필수입니다.");
+		}
+	}
+
+	private void validatePriceSnapshot(
+			ReservationPeriod period,
+			ReservationPriceSnapshot priceSnapshot
+	) {
+		requirePriceSnapshot(priceSnapshot);
+		List<LocalDate> snapshotDates = priceSnapshot.nights().stream()
+				.map(ReservationNightPrice::stayDate)
+				.toList();
+		if (!snapshotDates.equals(period.stayDates())) {
+			throw new IllegalArgumentException("숙박일별 가격 Snapshot 날짜는 예약 기간과 일치해야 합니다.");
 		}
 	}
 

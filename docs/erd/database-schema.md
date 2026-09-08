@@ -17,6 +17,7 @@ erDiagram
     ROOMS ||--o{ RESERVATIONS : receives
     ROOMS ||--o{ ROOM_INVENTORIES : owns
     ROOMS ||--o{ ROOM_DAILY_PRICES : prices
+    RESERVATIONS ||--o{ RESERVATION_NIGHTS : contains
     RESERVATIONS ||--|{ RESERVATION_CANCELLATION_FEE_SNAPSHOTS : snapshots
 
     MEMBERS {
@@ -100,7 +101,17 @@ erDiagram
         decimal_19_2 total_amount
         int free_cancellation_days_before_check_in
         int cancellation_deadline_days_before_check_in
+        timestamp cancelled_at
+        decimal_19_2 cancellation_fee_amount
+        decimal_19_2 refund_amount
         enum status
+    }
+
+    RESERVATION_NIGHTS {
+        bigint id PK
+        bigint reservation_id FK
+        date stay_date
+        decimal_12_2 price_snapshot
     }
 
     RESERVATION_CANCELLATION_FEE_SNAPSHOTS {
@@ -124,7 +135,8 @@ erDiagram
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
 | `room_inventories` | room/date/total/reserved/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
-| `reservations` | member/room/guest count/dates/prices/cancellation policy 기준/status | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, 가격 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
+| `reservations` | member/room/guest count/dates/prices/cancellation policy·result/status | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, 가격·취소 수수료·환불액 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
+| `reservation_nights` | reservation/stay date/price snapshot | `uk_reservation_nights_reservation_date(reservation_id, stay_date)` | reservation → reservations | price snapshot ≥ 0 |
 | `reservation_cancellation_fee_snapshots` | 예약, 순서, 구간 시작일, 정수 요율 | reservation+order | reservation → reservations | 구간 시작일 ≥ 0, 요율 1~100 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
@@ -142,13 +154,16 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 
 예약의 `nightly_price_snapshot`은 예약 또는 일정 변경 시점의 첫 숙박일 적용
 가격이고, `total_amount`는 전체 숙박일 가격을 합한 확정 금액 Snapshot입니다.
-원본 가격이 변경되어도 두 값은 자동으로 바뀌지 않습니다. 날짜별 세부 Snapshot은
-별도 행으로 저장하지 않으며, 일정 변경 시 새 기간 전체를 현재 가격으로 다시
-계산합니다.
+각 날짜와 적용 가격은 `reservation_nights`에 저장하며 Domain은 그 합계와
+`total_amount`, 첫 행과 `nightly_price_snapshot`, 날짜 목록과 예약 기간이 일치하는지
+검증합니다. 원본 가격이 변경되어도 Snapshot은 자동으로 바뀌지 않습니다. 일정
+변경 시 새 기간 전체를 현재 가격으로 다시 계산하고 자식 행을 재구성합니다.
 
 예약 생성 시 숙소의 현재 취소 정책 기준값과 수수료 구간도 복제합니다. 숙소 정책
 수정은 기존 예약의 Snapshot을 변경하지 않으며 일정 변경도 Snapshot을 유지합니다.
 정책이 없는 숙소는 기존 전역 취소 규칙을 기본 Snapshot으로 사용합니다.
+허용된 취소는 UTC 시각, 실제 수수료와 예상 환불액을 nullable 결과 컬럼에 저장합니다.
+확정 예약과 업그레이드 전 기존 취소 예약에는 이 결과 컬럼이 `NULL`일 수 있습니다.
 
 객실 `capacity`는 성인과 아동을 구분하지 않은 전체 최대 수용 인원이며, 예약
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
@@ -187,6 +202,7 @@ DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날�
 | `uk_cancellation_policies_accommodation(accommodation_id)` | 숙소별 현재 취소 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
 | `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_room_daily_prices_room_date(room_id,stay_date)` | 객실·날짜 적용 가격 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
+| `uk_reservation_nights_reservation_date(reservation_id,stay_date)` | 예약 상세의 날짜순 숙박일 가격 조회와 중복 방지 | UNIQUE가 reservation 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
@@ -221,6 +237,12 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 [`mysql-room-inventory-sale-status-upgrade.sql`](mysql-room-inventory-sale-status-upgrade.sql)로
 `OPEN` 상태를 Backfill할 수 있습니다. 기존 판매 가능 동작을 보존하기 위한 값이며,
 실제 판매 중지 날짜는 적용 후 관리 API로 명시적으로 `CLOSED` 처리합니다.
+
+숙박일별 가격과 취소 결과 도입 전 예약 Schema는
+[`mysql-reservation-snapshot-upgrade.sql`](mysql-reservation-snapshot-upgrade.sql)로
+결과 컬럼과 `reservation_nights` 테이블을 추가할 수 있습니다. 기존 예약의 실제
+일자별 가격과 과거 취소 시각·결과는 현재 컬럼만으로 정확히 복원할 수 없으므로
+임의 Backfill하지 않습니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지

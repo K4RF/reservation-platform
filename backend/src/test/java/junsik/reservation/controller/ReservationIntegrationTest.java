@@ -12,9 +12,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.MemberFixture.member;
 import static junsik.reservation.support.ReservationFixture.reservation;
+import static junsik.reservation.support.ReservationFixture.freeCancellationQuote;
 import static junsik.reservation.support.RoomFixture.room;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
+import junsik.reservation.entity.ReservationNight;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomDailyPrice;
 import junsik.reservation.entity.RoomInventory;
@@ -61,6 +64,7 @@ class ReservationIntegrationTest {
 	private static final BigDecimal NIGHTLY_PRICE = new BigDecimal("125000.00");
 	private static final int GUEST_COUNT = 2;
 	private static final LocalDate CANCELLATION_DATE = LocalDate.of(2030, 1, 1);
+	private static final Instant CANCELLATION_INSTANT = Instant.parse("2030-01-01T03:00:00Z");
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -98,6 +102,7 @@ class ReservationIntegrationTest {
 	@BeforeEach
 	void setUpCancellationDate() {
 		given(reservationDateProvider.today()).willReturn(CANCELLATION_DATE);
+		given(reservationDateProvider.now()).willReturn(CANCELLATION_INSTANT);
 	}
 
 	@Test
@@ -124,6 +129,12 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
 				.andExpect(jsonPath("$.stayNights").value(5))
 				.andExpect(jsonPath("$.totalAmount").value(625000.00))
+				.andExpect(jsonPath("$.nights.length()").value(5))
+				.andExpect(jsonPath("$.nights[0].stayDate").value("2030-01-10"))
+				.andExpect(jsonPath("$.nights[0].priceSnapshot").value(125000.00))
+				.andExpect(jsonPath("$.cancelledAt").doesNotExist())
+				.andExpect(jsonPath("$.cancellationFeeAmount").doesNotExist())
+				.andExpect(jsonPath("$.refundAmount").doesNotExist())
 				.andExpect(jsonPath("$.status").value("CONFIRMED"));
 
 		Reservation reservation = reservationRepository.findAll().getFirst();
@@ -133,6 +144,15 @@ class ReservationIntegrationTest {
 		assertThat(reservation.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
 		assertThat(reservation.getStayNights()).isEqualTo(5);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("625000.00");
+		assertThat(reservation.getNights())
+				.extracting(ReservationNight::getStayDate)
+				.containsExactly(
+						CHECK_IN,
+						CHECK_IN.plusDays(1),
+						CHECK_IN.plusDays(2),
+						CHECK_IN.plusDays(3),
+						CHECK_IN.plusDays(4)
+				);
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
@@ -203,7 +223,16 @@ class ReservationIntegrationTest {
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(150000.00))
 				.andExpect(jsonPath("$.stayNights").value(5))
-				.andExpect(jsonPath("$.totalAmount").value(700000.00));
+				.andExpect(jsonPath("$.totalAmount").value(700000.00))
+				.andExpect(jsonPath("$.nights[*].priceSnapshot").value(
+						org.hamcrest.Matchers.contains(
+								150000.00,
+								125000.00,
+								175000.00,
+								125000.00,
+								125000.00
+						)
+				));
 	}
 
 	@Test
@@ -247,6 +276,9 @@ class ReservationIntegrationTest {
 		Reservation reloaded = reservationRepository.findById(reservation.getId()).orElseThrow();
 		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("150000.00");
 		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("275000.00");
+		assertThat(reloaded.getNights())
+				.extracting(ReservationNight::getPriceSnapshot)
+				.containsExactly(new BigDecimal("150000.00"), new BigDecimal("125000.00"));
 	}
 
 	@Test
@@ -277,6 +309,12 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(210000.00))
 				.andExpect(jsonPath("$.stayNights").value(3))
 				.andExpect(jsonPath("$.totalAmount").value(640000.00))
+				.andExpect(jsonPath("$.nights[*].stayDate").value(
+						org.hamcrest.Matchers.contains("2030-02-10", "2030-02-11", "2030-02-12")
+				))
+				.andExpect(jsonPath("$.nights[*].priceSnapshot").value(
+						org.hamcrest.Matchers.contains(210000.00, 200000.00, 230000.00)
+				))
 				.andExpect(jsonPath("$.status").value("CONFIRMED"));
 
 		reservationRepository.flush();
@@ -286,6 +324,20 @@ class ReservationIntegrationTest {
 		assertThat(reloaded.getCheckOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
 		assertThat(reloaded.getNightlyPriceSnapshot()).isEqualByComparingTo("210000.00");
 		assertThat(reloaded.getTotalAmount()).isEqualByComparingTo("640000.00");
+		assertThat(reloaded.getNights())
+				.extracting(ReservationNight::getStayDate)
+				.containsExactly(
+						LocalDate.of(2030, 2, 10),
+						LocalDate.of(2030, 2, 11),
+						LocalDate.of(2030, 2, 12)
+				);
+		assertThat(reloaded.getNights())
+				.extracting(ReservationNight::getPriceSnapshot)
+				.containsExactly(
+						new BigDecimal("210000.00"),
+						new BigDecimal("200000.00"),
+						new BigDecimal("230000.00")
+				);
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);
@@ -374,7 +426,7 @@ class ReservationIntegrationTest {
 	void rejectsCancelledReservationScheduleUpdate() throws Exception {
 		Member member = saveMember("member@example.com");
 		Reservation reservation = saveReservation(member, saveRoom(), CHECK_IN, CHECK_OUT);
-		reservation.cancel();
+		reservation.cancel(freeCancellationQuote(reservation));
 		reservationRepository.flush();
 
 		performUpdate(member.getId(), reservation.getId(), CHECK_IN.plusDays(1), CHECK_OUT.plusDays(1))
@@ -692,14 +744,14 @@ class ReservationIntegrationTest {
 		Room room = saveRoom();
 		Reservation confirmed = saveReservation(member, room, CHECK_IN, CHECK_OUT);
 		Reservation cancelled = saveReservation(member, room, CHECK_OUT, CHECK_OUT.plusDays(2));
-		cancelled.cancel();
+		cancelled.cancel(freeCancellationQuote(cancelled));
 		Reservation otherCancelled = saveReservation(
 				otherMember,
 				room,
 				CHECK_OUT.plusDays(2),
 				CHECK_OUT.plusDays(4)
 		);
-		otherCancelled.cancel();
+		otherCancelled.cancel(freeCancellationQuote(otherCancelled));
 		reservationRepository.flush();
 
 		mockMvc.perform(get(RESERVATIONS_URL)
@@ -770,9 +822,9 @@ class ReservationIntegrationTest {
 				LocalDate.of(2030, 2, 8),
 				LocalDate.of(2030, 2, 12)
 		);
-		shortest.cancel();
-		middle.cancel();
-		longest.cancel();
+		shortest.cancel(freeCancellationQuote(shortest));
+		middle.cancel(freeCancellationQuote(middle));
+		longest.cancel(freeCancellationQuote(longest));
 		reservationRepository.flush();
 
 		mockMvc.perform(get(RESERVATIONS_URL)
@@ -829,6 +881,7 @@ class ReservationIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.reservationId").value(reservation.getId()))
 				.andExpect(jsonPath("$.status").value("CANCELLED"))
+				.andExpect(jsonPath("$.cancelledAt").value(CANCELLATION_INSTANT.toString()))
 				.andExpect(jsonPath("$.cancellationDate").value("2030-01-01"))
 				.andExpect(jsonPath("$.daysBeforeCheckIn").value(9))
 				.andExpect(jsonPath("$.totalAmount").value(625000.00))
@@ -836,8 +889,13 @@ class ReservationIntegrationTest {
 				.andExpect(jsonPath("$.cancellationFeeAmount").value(0.00))
 				.andExpect(jsonPath("$.estimatedRefundAmount").value(625000.00));
 
-		assertThat(reservationRepository.findById(reservation.getId()).orElseThrow().getStatus())
-				.isEqualTo(ReservationStatus.CANCELLED);
+		reservationRepository.flush();
+		entityManager.clear();
+		Reservation cancelled = reservationRepository.findById(reservation.getId()).orElseThrow();
+		assertThat(cancelled.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+		assertThat(cancelled.getCancelledAt()).isEqualTo(CANCELLATION_INSTANT);
+		assertThat(cancelled.getCancellationFeeAmount()).isEqualByComparingTo("0.00");
+		assertThat(cancelled.getRefundAmount()).isEqualByComparingTo("625000.00");
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);

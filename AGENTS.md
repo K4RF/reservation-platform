@@ -185,8 +185,9 @@ Before completing a change:
   daily override or the room base-price fallback and sums those `BigDecimal`
   values. `nightlyPriceSnapshot` stores the first stay date's effective price,
   while `totalAmount` is the authoritative aggregate snapshot. Later source
-  price changes do not alter an existing reservation's amount. Per-date price
-  snapshot rows are not stored.
+  price changes do not alter an existing reservation's amount. Each stay date
+  and applied price is stored as a `ReservationNight`; its sum must equal
+  `totalAmount` and schedule changes rebuild the complete per-night snapshot.
 - Room capacity and reservation guest count both represent total guests without
   adult/child separation. Reservation creation requires at least one guest and
   rejects counts above room capacity. The accepted count is stored on the
@@ -206,9 +207,9 @@ Before completing a change:
 - Reservation cancellation uses the `Asia/Seoul` calendar date and the
   reservation's stored cancellation-policy snapshot. Fees use `totalAmount` and
   `HALF_UP` rounding to two decimals. An allowed cancellation restores every
-  stay-date inventory and changes the state to `CANCELLED` in one transaction.
-  The API returns the fee and estimated refund, but no payment cancellation,
-  refund, or cancellation-fee persistence is implemented.
+  stay-date inventory, changes the state to `CANCELLED`, and stores UTC
+  `cancelledAt`, the applied fee, and estimated refund in one transaction. No
+  payment cancellation, refund completion, or PG transaction is implemented.
 - `Reservation` owns schedule-change and cancellation state rules. Invalid
   operations on `CANCELLED` reservations raise a domain state-transition
   exception that the API maps to the existing reservation error responses.
@@ -241,7 +242,9 @@ Before completing a change:
 - Hibernate `ddl-auto=update` does not backfill CHECK constraints into an
   existing database. Existing local volumes require the reviewed one-time SQL
   under `docs/erd/`, including the cancellation-policy snapshot upgrade for
-  pre-issue-76 reservations. A formal migration tool and
+  pre-issue-76 reservations and reservation-night/result upgrade for issue 78.
+  Historical per-night prices and past cancellation results cannot be inferred
+  exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.
 - Email/password and Google OAuth2 login issue Access and Refresh Tokens. Refresh
   Tokens are stored as `refresh:{memberId}` in Redis with matching TTL and are
@@ -278,6 +281,7 @@ Before completing a change:
   pricing, price snapshot stability, schedule repricing, booking-policy
   boundaries, cancellation-policy management and snapshot stability,
   cancellation fee boundaries and denied-cancellation inventory retention, and inventory-backed
+  per-night price persistence, schedule snapshot reconstruction, cancellation-result persistence,
   reservation creation, missing and insufficient inventory, checkout exclusion,
   schedule inventory adjustment, transaction rollback, amount recalculation,
   owner-scoped queries, pagination, status/period filtering, allowed sorting,

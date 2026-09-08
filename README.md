@@ -15,8 +15,8 @@
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
 > 숙소명·지역·기간·인원·가격·상태·재고를 조합한 숙소 통합 검색과 숙소별 객실
 > 조건 조회도 지원합니다. 예약 생성 시 각 숙박일의 날짜별
-> 가격 또는 객실 기본 가격을 합산하고 첫 숙박일 가격과 총액을 Snapshot으로
-> 저장하며, 본인 예약의 일정 변경 시 현재 가격으로 다시 계산합니다. 관리자는
+> 가격 또는 객실 기본 가격을 합산하고 숙박일별 가격, 첫 숙박일 가격과 총액을
+> Snapshot으로 저장하며, 본인 예약의 일정 변경 시 현재 가격으로 다시 계산합니다. 관리자는
 > 숙소·객실 정보와 운영 상태를 관리할 수
 > 있습니다. 주요 테이블의 NOT NULL·UNIQUE·FK·CHECK 제약과 현재 조회 패턴 기반
 > 인덱스를 검토하고 문서화했습니다. API Validation·ErrorCode·HTTP Status와
@@ -31,6 +31,7 @@
 > 숙소 정책이 바뀌어도 기존 예약의 무료·부분 수수료·취소 제한 기준은 유지됩니다.
 > 관리자는 객실별 재고 Calendar에서 날짜별 전체 수량과 `OPEN/CLOSED` 판매 상태를
 > 관리할 수 있으며, 판매 중지된 날짜는 예약 가능 조회와 신규 예약에서 제외됩니다.
+> 예약 취소 시각과 실제 취소 수수료·예상 환불액도 예약에 Snapshot으로 보존됩니다.
 
 ---
 
@@ -228,10 +229,13 @@ Spring Boot API
 `[checkInDate, checkOutDate)`의 숙박일마다 날짜별 가격을 적용하고, 없으면 객실
 기본 가격으로 fallback합니다. `nightlyPriceSnapshot`은 계산 시점의 첫 숙박일
 적용 가격이고 `totalAmount`는 모든 숙박일 가격의 합계입니다. 객실 또는 날짜별
-가격이 이후 변경되어도 기존 예약 금액은 바뀌지 않습니다. 별도 날짜별 Snapshot
-행은 저장하지 않으며 상세 결정은
+가격이 이후 변경되어도 기존 예약 금액은 바뀌지 않습니다. 각 숙박일은
+`ReservationNight`에 날짜와 적용 가격을 별도 Snapshot 행으로 저장하고 그 합계가
+항상 `totalAmount`와 일치해야 합니다. 일정 변경 시 새 기간 전체를 현재 가격으로
+다시 계산해 숙박일 Snapshot도 재구성합니다. 상세 결정은
 [`ADR-004`](docs/adr/004-reservation-price-snapshot.md)에 정리되어 있습니다.
-기존 개발 DB 예약의 금액 컬럼은 그대로 유지됩니다.
+기존 개발 DB 예약의 금액 컬럼은 그대로 유지되며, 과거 숙박일별 가격은 정확히
+복원할 수 없어 임의 Backfill하지 않습니다.
 
 예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
 경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
@@ -258,7 +262,9 @@ Spring Boot API
 수수료와 취소 가능 여부를 결정합니다. 숙소 정책이 없으면 기존의 7일 무료,
 3~6일 30%, 1~2일 50%, 당일 이후 취소 불가 규칙을 Snapshot으로 사용합니다.
 허용된 취소는 사용한 모든 숙박일 재고를 반환하고 상태를 `CANCELLED`로 변경합니다.
-응답의 수수료와 환불액은 예상값이며 실제 결제 취소·환불은 수행하지 않습니다. 세부 정책은
+동일 Transaction에서 UTC 취소 시각, 실제 적용 수수료와 예상 환불액을 예약에
+Snapshot으로 저장합니다. 환불액은 Payment 연동 전 예상값이며 실제 결제 취소·환불은
+수행하지 않습니다. 세부 정책은
 [`docs/architecture/reservation-cancellation-policy.md`](docs/architecture/reservation-cancellation-policy.md),
 상태별 허용 동작과 전이 규칙은
 [`docs/architecture/reservation-status-policy.md`](docs/architecture/reservation-status-policy.md)에
@@ -364,7 +370,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 숙소별 Booking Policy와 예약 가능 조건
 * [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
 * [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
-* [ ] 숙박일별 가격 및 취소 결과 Snapshot 고도화
+* [x] 숙박일별 가격 및 취소 결과 Snapshot 고도화
 * [ ] 구조화된 숙소 위치와 편의시설
 * [ ] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
 * [ ] Booking Policy & Catalog Completion 통합 테스트
@@ -606,6 +612,7 @@ docs: add concurrency test results
 * [x] 숙소별 최소·최대 숙박일 및 사전 예약일 정책 관리·공통 검증
 * [x] 숙소별 취소 정책 관리 및 예약 생성 시점 정책 Snapshot 보존
 * [x] 관리자 재고 Calendar API 및 날짜별 `OPEN/CLOSED` 판매 상태 관리
+* [x] 숙박일별 가격 행과 예약 취소 결과 Snapshot 영속화
 
 ---
 

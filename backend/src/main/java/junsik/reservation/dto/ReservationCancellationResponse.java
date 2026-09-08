@@ -1,6 +1,7 @@
 package junsik.reservation.dto;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,6 +12,8 @@ import junsik.reservation.enums.ReservationStatus;
 public record ReservationCancellationResponse(
 		Long reservationId,
 		ReservationStatus status,
+		@Schema(description = "취소 처리 시각(UTC)", example = "2030-01-01T03:00:00Z")
+		Instant cancelledAt,
 		@Schema(description = "Asia/Seoul 기준 취소일", example = "2030-01-01")
 		LocalDate cancellationDate,
 		@Schema(description = "취소일부터 체크인까지 남은 달력 일수", example = "9")
@@ -30,12 +33,13 @@ public record ReservationCancellationResponse(
 		return new ReservationCancellationResponse(
 				reservation.getId(),
 				reservation.getStatus(),
+				reservation.getCancelledAt(),
 				quote.cancellationDate(),
 				quote.daysBeforeCheckIn(),
 				reservation.getTotalAmount(),
 				quote.cancellationFeeRate(),
-				quote.cancellationFeeAmount(),
-				quote.estimatedRefundAmount()
+				reservation.getCancellationFeeAmount(),
+				reservation.getRefundAmount()
 		);
 	}
 }

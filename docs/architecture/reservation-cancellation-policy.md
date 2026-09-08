@@ -57,5 +57,8 @@ Snapshot 저장 방식과 대안은
 `HALF_UP`으로 반올림합니다. 예상 환불액은 `totalAmount - cancellationFeeAmount`입니다.
 
 허용된 경우에만 모든 숙박일 재고를 반환하고 예약 상태를 `CANCELLED`로 바꿉니다.
-응답의 수수료와 환불액은 예상값이며 실제 결제 취소·환불 및 취소 결과 영속화는
-이번 범위에 포함하지 않습니다.
+같은 Transaction에서 UTC `cancelledAt`, 실제 적용 `cancellationFeeAmount`,
+`refundAmount`를 Reservation에 Snapshot으로 저장합니다. API 응답은 저장된 금액을
+반환하며, `estimatedRefundAmount`라는 기존 응답 필드명은 호환을 위해 유지합니다.
+환불액은 Payment 연동 전 예상값이며 실제 결제 취소·환불 완료 여부나 PG Transaction
+정보는 저장하지 않습니다.

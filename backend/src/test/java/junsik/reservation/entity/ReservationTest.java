@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.MemberFixture.member;
 import static junsik.reservation.support.ReservationFixture.reservation;
+import static junsik.reservation.support.ReservationFixture.freeCancellationQuote;
 import static junsik.reservation.support.RoomFixture.room;
 
 import java.time.LocalDate;
@@ -30,9 +31,12 @@ class ReservationTest {
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(reservation.getGuestCount()).isEqualTo(2);
 
-		reservation.cancel();
+		reservation.cancel(freeCancellationQuote(reservation));
 
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+		assertThat(reservation.getCancelledAt()).isNotNull();
+		assertThat(reservation.getCancellationFeeAmount()).isEqualByComparingTo("0.00");
+		assertThat(reservation.getRefundAmount()).isEqualByComparingTo(reservation.getTotalAmount());
 	}
 
 	@Test
@@ -45,6 +49,9 @@ class ReservationTest {
 		assertThat(reservation.getCheckOutDate()).isEqualTo(CHECK_IN.plusDays(2));
 		assertThat(reservation.getStayNights()).isEqualTo(2);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("250000.00");
+		assertThat(reservation.getNights())
+				.extracting(ReservationNight::getStayDate)
+				.containsExactly(CHECK_IN, CHECK_IN.plusDays(1));
 		assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 		assertThat(reservation.getGuestCount()).isEqualTo(2);
 	}
@@ -91,11 +98,11 @@ class ReservationTest {
 	@Test
 	void rejectsCancellationAndScheduleChangeAfterCancellation() {
 		Reservation reservation = createReservation();
-		reservation.cancel();
+		reservation.cancel(freeCancellationQuote(reservation));
 
 		InvalidReservationStateTransitionException cancellationException = catchThrowableOfType(
 				InvalidReservationStateTransitionException.class,
-				reservation::cancel
+				() -> reservation.cancel(freeCancellationQuote(reservation))
 		);
 		InvalidReservationStateTransitionException scheduleException = catchThrowableOfType(
 				InvalidReservationStateTransitionException.class,
