@@ -29,6 +29,8 @@
 > 제어는 아직 구현되지 않았습니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
 > 관리할 수 있습니다. 신규 예약은 당시 취소 정책을 Snapshot으로 저장하므로 이후
 > 숙소 정책이 바뀌어도 기존 예약의 무료·부분 수수료·취소 제한 기준은 유지됩니다.
+> 관리자는 객실별 재고 Calendar에서 날짜별 전체 수량과 `OPEN/CLOSED` 판매 상태를
+> 관리할 수 있으며, 판매 중지된 날짜는 예약 가능 조회와 신규 예약에서 제외됩니다.
 
 ---
 
@@ -181,6 +183,9 @@ Spring Boot API
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·정렬·페이지 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
+| `POST` | `/api/v1/rooms/{roomId}/inventories` | `ADMIN` | 날짜별 객실 재고 등록(기본 `OPEN`) |
+| `PUT` | `/api/v1/rooms/{roomId}/inventories/{inventoryDate}` | `ADMIN` | 전체 재고 수량·판매 상태 수정 |
+| `GET` | `/api/v1/rooms/{roomId}/inventories?startDate=2030-07-01&endDate=2030-07-31` | `ADMIN` | 양끝 날짜를 포함하는 재고 Calendar 조회 |
 | `POST` | `/api/v1/rooms/{roomId}/prices` | `ADMIN` | 날짜별 객실 가격 등록 |
 | `PUT` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | `ADMIN` | 날짜별 객실 가격 수정 |
 | `GET` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | 인증 사용자 | 날짜별 적용 가격과 기본 가격 fallback 조회 |
@@ -230,8 +235,10 @@ Spring Boot API
 
 예약 가능 객실 조회는 체크인보다 체크아웃이 뒤이고 요청 인원이 1명 이상인
 경우에만 수행됩니다. 특정 숙소의 `ACTIVE` 객실 중 수용 인원이 요청 인원 이상이고,
-`[checkInDate, checkOutDate)`의 모든 숙박일에 재고 행과 잔여 수량이 있는 객실을
-반환합니다. 체크아웃 날짜의 재고는 조회·차감하지 않습니다. 조회와 실제 예약 생성
+`[checkInDate, checkOutDate)`의 모든 숙박일에 `OPEN` 재고 행과 잔여 수량이 있는
+객실을 반환합니다. 체크아웃 날짜의 재고는 조회·차감하지 않습니다. 관리자가 재고를
+`CLOSED`로 변경해도 이미 생성된 예약과 예약 수량은 유지되며, 이후 신규 예약과
+일정 변경에서 새로 점유할 날짜만 차단됩니다. 조회와 실제 예약 생성
 사이의 Race Condition은 아직 방지하지 않습니다.
 
 예약 생성 요청은 `memberId`를 받지 않고 JWT 인증 정보의 회원 ID를 사용합니다.
@@ -356,7 +363,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [ ] 숙소 TimeZone 기반 날짜·시간 정책
 * [x] 숙소별 Booking Policy와 예약 가능 조건
 * [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
-* [ ] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
+* [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
 * [ ] 숙박일별 가격 및 취소 결과 Snapshot 고도화
 * [ ] 구조화된 숙소 위치와 편의시설
 * [ ] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
@@ -598,6 +605,7 @@ docs: add concurrency test results
 * [x] v0.1.2 전체 예약 흐름과 MySQL Transaction Rollback Baseline 검증
 * [x] 숙소별 최소·최대 숙박일 및 사전 예약일 정책 관리·공통 검증
 * [x] 숙소별 취소 정책 관리 및 예약 생성 시점 정책 Snapshot 보존
+* [x] 관리자 재고 Calendar API 및 날짜별 `OPEN/CLOSED` 판매 상태 관리
 
 ---
 

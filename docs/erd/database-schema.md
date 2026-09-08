@@ -79,6 +79,7 @@ erDiagram
         date inventory_date
         int total_quantity
         int reserved_quantity
+        enum sale_status
     }
 
     ROOM_DAILY_PRICES {
@@ -121,7 +122,7 @@ erDiagram
 | `accommodation_cancellation_policies` | accommodation, 무료 취소·취소 마감 기준 | `uk_cancellation_policies_accommodation(accommodation_id)` | accommodation → accommodations | 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `cancellation_policy_fee_rules` | 정책, 순서, 구간 시작일, 정수 요율 | policy+order | policy → accommodation cancellation policies | 구간 시작일 ≥ 0, 요율 1~100 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
-| `room_inventories` | room/date/total/reserved | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
+| `room_inventories` | room/date/total/reserved/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
 | `reservations` | member/room/guest count/dates/prices/cancellation policy 기준/status | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, 가격 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `reservation_cancellation_fee_snapshots` | 예약, 순서, 구간 시작일, 정수 요율 | reservation+order | reservation → reservations | 구간 시작일 ≥ 0, 요율 1~100 |
@@ -154,10 +155,12 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 검증하고, Service는 객실의 `capacity`를 초과하지 않는지 생성과 일정 변경 시점에
 검증합니다. 일정 변경은 예약 인원을 변경하지 않습니다.
 
-날짜별 객실 재고는 전체 수량과 예약 수량만 저장하고 잔여 수량은 둘의 차이로
-계산합니다. 전체 수량 0은 판매할 수 없는 날짜를 표현할 수 있도록 허용합니다.
+날짜별 객실 재고는 전체 수량, 예약 수량과 `OPEN/CLOSED` 판매 상태를 저장하고
+잔여 수량은 두 수량의 차이로 계산합니다. 신규 행은 `OPEN`이며, 전체 수량 0과
+운영자가 명시한 `CLOSED`를 서로 다른 상태로 표현합니다.
 동일 객실·날짜의 중복 행은 UNIQUE로 막으며, Service는 순차 요청에서 예약 수량이
-전체 수량을 넘거나 반환 후 음수가 되지 않도록 검증합니다. 예약 생성·취소·일정
+전체 수량을 넘거나 반환 후 음수가 되지 않도록 검증합니다. `CLOSED` 재고는 신규
+예약 대상에서 제외하지만 기존 예약과 예약 수량은 변경하지 않습니다. 예약 생성·취소·일정
 변경은 여러 날짜의 재고 변경과 Reservation 저장을 하나의 Transaction으로
 처리합니다. 동시 요청 Lock은 아직 구현되지 않았습니다.
 
@@ -214,6 +217,11 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 기존 전역 정책을 Snapshot으로 Backfill할 수 있습니다. 실행 전에 예약 수와 생성될
 구간 행 수를 확인하고 이미 적용된 컬럼·제약은 중복 실행하지 않아야 합니다.
 
+날짜별 판매 상태 도입 전에 생성된 객실 재고는
+[`mysql-room-inventory-sale-status-upgrade.sql`](mysql-room-inventory-sale-status-upgrade.sql)로
+`OPEN` 상태를 Backfill할 수 있습니다. 기존 판매 가능 동작을 보존하기 위한 값이며,
+실제 판매 중지 날짜는 적용 후 관리 API로 명시적으로 `CLOSED` 처리합니다.
+
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지
 않습니다. 운영 배포 전에는 정식 Migration 도구 도입, Schema baseline 작성,
@@ -223,10 +231,11 @@ DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 �
 유지할 수 있습니다. 제약의 대상과 동작은 동일하며, 새 Schema에서는 Entity에
 명시한 `fk_social_accounts_member` 이름으로 생성됩니다.
 
-`room_inventories`와 `room_daily_prices`는 기존 테이블 변경이 아닌 새 테이블이므로
-현재 개발 설정의 `ddl-auto=update`에서 생성됩니다. 데이터가 있는 환경이나 운영
-환경에는 자동 Schema 갱신을 의존하지 말고 정식 Migration 도입 후 동일한
-FK·UNIQUE·CHECK를 명시적으로 적용해야 합니다.
+`room_daily_prices`는 기존 테이블 변경이 아닌 새 테이블이므로 현재 개발 설정의
+`ddl-auto=update`에서 생성됩니다. `room_inventories.sale_status`는 기존 테이블을
+변경하므로 데이터가 있는 개발 DB에는 위 일회성 SQL을 검토해 적용합니다. 데이터가
+있는 환경이나 운영 환경에는 자동 Schema 갱신을 의존하지 말고 정식 Migration 도입
+후 동일한 FK·UNIQUE·CHECK와 enum 허용값을 명시적으로 적용해야 합니다.
 
 `accommodation_booking_policies`도 기존 테이블을 변경하지 않는 새 테이블입니다.
 현재 개발 환경에서는 `ddl-auto=update`로 생성되지만, 운영 환경에서는 위와 같은
