@@ -2,6 +2,7 @@ package junsik.reservation.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -11,8 +12,10 @@ import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationSortField;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.SortDirection;
 
 public record AccommodationSearchRequest(
@@ -20,9 +23,19 @@ public record AccommodationSearchRequest(
 		@Schema(description = "숙소명 부분 검색어", example = "호텔")
 		String name,
 
-		@Size(max = 255, message = "지역 검색어는 255자 이하여야 합니다.")
-		@Schema(description = "숙소 주소에 포함된 지역 부분 검색어", example = "서울 강남")
+		@Size(max = 100, message = "도시 검색어는 100자 이하여야 합니다.")
+		@Schema(description = "구조화된 도시의 정확한 이름", example = "서울특별시")
+		String city,
+
+		@Size(max = 100, message = "지역 검색어는 100자 이하여야 합니다.")
+		@Schema(description = "구조화된 지역의 정확한 이름", example = "강남구")
 		String region,
+
+		@Schema(description = "모두 보유해야 하는 숙소 공용 편의시설(AND)")
+		Set<AccommodationAmenity> accommodationAmenities,
+
+		@Schema(description = "하나의 활성 객실이 모두 보유해야 하는 객실 편의시설(AND)")
+		Set<RoomAmenity> roomAmenities,
 
 		@DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
 		@Schema(description = "예약 가능 여부를 확인할 체크인 날짜", example = "2030-01-10")
@@ -70,6 +83,10 @@ public record AccommodationSearchRequest(
 ) {
 
 	public AccommodationSearchRequest {
+		accommodationAmenities = accommodationAmenities == null
+				? Set.of()
+				: Set.copyOf(accommodationAmenities);
+		roomAmenities = roomAmenities == null ? Set.of() : Set.copyOf(roomAmenities);
 		if (available == null && (checkInDate != null || checkOutDate != null)) {
 			available = true;
 		}

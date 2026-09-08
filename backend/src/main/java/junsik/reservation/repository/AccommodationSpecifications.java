@@ -3,10 +3,12 @@ package junsik.reservation.repository;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import jakarta.persistence.criteria.Subquery;
@@ -19,7 +21,9 @@ import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 
@@ -35,7 +39,13 @@ public final class AccommodationSpecifications {
 		return (root, query, criteriaBuilder) -> {
 			List<Predicate> predicates = new ArrayList<>();
 			addContains(predicates, criteriaBuilder, root, "name", request.name());
-			addContains(predicates, criteriaBuilder, root, "address", request.region());
+			addLocationFilters(predicates, criteriaBuilder, root, request);
+			for (AccommodationAmenity amenity : request.accommodationAmenities()) {
+				predicates.add(criteriaBuilder.isMember(
+						amenity,
+						root.<Collection<AccommodationAmenity>>get("amenities")
+				));
+			}
 
 			if (request.status() != null) {
 				predicates.add(criteriaBuilder.equal(root.get("status"), request.status()));
@@ -44,7 +54,8 @@ public final class AccommodationSpecifications {
 			boolean hasRoomFilter = request.guestCount() != null
 					|| request.minPrice() != null
 					|| request.maxPrice() != null
-					|| request.available() != null;
+					|| request.available() != null
+					|| !request.roomAmenities().isEmpty();
 			if (hasRoomFilter) {
 				Subquery<Long> matchingRoom = query.subquery(Long.class);
 				Root<Room> room = matchingRoom.from(Room.class);
@@ -68,6 +79,12 @@ public final class AccommodationSpecifications {
 					roomPredicates.add(criteriaBuilder.lessThanOrEqualTo(
 							room.get("nightlyPrice"),
 							request.maxPrice()
+					));
+				}
+				for (RoomAmenity amenity : request.roomAmenities()) {
+					roomPredicates.add(criteriaBuilder.isMember(
+							amenity,
+							room.<Collection<RoomAmenity>>get("amenities")
 					));
 				}
 
@@ -125,6 +142,38 @@ public final class AccommodationSpecifications {
 
 			return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
 		};
+	}
+
+	private static void addLocationFilters(
+			List<Predicate> predicates,
+			CriteriaBuilder criteriaBuilder,
+			Root<Accommodation> root,
+			AccommodationSearchRequest request
+	) {
+		Expression<String> city = root.get("location").get("city");
+		if (request.city() != null && !request.city().isBlank()) {
+			predicates.add(criteriaBuilder.equal(
+					city,
+					request.city().trim()
+			));
+		}
+		if (request.region() == null || request.region().isBlank()) {
+			return;
+		}
+		String regionKeyword = request.region().trim().toLowerCase(Locale.ROOT);
+		Expression<String> region = root.get("location").get("region");
+		Expression<String> detailAddress = root.get("location").get("detailAddress");
+		predicates.add(criteriaBuilder.or(
+				criteriaBuilder.equal(region, request.region().trim()),
+				criteriaBuilder.and(
+						criteriaBuilder.isNull(region),
+						criteriaBuilder.like(
+								criteriaBuilder.lower(detailAddress),
+								"%" + escapeLike(regionKeyword) + "%",
+								'\\'
+						)
+				)
+		));
 	}
 
 	private static Predicate bookingPolicyAllows(

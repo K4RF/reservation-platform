@@ -1,8 +1,10 @@
 package junsik.reservation.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import junsik.reservation.entity.Room;
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 
 public record RoomResponse(
@@ -11,6 +13,7 @@ public record RoomResponse(
 		String name,
 		int capacity,
 		BigDecimal nightlyPrice,
+		List<RoomAmenity> amenities,
 		RoomStatus status
 ) {
 
@@ -21,6 +24,7 @@ public record RoomResponse(
 				room.getName(),
 				room.getCapacity(),
 				room.getNightlyPrice(),
+				room.getAmenities().stream().sorted().toList(),
 				room.getStatus()
 		);
 	}

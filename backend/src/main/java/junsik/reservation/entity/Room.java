@@ -1,9 +1,13 @@
 package junsik.reservation.entity;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,9 +19,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.ColumnDefault;
 
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 
 @Entity
@@ -52,6 +58,20 @@ public class Room {
 	@ColumnDefault("0.00")
 	private BigDecimal nightlyPrice;
 
+	@ElementCollection(fetch = FetchType.LAZY)
+	@CollectionTable(
+			name = "room_amenities",
+			joinColumns = @JoinColumn(name = "room_id", nullable = false),
+			foreignKey = @ForeignKey(name = "fk_room_amenities_room"),
+			uniqueConstraints = @UniqueConstraint(
+					name = "uk_room_amenities_room_amenity",
+					columnNames = {"room_id", "amenity"}
+			)
+	)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "amenity", nullable = false, length = 50)
+	private Set<RoomAmenity> amenities = new LinkedHashSet<>();
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	@ColumnDefault("'ACTIVE'")
@@ -60,11 +80,18 @@ public class Room {
 	protected Room() {
 	}
 
-	private Room(Accommodation accommodation, String name, int capacity, BigDecimal nightlyPrice) {
+	private Room(
+			Accommodation accommodation,
+			String name,
+			int capacity,
+			BigDecimal nightlyPrice,
+			Set<RoomAmenity> amenities
+	) {
 		this.accommodation = accommodation;
 		this.name = name;
 		this.capacity = capacity;
 		this.nightlyPrice = nightlyPrice;
+		this.amenities.addAll(copyAmenities(amenities));
 		this.status = RoomStatus.ACTIVE;
 	}
 
@@ -78,7 +105,17 @@ public class Room {
 			int capacity,
 			BigDecimal nightlyPrice
 	) {
-		return new Room(accommodation, name, capacity, nightlyPrice);
+		return create(accommodation, name, capacity, nightlyPrice, Set.of());
+	}
+
+	public static Room create(
+			Accommodation accommodation,
+			String name,
+			int capacity,
+			BigDecimal nightlyPrice,
+			Set<RoomAmenity> amenities
+	) {
+		return new Room(accommodation, name, capacity, nightlyPrice, amenities);
 	}
 
 	public Long getId() {
@@ -101,6 +138,10 @@ public class Room {
 		return nightlyPrice;
 	}
 
+	public Set<RoomAmenity> getAmenities() {
+		return Set.copyOf(amenities);
+	}
+
 	public RoomStatus getStatus() {
 		return status;
 	}
@@ -119,7 +160,24 @@ public class Room {
 		this.nightlyPrice = nightlyPrice;
 	}
 
+	public void update(
+			String name,
+			int capacity,
+			BigDecimal nightlyPrice,
+			Set<RoomAmenity> amenities
+	) {
+		this.name = name;
+		this.capacity = capacity;
+		this.nightlyPrice = nightlyPrice;
+		this.amenities.clear();
+		this.amenities.addAll(copyAmenities(amenities));
+	}
+
 	public void changeStatus(RoomStatus status) {
 		this.status = status;
+	}
+
+	private static Set<RoomAmenity> copyAmenities(Set<RoomAmenity> amenities) {
+		return amenities == null ? Set.of() : Set.copyOf(amenities);
 	}
 }
