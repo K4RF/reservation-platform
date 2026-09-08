@@ -153,9 +153,14 @@ Before completing a change:
   new member and provider-specific social account are created.
 - Accommodation creation, information updates, and `ACTIVE/INACTIVE` status
   changes are restricted to `ADMIN`; newly created accommodations are `ACTIVE`.
+  New create/update requests require country, city, region, and the legacy
+  `address` field as the detail address. Pre-upgrade rows may retain null
+  structured fields without guessing values from their address. Accommodation
+  amenities are `PARKING`, `BREAKFAST`, `POOL`, `GYM`, and `PET_FRIENDLY`.
   Authenticated users can read details and search paginated lists by optional
-  name, address-region, status, active-room capacity/base-nightly-price, and
-  stay-period inventory availability conditions. Dates default to available
+  name, exact city/region, required accommodation/room amenities, status,
+  active-room capacity/base-nightly-price, and stay-period inventory availability
+  conditions. Multiple amenities use AND semantics. Dates default to available
   search and availability requires a valid `[check-in, check-out)` pair. Only
   `ID` and `NAME` sorting is allowed; dated search prices do not use daily-price
   overrides or total-stay amounts.
@@ -168,8 +173,8 @@ Before completing a change:
   restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
   nightly price. Authenticated users can read room details and filter
   accommodation-scoped paginated lists by minimum capacity, nightly-price
-  range, and status. Allowed sort fields are `ID`, `NAME`, `CAPACITY`, and
-  `NIGHTLY_PRICE`.
+  range, status, and required `WIFI`/`AIR_CONDITIONER` amenities. Allowed sort
+  fields are `ID`, `NAME`, `CAPACITY`, and `NIGHTLY_PRICE`.
 - Administrators can create and update a positive daily price for one room and
   stay date, including preparing prices for inactive rooms. Authenticated users
   can query the effective price: a stored override reports `DAILY`, while a
@@ -243,6 +248,9 @@ Before completing a change:
   existing database. Existing local volumes require the reviewed one-time SQL
   under `docs/erd/`, including the cancellation-policy snapshot upgrade for
   pre-issue-76 reservations and reservation-night/result upgrade for issue 78.
+  The issue-79 catalog upgrade adds nullable structured-location columns,
+  location indexes, and accommodation/room amenity tables without inferring
+  legacy location values.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.

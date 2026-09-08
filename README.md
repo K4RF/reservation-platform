@@ -13,8 +13,8 @@
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
-> 숙소명·지역·기간·인원·가격·상태·재고를 조합한 숙소 통합 검색과 숙소별 객실
-> 조건 조회도 지원합니다. 예약 생성 시 각 숙박일의 날짜별
+> 숙소명·구조화된 도시·지역·숙소/객실 편의시설·기간·인원·가격·상태·재고를
+> 조합한 숙소 통합 검색과 숙소별 객실 조건 조회도 지원합니다. 예약 생성 시 각 숙박일의 날짜별
 > 가격 또는 객실 기본 가격을 합산하고 숙박일별 가격, 첫 숙박일 가격과 총액을
 > Snapshot으로 저장하며, 본인 예약의 일정 변경 시 현재 가격으로 다시 계산합니다. 관리자는
 > 숙소·객실 정보와 운영 상태를 관리할 수
@@ -177,12 +177,12 @@ Spring Boot API
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/booking-policy` | `ADMIN` | 숙소별 예약 가능 정책 등록·수정 |
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/cancellation-policy` | `ADMIN` | 숙소별 취소 정책 등록·수정 |
 | `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
-| `GET` | `/api/v1/accommodations?region=서울&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소·지역·객실 조건·재고 기반 통합 검색 |
+| `GET` | `/api/v1/accommodations?city=서울특별시&region=강남구&accommodationAmenities=PARKING&roomAmenities=WIFI&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 위치·편의시설·객실 조건·재고 기반 통합 검색 |
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
 | `PUT` | `/api/v1/rooms/{roomId}` | `ADMIN` | 객실 정보 수정 |
 | `PATCH` | `/api/v1/rooms/{roomId}/status` | `ADMIN` | 객실 운영 상태 변경 |
 | `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
-| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·정렬·페이지 조회 |
+| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&amenities=WIFI&amenities=AIR_CONDITIONER&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·편의시설·정렬·페이지 조회 |
 | `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
 | `POST` | `/api/v1/rooms/{roomId}/inventories` | `ADMIN` | 날짜별 객실 재고 등록(기본 `OPEN`) |
 | `PUT` | `/api/v1/rooms/{roomId}/inventories/{inventoryDate}` | `ADMIN` | 전체 재고 수량·판매 상태 수정 |
@@ -200,14 +200,18 @@ Spring Boot API
 생략하면 기존처럼 ID 오름차순 목록을 반환합니다. 숙소 정렬은 `ID`, `NAME`,
 객실 정렬은 `ID`, `NAME`, `CAPACITY`, `NIGHTLY_PRICE`, 예약 정렬은 `ID`,
 `CHECK_IN_DATE`, `CHECK_OUT_DATE`, `TOTAL_AMOUNT`만 허용하며 방향은 `ASC`,
-`DESC`입니다. 숙소 통합 검색은 숙소명·주소 내 지역·운영 상태와 활성 객실의
-수용 인원·기본 1박 가격, 기간 내 날짜별 재고 가용성을 선택적으로 조합합니다.
+`DESC`입니다. 숙소 통합 검색은 숙소명·구조화된 도시·지역·숙소 공용 편의시설·운영
+상태와 활성 객실의 편의시설·수용 인원·기본 1박 가격, 기간 내 날짜별 재고 가용성을
+선택적으로 조합합니다. 복수 편의시설은 모두 만족해야 하는 AND 조건이며 객실
+조건은 하나의 활성 객실이 모두 만족해야 합니다.
 날짜는 함께 전달해야 하며 날짜만 입력하면 `available=true`가 적용됩니다. 가격
 조건은 날짜별 가격이나 숙박 총액이 아닌 객실 기본 1박 가격 기준입니다. 자세한
 계약은
 [`docs/architecture/accommodation-integrated-search.md`](docs/architecture/accommodation-integrated-search.md)에
+정리되어 있습니다. 위치·편의시설 책임과 레거시 주소 호환 정책은
+[`docs/architecture/accommodation-catalog.md`](docs/architecture/accommodation-catalog.md)에
 정리되어 있습니다. 숙소별 객실 조회는 최소 수용 인원, 1박 최소·최대 가격,
-`ACTIVE/INACTIVE` 상태를 선택적으로 조합할 수 있습니다. 예약은
+`ACTIVE/INACTIVE` 상태와 객실 편의시설을 선택적으로 조합할 수 있습니다. 예약은
 `CONFIRMED/CANCELLED` 상태와 체크인·체크아웃 날짜의
 `From/To` 조건을 선택적으로 조합할 수 있으며 각 날짜 경계는 포함됩니다.
 `From`과 `To`를 함께 전달하면 `From`은 `To` 이하여야 합니다. 모든 예약 목록
@@ -371,7 +375,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
 * [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
 * [x] 숙박일별 가격 및 취소 결과 Snapshot 고도화
-* [ ] 구조화된 숙소 위치와 편의시설
+* [x] 구조화된 숙소 위치와 편의시설
 * [ ] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
 * [ ] Booking Policy & Catalog Completion 통합 테스트
 
@@ -613,6 +617,7 @@ docs: add concurrency test results
 * [x] 숙소별 취소 정책 관리 및 예약 생성 시점 정책 Snapshot 보존
 * [x] 관리자 재고 Calendar API 및 날짜별 `OPEN/CLOSED` 판매 상태 관리
 * [x] 숙박일별 가격 행과 예약 취소 결과 Snapshot 영속화
+* [x] 숙소 국가·도시·지역 구조화 및 숙소·객실 편의시설 관리·AND 검색
 
 ---
 
