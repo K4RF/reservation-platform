@@ -7,7 +7,10 @@
 | Parameter | Meaning |
 | --- | --- |
 | `name` | 숙소명의 대소문자 구분 없는 부분 일치 |
-| `region` | 구조화된 지역 컬럼이 없으므로 주소의 대소문자 구분 없는 부분 일치 |
+| `city` | 구조화된 도시의 정확 일치(MySQL 문자열 Collation 적용) |
+| `region` | 구조화된 지역의 정확 일치(MySQL 문자열 Collation 적용). 구조화 이전 행은 기존 주소 부분 일치 |
+| `accommodationAmenities` | 숙소가 모두 보유해야 하는 공용 편의시설(AND) |
+| `roomAmenities` | 한 활성 객실이 모두 보유해야 하는 객실 편의시설(AND) |
 | `checkInDate`, `checkOutDate` | `[check-in, check-out)` 기간의 날짜별 재고 확인 |
 | `guestCount` | 요청 인원 이상을 수용하는 활성 객실 존재 여부 |
 | `minPrice`, `maxPrice` | 활성 객실 기본 1박 가격의 포함 범위 |
@@ -25,14 +28,15 @@
 사전 예약일을 모두 만족해야 `available=true`입니다. 정책이 없는 숙소는 기존
 가용성 조건만 적용합니다.
 
-인원·가격 조건은 한 객실이 모두 만족해야 합니다. 서로 다른 객실이 각각 일부
-조건만 만족하는 숙소는 결과에 포함하지 않습니다. 가격 범위는 기존 숙소별 객실
+인원·가격·객실 편의시설 조건은 한 객실이 모두 만족해야 합니다. 서로 다른 객실이 각각 일부
+조건만 만족하는 숙소는 결과에 포함하지 않습니다. 숙소 편의시설도 요청한 값을
+모두 보유해야 합니다. 가격 범위는 기존 숙소별 객실
 검색과 동일하게 객실의 기본 `nightlyPrice`를 기준으로 합니다. 날짜별 가격 또는
 숙박 기간 총액을 기준으로 한 검색은 현재 계약에 포함하지 않습니다.
 
 ## Query Design
 
-기존 Spring Data JPA Specification을 확장했습니다. 숙소명·주소·상태는 숙소
+기존 Spring Data JPA Specification을 확장했습니다. 숙소명·도시·지역·공용 편의시설·상태는 숙소
 Predicate로 적용하고, 객실·재고 조건은 상관 `EXISTS` Subquery로 적용합니다.
 따라서 조건에 맞는 객실이 여러 개여도 한 숙소가 중복 반환되지 않고 Pagination의
 전체 개수도 숙소 수를 유지합니다.
@@ -46,8 +50,10 @@ Predicate로 적용하고, 객실·재고 조건은 상관 `EXISTS` Subquery로 
 
 MySQL 8.4의 현재 Schema와 조회 조건을 기준으로 다음 접근 경로를 사용합니다.
 
-- 숙소의 `lower(name/address) like '%keyword%'`는 선행 wildcard 때문에 일반
-  B-tree 텍스트 인덱스를 활용하기 어렵습니다.
+- 숙소명과 레거시 주소의 `LIKE '%keyword%'`는 선행 wildcard 때문에 일반 B-tree
+  텍스트 인덱스를 활용하기 어렵습니다. 구조화된 도시·지역 정확 일치는
+  `idx_accommodations_city_region`, 지역 단독 검색은 `idx_accommodations_region`을
+  후보 접근 경로로 사용합니다.
 - `rooms(accommodation_id)` 외래 키 인덱스는 존재하지만 작은 테스트 데이터의
   대표 계획에서는 Optimizer가 `EXISTS`를 Semi-join으로 바꾸고 객실을 먼저
   스캔한 뒤 숙소를 PK로 조회했습니다. 데이터 분포에 따라 외래 키 인덱스 계획을
@@ -69,7 +75,7 @@ MySQL 8.4의 현재 Schema와 조회 조건을 기준으로 다음 접근 경로
 예약 가능한 서울 숙소를 인원과 객실 기본 가격으로 검색합니다.
 
 ```http
-GET /api/v1/accommodations?region=서울&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20
+GET /api/v1/accommodations?city=서울특별시&region=강남구&accommodationAmenities=PARKING&accommodationAmenities=POOL&roomAmenities=WIFI&roomAmenities=AIR_CONDITIONER&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20
 Authorization: Bearer <access-token>
 ```
 

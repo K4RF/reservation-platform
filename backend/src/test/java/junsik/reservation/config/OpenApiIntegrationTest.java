@@ -64,7 +64,10 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/accommodations'].get.parameters[*].name",
 						containsInAnyOrder(
 								"name",
+								"city",
 								"region",
+								"accommodationAmenities",
+								"roomAmenities",
 								"checkInDate",
 								"checkOutDate",
 								"guestCount",
@@ -86,6 +89,7 @@ class OpenApiIntegrationTest {
 								"minPrice",
 								"maxPrice",
 								"status",
+								"amenities",
 								"page",
 								"size",
 								"sortBy",
@@ -253,11 +257,16 @@ class OpenApiIntegrationTest {
 				))
 				.andExpect(jsonPath("$.components.schemas.RoomDailyPriceResponse.properties.source").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomInventoryResponse.properties.saleStatus").exists())
+				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.amenities").exists())
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.status").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.country").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.city").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.region").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.amenities").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
 				.andExpect(jsonPath(
 						"$.components.schemas.UpdateAccommodationRequest.required",
-						containsInAnyOrder("name", "description", "address")
+						containsInAnyOrder("name", "description", "country", "city", "region", "address")
 				))
 				.andExpect(jsonPath(
 						"$.components.schemas.UpdateRoomRequest.required",

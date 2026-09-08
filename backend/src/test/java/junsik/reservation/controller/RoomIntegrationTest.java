@@ -12,6 +12,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.math.BigDecimal;
+import java.util.Set;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.enums.MemberRole;
+import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
@@ -64,7 +68,8 @@ class RoomIntegrationTest {
 							{
 							  "name": "  Deluxe Twin Room  ",
 							  "capacity": 4,
-							  "nightlyPrice": 150000.00
+							  "nightlyPrice": 150000.00,
+							  "amenities": ["WIFI", "AIR_CONDITIONER"]
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -77,6 +82,7 @@ class RoomIntegrationTest {
 				.andExpect(jsonPath("$.name").value("Deluxe Twin Room"))
 				.andExpect(jsonPath("$.capacity").value(4))
 				.andExpect(jsonPath("$.nightlyPrice").value(150000.00))
+				.andExpect(jsonPath("$.amenities[*]", containsInAnyOrder("WIFI", "AIR_CONDITIONER")))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Room savedRoom = roomRepository.findAll().getFirst();
@@ -84,6 +90,10 @@ class RoomIntegrationTest {
 		assertThat(savedRoom.getName()).isEqualTo("Deluxe Twin Room");
 		assertThat(savedRoom.getCapacity()).isEqualTo(4);
 		assertThat(savedRoom.getNightlyPrice()).isEqualByComparingTo("150000.00");
+		assertThat(savedRoom.getAmenities()).containsExactlyInAnyOrder(
+				RoomAmenity.WIFI,
+				RoomAmenity.AIR_CONDITIONER
+		);
 		assertThat(savedRoom.getStatus()).isEqualTo(RoomStatus.ACTIVE);
 	}
 
@@ -98,17 +108,20 @@ class RoomIntegrationTest {
 							{
 							  "name": "  Updated Suite  ",
 							  "capacity": 6,
-							  "nightlyPrice": 250000.00
+							  "nightlyPrice": 250000.00,
+							  "amenities": ["AIR_CONDITIONER"]
 							}
 							"""))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.name").value("Updated Suite"))
 				.andExpect(jsonPath("$.capacity").value(6))
 				.andExpect(jsonPath("$.nightlyPrice").value(250000.00))
+				.andExpect(jsonPath("$.amenities[0]").value("AIR_CONDITIONER"))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		assertThat(room.getName()).isEqualTo("Updated Suite");
 		assertThat(room.getNightlyPrice()).isEqualByComparingTo("250000.00");
+		assertThat(room.getAmenities()).containsExactly(RoomAmenity.AIR_CONDITIONER);
 	}
 
 	@Test
@@ -298,6 +311,32 @@ class RoomIntegrationTest {
 				.andExpect(jsonPath("$.content[1].roomId").value(standard.getId()))
 				.andExpect(jsonPath("$.content[1].nightlyPrice").value(150000.00))
 				.andExpect(jsonPath("$.totalElements").value(2));
+	}
+
+	@Test
+	void filtersRoomsThatContainAllRequestedAmenities() throws Exception {
+		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+		Room expected = roomRepository.saveAndFlush(Room.create(
+				accommodation,
+				"Complete Room",
+				4,
+				new BigDecimal("180000.00"),
+				Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
+		));
+		roomRepository.saveAndFlush(Room.create(
+				accommodation,
+				"Wifi Only Room",
+				4,
+				new BigDecimal("170000.00"),
+				Set.of(RoomAmenity.WIFI)
+		));
+
+		mockMvc.perform(get(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.USER))
+					.param("amenities", "WIFI", "AIR_CONDITIONER"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].roomId").value(expected.getId()));
 	}
 
 	@Test

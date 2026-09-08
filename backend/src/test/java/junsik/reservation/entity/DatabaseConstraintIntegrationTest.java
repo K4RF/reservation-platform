@@ -8,6 +8,7 @@ import static junsik.reservation.support.RoomFixture.room;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,6 +110,31 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				"address",
 				"ACTIVE"
 		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into accommodations (name, description, country, city, region, address, status)"
+						+ " values (?, ?, ?, ?, ?, ?, ?)",
+				"Accommodation",
+				"description",
+				"x".repeat(101),
+				"city",
+				"region",
+				"address",
+				"ACTIVE"
+		));
+	}
+
+	@Test
+	void definesStructuredLocationSearchIndexes() {
+		List<String> indexNames = jdbcTemplate.queryForList(
+				"select distinct index_name from information_schema.statistics"
+						+ " where table_schema = database() and table_name = 'accommodations'",
+				String.class
+		);
+
+		assertThat(indexNames).contains(
+				"idx_accommodations_city_region",
+				"idx_accommodations_region"
+		);
 	}
 
 	@Test
@@ -119,6 +145,58 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		assertConstraintViolation(() -> insertRoom(accommodation.getId(), "Room", 0, new BigDecimal("100000.00")));
 		assertConstraintViolation(() -> insertRoom(accommodation.getId(), "Room", 2, new BigDecimal("-0.01")));
 		assertConstraintViolation(() -> insertRoom(accommodation.getId(), "   ", 2, new BigDecimal("100000.00")));
+	}
+
+	@Test
+	void enforcesAccommodationAndRoomAmenityRelationshipConstraints() {
+		Accommodation accommodation = saveAccommodation();
+		Room room = saveRoom(accommodation);
+
+		jdbcTemplate.update(
+				"insert into accommodation_amenities (accommodation_id, amenity) values (?, ?)",
+				accommodation.getId(),
+				"PARKING"
+		);
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into accommodation_amenities (accommodation_id, amenity) values (?, ?)",
+				accommodation.getId(),
+				"PARKING"
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into accommodation_amenities (accommodation_id, amenity) values (?, ?)",
+				999999L,
+				"POOL"
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into accommodation_amenities (accommodation_id, amenity) values (?, null)",
+				accommodation.getId()
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into accommodation_amenities (accommodation_id, amenity) values (?, ?)",
+				accommodation.getId(),
+				"UNKNOWN"
+		));
+
+		jdbcTemplate.update(
+				"insert into room_amenities (room_id, amenity) values (?, ?)",
+				room.getId(),
+				"WIFI"
+		);
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into room_amenities (room_id, amenity) values (?, ?)",
+				room.getId(),
+				"WIFI"
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into room_amenities (room_id, amenity) values (?, ?)",
+				999999L,
+				"AIR_CONDITIONER"
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"insert into room_amenities (room_id, amenity) values (?, ?)",
+				room.getId(),
+				"UNKNOWN"
+		));
 	}
 
 	@Test

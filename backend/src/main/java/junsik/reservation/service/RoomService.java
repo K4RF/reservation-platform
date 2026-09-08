@@ -50,7 +50,8 @@ public class RoomService {
 				accommodation,
 				request.name().trim(),
 				request.capacity(),
-				request.nightlyPrice()
+				request.nightlyPrice(),
+				request.amenities()
 		);
 		return RoomResponse.from(roomRepository.save(room));
 	}
@@ -78,7 +79,8 @@ public class RoomService {
 						request.minCapacity(),
 						request.minPrice(),
 						request.maxPrice(),
-						request.status()
+						request.status(),
+						request.amenities()
 				), pageRequest)
 				.map(RoomResponse::from);
 		return PageResponse.from(rooms);
@@ -114,7 +116,12 @@ public class RoomService {
 	@Transactional
 	public RoomResponse update(Long roomId, UpdateRoomRequest request) {
 		Room room = getRoom(roomId);
-		room.update(request.name().trim(), request.capacity(), request.nightlyPrice());
+		room.update(
+				request.name().trim(),
+				request.capacity(),
+				request.nightlyPrice(),
+				request.amenities()
+		);
 		return RoomResponse.from(room);
 	}
 

@@ -117,7 +117,7 @@ public class RoomController {
 		return ResponseEntity.ok(roomService.getById(roomId));
 	}
 
-	@Operation(summary = "숙소별 객실 목록 조회")
+	@Operation(summary = "숙소별 객실 목록 조회", description = "수용 인원·가격·상태·객실 편의시설을 조합하며 복수 편의시설은 AND 조건입니다.")
 	@ApiResponse(
 			responseCode = "404",
 			description = "숙소를 찾을 수 없음",

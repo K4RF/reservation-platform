@@ -1,12 +1,16 @@
 package junsik.reservation.dto;
 
 import java.math.BigDecimal;
+import java.util.Set;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import junsik.reservation.enums.RoomAmenity;
 
 public record UpdateRoomRequest(
 		@NotBlank(message = "객실명은 필수입니다.")
@@ -19,6 +23,13 @@ public record UpdateRoomRequest(
 
 		@NotNull(message = "1박 가격은 필수입니다.")
 		@DecimalMin(value = "0.00", inclusive = false, message = "1박 가격은 0보다 커야 합니다.")
-		BigDecimal nightlyPrice
+		BigDecimal nightlyPrice,
+
+		@Schema(description = "객실 전용 편의시설")
+		Set<RoomAmenity> amenities
 ) {
+
+	public UpdateRoomRequest {
+		amenities = amenities == null ? Set.of() : Set.copyOf(amenities);
+	}
 }

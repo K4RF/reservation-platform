@@ -37,7 +37,11 @@ public class AccommodationService {
 		Accommodation accommodation = Accommodation.create(
 				request.name().trim(),
 				request.description().trim(),
-				request.address().trim()
+				request.country(),
+				request.city(),
+				request.region(),
+				request.address(),
+				request.amenities()
 		);
 		return AccommodationResponse.from(accommodationRepository.save(accommodation));
 	}
@@ -70,7 +74,11 @@ public class AccommodationService {
 		accommodation.update(
 				request.name().trim(),
 				request.description().trim(),
-				request.address().trim()
+				request.country(),
+				request.city(),
+				request.region(),
+				request.address(),
+				request.amenities()
 		);
 		return AccommodationResponse.from(accommodation);
 	}
