@@ -1,5 +1,6 @@
 package junsik.reservation.dto;
 
+import java.time.LocalTime;
 import java.util.List;
 
 import junsik.reservation.entity.Accommodation;
@@ -15,6 +16,8 @@ public record AccommodationResponse(
 		String region,
 		String address,
 		List<AccommodationAmenity> amenities,
+		LocalTime checkInTime,
+		LocalTime checkOutTime,
 		AccommodationStatus status
 ) {
 
@@ -28,6 +31,8 @@ public record AccommodationResponse(
 				accommodation.getRegion(),
 				accommodation.getAddress(),
 				accommodation.getAmenities().stream().sorted().toList(),
+				accommodation.getCheckInTime(),
+				accommodation.getCheckOutTime(),
 				accommodation.getStatus()
 		);
 	}

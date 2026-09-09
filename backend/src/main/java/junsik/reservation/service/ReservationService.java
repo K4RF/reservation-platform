@@ -23,6 +23,7 @@ import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.ReservationCancellationQuote;
 import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.ReservationPriceSnapshot;
+import junsik.reservation.entity.RepresentativeGuest;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.AccommodationErrorCode;
@@ -48,6 +49,7 @@ public class ReservationService {
 	private final ReservationCancellationPolicy cancellationPolicy;
 	private final AccommodationBookingPolicyService bookingPolicyService;
 	private final AccommodationCancellationPolicyService accommodationCancellationPolicyService;
+	private final ReservationNumberGenerator reservationNumberGenerator;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
@@ -57,7 +59,8 @@ public class ReservationService {
 			RoomDailyPriceService roomDailyPriceService,
 			ReservationCancellationPolicy cancellationPolicy,
 			AccommodationBookingPolicyService bookingPolicyService,
-			AccommodationCancellationPolicyService accommodationCancellationPolicyService
+			AccommodationCancellationPolicyService accommodationCancellationPolicyService,
+			ReservationNumberGenerator reservationNumberGenerator
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
@@ -67,6 +70,7 @@ public class ReservationService {
 		this.cancellationPolicy = cancellationPolicy;
 		this.bookingPolicyService = bookingPolicyService;
 		this.accommodationCancellationPolicyService = accommodationCancellationPolicyService;
+		this.reservationNumberGenerator = reservationNumberGenerator;
 	}
 
 	@Transactional
@@ -89,9 +93,15 @@ public class ReservationService {
 				.resolveReservationPriceSnapshot(room, period);
 
 		Reservation reservation = Reservation.create(
+				reservationNumberGenerator.generate(),
 				member,
 				room,
 				request.guestCount(),
+				new RepresentativeGuest(
+						request.representativeGuest().name(),
+						request.representativeGuest().email(),
+						request.representativeGuest().phone()
+				),
 				request.checkInDate(),
 				request.checkOutDate(),
 				priceSnapshot,

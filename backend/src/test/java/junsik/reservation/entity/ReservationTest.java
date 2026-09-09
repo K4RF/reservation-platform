@@ -67,9 +67,11 @@ class ReservationTest {
 				List.of(CancellationFeeRule.create(2, 65))
 		);
 		Reservation reservation = Reservation.create(
+				"RSV-20300101-A1B2C3D4E5F60708",
 				member,
 				room,
 				2,
+				new RepresentativeGuest("Test Guest", "guest@example.com", "010-1234-5678"),
 				CHECK_IN,
 				CHECK_OUT,
 				ReservationPriceSnapshot.calculate(period, room.getNightlyPrice(), Map.of()),

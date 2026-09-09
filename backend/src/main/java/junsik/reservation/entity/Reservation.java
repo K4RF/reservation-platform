@@ -17,6 +17,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -42,6 +43,10 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 @Entity
 @Table(
 		name = "reservations",
+		uniqueConstraints = @UniqueConstraint(
+				name = "uk_reservations_reservation_number",
+				columnNames = "reservation_number"
+		),
 		indexes = @Index(name = "idx_reservations_member", columnList = "member_id"),
 		check = {
 				@CheckConstraint(
@@ -64,6 +69,18 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 						name = "chk_reservations_cancellation_result",
 						constraint = "(cancellation_fee_amount is null or cancellation_fee_amount >= 0)"
 								+ " and (refund_amount is null or refund_amount >= 0)"
+				),
+				@CheckConstraint(
+						name = "chk_reservations_reservation_number",
+						constraint = "char_length(trim(reservation_number)) > 0"
+				),
+				@CheckConstraint(
+						name = "chk_reservations_representative_guest",
+						constraint = "(guest_name is null and guest_email is null and guest_phone is null)"
+								+ " or (guest_name is not null and guest_email is not null and guest_phone is not null"
+								+ " and char_length(trim(guest_name)) > 0"
+								+ " and char_length(trim(guest_email)) > 0"
+								+ " and char_length(trim(guest_phone)) > 0)"
 				)
 		}
 )
@@ -72,6 +89,9 @@ public class Reservation {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
+	@Column(name = "reservation_number", nullable = false, length = 40)
+	private String reservationNumber;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(
@@ -92,6 +112,9 @@ public class Reservation {
 	@Column(name = "guest_count", nullable = false)
 	@ColumnDefault("1")
 	private int guestCount;
+
+	@Embedded
+	private RepresentativeGuest representativeGuest;
 
 	@Column(name = "check_in_date", nullable = false)
 	private LocalDate checkInDate;
@@ -149,22 +172,32 @@ public class Reservation {
 	}
 
 	private Reservation(
+			String reservationNumber,
 			Member member,
 			Room room,
 			int guestCount,
+			RepresentativeGuest representativeGuest,
 			LocalDate checkInDate,
 			LocalDate checkOutDate,
 			ReservationPriceSnapshot priceSnapshot,
 			CancellationPolicySnapshot cancellationPolicySnapshot
 	) {
+		if (reservationNumber == null || reservationNumber.isBlank()) {
+			throw new IllegalArgumentException("예약번호는 필수입니다.");
+		}
+		if (representativeGuest == null) {
+			throw new IllegalArgumentException("대표 투숙객 정보는 필수입니다.");
+		}
 		if (!room.canAccommodate(guestCount)) {
 			throw new IllegalArgumentException("예약 인원은 1명 이상이며 객실 최대 수용 인원 이하여야 합니다.");
 		}
 		ReservationPeriod period = new ReservationPeriod(checkInDate, checkOutDate);
 		validatePriceSnapshot(period, priceSnapshot);
+		this.reservationNumber = reservationNumber;
 		this.member = member;
 		this.room = room;
 		this.guestCount = guestCount;
+		this.representativeGuest = representativeGuest;
 		this.checkInDate = checkInDate;
 		this.checkOutDate = checkOutDate;
 		applyPriceSnapshot(priceSnapshot);
@@ -173,9 +206,11 @@ public class Reservation {
 	}
 
 	public static Reservation create(
+			String reservationNumber,
 			Member member,
 			Room room,
 			int guestCount,
+			RepresentativeGuest representativeGuest,
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) {
@@ -186,9 +221,11 @@ public class Reservation {
 				Map.of()
 		);
 		return create(
+				reservationNumber,
 				member,
 				room,
 				guestCount,
+				representativeGuest,
 				checkInDate,
 				checkOutDate,
 				priceSnapshot,
@@ -197,17 +234,21 @@ public class Reservation {
 	}
 
 	public static Reservation create(
+			String reservationNumber,
 			Member member,
 			Room room,
 			int guestCount,
+			RepresentativeGuest representativeGuest,
 			LocalDate checkInDate,
 			LocalDate checkOutDate,
 			ReservationPriceSnapshot priceSnapshot
 	) {
 		return create(
+				reservationNumber,
 				member,
 				room,
 				guestCount,
+				representativeGuest,
 				checkInDate,
 				checkOutDate,
 				priceSnapshot,
@@ -216,18 +257,22 @@ public class Reservation {
 	}
 
 	public static Reservation create(
+			String reservationNumber,
 			Member member,
 			Room room,
 			int guestCount,
+			RepresentativeGuest representativeGuest,
 			LocalDate checkInDate,
 			LocalDate checkOutDate,
 			ReservationPriceSnapshot priceSnapshot,
 			CancellationPolicySnapshot cancellationPolicySnapshot
 	) {
 		return new Reservation(
+				reservationNumber,
 				member,
 				room,
 				guestCount,
+				representativeGuest,
 				checkInDate,
 				checkOutDate,
 				priceSnapshot,
@@ -237,6 +282,10 @@ public class Reservation {
 
 	public Long getId() {
 		return id;
+	}
+
+	public String getReservationNumber() {
+		return reservationNumber;
 	}
 
 	public Member getMember() {
@@ -249,6 +298,10 @@ public class Reservation {
 
 	public int getGuestCount() {
 		return guestCount;
+	}
+
+	public RepresentativeGuest getRepresentativeGuest() {
+		return representativeGuest;
 	}
 
 	public LocalDate getCheckInDate() {

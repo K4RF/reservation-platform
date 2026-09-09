@@ -1,9 +1,12 @@
 package junsik.reservation.dto;
 
+import java.time.LocalTime;
 import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.AssertTrue;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import junsik.reservation.enums.AccommodationAmenity;
@@ -35,10 +38,23 @@ public record UpdateAccommodationRequest(
 		String address,
 
 		@Schema(description = "숙소 공용 편의시설")
-		Set<AccommodationAmenity> amenities
+		Set<AccommodationAmenity> amenities,
+
+		@NotNull(message = "체크인 시간은 필수입니다.")
+		@Schema(description = "숙소 기본 체크인 시간", example = "15:00:00")
+		LocalTime checkInTime,
+
+		@NotNull(message = "체크아웃 시간은 필수입니다.")
+		@Schema(description = "숙소 기본 체크아웃 시간", example = "11:00:00")
+		LocalTime checkOutTime
 ) {
 
 	public UpdateAccommodationRequest {
 		amenities = amenities == null ? Set.of() : Set.copyOf(amenities);
+	}
+
+	@AssertTrue(message = "체크인 시간과 체크아웃 시간은 달라야 합니다.")
+	public boolean isOperatingTimeValid() {
+		return checkInTime == null || checkOutTime == null || !checkInTime.equals(checkOutTime);
 	}
 }

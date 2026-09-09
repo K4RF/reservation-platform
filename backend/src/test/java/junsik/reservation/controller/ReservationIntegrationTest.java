@@ -121,9 +121,15 @@ class ReservationIntegrationTest {
 						org.hamcrest.Matchers.matchesPattern("/api/v1/reservations/\\d+")
 				))
 				.andExpect(jsonPath("$.reservationId").isNumber())
+				.andExpect(jsonPath("$.reservationNumber").value(
+						org.hamcrest.Matchers.matchesPattern("RSV-20300101-[A-F0-9]{16}")
+				))
 				.andExpect(jsonPath("$.memberId").value(member.getId()))
 				.andExpect(jsonPath("$.roomId").value(room.getId()))
 				.andExpect(jsonPath("$.guestCount").value(GUEST_COUNT))
+				.andExpect(jsonPath("$.representativeGuest.name").value("Test Guest"))
+				.andExpect(jsonPath("$.representativeGuest.email").value("guest@example.com"))
+				.andExpect(jsonPath("$.representativeGuest.phone").value("010-1234-5678"))
 				.andExpect(jsonPath("$.checkInDate").value("2030-01-10"))
 				.andExpect(jsonPath("$.checkOutDate").value("2030-01-15"))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(125000.00))
@@ -141,6 +147,8 @@ class ReservationIntegrationTest {
 		assertThat(reservation.getMember().getId()).isEqualTo(member.getId());
 		assertThat(reservation.getRoom().getId()).isEqualTo(room.getId());
 		assertThat(reservation.getGuestCount()).isEqualTo(GUEST_COUNT);
+		assertThat(reservation.getReservationNumber()).matches("RSV-20300101-[A-F0-9]{16}");
+		assertThat(reservation.getRepresentativeGuest().getName()).isEqualTo("Test Guest");
 		assertThat(reservation.getNightlyPriceSnapshot()).isEqualByComparingTo("125000.00");
 		assertThat(reservation.getStayNights()).isEqualTo(5);
 		assertThat(reservation.getTotalAmount()).isEqualByComparingTo("625000.00");
@@ -553,7 +561,8 @@ class ReservationIntegrationTest {
 							  "roomId": null,
 							  "guestCount": null,
 							  "checkInDate": null,
-							  "checkOutDate": null
+							  "checkOutDate": null,
+							  "representativeGuest": null
 							}
 							"""))
 				.andExpect(status().isBadRequest())
@@ -562,10 +571,41 @@ class ReservationIntegrationTest {
 						"roomId",
 						"guestCount",
 						"checkInDate",
-						"checkOutDate"
+						"checkOutDate",
+						"representativeGuest"
 				)));
 
 		assertThat(reservationRepository.count()).isZero();
+	}
+
+	@Test
+	void rejectsInvalidRepresentativeGuestInformation() throws Exception {
+		Member member = saveMember("member@example.com");
+		Room room = saveRoom();
+
+		mockMvc.perform(post(RESERVATIONS_URL)
+					.header("Authorization", bearerToken(member.getId()))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "roomId": %d,
+							  "guestCount": 2,
+							  "checkInDate": "2030-01-10",
+							  "checkOutDate": "2030-01-15",
+							  "representativeGuest": {
+							    "name": " ",
+							    "email": "invalid-email",
+							    "phone": "phone#"
+							  }
+							}
+							""".formatted(room.getId())))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
+						"representativeGuest.name",
+						"representativeGuest.email",
+						"representativeGuest.phone"
+				)));
 	}
 
 	@Test
@@ -1138,7 +1178,12 @@ class ReservationIntegrationTest {
 				  "roomId": %d,
 				  "guestCount": %d,
 				  "checkInDate": "%s",
-				  "checkOutDate": "%s"
+				  "checkOutDate": "%s",
+				  "representativeGuest": {
+				    "name": "Test Guest",
+				    "email": "guest@example.com",
+				    "phone": "010-1234-5678"
+				  }
 				}
 				""".formatted(roomId, guestCount, checkInDate, checkOutDate);
 	}

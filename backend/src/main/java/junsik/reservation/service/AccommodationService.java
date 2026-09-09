@@ -41,7 +41,9 @@ public class AccommodationService {
 				request.city(),
 				request.region(),
 				request.address(),
-				request.amenities()
+				request.amenities(),
+				request.checkInTime(),
+				request.checkOutTime()
 		);
 		return AccommodationResponse.from(accommodationRepository.save(accommodation));
 	}
@@ -78,7 +80,9 @@ public class AccommodationService {
 				request.city(),
 				request.region(),
 				request.address(),
-				request.amenities()
+				request.amenities(),
+				request.checkInTime(),
+				request.checkOutTime()
 		);
 		return AccommodationResponse.from(accommodation);
 	}

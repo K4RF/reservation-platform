@@ -221,8 +221,15 @@ class OpenApiIntegrationTest {
 						"roomId",
 						"guestCount",
 						"checkInDate",
-						"checkOutDate"
+						"checkOutDate",
+						"representativeGuest"
 				)))
+				.andExpect(jsonPath(
+						"$.components.schemas.RepresentativeGuestRequest.required",
+						containsInAnyOrder("name", "email", "phone")
+				))
+				.andExpect(jsonPath("$.components.schemas.RepresentativeGuestRequest.properties.email.format")
+						.value("email"))
 				.andExpect(jsonPath("$.components.schemas.CreateReservationRequest.properties.guestCount.minimum")
 						.value(1))
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
@@ -263,10 +270,15 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.city").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.region").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.amenities").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.checkInTime").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.checkOutTime").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
 				.andExpect(jsonPath(
 						"$.components.schemas.UpdateAccommodationRequest.required",
-						containsInAnyOrder("name", "description", "country", "city", "region", "address")
+						containsInAnyOrder(
+								"name", "description", "country", "city", "region", "address",
+								"checkInTime", "checkOutTime"
+						)
 				))
 				.andExpect(jsonPath(
 						"$.components.schemas.UpdateRoomRequest.required",
@@ -277,6 +289,8 @@ class OpenApiIntegrationTest {
 						containsInAnyOrder("checkInDate", "checkOutDate")
 				))
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.nightlyPriceSnapshot").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.reservationNumber").exists())
+				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.representativeGuest").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.guestCount").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.stayNights").exists())
 				.andExpect(jsonPath("$.components.schemas.ReservationResponse.properties.totalAmount").exists())

@@ -163,7 +163,12 @@ class CancellationPolicySnapshotIntegrationTest {
 						  "roomId": %d,
 						  "guestCount": 1,
 						  "checkInDate": "%s",
-						  "checkOutDate": "%s"
+						  "checkOutDate": "%s",
+						  "representativeGuest": {
+						    "name": "Test Guest",
+						    "email": "guest@example.com",
+						    "phone": "010-1234-5678"
+						  }
 						}
 						""".formatted(room.getId(), CHECK_IN, CHECK_OUT)));
 	}

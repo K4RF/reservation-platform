@@ -9,6 +9,7 @@ import static junsik.reservation.support.RoomFixture.room;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -424,6 +425,21 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 	}
 
 	@Test
+	void enforcesUniquePublicReservationNumber() {
+		Member member = saveMember("reservation-number@example.com");
+		Room room = saveRoom(saveAccommodation());
+		String reservationNumber = "RSV-20300101-A1B2C3D4E5F60708";
+
+		insertReservation(reservationNumber, member.getId(), room.getId());
+
+		assertConstraintViolation(() -> insertReservation(
+				reservationNumber,
+				member.getId(),
+				room.getId()
+		));
+	}
+
+	@Test
 	void explainsIntegratedAccommodationSearchUsingCurrentIndexes() {
 		LocalDate checkInDate = LocalDate.of(2030, 1, 10);
 		LocalDate checkOutDate = LocalDate.of(2030, 1, 13);
@@ -657,10 +673,11 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		jdbcTemplate.update(
 				"""
 				insert into reservations (
-				    member_id, room_id, guest_count, check_in_date, check_out_date,
+				    reservation_number, member_id, room_id, guest_count, check_in_date, check_out_date,
 				    nightly_price_snapshot, total_amount, status
-				) values (?, ?, ?, ?, ?, ?, ?, ?)
+				) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
 				""",
+				"RSV-20300101-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase(),
 				memberId,
 				roomId,
 				guestCount,
@@ -669,6 +686,20 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				nightlyPriceSnapshot,
 				totalAmount,
 				"CONFIRMED"
+		);
+	}
+
+	private void insertReservation(String reservationNumber, Long memberId, Long roomId) {
+		jdbcTemplate.update(
+				"""
+				insert into reservations (
+				    reservation_number, member_id, room_id, guest_count, check_in_date, check_out_date,
+				    nightly_price_snapshot, total_amount, status
+				) values (?, ?, ?, 1, '2030-01-10', '2030-01-11', 100000.00, 100000.00, 'CONFIRMED')
+				""",
+				reservationNumber,
+				memberId,
+				roomId
 		);
 	}
 

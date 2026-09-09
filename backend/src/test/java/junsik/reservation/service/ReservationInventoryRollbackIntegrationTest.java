@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import junsik.reservation.dto.CreateReservationRequest;
+import junsik.reservation.dto.RepresentativeGuestRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
@@ -77,7 +78,13 @@ class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSu
 
 		assertThatThrownBy(() -> reservationService.create(
 				member.getId(),
-				new CreateReservationRequest(room.getId(), 2, CHECK_IN, CHECK_OUT)
+				new CreateReservationRequest(
+						room.getId(),
+						2,
+						CHECK_IN,
+						CHECK_OUT,
+						new RepresentativeGuestRequest("Test Guest", "guest@example.com", "010-1234-5678")
+				)
 		)).isInstanceOf(IllegalStateException.class);
 
 		assertThat(roomInventoryRepository
