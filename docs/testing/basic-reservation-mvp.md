@@ -51,4 +51,4 @@ MySQL 제약조건은 별도의 Testcontainers 테스트가 담당합니다. MVP
 v0.1.2의 숙소 통합 검색, 날짜별 가격 합산, 상세 재고 변화와 취소 수수료까지
 연결한 실제 MySQL 성공 흐름은
 [`reservation-domain-baseline.md`](reservation-domain-baseline.md)의
-`ReservationDomainBaselineIntegrationTest`가 담당합니다.
+`BookingPolicyCatalogBaselineIntegrationTest`가 v0.1.3 정책·Catalog 범위까지 확장하여 담당합니다.
