@@ -1,4 +1,4 @@
--- MySQL 8.4 one-time upgrade for accommodation TimeZone before issue #81.
+-- MySQL 8.4 one-time upgrade for accommodation TimeZone before issue #82.
 -- Back up the database and verify the column/constraint does not exist first.
 
 ALTER TABLE accommodations

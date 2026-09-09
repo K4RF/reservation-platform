@@ -263,7 +263,7 @@ Before completing a change:
   The issue-80 reservation-details upgrade backfills stable public numbers using
   the migration date, while leaving unknown historical guest and operating-time
   values null.
-  The issue-81 TimeZone upgrade backfills accommodations to `Asia/Seoul` to
+  The issue-82 TimeZone upgrade backfills accommodations to `Asia/Seoul` to
   preserve the earlier fixed business-zone behavior.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and

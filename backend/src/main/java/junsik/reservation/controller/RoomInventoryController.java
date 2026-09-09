@@ -28,10 +28,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
-import junsik.reservation.dto.CreateRoomInventoryRequest;
-import junsik.reservation.dto.RoomInventoryCalendarResponse;
-import junsik.reservation.dto.RoomInventoryResponse;
-import junsik.reservation.dto.UpdateRoomInventoryRequest;
+import junsik.reservation.dto.room.request.CreateRoomInventoryRequest;
+import junsik.reservation.dto.room.request.UpdateRoomInventoryRequest;
+import junsik.reservation.dto.room.response.RoomInventoryCalendarResponse;
+import junsik.reservation.dto.room.response.RoomInventoryResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.RoomInventoryService;
 

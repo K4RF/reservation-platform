@@ -14,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.RoomInventoryResponse;
+import junsik.reservation.dto.room.response.RoomInventoryResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;

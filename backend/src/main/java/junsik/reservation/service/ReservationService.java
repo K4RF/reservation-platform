@@ -11,12 +11,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.CreateReservationRequest;
-import junsik.reservation.dto.PageResponse;
-import junsik.reservation.dto.ReservationCancellationResponse;
-import junsik.reservation.dto.ReservationResponse;
-import junsik.reservation.dto.ReservationSearchRequest;
-import junsik.reservation.dto.UpdateReservationScheduleRequest;
+import junsik.reservation.dto.common.response.PageResponse;
+import junsik.reservation.dto.reservation.request.CreateReservationRequest;
+import junsik.reservation.dto.reservation.request.ReservationSearchRequest;
+import junsik.reservation.dto.reservation.request.UpdateReservationScheduleRequest;
+import junsik.reservation.dto.reservation.response.ReservationCancellationResponse;
+import junsik.reservation.dto.reservation.response.ReservationResponse;
 import junsik.reservation.entity.CancellationPolicySnapshot;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;

@@ -23,8 +23,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
-import junsik.reservation.dto.AccommodationCancellationPolicyRequest;
-import junsik.reservation.dto.AccommodationCancellationPolicyResponse;
+import junsik.reservation.dto.accommodation.request.AccommodationCancellationPolicyRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationCancellationPolicyResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.AccommodationCancellationPolicyService;
 

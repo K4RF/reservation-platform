@@ -11,12 +11,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.AccommodationResponse;
-import junsik.reservation.dto.AccommodationSearchRequest;
-import junsik.reservation.dto.CreateAccommodationRequest;
-import junsik.reservation.dto.PageResponse;
-import junsik.reservation.dto.UpdateAccommodationRequest;
-import junsik.reservation.dto.UpdateAccommodationStatusRequest;
+import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
+import junsik.reservation.dto.accommodation.request.CreateAccommodationRequest;
+import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
+import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationResponse;
+import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.global.exception.BusinessException;

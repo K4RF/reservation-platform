@@ -8,8 +8,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.stereotype.Service;
 
-import junsik.reservation.dto.LoginRequest;
-import junsik.reservation.dto.LoginResponse;
+import junsik.reservation.dto.auth.request.LoginRequest;
+import junsik.reservation.dto.auth.response.LoginResponse;
 import junsik.reservation.enums.SecurityErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.security.MemberUserDetails;

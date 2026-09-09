@@ -16,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import junsik.reservation.dto.CreateReservationRequest;
-import junsik.reservation.dto.RepresentativeGuestRequest;
+import junsik.reservation.dto.reservation.request.CreateReservationRequest;
+import junsik.reservation.dto.reservation.request.RepresentativeGuestRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Reservation;
