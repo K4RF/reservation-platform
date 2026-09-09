@@ -47,6 +47,10 @@ import junsik.reservation.enums.AccommodationStatus;
 						constraint = "(check_in_time is null and check_out_time is null)"
 								+ " or (check_in_time is not null and check_out_time is not null"
 								+ " and check_in_time <> check_out_time)"
+				),
+				@CheckConstraint(
+						name = "chk_accommodations_time_zone",
+						constraint = "char_length(trim(time_zone)) > 0"
 				)
 		}
 )
