@@ -233,6 +233,18 @@ class AccommodationIntegrationTest {
 	}
 
 	@Test
+	void rejectsUnknownIanaTimeZone() throws Exception {
+		mockMvc.perform(post(ACCOMMODATIONS_URL)
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest().replace("Asia/Seoul", "Mars/Olympus")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("timeZone"))
+				.andExpect(jsonPath("$.errors[0].message").value("유효한 IANA TimeZone이어야 합니다."));
+	}
+
+	@Test
 	void rejectsAccommodationCreationFromUserRole() throws Exception {
 		mockMvc.perform(post(ACCOMMODATIONS_URL)
 					.header("Authorization", bearerToken(MemberRole.USER))

@@ -11,12 +11,15 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import junsik.reservation.entity.Reservation;
 import junsik.reservation.entity.ReservationCancellationQuote;
+import junsik.reservation.entity.Accommodation;
 import junsik.reservation.enums.ReservationErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 
@@ -79,11 +82,52 @@ class ReservationCancellationPolicyTest {
 		assertThat(afterCheckIn.getErrorCode()).isEqualTo(ReservationErrorCode.CANCELLATION_NOT_ALLOWED);
 	}
 
+	@Test
+	void appliesEachAccommodationDateAcrossTheUtcMidnightBoundary() {
+		Instant instant = Instant.parse("2030-07-01T03:30:00Z");
+		ReservationCancellationPolicy boundaryPolicy = new ReservationCancellationPolicy(
+				new ReservationDateProvider(Clock.fixed(instant, ZoneOffset.UTC))
+		);
+		Reservation tokyoReservation = reservationAt("Asia/Tokyo", LocalDate.of(2030, 7, 7));
+		Reservation newYorkReservation = reservationAt("America/New_York", LocalDate.of(2030, 7, 7));
+
+		ReservationCancellationQuote tokyoQuote = boundaryPolicy.evaluate(tokyoReservation);
+		ReservationCancellationQuote newYorkQuote = boundaryPolicy.evaluate(newYorkReservation);
+
+		assertThat(tokyoQuote.cancelledAt()).isEqualTo(instant);
+		assertThat(newYorkQuote.cancelledAt()).isEqualTo(instant);
+		assertThat(tokyoQuote.cancellationDate()).isEqualTo(LocalDate.of(2030, 7, 1));
+		assertThat(tokyoQuote.cancellationFeeRate()).isEqualTo(30);
+		assertThat(newYorkQuote.cancellationDate()).isEqualTo(LocalDate.of(2030, 6, 30));
+		assertThat(newYorkQuote.cancellationFeeRate()).isZero();
+	}
+
 	private Reservation reservationWithCheckInAfter(long days) {
 		LocalDate checkInDate = TODAY.plusDays(days);
 		return reservation(
 				member(),
 				room(accommodation(), "Deluxe Room", 2, new BigDecimal("100000.01")),
+				checkInDate,
+				checkInDate.plusDays(1)
+		);
+	}
+
+	private Reservation reservationAt(String timeZone, LocalDate checkInDate) {
+		Accommodation accommodation = Accommodation.create(
+				"Time Zone Hotel",
+				"Description",
+				"Country",
+				"City",
+				"Region",
+				"Address",
+				Set.of(),
+				LocalTime.of(15, 0),
+				LocalTime.of(11, 0),
+				timeZone
+		);
+		return reservation(
+				member(),
+				room(accommodation, "Deluxe Room", 2, new BigDecimal("100000.01")),
 				checkInDate,
 				checkInDate.plusDays(1)
 		);
