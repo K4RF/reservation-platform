@@ -135,7 +135,9 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							  "country": "대한민국",
 							  "city": "서울특별시",
 							  "region": "강남구",
-							  "address": "서울 강남구 테헤란로"
+							  "address": "서울 강남구 테헤란로",
+							  "checkInTime": "15:00:00",
+							  "checkOutTime": "11:00:00"
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -227,7 +229,12 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							  "roomId": %d,
 							  "guestCount": 4,
 							  "checkInDate": "%s",
-							  "checkOutDate": "%s"
+							  "checkOutDate": "%s",
+							  "representativeGuest": {
+							    "name": "Baseline Guest",
+							    "email": "guest@example.com",
+							    "phone": "010-1234-5678"
+							  }
 							}
 							""".formatted(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT)))
 				.andExpect(status().isCreated())

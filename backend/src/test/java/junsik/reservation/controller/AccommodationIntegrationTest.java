@@ -55,7 +55,9 @@ class AccommodationIntegrationTest {
 							  "city": "  부산광역시  ",
 							  "region": "  해운대구  ",
 							  "address": "  123 Beach Road  ",
-							  "amenities": ["PARKING", "POOL"]
+							  "amenities": ["PARKING", "POOL"],
+							  "checkInTime": "15:00:00",
+							  "checkOutTime": "11:00:00"
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -71,6 +73,8 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.region").value("해운대구"))
 				.andExpect(jsonPath("$.address").value("123 Beach Road"))
 				.andExpect(jsonPath("$.amenities[*]", containsInAnyOrder("PARKING", "POOL")))
+				.andExpect(jsonPath("$.checkInTime").value("15:00:00"))
+				.andExpect(jsonPath("$.checkOutTime").value("11:00:00"))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Accommodation saved = accommodationRepository.findAll().getFirst();
@@ -84,6 +88,8 @@ class AccommodationIntegrationTest {
 				AccommodationAmenity.PARKING,
 				AccommodationAmenity.POOL
 		);
+		assertThat(saved.getCheckInTime()).hasToString("15:00");
+		assertThat(saved.getCheckOutTime()).hasToString("11:00");
 		assertThat(saved.getStatus()).isEqualTo(AccommodationStatus.ACTIVE);
 	}
 
@@ -102,7 +108,9 @@ class AccommodationIntegrationTest {
 							  "city": "  서울특별시  ",
 							  "region": "  종로구  ",
 							  "address": "  Updated address  ",
-							  "amenities": ["BREAKFAST", "GYM"]
+							  "amenities": ["BREAKFAST", "GYM"],
+							  "checkInTime": "16:00:00",
+							  "checkOutTime": "10:00:00"
 							}
 							"""))
 				.andExpect(status().isOk())
@@ -112,6 +120,8 @@ class AccommodationIntegrationTest {
 				.andExpect(jsonPath("$.region").value("종로구"))
 				.andExpect(jsonPath("$.address").value("Updated address"))
 				.andExpect(jsonPath("$.amenities[*]", containsInAnyOrder("BREAKFAST", "GYM")))
+				.andExpect(jsonPath("$.checkInTime").value("16:00:00"))
+				.andExpect(jsonPath("$.checkOutTime").value("10:00:00"))
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		assertThat(accommodation.getName()).isEqualTo("Updated Hotel");
@@ -157,7 +167,7 @@ class AccommodationIntegrationTest {
 		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}", accommodation.getId())
 					.header("Authorization", bearerToken(MemberRole.ADMIN))
 					.contentType(MediaType.APPLICATION_JSON)
-					.content("{\"name\":\"\",\"description\":\"\",\"country\":\"\",\"city\":\"\",\"region\":\"\",\"address\":\"\"}"))
+					.content("{\"name\":\"\",\"description\":\"\",\"country\":\"\",\"city\":\"\",\"region\":\"\",\"address\":\"\",\"checkInTime\":\"15:00:00\",\"checkOutTime\":\"11:00:00\"}"))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder(
 						"name", "description", "country", "city", "region", "address"
@@ -183,7 +193,9 @@ class AccommodationIntegrationTest {
 							  "country": "",
 							  "city": "",
 							  "region": "",
-							  "address": ""
+							  "address": "",
+							  "checkInTime": null,
+							  "checkOutTime": null
 							}
 							"""))
 				.andExpect(status().isBadRequest())
@@ -194,10 +206,23 @@ class AccommodationIntegrationTest {
 						"country",
 						"city",
 						"region",
-						"address"
+						"address",
+						"checkInTime",
+						"checkOutTime"
 				)));
 
 		assertThat(accommodationRepository.count()).isZero();
+	}
+
+	@Test
+	void rejectsEqualCheckInAndCheckOutTimes() throws Exception {
+		mockMvc.perform(post(ACCOMMODATIONS_URL)
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(validCreateRequest().replace("11:00:00", "15:00:00")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("operatingTimeValid"));
 	}
 
 	@Test
@@ -335,7 +360,9 @@ class AccommodationIntegrationTest {
 				  "country": "대한민국",
 				  "city": "부산광역시",
 				  "region": "해운대구",
-				  "address": "123 Beach Road"
+				  "address": "123 Beach Road",
+				  "checkInTime": "15:00:00",
+				  "checkOutTime": "11:00:00"
 				}
 				""";
 	}

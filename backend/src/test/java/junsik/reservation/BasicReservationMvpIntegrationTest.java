@@ -101,7 +101,9 @@ class BasicReservationMvpIntegrationTest {
 							  "country": "대한민국",
 							  "city": "부산광역시",
 							  "region": "해운대구",
-							  "address": "100 Test Beach Road"
+							  "address": "100 Test Beach Road",
+							  "checkInTime": "15:00:00",
+							  "checkOutTime": "11:00:00"
 							}
 							"""))
 				.andExpect(status().isCreated())
@@ -158,7 +160,12 @@ class BasicReservationMvpIntegrationTest {
 							  "roomId": %d,
 							  "guestCount": 2,
 							  "checkInDate": "2035-06-10",
-							  "checkOutDate": "2035-06-13"
+							  "checkOutDate": "2035-06-13",
+							  "representativeGuest": {
+							    "name": "MVP Guest",
+							    "email": "guest@example.com",
+							    "phone": "010-1234-5678"
+							  }
 							}
 							""".formatted(roomId)))
 				.andExpect(status().isCreated())

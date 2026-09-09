@@ -32,6 +32,8 @@
 > 관리자는 객실별 재고 Calendar에서 날짜별 전체 수량과 `OPEN/CLOSED` 판매 상태를
 > 관리할 수 있으며, 판매 중지된 날짜는 예약 가능 조회와 신규 예약에서 제외됩니다.
 > 예약 취소 시각과 실제 취소 수수료·예상 환불액도 예약에 Snapshot으로 보존됩니다.
+> 신규 예약은 외부 공개 예약번호와 최소 대표 투숙객 정보를 보존하며, 숙소 상세에는
+> 기본 체크인·체크아웃 운영시간이 포함됩니다.
 
 ---
 
@@ -171,8 +173,8 @@ Spring Boot API
 
 | Method | Endpoint | 권한 | 기능 |
 | --- | --- | --- | --- |
-| `POST` | `/api/v1/accommodations` | `ADMIN` | 숙소 등록 |
-| `PUT` | `/api/v1/accommodations/{accommodationId}` | `ADMIN` | 숙소 정보 수정 |
+| `POST` | `/api/v1/accommodations` | `ADMIN` | 위치·편의시설·체크인/체크아웃 시간을 포함한 숙소 등록 |
+| `PUT` | `/api/v1/accommodations/{accommodationId}` | `ADMIN` | 위치·편의시설·체크인/체크아웃 시간을 포함한 숙소 정보 수정 |
 | `PATCH` | `/api/v1/accommodations/{accommodationId}/status` | `ADMIN` | 숙소 운영 상태 변경 |
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/booking-policy` | `ADMIN` | 숙소별 예약 가능 정책 등록·수정 |
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/cancellation-policy` | `ADMIN` | 숙소별 취소 정책 등록·수정 |
@@ -250,6 +252,10 @@ Spring Boot API
 사이의 Race Condition은 아직 방지하지 않습니다.
 
 예약 생성 요청은 `memberId`를 받지 않고 JWT 인증 정보의 회원 ID를 사용합니다.
+실제 대표 투숙객은 회원과 다를 수 있으므로 요청에서 이름·이메일·전화번호를 받고,
+응답에는 내부 `reservationId`와 별도로 고객 문의·결제·알림용 공개
+`reservationNumber`를 제공합니다. 공개번호 형식과 레거시 DB 적용 방식은
+[`docs/erd/database-schema.md`](docs/erd/database-schema.md)에 정리되어 있습니다.
 예약 기간은 체크아웃 날짜를 점유하지 않는 `[checkInDate, checkOutDate)` 구간으로
 처리하므로 기존 예약의 체크아웃 날짜와 다음 예약의 체크인 날짜가 같을 수
 있습니다. 예약 생성은 모든 숙박일 재고의 존재와 잔여 수량을 검증한 뒤 날짜마다

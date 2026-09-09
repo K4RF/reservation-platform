@@ -193,6 +193,12 @@ Before completing a change:
   price changes do not alter an existing reservation's amount. Each stay date
   and applied price is stored as a `ReservationNight`; its sum must equal
   `totalAmount` and schedule changes rebuild the complete per-night snapshot.
+- New reservations receive a stable, unique public number in
+  `RSV-yyyyMMdd-XXXXXXXXXXXXXXXX` format and store only the representative
+  guest's name, contact email, and phone separately from the owning Member.
+- New accommodation create/update requests require distinct default check-in
+  and check-out times. Legacy accommodation rows may keep null times rather
+  than receiving guessed values.
 - Room capacity and reservation guest count both represent total guests without
   adult/child separation. Reservation creation requires at least one guest and
   rejects counts above room capacity. The accepted count is stored on the
@@ -251,6 +257,9 @@ Before completing a change:
   The issue-79 catalog upgrade adds nullable structured-location columns,
   location indexes, and accommodation/room amenity tables without inferring
   legacy location values.
+  The issue-80 reservation-details upgrade backfills stable public numbers using
+  the migration date, while leaving unknown historical guest and operating-time
+  values null.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.

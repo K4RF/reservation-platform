@@ -44,6 +44,8 @@ erDiagram
         varchar_100 city
         varchar_100 region
         varchar_255 address
+        time check_in_time
+        time check_out_time
         enum status
     }
 
@@ -107,9 +109,13 @@ erDiagram
 
     RESERVATIONS {
         bigint id PK
+        varchar_40 reservation_number UK
         bigint member_id FK
         bigint room_id FK
         int guest_count
+        varchar_100 guest_name
+        varchar_255 guest_email
+        varchar_30 guest_phone
         date check_in_date
         date check_out_date
         decimal_12_2 nightly_price_snapshot
@@ -143,7 +149,7 @@ erDiagram
 | --- | --- | --- | --- | --- |
 | `members` | email/password/role, email·password 255, role 20 | `uk_members_email(email)` | - | email은 trim 후 비어 있지 않고 password 길이는 1 이상 |
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
-| `accommodations` | name/description/address/status 필수, country/city/region nullable 호환 필드, 100/1000/255/20 | - | - | 기존 필수 문자열은 trim 후 비어 있지 않음 |
+| `accommodations` | name/description/address/status 필수, country/city/region 및 운영시간 nullable 호환 필드, 100/1000/255/20 | - | - | 기존 필수 문자열은 trim 후 비어 있지 않음, 운영시간은 모두 null이거나 모두 존재하면서 서로 다름 |
 | `accommodation_amenities` | accommodation/amenity | accommodation+amenity | accommodation → accommodations | enum 허용 값 |
 | `accommodation_booking_policies` | accommodation과 네 정책 경계값 | `uk_booking_policies_accommodation(accommodation_id)` | accommodation → accommodations | 최소 숙박일 ≥ 1, 최대 숙박일 ≥ 최소 숙박일, 최소 사전 예약일 ≥ 0, 최대 사전 예약일 ≥ 최소 사전 예약일 |
 | `accommodation_cancellation_policies` | accommodation, 무료 취소·취소 마감 기준 | `uk_cancellation_policies_accommodation(accommodation_id)` | accommodation → accommodations | 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
@@ -152,7 +158,7 @@ erDiagram
 | `room_amenities` | room/amenity | room+amenity | room → rooms | enum 허용 값 |
 | `room_inventories` | room/date/total/reserved/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
-| `reservations` | member/room/guest count/dates/prices/cancellation policy·result/status | - | member → members, room → rooms | guest count ≥ 1, check-in < check-out, 가격·취소 수수료·환불액 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
+| `reservations` | 공개 예약번호/member/room/guest count/dates/prices/cancellation policy·result/status 필수, 대표 투숙객은 레거시 호환 nullable | `uk_reservations_reservation_number(reservation_number)` | member → members, room → rooms | 예약번호와 입력된 대표 투숙객 값은 trim 후 비어 있지 않음, 대표 투숙객은 전부 null이거나 전부 존재, guest count ≥ 1, check-in < check-out, 가격·취소 수수료·환불액 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `reservation_nights` | reservation/stay date/price snapshot | `uk_reservation_nights_reservation_date(reservation_id, stay_date)` | reservation → reservations | price snapshot ≥ 0 |
 | `reservation_cancellation_fee_snapshots` | 예약, 순서, 구간 시작일, 정수 요율 | reservation+order | reservation → reservations | 구간 시작일 ≥ 0, 요율 1~100 |
 
@@ -165,6 +171,11 @@ Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 en
 불가능해 nullable로 유지합니다. 신규 API는 네 위치 필드를 모두 요구합니다.
 숙소와 객실 편의시설은 책임별 enum 및 관계 테이블로 분리하고 등록·전체 수정 시
 목록 전체를 교체합니다.
+
+신규 숙소 등록·수정 API는 체크인·체크아웃 시간을 모두 요구하며 두 시간은 서로
+달라야 합니다. 체크인과 체크아웃은 서로 다른 숙박일에 적용되므로 `15:00` 체크인과
+`11:00` 체크아웃처럼 체크인 시각이 더 늦은 구성이 유효합니다. 구조화 이전 숙소는
+검증되지 않은 시간을 추정하지 않고 nullable로 유지합니다.
 
 객실의 공개 생성·수정 API는 `nightlyPrice > 0`을 요구하지만 DB는 기존 개발
 데이터 및 내부 호환성을 위해 `nightly_price >= 0`을 허용합니다. 예약 가격
@@ -192,6 +203,12 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 `guest_count`도 같은 기준의 전체 인원입니다. 공개 예약 API는 1명 이상인지 먼저
 검증하고, Service는 객실의 `capacity`를 초과하지 않는지 생성과 일정 변경 시점에
 검증합니다. 일정 변경은 예약 인원을 변경하지 않습니다.
+
+신규 예약에는 내부 PK와 분리된 `RSV-yyyyMMdd-XXXXXXXXXXXXXXXX` 공개 예약번호를
+Asia/Seoul 기준 발급합니다. 16자리 대문자 16진 UUID 조각으로 충돌 가능성을 낮추고
+DB UNIQUE를 최종 방어선으로 사용합니다. 번호는 일정 변경·취소 후에도 바뀌지
+않습니다. 예약 소유자인 Member와 실제 대표 투숙객은 별개이며 이름·안내 이메일·
+연락처만 예약에 저장합니다.
 
 날짜별 객실 재고는 전체 수량, 예약 수량과 `OPEN/CLOSED` 판매 상태를 저장하고
 잔여 수량은 두 수량의 차이로 계산합니다. 신규 행은 `OPEN`이며, 전체 수량 0과
@@ -230,6 +247,7 @@ DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날�
 | `uk_accommodation_amenities_accommodation_amenity(accommodation_id,amenity)` | 숙소의 복수 편의시설 포함 여부와 중복 방지 | UNIQUE가 accommodation 선두 인덱스를 제공 |
 | `uk_room_amenities_room_amenity(room_id,amenity)` | 같은 활성 객실의 복수 편의시설 포함 여부와 중복 방지 | UNIQUE가 room 선두 인덱스를 제공 |
 | `uk_reservation_nights_reservation_date(reservation_id,stay_date)` | 예약 상세의 날짜순 숙박일 가격 조회와 중복 방지 | UNIQUE가 reservation 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
+| `uk_reservations_reservation_number(reservation_number)` | 고객 문의·결제·알림의 공개 예약 식별 | 공개 식별자의 유일성을 보장하므로 별도 인덱스 없음 |
 | `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
@@ -275,6 +293,12 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 [`mysql-accommodation-catalog-upgrade.sql`](mysql-accommodation-catalog-upgrade.sql)로
 nullable 위치 컬럼, 검색 인덱스와 두 편의시설 관계 테이블을 추가할 수 있습니다.
 기존 주소는 상세 주소로 보존하고 국가·도시·지역은 검증 없이 추정하지 않습니다.
+
+공개 예약번호·대표 투숙객·숙소 운영시간 도입 전 Schema는
+[`mysql-reservation-details-upgrade.sql`](mysql-reservation-details-upgrade.sql)로
+갱신합니다. 예약에 생성 시각이 없으므로 기존 예약번호의 날짜 구간은 Migration
+실행일을 사용하고, 과거 대표 투숙객과 숙소 운영시간은 추정하지 않아 nullable로
+남깁니다. 신규 API 쓰기부터는 해당 값을 모두 요구합니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지

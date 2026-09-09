@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -24,6 +25,10 @@ public record CreateReservationRequest(
 
 		@NotNull(message = "체크아웃 날짜는 필수입니다.")
 		@Schema(description = "체크아웃 날짜", example = "2030-01-15")
-		LocalDate checkOutDate
+		LocalDate checkOutDate,
+
+		@Valid
+		@NotNull(message = "대표 투숙객 정보는 필수입니다.")
+		RepresentativeGuestRequest representativeGuest
 ) {
 }
