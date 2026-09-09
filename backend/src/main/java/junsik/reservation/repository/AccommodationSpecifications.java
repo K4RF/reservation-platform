@@ -16,7 +16,7 @@ import jakarta.persistence.criteria.Subquery;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import junsik.reservation.dto.AccommodationSearchRequest;
+import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.ReservationPeriod;

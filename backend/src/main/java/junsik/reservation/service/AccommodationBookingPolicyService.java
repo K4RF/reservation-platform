@@ -6,8 +6,8 @@ import java.time.ZoneId;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.AccommodationBookingPolicyRequest;
-import junsik.reservation.dto.AccommodationBookingPolicyResponse;
+import junsik.reservation.dto.accommodation.request.AccommodationBookingPolicyRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationBookingPolicyResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.AccommodationBookingPolicy;
 import junsik.reservation.entity.ReservationPeriod;

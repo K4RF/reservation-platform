@@ -26,9 +26,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
-import junsik.reservation.dto.CreateRoomDailyPriceRequest;
-import junsik.reservation.dto.RoomDailyPriceResponse;
-import junsik.reservation.dto.UpdateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.request.CreateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.request.UpdateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.response.RoomDailyPriceResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.RoomDailyPriceService;
 

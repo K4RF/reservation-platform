@@ -5,8 +5,8 @@ import java.security.MessageDigest;
 
 import org.springframework.stereotype.Service;
 
-import junsik.reservation.dto.LoginResponse;
-import junsik.reservation.dto.ReissueTokenResponse;
+import junsik.reservation.dto.auth.response.LoginResponse;
+import junsik.reservation.dto.auth.response.ReissueTokenResponse;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.SecurityErrorCode;
 import junsik.reservation.global.exception.BusinessException;

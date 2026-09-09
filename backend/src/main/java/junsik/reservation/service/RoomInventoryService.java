@@ -6,10 +6,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.CreateRoomInventoryRequest;
-import junsik.reservation.dto.RoomInventoryCalendarResponse;
-import junsik.reservation.dto.RoomInventoryResponse;
-import junsik.reservation.dto.UpdateRoomInventoryRequest;
+import junsik.reservation.dto.room.request.CreateRoomInventoryRequest;
+import junsik.reservation.dto.room.request.UpdateRoomInventoryRequest;
+import junsik.reservation.dto.room.response.RoomInventoryCalendarResponse;
+import junsik.reservation.dto.room.response.RoomInventoryResponse;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
 import junsik.reservation.enums.RoomErrorCode;

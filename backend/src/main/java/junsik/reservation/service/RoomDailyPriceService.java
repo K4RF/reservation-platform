@@ -8,9 +8,9 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.CreateRoomDailyPriceRequest;
-import junsik.reservation.dto.RoomDailyPriceResponse;
-import junsik.reservation.dto.UpdateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.request.CreateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.request.UpdateRoomDailyPriceRequest;
+import junsik.reservation.dto.room.response.RoomDailyPriceResponse;
 import junsik.reservation.entity.ReservationPeriod;
 import junsik.reservation.entity.ReservationPriceSnapshot;
 import junsik.reservation.entity.Room;

@@ -17,8 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import junsik.reservation.dto.SignUpRequest;
-import junsik.reservation.dto.SignUpResponse;
+import junsik.reservation.dto.member.request.SignUpRequest;
+import junsik.reservation.dto.member.response.SignUpResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.MemberService;
 

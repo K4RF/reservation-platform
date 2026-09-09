@@ -3,8 +3,8 @@ package junsik.reservation.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.AccommodationCancellationPolicyRequest;
-import junsik.reservation.dto.AccommodationCancellationPolicyResponse;
+import junsik.reservation.dto.accommodation.request.AccommodationCancellationPolicyRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationCancellationPolicyResponse;
 import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.AccommodationCancellationPolicy;
 import junsik.reservation.entity.CancellationFeeRule;

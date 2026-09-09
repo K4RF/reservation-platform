@@ -7,8 +7,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.dto.SignUpRequest;
-import junsik.reservation.dto.SignUpResponse;
+import junsik.reservation.dto.member.request.SignUpRequest;
+import junsik.reservation.dto.member.response.SignUpResponse;
 import junsik.reservation.entity.Member;
 import junsik.reservation.enums.MemberErrorCode;
 import junsik.reservation.global.exception.BusinessException;
