@@ -66,7 +66,7 @@ Windows PowerShell:
 ```powershell
 cd backend
 .\gradlew.bat test --tests junsik.reservation.entity.DatabaseConstraintIntegrationTest
-.\gradlew.bat test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
+.\gradlew.bat test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
 .\gradlew.bat test
 .\gradlew.bat build
 ```
@@ -76,7 +76,7 @@ macOS/Linux:
 ```bash
 cd backend
 ./gradlew test --tests junsik.reservation.entity.DatabaseConstraintIntegrationTest
-./gradlew test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
+./gradlew test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
 ./gradlew test
 ./gradlew build
 ```

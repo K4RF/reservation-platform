@@ -389,8 +389,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 * [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
 * [x] 숙박일별 가격 및 취소 결과 Snapshot 고도화
 * [x] 구조화된 숙소 위치와 편의시설
-* [ ] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
-* [ ] Booking Policy & Catalog Completion 통합 테스트
+* [x] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
+* [x] Booking Policy & Catalog Completion 통합 테스트 (로컬; 원격 CI 확인 별도)
 
 ### Phase 2 — Concurrency Control
 

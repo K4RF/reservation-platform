@@ -6,15 +6,20 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Clock;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -28,13 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.ReservationRepository;
-import junsik.reservation.service.ReservationDateProvider;
 import junsik.reservation.support.MvpTestFixture;
 import junsik.reservation.support.MySqlIntegrationTestSupport;
 
 @AutoConfigureMockMvc
 @Transactional
-class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSupport {
+class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSupport {
 
 	private static final String MEMBERS_URL = "/api/v1/members";
 	private static final String LOGIN_URL = "/api/v1/auth/login";
@@ -48,7 +52,7 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	private static final LocalDate ORIGINAL_CHECK_OUT = LocalDate.of(2035, 6, 13);
 	private static final LocalDate CHANGED_CHECK_IN = LocalDate.of(2035, 6, 11);
 	private static final LocalDate CHANGED_CHECK_OUT = LocalDate.of(2035, 6, 15);
-	private static final LocalDate CANCELLATION_DATE = LocalDate.of(2035, 6, 8);
+	private static final LocalDate CLOSED_INVENTORY_DATE = LocalDate.of(2035, 6, 16);
 	private static final Instant CANCELLATION_INSTANT = Instant.parse("2035-06-08T03:00:00Z");
 
 	@Autowired
@@ -63,24 +67,30 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	@Autowired
 	private ReservationRepository reservationRepository;
 
+	@Autowired
+	private jakarta.persistence.EntityManager entityManager;
+
 	@MockitoBean
 	private RefreshTokenStore refreshTokenStore;
 
 	@MockitoBean
-	private ReservationDateProvider reservationDateProvider;
+	private Clock clock;
+
+	private String timeZone;
 
 	private MvpTestFixture fixture;
 
 	@BeforeEach
 	void setUp() {
 		fixture = new MvpTestFixture(jdbcTemplate, passwordEncoder);
-		when(reservationDateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class)))
-				.thenReturn(CANCELLATION_DATE);
-		when(reservationDateProvider.now()).thenReturn(CANCELLATION_INSTANT);
+		when(clock.instant()).thenReturn(CANCELLATION_INSTANT);
+		when(clock.getZone()).thenReturn(ZoneOffset.UTC);
 	}
 
-	@Test
-	void completesReservationDomainBaselineOnMySql() throws Exception {
+	@ParameterizedTest
+	@ValueSource(strings = {"Asia/Tokyo", "America/New_York"})
+	void completesBookingPolicyAndCatalogBaselineOnMySql(String timeZone) throws Exception {
+		this.timeZone = timeZone;
 		UserSession userSession = signUpAndLoginUser();
 		Long userId = userSession.userId();
 		String userToken = userSession.accessToken();
@@ -89,6 +99,8 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 
 		Long accommodationId = createAccommodation(adminToken);
 		Long roomId = createRoom(adminToken, accommodationId);
+		createBookingPolicy(adminToken, accommodationId);
+		createCancellationPolicy(adminToken, accommodationId, 30, 50);
 		fixture.createRoomInventory(
 				roomId,
 				ORIGINAL_CHECK_IN,
@@ -98,9 +110,12 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 		createDailyPrice(adminToken, roomId, ORIGINAL_CHECK_IN, "120000.00");
 		createDailyPrice(adminToken, roomId, CHANGED_CHECK_IN, "140000.00");
 
+		assertAccommodationCatalog(userToken, accommodationId);
+		assertClosedInventoryCannotBeReserved(adminToken, userToken, roomId);
 		assertSearchAndEffectivePrices(userToken, accommodationId, roomId);
 
 		Long reservationId = createReservation(userToken, userId, roomId);
+		updateCancellationPolicy(adminToken, accommodationId, 80, 90);
 		assertReservedDates(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT);
 		assertUnavailableAfterReservation(userToken, accommodationId, roomId);
 		assertReservationQuery(userToken, reservationId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT);
@@ -110,8 +125,11 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 		assertReservationQuery(userToken, reservationId, CHANGED_CHECK_IN, CHANGED_CHECK_OUT);
 
 		cancelReservation(userToken, reservationId);
-		assertThat(reservationRepository.findById(reservationId).orElseThrow().getStatus())
-				.isEqualTo(ReservationStatus.CANCELLED);
+		var cancelledReservation = reservationRepository.findById(reservationId).orElseThrow();
+		assertThat(cancelledReservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+		assertThat(cancelledReservation.getCancelledAt()).isEqualTo(CANCELLATION_INSTANT);
+		assertThat(cancelledReservation.getCancellationFeeAmount()).isEqualByComparingTo("132000.00");
+		assertThat(cancelledReservation.getRefundAmount()).isEqualByComparingTo("308000.00");
 		assertInventoryRange(roomId, ORIGINAL_CHECK_IN, CHANGED_CHECK_OUT, 0);
 	}
 
@@ -131,17 +149,18 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 					.contentType(MediaType.APPLICATION_JSON)
 					.content("""
 							{
-							  "name": "Baseline Seoul Hotel",
-							  "description": "Reservation domain completion baseline",
-							  "country": "대한민국",
-							  "city": "서울특별시",
-							  "region": "강남구",
-							  "address": "서울 강남구 테헤란로",
+							  "name": "Baseline Tokyo Hotel",
+							  "description": "Booking policy and catalog completion baseline",
+							  "country": "일본",
+							  "city": "도쿄도",
+							  "region": "신주쿠구",
+							  "address": "니시신주쿠 1-1",
+							  "amenities": ["PARKING", "POOL"],
 							  "checkInTime": "15:00:00",
 							  "checkOutTime": "11:00:00",
-							  "timeZone": "Asia/Seoul"
+							  "timeZone": "%s"
 							}
-							"""))
+							""".formatted(timeZone)))
 				.andExpect(status().isCreated())
 				.andReturn();
 		return readLong(result, "$.accommodationId");
@@ -155,12 +174,156 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							{
 							  "name": "Baseline Family Room",
 							  "capacity": 4,
-							  "nightlyPrice": 100000.00
+							  "nightlyPrice": 100000.00,
+							  "amenities": ["WIFI", "AIR_CONDITIONER"]
 							}
 							"""))
 				.andExpect(status().isCreated())
 				.andReturn();
 		return readLong(result, "$.roomId");
+	}
+
+	private void createBookingPolicy(String adminToken, Long accommodationId) throws Exception {
+		mockMvc.perform(post(ACCOMMODATIONS_URL + "/{accommodationId}/booking-policy", accommodationId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "minStayNights": 2,
+							  "maxStayNights": 5,
+							  "minAdvanceBookingDays": 1,
+							  "maxAdvanceBookingDays": 365
+							}
+							"""))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.accommodationId").value(accommodationId))
+				.andExpect(jsonPath("$.minStayNights").value(2))
+				.andExpect(jsonPath("$.maxStayNights").value(5));
+	}
+
+	private void createCancellationPolicy(
+			String adminToken,
+			Long accommodationId,
+			int earlyFeeRate,
+			int lateFeeRate
+	) throws Exception {
+		mockMvc.perform(post(ACCOMMODATIONS_URL + "/{accommodationId}/cancellation-policy", accommodationId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(cancellationPolicyRequest(earlyFeeRate, lateFeeRate)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.accommodationId").value(accommodationId))
+				.andExpect(jsonPath("$.feeRules[0].feeRatePercent").value(earlyFeeRate));
+	}
+
+	private void updateCancellationPolicy(
+			String adminToken,
+			Long accommodationId,
+			int earlyFeeRate,
+			int lateFeeRate
+	) throws Exception {
+		mockMvc.perform(put(ACCOMMODATIONS_URL + "/{accommodationId}/cancellation-policy", accommodationId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content(cancellationPolicyRequest(earlyFeeRate, lateFeeRate)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.feeRules[0].feeRatePercent").value(earlyFeeRate));
+	}
+
+	private String cancellationPolicyRequest(int earlyFeeRate, int lateFeeRate) {
+		return """
+				{
+				  "freeCancellationDaysBeforeCheckIn": 7,
+				  "cancellationDeadlineDaysBeforeCheckIn": 1,
+				  "feeRules": [
+				    {"minDaysBeforeCheckIn": 3, "feeRatePercent": %d},
+				    {"minDaysBeforeCheckIn": 1, "feeRatePercent": %d}
+				  ]
+				}
+				""".formatted(earlyFeeRate, lateFeeRate);
+	}
+
+	private void assertAccommodationCatalog(String userToken, Long accommodationId) throws Exception {
+		mockMvc.perform(get(ACCOMMODATIONS_URL + "/{accommodationId}", accommodationId)
+					.header("Authorization", bearer(userToken)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.country").value("일본"))
+				.andExpect(jsonPath("$.city").value("도쿄도"))
+				.andExpect(jsonPath("$.region").value("신주쿠구"))
+				.andExpect(jsonPath("$.amenities.length()").value(2))
+				.andExpect(jsonPath("$.checkInTime").value("15:00:00"))
+				.andExpect(jsonPath("$.checkOutTime").value("11:00:00"))
+				.andExpect(jsonPath("$.timeZone").value(timeZone));
+	}
+
+	private void assertClosedInventoryCannotBeReserved(
+			String adminToken,
+			String userToken,
+			Long roomId
+	) throws Exception {
+		mockMvc.perform(post("/api/v1/rooms/{roomId}/inventories", roomId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "inventoryDate": "%s",
+							  "totalQuantity": 1
+							}
+							""".formatted(CLOSED_INVENTORY_DATE)))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.saleStatus").value("OPEN"));
+		mockMvc.perform(post("/api/v1/rooms/{roomId}/inventories", roomId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "inventoryDate": "%s",
+							  "totalQuantity": 1
+							}
+							""".formatted(CLOSED_INVENTORY_DATE.plusDays(1))))
+				.andExpect(status().isCreated());
+
+		mockMvc.perform(put("/api/v1/rooms/{roomId}/inventories/{inventoryDate}", roomId, CLOSED_INVENTORY_DATE)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "totalQuantity": 1,
+							  "saleStatus": "CLOSED"
+							}
+							"""))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.availableQuantity").value(1))
+				.andExpect(jsonPath("$.saleStatus").value("CLOSED"));
+
+		mockMvc.perform(get("/api/v1/rooms/{roomId}/inventories", roomId)
+					.header("Authorization", bearer(adminToken))
+					.param("startDate", ORIGINAL_CHECK_IN.toString())
+					.param("endDate", CLOSED_INVENTORY_DATE.plusDays(1).toString()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.inventories.length()").value(7))
+				.andExpect(jsonPath("$.inventories[5].inventoryDate").value(CLOSED_INVENTORY_DATE.toString()))
+				.andExpect(jsonPath("$.inventories[5].saleStatus").value("CLOSED"))
+				.andExpect(jsonPath("$.inventories[6].saleStatus").value("OPEN"));
+
+		mockMvc.perform(post(RESERVATIONS_URL)
+					.header("Authorization", bearer(userToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{
+							  "roomId": %d,
+							  "guestCount": 1,
+							  "checkInDate": "%s",
+							  "checkOutDate": "%s",
+							  "representativeGuest": {
+							    "name": "Closed Inventory Guest",
+							    "email": "closed@example.com",
+							    "phone": "010-0000-0000"
+							  }
+							}
+							""".formatted(roomId, CLOSED_INVENTORY_DATE, CLOSED_INVENTORY_DATE.plusDays(2))))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("INVENTORY_009"));
 	}
 
 	private void createDailyPrice(
@@ -188,8 +351,11 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	) throws Exception {
 		mockMvc.perform(get(ACCOMMODATIONS_URL)
 					.header("Authorization", bearer(userToken))
-					.param("name", "seoul")
-					.param("region", "강남구")
+					.param("name", "tokyo")
+					.param("city", "도쿄도")
+					.param("region", "신주쿠구")
+					.param("accommodationAmenities", "PARKING", "POOL")
+					.param("roomAmenities", "WIFI", "AIR_CONDITIONER")
 					.param("checkInDate", ORIGINAL_CHECK_IN.toString())
 					.param("checkOutDate", ORIGINAL_CHECK_OUT.toString())
 					.param("guestCount", "4")
@@ -240,11 +406,24 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							}
 							""".formatted(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT)))
 				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.reservationNumber").value(
+						org.hamcrest.Matchers.matchesPattern("RSV-" + localToday().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + "-[A-F0-9]{16}")
+				))
 				.andExpect(jsonPath("$.memberId").value(userId))
 				.andExpect(jsonPath("$.guestCount").value(4))
+				.andExpect(jsonPath("$.representativeGuest.name").value("Baseline Guest"))
+				.andExpect(jsonPath("$.representativeGuest.email").value("guest@example.com"))
+				.andExpect(jsonPath("$.representativeGuest.phone").value("010-1234-5678"))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(120000.00))
 				.andExpect(jsonPath("$.stayNights").value(3))
 				.andExpect(jsonPath("$.totalAmount").value(360000.00))
+				.andExpect(jsonPath("$.nights.length()").value(3))
+				.andExpect(jsonPath("$.nights[0].stayDate").value(ORIGINAL_CHECK_IN.toString()))
+				.andExpect(jsonPath("$.nights[0].priceSnapshot").value(120000.00))
+				.andExpect(jsonPath("$.nights[1].priceSnapshot").value(140000.00))
+				.andExpect(jsonPath("$.nights[2].priceSnapshot").value(100000.00))
+				.andExpect(jsonPath("$.cancellationPolicySnapshot.freeCancellationDaysBeforeCheckIn").value(7))
+				.andExpect(jsonPath("$.cancellationPolicySnapshot.feeRules[0].feeRatePercent").value(30))
 				.andExpect(jsonPath("$.status").value("CONFIRMED"))
 				.andReturn();
 		return readLong(result, "$.reservationId");
@@ -288,7 +467,13 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 				.andExpect(jsonPath("$.guestCount").value(4))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(140000.00))
 				.andExpect(jsonPath("$.stayNights").value(4))
-				.andExpect(jsonPath("$.totalAmount").value(440000.00));
+				.andExpect(jsonPath("$.totalAmount").value(440000.00))
+				.andExpect(jsonPath("$.nights.length()").value(4))
+				.andExpect(jsonPath("$.nights[0].stayDate").value(CHANGED_CHECK_IN.toString()))
+				.andExpect(jsonPath("$.nights[0].priceSnapshot").value(140000.00))
+				.andExpect(jsonPath("$.nights[3].stayDate").value(CHANGED_CHECK_OUT.minusDays(1).toString()))
+				.andExpect(jsonPath("$.nights[3].priceSnapshot").value(100000.00))
+				.andExpect(jsonPath("$.cancellationPolicySnapshot.feeRules[0].feeRatePercent").value(30));
 	}
 
 	private void assertScheduleInventoryChanged(Long roomId) {
@@ -302,11 +487,16 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) throws Exception {
+		entityManager.flush();
+		entityManager.clear();
 		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservationId)
 					.header("Authorization", bearer(userToken)))
 				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.reservationNumber").isNotEmpty())
+				.andExpect(jsonPath("$.representativeGuest.name").value("Baseline Guest"))
 				.andExpect(jsonPath("$.checkInDate").value(checkInDate.toString()))
-				.andExpect(jsonPath("$.checkOutDate").value(checkOutDate.toString()));
+				.andExpect(jsonPath("$.checkOutDate").value(checkOutDate.toString()))
+				.andExpect(jsonPath("$.cancellationPolicySnapshot.feeRules[0].feeRatePercent").value(30));
 
 		mockMvc.perform(get(RESERVATIONS_URL)
 					.header("Authorization", bearer(userToken))
@@ -325,12 +515,22 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 					.header("Authorization", bearer(userToken)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("CANCELLED"))
-				.andExpect(jsonPath("$.cancellationDate").value(CANCELLATION_DATE.toString()))
-				.andExpect(jsonPath("$.daysBeforeCheckIn").value(3))
+				.andExpect(jsonPath("$.cancelledAt").value(CANCELLATION_INSTANT.toString()))
+				.andExpect(jsonPath("$.cancellationDate").value(localToday().toString()))
+				.andExpect(jsonPath("$.daysBeforeCheckIn").value((int) java.time.temporal.ChronoUnit.DAYS.between(localToday(), CHANGED_CHECK_IN)))
 				.andExpect(jsonPath("$.totalAmount").value(440000.00))
 				.andExpect(jsonPath("$.cancellationFeeRate").value(30))
 				.andExpect(jsonPath("$.cancellationFeeAmount").value(132000.00))
 				.andExpect(jsonPath("$.estimatedRefundAmount").value(308000.00));
+
+		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservationId)
+					.header("Authorization", bearer(userToken)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("CANCELLED"))
+				.andExpect(jsonPath("$.cancelledAt").value(CANCELLATION_INSTANT.toString()))
+				.andExpect(jsonPath("$.cancellationFeeAmount").value(132000.00))
+				.andExpect(jsonPath("$.refundAmount").value(308000.00))
+				.andExpect(jsonPath("$.cancellationPolicySnapshot.feeRules[0].feeRatePercent").value(30));
 	}
 
 	private String login(String email, String password) throws Exception {
@@ -341,6 +541,10 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 				.andExpect(jsonPath("$.accessToken").isNotEmpty())
 				.andReturn();
 		return JsonPath.read(result.getResponse().getContentAsString(), "$.accessToken");
+	}
+
+	private LocalDate localToday() {
+		return LocalDate.ofInstant(CANCELLATION_INSTANT, ZoneId.of(timeZone));
 	}
 
 	private void assertReservedDates(Long roomId, LocalDate startDate, LocalDate endDate) {

@@ -1,13 +1,32 @@
-# Reservation Domain Completion Baseline
+# Booking Policy & Catalog Completion Baseline
 
 ## 목적
 
-`ReservationDomainBaselineIntegrationTest`는 v0.1.2에서 완성한 핵심 도메인
+`BookingPolicyCatalogBaselineIntegrationTest`는 기존 v0.1.2 Baseline을 확장하여 v0.1.3의 핵심 도메인
 규칙이 실제 MySQL 8.4와 전체 HTTP 요청 흐름에서 함께 동작하는 기준선을
 검증합니다. 각 오류 경계와 세부 계산을 다시 복제하지 않고 기존 단위·기능별 통합
 테스트를 유지하며, 이 테스트는 기능 사이의 연결과 최종 상태를 담당합니다.
 
 ## 검증 시나리오
+
+동일 UTC 시각 `2035-06-08T03:00:00Z`의 고정 Clock으로 전체 흐름을
+`Asia/Tokyo`와 `America/New_York`에서 각각 실행합니다. 실제 DateProvider와
+예약번호 생성기를 사용하며 현지 날짜는 각각 6월 8일, 6월 7일입니다.
+일정 변경 후 취소까지 남은 날짜는 각각 3일, 4일이며 둘 다 저장된 30% 구간입니다.
+조회 전에 flush/clear하여 숙박일 및 정책 Snapshot을 DB에서 다시 읽습니다.
+
+v0.1.3에서는 다음 검증을 기존 MySQL 흐름에 추가했습니다.
+
+- 숙소 Booking Policy(2~5박) 및 Cancellation Policy를 관리 API로 생성
+- 위치·숙소/객실 복수 편의시설·기간·가격 조건을 함께 검색
+- 운영시간과 TimeZone 조회, 재고 생성·판매 중지·Calendar 조회 및 CLOSED 예약 거부
+- 공개 예약번호 형식, 대표 투숙객, 숙박일별 가격 Snapshot 조회
+- 예약 후 숙소 수수료를 80/90%로 수정해도 일정 변경·취소 시 기존 30/50% 유지
+- UTC 취소 시각, 수수료·환불 Snapshot 조회 및 날짜별 재고 복구
+
+Booking Policy 거절과 일정 변경 실패 전 재고 보존은 기존
+`BookingPolicyReservationIntegrationTest`, 저장 실패의 실제 Transaction Rollback은
+`ReservationInventoryRollbackIntegrationTest`가 담당합니다. 기존 세부 테스트를 유지합니다.
 
 ```text
 사용자 회원가입·로그인 / 관리자 로그인
@@ -40,7 +59,7 @@ Baseline의 고정 가격과 예상 결과는 다음과 같습니다.
 
 | 검증 범위 | 담당 테스트 |
 | --- | --- |
-| MySQL 기반 v0.1.2 전체 성공 흐름 | `ReservationDomainBaselineIntegrationTest` |
+| MySQL 기반 v0.1.3 전체 성공 흐름 | `BookingPolicyCatalogBaselineIntegrationTest` |
 | 빠른 기본 회원·숙소·객실·예약 연결 | `BasicReservationMvpIntegrationTest` |
 | 인원·재고·기간·가격·상태별 성공/실패 경계 | `ReservationIntegrationTest` |
 | 숙소 복합 조건과 결과 없음·Pagination·정렬 | `AccommodationIntegratedSearchIntegrationTest` |
@@ -89,8 +108,9 @@ DB Lock과 Redis 분산 Lock 적용 전 Baseline으로 사용합니다. 이 문�
 - `docs/erd/database-schema.md`의 Member, Accommodation, Room, RoomInventory,
   RoomDailyPrice, Reservation 관계와 Snapshot·재고 제약은 현재 Entity 매핑과
   일치합니다.
-- 날짜별 가격 상세 Snapshot 행, 결제 취소·환불, 동시성 Lock은 현재 API와 ERD에
-  없는 후속 범위입니다.
+- 숙박일별 `reservation_nights`, 취소 결과, 대표 투숙객, 공개 예약번호와 숙소
+  TimeZone은 현재 Entity/Schema에 반영되어 있습니다. 결제 취소·환불과 동시성
+  Lock은 후속 범위입니다.
 
 ## 실행 명령
 
@@ -98,7 +118,7 @@ Windows PowerShell:
 
 ```powershell
 cd backend
-.\gradlew.bat test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
+.\gradlew.bat test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
 .\gradlew.bat test --tests junsik.reservation.service.ReservationInventoryRollbackIntegrationTest
 .\gradlew.bat clean test
 .\gradlew.bat build
@@ -108,7 +128,7 @@ macOS/Linux:
 
 ```bash
 cd backend
-./gradlew test --tests junsik.reservation.ReservationDomainBaselineIntegrationTest
+./gradlew test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
 ./gradlew test --tests junsik.reservation.service.ReservationInventoryRollbackIntegrationTest
 ./gradlew clean test
 ./gradlew build
@@ -120,3 +140,16 @@ MySQL 기반 테스트를 포함하므로 전체 실행에는 Docker 호환 Cont
 Backend GitHub Actions는 PR과 `develop`에서 `./gradlew test` 후
 `./gradlew build -x test`를 실행하므로 로컬 검증과 같은 테스트 범위를 사용합니다.
 실제 원격 CI 결과는 이 브랜치를 Push하고 PR을 생성한 뒤 확인해야 합니다.
+
+## #83 검증 기록 (2026-09-10)
+
+- `gradlew.bat test build`: 220 tests, 0 failures, 0 errors, 0 skipped.
+- 기존 OpenAPI/Swagger, MySQL Constraint 및 Rollback 테스트를 포함합니다.
+- 원격 CI: 이번 브랜치는 아직 Push하지 않았으므로 이번 커밋의 실행 결과는 미확인입니다.
+- Notion [예약 생성 명세](https://app.notion.com/p/3c33bbc0582a813a92aed9abf4412c80)는
+  직접 읽어 대조한 결과 현재 구현과 불일치합니다. 요청의 필수 `representativeGuest`,
+  응답의 `reservationNumber`, `nights`, `cancellationPolicySnapshot`, 취소 결과 필드가
+  빠져 있고 Booking Policy 오류와 `INVENTORY_009`도 반영이 필요합니다.
+  Notion 전체 명세의 일치나 동기화 완료를 의미하지 않습니다.
+- 기존 ERD 문서에는 숙박일 Snapshot, 대표 투숙객, 공개번호, 취소 결과와 숙소
+  TimeZone이 반영되어 있습니다. DB 제약 검증은 일회용 MySQL 8.4에서 수행했습니다.
