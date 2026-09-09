@@ -12,10 +12,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.Clock;
+import java.time.ZoneOffset;
+import java.time.ZoneId;
 
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
@@ -29,7 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.ReservationRepository;
-import junsik.reservation.service.ReservationDateProvider;
 import junsik.reservation.support.MvpTestFixture;
 import junsik.reservation.support.MySqlIntegrationTestSupport;
 
@@ -50,7 +53,6 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 	private static final LocalDate CHANGED_CHECK_IN = LocalDate.of(2035, 6, 11);
 	private static final LocalDate CHANGED_CHECK_OUT = LocalDate.of(2035, 6, 15);
 	private static final LocalDate CLOSED_INVENTORY_DATE = LocalDate.of(2035, 6, 16);
-	private static final LocalDate CANCELLATION_DATE = LocalDate.of(2035, 6, 8);
 	private static final Instant CANCELLATION_INSTANT = Instant.parse("2035-06-08T03:00:00Z");
 
 	@Autowired
@@ -65,24 +67,30 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 	@Autowired
 	private ReservationRepository reservationRepository;
 
+	@Autowired
+	private jakarta.persistence.EntityManager entityManager;
+
 	@MockitoBean
 	private RefreshTokenStore refreshTokenStore;
 
 	@MockitoBean
-	private ReservationDateProvider reservationDateProvider;
+	private Clock clock;
+
+	private String timeZone;
 
 	private MvpTestFixture fixture;
 
 	@BeforeEach
 	void setUp() {
 		fixture = new MvpTestFixture(jdbcTemplate, passwordEncoder);
-		when(reservationDateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class)))
-				.thenReturn(CANCELLATION_DATE);
-		when(reservationDateProvider.now()).thenReturn(CANCELLATION_INSTANT);
+		when(clock.instant()).thenReturn(CANCELLATION_INSTANT);
+		when(clock.getZone()).thenReturn(ZoneOffset.UTC);
 	}
 
-	@Test
-	void completesBookingPolicyAndCatalogBaselineOnMySql() throws Exception {
+	@ParameterizedTest
+	@ValueSource(strings = {"Asia/Tokyo", "America/New_York"})
+	void completesBookingPolicyAndCatalogBaselineOnMySql(String timeZone) throws Exception {
+		this.timeZone = timeZone;
 		UserSession userSession = signUpAndLoginUser();
 		Long userId = userSession.userId();
 		String userToken = userSession.accessToken();
@@ -150,9 +158,9 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 							  "amenities": ["PARKING", "POOL"],
 							  "checkInTime": "15:00:00",
 							  "checkOutTime": "11:00:00",
-							  "timeZone": "Asia/Tokyo"
+							  "timeZone": "%s"
 							}
-							"""))
+							""".formatted(timeZone)))
 				.andExpect(status().isCreated())
 				.andReturn();
 		return readLong(result, "$.accommodationId");
@@ -245,7 +253,7 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 				.andExpect(jsonPath("$.amenities.length()").value(2))
 				.andExpect(jsonPath("$.checkInTime").value("15:00:00"))
 				.andExpect(jsonPath("$.checkOutTime").value("11:00:00"))
-				.andExpect(jsonPath("$.timeZone").value("Asia/Tokyo"));
+				.andExpect(jsonPath("$.timeZone").value(timeZone));
 	}
 
 	private void assertClosedInventoryCannotBeReserved(
@@ -399,7 +407,7 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 							""".formatted(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT)))
 				.andExpect(status().isCreated())
 				.andExpect(jsonPath("$.reservationNumber").value(
-						org.hamcrest.Matchers.matchesPattern("RSV-20350608-[A-F0-9]{16}")
+						org.hamcrest.Matchers.matchesPattern("RSV-" + localToday().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE) + "-[A-F0-9]{16}")
 				))
 				.andExpect(jsonPath("$.memberId").value(userId))
 				.andExpect(jsonPath("$.guestCount").value(4))
@@ -479,6 +487,8 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 			LocalDate checkInDate,
 			LocalDate checkOutDate
 	) throws Exception {
+		entityManager.flush();
+		entityManager.clear();
 		mockMvc.perform(get(RESERVATIONS_URL + "/{reservationId}", reservationId)
 					.header("Authorization", bearer(userToken)))
 				.andExpect(status().isOk())
@@ -506,8 +516,8 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.status").value("CANCELLED"))
 				.andExpect(jsonPath("$.cancelledAt").value(CANCELLATION_INSTANT.toString()))
-				.andExpect(jsonPath("$.cancellationDate").value(CANCELLATION_DATE.toString()))
-				.andExpect(jsonPath("$.daysBeforeCheckIn").value(3))
+				.andExpect(jsonPath("$.cancellationDate").value(localToday().toString()))
+				.andExpect(jsonPath("$.daysBeforeCheckIn").value((int) java.time.temporal.ChronoUnit.DAYS.between(localToday(), CHANGED_CHECK_IN)))
 				.andExpect(jsonPath("$.totalAmount").value(440000.00))
 				.andExpect(jsonPath("$.cancellationFeeRate").value(30))
 				.andExpect(jsonPath("$.cancellationFeeAmount").value(132000.00))
@@ -531,6 +541,10 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 				.andExpect(jsonPath("$.accessToken").isNotEmpty())
 				.andReturn();
 		return JsonPath.read(result.getResponse().getContentAsString(), "$.accessToken");
+	}
+
+	private LocalDate localToday() {
+		return LocalDate.ofInstant(CANCELLATION_INSTANT, ZoneId.of(timeZone));
 	}
 
 	private void assertReservedDates(Long roomId, LocalDate startDate, LocalDate endDate) {
