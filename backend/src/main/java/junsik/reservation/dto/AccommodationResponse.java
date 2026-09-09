@@ -18,6 +18,7 @@ public record AccommodationResponse(
 		List<AccommodationAmenity> amenities,
 		LocalTime checkInTime,
 		LocalTime checkOutTime,
+		String timeZone,
 		AccommodationStatus status
 ) {
 
@@ -33,6 +34,7 @@ public record AccommodationResponse(
 				accommodation.getAmenities().stream().sorted().toList(),
 				accommodation.getCheckInTime(),
 				accommodation.getCheckOutTime(),
+				accommodation.getTimeZoneId(),
 				accommodation.getStatus()
 		);
 	}

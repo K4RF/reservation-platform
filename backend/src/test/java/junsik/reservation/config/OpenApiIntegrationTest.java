@@ -272,12 +272,13 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.amenities").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.checkInTime").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.checkOutTime").exists())
+				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.timeZone").exists())
 				.andExpect(jsonPath("$.components.schemas.AccommodationResponse.properties.status").exists())
 				.andExpect(jsonPath(
 						"$.components.schemas.UpdateAccommodationRequest.required",
 						containsInAnyOrder(
 								"name", "description", "country", "city", "region", "address",
-								"checkInTime", "checkOutTime"
+								"checkInTime", "checkOutTime", "timeZone"
 						)
 				))
 				.andExpect(jsonPath(

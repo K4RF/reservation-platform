@@ -1,6 +1,7 @@
 package junsik.reservation.entity;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -51,6 +52,8 @@ import junsik.reservation.enums.AccommodationStatus;
 )
 public class Accommodation {
 
+	public static final String DEFAULT_TIME_ZONE = "Asia/Seoul";
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -89,6 +92,10 @@ public class Accommodation {
 	@Column(name = "check_out_time")
 	private LocalTime checkOutTime;
 
+	@Column(name = "time_zone", nullable = false, length = 50)
+	@ColumnDefault("'Asia/Seoul'")
+	private String timeZoneId;
+
 	protected Accommodation() {
 	}
 
@@ -98,9 +105,11 @@ public class Accommodation {
 			AccommodationLocation location,
 			Set<AccommodationAmenity> amenities,
 			LocalTime checkInTime,
-			LocalTime checkOutTime
+			LocalTime checkOutTime,
+			String timeZoneId
 	) {
 		validateOperatingTimes(checkInTime, checkOutTime);
+		this.timeZoneId = requireTimeZoneId(timeZoneId);
 		this.name = name;
 		this.description = description;
 		this.location = location;
@@ -117,7 +126,8 @@ public class Accommodation {
 				AccommodationLocation.legacy(address),
 				Set.of(),
 				null,
-				null
+				null,
+				DEFAULT_TIME_ZONE
 		);
 	}
 
@@ -130,7 +140,10 @@ public class Accommodation {
 			String detailAddress,
 			Set<AccommodationAmenity> amenities
 	) {
-		return create(name, description, country, city, region, detailAddress, amenities, null, null);
+		return create(
+				name, description, country, city, region, detailAddress, amenities,
+				null, null, DEFAULT_TIME_ZONE
+		);
 	}
 
 	public static Accommodation create(
@@ -142,7 +155,8 @@ public class Accommodation {
 			String detailAddress,
 			Set<AccommodationAmenity> amenities,
 			LocalTime checkInTime,
-			LocalTime checkOutTime
+			LocalTime checkOutTime,
+			String timeZoneId
 	) {
 		return new Accommodation(
 				name,
@@ -150,7 +164,8 @@ public class Accommodation {
 				AccommodationLocation.structured(country, city, region, detailAddress),
 				amenities,
 				checkInTime,
-				checkOutTime
+				checkOutTime,
+				timeZoneId
 		);
 	}
 
@@ -198,6 +213,14 @@ public class Accommodation {
 		return checkOutTime;
 	}
 
+	public String getTimeZoneId() {
+		return timeZoneId;
+	}
+
+	public ZoneId getZoneId() {
+		return ZoneId.of(timeZoneId);
+	}
+
 	public boolean isActive() {
 		return status == AccommodationStatus.ACTIVE;
 	}
@@ -217,9 +240,11 @@ public class Accommodation {
 			String detailAddress,
 			Set<AccommodationAmenity> amenities,
 			LocalTime checkInTime,
-			LocalTime checkOutTime
+			LocalTime checkOutTime,
+			String timeZoneId
 	) {
 		validateOperatingTimes(checkInTime, checkOutTime);
+		this.timeZoneId = requireTimeZoneId(timeZoneId);
 		this.name = name;
 		this.description = description;
 		this.location = AccommodationLocation.structured(country, city, region, detailAddress);
@@ -247,5 +272,16 @@ public class Accommodation {
 		if (checkInTime.equals(checkOutTime)) {
 			throw new IllegalArgumentException("체크인 시간과 체크아웃 시간은 달라야 합니다.");
 		}
+	}
+
+	private static String requireTimeZoneId(String timeZoneId) {
+		if (timeZoneId == null || timeZoneId.isBlank()) {
+			throw new IllegalArgumentException("숙소 TimeZone은 필수입니다.");
+		}
+		String normalized = timeZoneId.trim();
+		if (!ZoneId.getAvailableZoneIds().contains(normalized)) {
+			throw new IllegalArgumentException("유효한 IANA TimeZone이어야 합니다.");
+		}
+		return normalized;
 	}
 }

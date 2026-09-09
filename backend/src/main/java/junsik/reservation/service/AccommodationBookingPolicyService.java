@@ -1,6 +1,7 @@
 package junsik.reservation.service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,11 +73,14 @@ public class AccommodationBookingPolicyService {
 	@Transactional(readOnly = true)
 	public void validateReservationPeriod(Accommodation accommodation, ReservationPeriod period) {
 		bookingPolicyRepository.findByAccommodationId(accommodation.getId())
-				.ifPresent(policy -> policy.validateReservationPeriod(dateProvider.today(), period));
+				.ifPresent(policy -> policy.validateReservationPeriod(
+						dateProvider.today(accommodation.getZoneId()),
+						period
+				));
 	}
 
-	public LocalDate today() {
-		return dateProvider.today();
+	public LocalDate today(ZoneId zoneId) {
+		return dateProvider.today(zoneId);
 	}
 
 	private Accommodation getAccommodation(Long accommodationId) {

@@ -74,7 +74,8 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 	@BeforeEach
 	void setUp() {
 		fixture = new MvpTestFixture(jdbcTemplate, passwordEncoder);
-		when(reservationDateProvider.today()).thenReturn(CANCELLATION_DATE);
+		when(reservationDateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class)))
+				.thenReturn(CANCELLATION_DATE);
 		when(reservationDateProvider.now()).thenReturn(CANCELLATION_INSTANT);
 	}
 
@@ -137,7 +138,8 @@ class ReservationDomainBaselineIntegrationTest extends MySqlIntegrationTestSuppo
 							  "region": "강남구",
 							  "address": "서울 강남구 테헤란로",
 							  "checkInTime": "15:00:00",
-							  "checkOutTime": "11:00:00"
+							  "checkOutTime": "11:00:00",
+							  "timeZone": "Asia/Seoul"
 							}
 							"""))
 				.andExpect(status().isCreated())

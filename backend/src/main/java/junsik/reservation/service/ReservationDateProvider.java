@@ -10,16 +10,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class ReservationDateProvider {
 
-	public static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Seoul");
-
 	private final Clock clock;
 
 	public ReservationDateProvider(Clock clock) {
 		this.clock = clock;
 	}
 
-	public LocalDate today() {
-		return LocalDate.ofInstant(now(), BUSINESS_ZONE);
+	public LocalDate today(ZoneId zoneId) {
+		return LocalDate.ofInstant(now(), zoneId);
 	}
 
 	public Instant now() {

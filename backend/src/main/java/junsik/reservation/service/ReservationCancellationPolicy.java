@@ -27,7 +27,7 @@ public class ReservationCancellationPolicy {
 		Instant cancelledAt = dateProvider.now();
 		LocalDate cancellationDate = LocalDate.ofInstant(
 				cancelledAt,
-				ReservationDateProvider.BUSINESS_ZONE
+				reservation.getRoom().getAccommodation().getZoneId()
 		);
 		long daysBeforeCheckIn = ChronoUnit.DAYS.between(
 				cancellationDate,
