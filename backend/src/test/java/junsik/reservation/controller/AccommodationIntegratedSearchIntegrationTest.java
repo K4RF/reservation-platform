@@ -5,17 +5,23 @@ import static junsik.reservation.support.RoomFixture.room;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.Accommodation;
@@ -33,6 +39,7 @@ import junsik.reservation.repository.AccommodationBookingPolicyRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
+import junsik.reservation.service.ReservationDateProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -60,6 +67,14 @@ class AccommodationIntegratedSearchIntegrationTest {
 
 	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
+
+	@MockitoBean
+	private ReservationDateProvider dateProvider;
+
+	@BeforeEach
+	void setUpBusinessDate() {
+		given(dateProvider.today(any(ZoneId.class))).willReturn(CHECK_IN.minusDays(5));
+	}
 
 	@Test
 	void searchesNameAndRegionCaseInsensitively() throws Exception {
@@ -158,6 +173,29 @@ class AccommodationIntegratedSearchIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
 				.andExpect(jsonPath("$.content[0].accommodationId").value(blocked.getId()));
+	}
+
+	@Test
+	void appliesAdvanceBookingPolicyWithEachAccommodationTimeZone() throws Exception {
+		Accommodation tokyo = saveTimeZoneAccommodation("Tokyo Hotel", "Asia/Tokyo");
+		Accommodation newYork = saveTimeZoneAccommodation("New York Hotel", "America/New_York");
+		Room tokyoRoom = saveRoom(tokyo, "Tokyo Room", 2, "100000.00", RoomStatus.ACTIVE);
+		Room newYorkRoom = saveRoom(newYork, "New York Room", 2, "100000.00", RoomStatus.ACTIVE);
+		saveInventory(tokyoRoom, CHECK_IN, CHECK_OUT, false);
+		saveInventory(newYorkRoom, CHECK_IN, CHECK_OUT, false);
+		bookingPolicyRepository.saveAndFlush(AccommodationBookingPolicy.create(tokyo, 1, 10, 1, 1));
+		bookingPolicyRepository.saveAndFlush(AccommodationBookingPolicy.create(newYork, 1, 10, 1, 1));
+		given(dateProvider.today(ZoneId.of("Asia/Tokyo"))).willReturn(CHECK_IN.minusDays(1));
+		given(dateProvider.today(ZoneId.of("America/New_York"))).willReturn(CHECK_IN.minusDays(2));
+
+		performSearch(
+				"checkInDate", CHECK_IN.toString(),
+				"checkOutDate", CHECK_OUT.toString(),
+				"available", "true"
+		)
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content.length()").value(1))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(tokyo.getId()));
 	}
 
 	@Test
@@ -365,6 +403,21 @@ class AccommodationIntegratedSearchIntegrationTest {
 				region,
 				"테스트 상세 주소",
 				amenities
+		));
+	}
+
+	private Accommodation saveTimeZoneAccommodation(String name, String timeZone) {
+		return accommodationRepository.saveAndFlush(Accommodation.create(
+				name,
+				"Description",
+				"Country",
+				"City",
+				"Region",
+				"Address",
+				Set.of(),
+				LocalTime.of(15, 0),
+				LocalTime.of(11, 0),
+				timeZone
 		));
 	}
 
