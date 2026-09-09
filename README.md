@@ -34,6 +34,8 @@
 > 예약 취소 시각과 실제 취소 수수료·예상 환불액도 예약에 Snapshot으로 보존됩니다.
 > 신규 예약은 외부 공개 예약번호와 최소 대표 투숙객 정보를 보존하며, 숙소 상세에는
 > 기본 체크인·체크아웃 운영시간이 포함됩니다.
+> 숙소별 IANA TimeZone을 기준으로 예약 가능일·취소일·공개 예약번호의 날짜를
+> 계산하며 시스템 이벤트 Timestamp는 UTC로 저장합니다.
 
 ---
 
@@ -256,6 +258,11 @@ Spring Boot API
 응답에는 내부 `reservationId`와 별도로 고객 문의·결제·알림용 공개
 `reservationNumber`를 제공합니다. 공개번호 형식과 레거시 DB 적용 방식은
 [`docs/erd/database-schema.md`](docs/erd/database-schema.md)에 정리되어 있습니다.
+공개번호의 날짜 구간과 예약·취소 정책의 현재 날짜는 서버 기본 TimeZone이 아니라
+숙소의 `timeZone`을 사용합니다. 체크인·체크아웃 시간도 해당 숙소 현지 시각이며
+세부 기준은
+[`Accommodation TimeZone Policy`](docs/architecture/accommodation-time-zone-policy.md)에
+정리되어 있습니다.
 예약 기간은 체크아웃 날짜를 점유하지 않는 `[checkInDate, checkOutDate)` 구간으로
 처리하므로 기존 예약의 체크아웃 날짜와 다음 예약의 체크인 날짜가 같을 수
 있습니다. 예약 생성은 모든 숙박일 재고의 존재와 잔여 수량을 검증한 뒤 날짜마다
@@ -267,7 +274,7 @@ Spring Boot API
 유지하고, 빠지는 날짜의 재고를 반환하며 추가되는 날짜의 재고를 검증·차감합니다.
 새 기간 전체의 날짜별 가격과 기본 가격 fallback을 변경 시점 기준으로 적용해
 첫 숙박일 가격과 총액 Snapshot도 다시 계산합니다.
-`CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 `Asia/Seoul` 기준
+`CANCELLED` 예약의 일정은 변경할 수 없습니다. 예약 취소는 해당 숙소 TimeZone 기준
 체크인까지 남은 일수와 예약 생성 당시 저장한 숙소별 취소 정책 Snapshot으로
 수수료와 취소 가능 여부를 결정합니다. 숙소 정책이 없으면 기존의 7일 무료,
 3~6일 30%, 1~2일 50%, 당일 이후 취소 불가 규칙을 Snapshot으로 사용합니다.
@@ -376,7 +383,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 동시성 제어에 들어가기 전 실제 숙박 예약 서비스에 필요한 정책과 Catalog를
 마지막으로 보완합니다. 아래 항목은 저장소 구현 상태를 기준으로 표시합니다.
 
-* [ ] 숙소 TimeZone 기반 날짜·시간 정책
+* [x] 숙소 TimeZone 기반 날짜·시간 정책
 * [x] 숙소별 Booking Policy와 예약 가능 조건
 * [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
 * [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API

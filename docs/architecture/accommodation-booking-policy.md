@@ -21,13 +21,15 @@
 
 예약 API가 시간을 받지 않고 `LocalDate`만 받으므로 최소 사전 예약 기준은 시간이
 아닌 달력 일수로 정의합니다. 현재 날짜는 기존 예약 취소 정책과 같은
-`ReservationDateProvider`를 사용하며 현재 기준 Zone은 `Asia/Seoul`입니다.
+`ReservationDateProvider`가 현재 UTC `Instant`를 각 숙소의 IANA ZoneId 날짜로
+변환합니다. 서버 기본 TimeZone이나 단일 고정 Zone은 사용하지 않습니다.
 
 - 숙박 기간은 기존과 같은 `[check-in, check-out)`입니다.
 - 최소·최대 숙박일과 최소·최대 사전 예약일의 경계값은 모두 허용합니다.
 - 예를 들어 오늘이 1월 1일이고 `minAdvanceBookingDays=1`이면 1월 2일 체크인이
   가장 빠른 예약입니다.
-- 숙소별 TimeZone 도입 전까지는 모든 숙소가 같은 Business Zone을 사용합니다.
+- 체크인·체크아웃과 정책 날짜의 기준은
+  [`Accommodation TimeZone Policy`](accommodation-time-zone-policy.md)를 따릅니다.
 
 ## Consistent Enforcement
 

@@ -197,8 +197,9 @@ Before completing a change:
   `RSV-yyyyMMdd-XXXXXXXXXXXXXXXX` format and store only the representative
   guest's name, contact email, and phone separately from the owning Member.
 - New accommodation create/update requests require distinct default check-in
-  and check-out times. Legacy accommodation rows may keep null times rather
-  than receiving guessed values.
+  and check-out times plus a valid IANA ZoneId. Legacy accommodation rows may
+  keep null times, while their TimeZone is backfilled to `Asia/Seoul` to preserve
+  the former application-wide policy.
 - Room capacity and reservation guest count both represent total guests without
   adult/child separation. Reservation creation requires at least one guest and
   rejects counts above room capacity. The accepted count is stored on the
@@ -215,7 +216,9 @@ Before completing a change:
   reservations copy the current policy into a value snapshot; later policy and
   schedule changes do not alter that snapshot. Accommodations without a policy
   use the former 7-day/30%/50% default as the reservation snapshot.
-- Reservation cancellation uses the `Asia/Seoul` calendar date and the
+- Booking-policy advance days, cancellation dates, and public reservation-number
+  dates use each accommodation's TimeZone. System event timestamps remain UTC
+  `Instant` values and server-default TimeZone is not used. Cancellation uses the
   reservation's stored cancellation-policy snapshot. Fees use `totalAmount` and
   `HALF_UP` rounding to two decimals. An allowed cancellation restores every
   stay-date inventory, changes the state to `CANCELLED`, and stores UTC
@@ -260,6 +263,8 @@ Before completing a change:
   The issue-80 reservation-details upgrade backfills stable public numbers using
   the migration date, while leaving unknown historical guest and operating-time
   values null.
+  The issue-81 TimeZone upgrade backfills accommodations to `Asia/Seoul` to
+  preserve the earlier fixed business-zone behavior.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.
