@@ -166,7 +166,7 @@ public class ReservationController {
 
 	@Operation(
 			summary = "본인 예약 취소",
-			description = "Asia/Seoul 기준 체크인까지 남은 일수로 수수료를 계산하고 재고를 복구합니다. 실제 결제 취소나 환불은 수행하지 않습니다.",
+			description = "예약 숙소의 TimeZone 기준으로 체크인까지 남은 일수를 계산하고 재고를 복구합니다. 취소 시각은 UTC로 저장하며 실제 결제 취소나 환불은 수행하지 않습니다.",
 			responses = @ApiResponse(
 					responseCode = "200",
 					description = "예약 취소와 예상 수수료 계산 성공",

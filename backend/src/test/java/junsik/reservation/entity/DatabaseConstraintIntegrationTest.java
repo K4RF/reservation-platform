@@ -105,6 +105,17 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				"ACTIVE"
 		));
 		assertConstraintViolation(() -> jdbcTemplate.update(
+				"""
+				insert into accommodations (name, description, address, status, time_zone)
+				values (?, ?, ?, ?, ?)
+				""",
+				"Accommodation",
+				"description",
+				"address",
+				"ACTIVE",
+				"   "
+		));
+		assertConstraintViolation(() -> jdbcTemplate.update(
 				"insert into accommodations (name, description, address, status) values (?, ?, ?, ?)",
 				"x".repeat(101),
 				"description",

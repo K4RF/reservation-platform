@@ -103,7 +103,8 @@ class BasicReservationMvpIntegrationTest {
 							  "region": "해운대구",
 							  "address": "100 Test Beach Road",
 							  "checkInTime": "15:00:00",
-							  "checkOutTime": "11:00:00"
+							  "checkOutTime": "11:00:00",
+							  "timeZone": "Asia/Seoul"
 							}
 							"""))
 				.andExpect(status().isCreated())

@@ -46,8 +46,11 @@ Snapshot 저장 방식과 대안은
 
 ## Date and Fee Calculation
 
-취소일은 현재 서비스 기준 시간대인 `Asia/Seoul`의 달력 날짜입니다. 체크인까지
-남은 일수는 `cancellationDate`부터 `checkInDate`까지 계산합니다.
+취소 시각은 UTC `Instant`로 기록하고 취소일은 해당 예약 숙소 TimeZone의 달력
+날짜로 변환합니다. 체크인까지 남은 일수는 이 `cancellationDate`부터 숙소 현지
+`checkInDate`까지 계산합니다. 서버 기본 TimeZone은 사용하지 않습니다. 전체 시간
+모델은 [`Accommodation TimeZone Policy`](accommodation-time-zone-policy.md)를
+따릅니다.
 
 1. 남은 일수가 무료 취소 기준 이상이면 수수료율은 0%입니다.
 2. 남은 일수가 취소 마감 기준 미만이면 `RESERVATION_009`로 거절합니다.

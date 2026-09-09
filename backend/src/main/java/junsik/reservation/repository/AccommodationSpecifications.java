@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -34,7 +35,7 @@ public final class AccommodationSpecifications {
 
 	public static Specification<Accommodation> withFilters(
 			AccommodationSearchRequest request,
-			LocalDate today
+			Map<String, LocalDate> todayByTimeZone
 	) {
 		return (root, query, criteriaBuilder) -> {
 			List<Predicate> predicates = new ArrayList<>();
@@ -126,7 +127,7 @@ public final class AccommodationSpecifications {
 						query.subquery(Long.class),
 						criteriaBuilder,
 						request,
-						today
+						todayByTimeZone
 				);
 				Predicate isAvailable = criteriaBuilder.and(
 						criteriaBuilder.equal(root.get("status"), AccommodationStatus.ACTIVE),
@@ -181,24 +182,41 @@ public final class AccommodationSpecifications {
 			Subquery<Long> incompatiblePolicy,
 			CriteriaBuilder criteriaBuilder,
 			AccommodationSearchRequest request,
-			LocalDate today
+			Map<String, LocalDate> todayByTimeZone
 	) {
 		if (request.checkInDate() == null) {
 			return criteriaBuilder.conjunction();
 		}
 
 		long stayNights = ChronoUnit.DAYS.between(request.checkInDate(), request.checkOutDate());
-		long advanceBookingDays = ChronoUnit.DAYS.between(today, request.checkInDate());
 		Root<AccommodationBookingPolicy> policy = incompatiblePolicy.from(AccommodationBookingPolicy.class);
 		incompatiblePolicy.select(policy.get("id"));
+		List<Predicate> incompatibleByTimeZone = todayByTimeZone.entrySet().stream()
+				.map(entry -> {
+					long advanceBookingDays = ChronoUnit.DAYS.between(
+							entry.getValue(),
+							request.checkInDate()
+					);
+					return criteriaBuilder.and(
+							criteriaBuilder.equal(accommodation.get("timeZoneId"), entry.getKey()),
+							criteriaBuilder.or(
+									criteriaBuilder.greaterThan(policy.get("minStayNights"), stayNights),
+									criteriaBuilder.lessThan(policy.get("maxStayNights"), stayNights),
+									criteriaBuilder.greaterThan(
+											policy.get("minAdvanceBookingDays"),
+											advanceBookingDays
+									),
+									criteriaBuilder.lessThan(
+											policy.get("maxAdvanceBookingDays"),
+											advanceBookingDays
+									)
+							)
+					);
+				})
+				.toList();
 		incompatiblePolicy.where(
 				criteriaBuilder.equal(policy.get("accommodation"), accommodation),
-				criteriaBuilder.or(
-						criteriaBuilder.greaterThan(policy.get("minStayNights"), stayNights),
-						criteriaBuilder.lessThan(policy.get("maxStayNights"), stayNights),
-						criteriaBuilder.greaterThan(policy.get("minAdvanceBookingDays"), advanceBookingDays),
-						criteriaBuilder.lessThan(policy.get("maxAdvanceBookingDays"), advanceBookingDays)
-				)
+				criteriaBuilder.or(incompatibleByTimeZone.toArray(Predicate[]::new))
 		);
 		return criteriaBuilder.not(criteriaBuilder.exists(incompatiblePolicy));
 	}

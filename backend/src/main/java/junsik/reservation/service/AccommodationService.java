@@ -1,5 +1,10 @@
 package junsik.reservation.service;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -43,7 +48,8 @@ public class AccommodationService {
 				request.address(),
 				request.amenities(),
 				request.checkInTime(),
-				request.checkOutTime()
+				request.checkOutTime(),
+				request.timeZone()
 		);
 		return AccommodationResponse.from(accommodationRepository.save(accommodation));
 	}
@@ -61,10 +67,16 @@ public class AccommodationService {
 		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
 				.and(Sort.by(Sort.Direction.ASC, "id"));
 		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
+		Map<String, LocalDate> todayByTimeZone = accommodationRepository.findDistinctTimeZoneIds()
+				.stream()
+				.collect(Collectors.toMap(
+						timeZone -> timeZone,
+						timeZone -> bookingPolicyService.today(ZoneId.of(timeZone))
+				));
 		Page<AccommodationResponse> accommodations = accommodationRepository
 				.findAll(AccommodationSpecifications.withFilters(
 						request,
-						bookingPolicyService.today()
+						todayByTimeZone
 				), pageRequest)
 				.map(AccommodationResponse::from);
 		return PageResponse.from(accommodations);
@@ -82,7 +94,8 @@ public class AccommodationService {
 				request.address(),
 				request.amenities(),
 				request.checkInTime(),
-				request.checkOutTime()
+				request.checkOutTime(),
+				request.timeZone()
 		);
 		return AccommodationResponse.from(accommodation);
 	}

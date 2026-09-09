@@ -46,6 +46,7 @@ erDiagram
         varchar_255 address
         time check_in_time
         time check_out_time
+        varchar_50 time_zone
         enum status
     }
 
@@ -149,7 +150,7 @@ erDiagram
 | --- | --- | --- | --- | --- |
 | `members` | email/password/role, email·password 255, role 20 | `uk_members_email(email)` | - | email은 trim 후 비어 있지 않고 password 길이는 1 이상 |
 | `social_accounts` | member/provider/provider user ID, provider 20, provider user ID 255 | provider+provider user ID, member+provider | member → members | provider user ID는 trim 후 비어 있지 않음 |
-| `accommodations` | name/description/address/status 필수, country/city/region 및 운영시간 nullable 호환 필드, 100/1000/255/20 | - | - | 기존 필수 문자열은 trim 후 비어 있지 않음, 운영시간은 모두 null이거나 모두 존재하면서 서로 다름 |
+| `accommodations` | name/description/address/status/time zone 필수, country/city/region 및 운영시간 nullable 호환 필드, 100/1000/255/50/20 | - | - | 기존 필수 문자열과 TimeZone은 trim 후 비어 있지 않음, 운영시간은 모두 null이거나 모두 존재하면서 서로 다름 |
 | `accommodation_amenities` | accommodation/amenity | accommodation+amenity | accommodation → accommodations | enum 허용 값 |
 | `accommodation_booking_policies` | accommodation과 네 정책 경계값 | `uk_booking_policies_accommodation(accommodation_id)` | accommodation → accommodations | 최소 숙박일 ≥ 1, 최대 숙박일 ≥ 최소 숙박일, 최소 사전 예약일 ≥ 0, 최대 사전 예약일 ≥ 최소 사전 예약일 |
 | `accommodation_cancellation_policies` | accommodation, 무료 취소·취소 마감 기준 | `uk_cancellation_policies_accommodation(accommodation_id)` | accommodation → accommodations | 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
@@ -176,6 +177,10 @@ Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 en
 달라야 합니다. 체크인과 체크아웃은 서로 다른 숙박일에 적용되므로 `15:00` 체크인과
 `11:00` 체크아웃처럼 체크인 시각이 더 늦은 구성이 유효합니다. 구조화 이전 숙소는
 검증되지 않은 시간을 추정하지 않고 nullable로 유지합니다.
+
+숙소의 `time_zone`은 Java `ZoneId`가 인식하는 IANA 지역 ID를 저장합니다. 신규 API는
+유효한 값을 필수로 요구하고 Domain에서도 다시 검증합니다. 기존 숙소는 종전의
+애플리케이션 전역 날짜 정책을 그대로 보존하기 위해 `Asia/Seoul`로 Backfill합니다.
 
 객실의 공개 생성·수정 API는 `nightlyPrice > 0`을 요구하지만 DB는 기존 개발
 데이터 및 내부 호환성을 위해 `nightly_price >= 0`을 허용합니다. 예약 가격
@@ -205,7 +210,7 @@ Snapshot과 총액 역시 음수만 DB에서 차단합니다. 실제 총액 계�
 검증합니다. 일정 변경은 예약 인원을 변경하지 않습니다.
 
 신규 예약에는 내부 PK와 분리된 `RSV-yyyyMMdd-XXXXXXXXXXXXXXXX` 공개 예약번호를
-Asia/Seoul 기준 발급합니다. 16자리 대문자 16진 UUID 조각으로 충돌 가능성을 낮추고
+숙소 TimeZone 기준으로 발급합니다. 16자리 대문자 16진 UUID 조각으로 충돌 가능성을 낮추고
 DB UNIQUE를 최종 방어선으로 사용합니다. 번호는 일정 변경·취소 후에도 바뀌지
 않습니다. 예약 소유자인 Member와 실제 대표 투숙객은 별개이며 이름·안내 이메일·
 연락처만 예약에 저장합니다.
@@ -299,6 +304,12 @@ nullable 위치 컬럼, 검색 인덱스와 두 편의시설 관계 테이블을
 갱신합니다. 예약에 생성 시각이 없으므로 기존 예약번호의 날짜 구간은 Migration
 실행일을 사용하고, 과거 대표 투숙객과 숙소 운영시간은 추정하지 않아 nullable로
 남깁니다. 신규 API 쓰기부터는 해당 값을 모두 요구합니다.
+
+숙소별 TimeZone 도입 전 Schema는
+[`mysql-accommodation-time-zone-upgrade.sql`](mysql-accommodation-time-zone-upgrade.sql)로
+갱신합니다. 위치 문자열로 TimeZone을 추측하지 않고 기존 전역 정책이었던
+`Asia/Seoul`을 호환 기본값으로 사용하며, 이후 관리 API에서 검증된 IANA ZoneId로
+변경할 수 있습니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지

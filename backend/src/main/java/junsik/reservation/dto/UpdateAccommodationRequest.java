@@ -10,6 +10,7 @@ import jakarta.validation.constraints.AssertTrue;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import junsik.reservation.enums.AccommodationAmenity;
+import junsik.reservation.global.validation.ValidZoneId;
 
 public record UpdateAccommodationRequest(
 		@NotBlank(message = "숙소 이름은 필수입니다.")
@@ -46,7 +47,12 @@ public record UpdateAccommodationRequest(
 
 		@NotNull(message = "체크아웃 시간은 필수입니다.")
 		@Schema(description = "숙소 기본 체크아웃 시간", example = "11:00:00")
-		LocalTime checkOutTime
+		LocalTime checkOutTime,
+
+		@NotBlank(message = "숙소 TimeZone은 필수입니다.")
+		@ValidZoneId
+		@Schema(description = "숙소 현지 날짜·시간 계산에 사용하는 IANA ZoneId", example = "Asia/Seoul")
+		String timeZone
 ) {
 
 	public UpdateAccommodationRequest {

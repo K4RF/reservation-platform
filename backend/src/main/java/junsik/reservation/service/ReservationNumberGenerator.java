@@ -1,6 +1,7 @@
 package junsik.reservation.service;
 
 import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -16,10 +17,10 @@ public class ReservationNumberGenerator {
 		this.dateProvider = dateProvider;
 	}
 
-	public String generate() {
+	public String generate(ZoneId zoneId) {
 		String randomPart = UUID.randomUUID().toString().replace("-", "")
 				.substring(0, 16)
 				.toUpperCase();
-		return "RSV-" + dateProvider.today().format(DATE_FORMAT) + "-" + randomPart;
+		return "RSV-" + dateProvider.today(zoneId).format(DATE_FORMAT) + "-" + randomPart;
 	}
 }

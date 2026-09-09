@@ -101,7 +101,8 @@ class ReservationIntegrationTest {
 
 	@BeforeEach
 	void setUpCancellationDate() {
-		given(reservationDateProvider.today()).willReturn(CANCELLATION_DATE);
+		given(reservationDateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class)))
+				.willReturn(CANCELLATION_DATE);
 		given(reservationDateProvider.now()).willReturn(CANCELLATION_INSTANT);
 	}
 

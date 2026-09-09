@@ -14,7 +14,7 @@ public record ReservationCancellationResponse(
 		ReservationStatus status,
 		@Schema(description = "취소 처리 시각(UTC)", example = "2030-01-01T03:00:00Z")
 		Instant cancelledAt,
-		@Schema(description = "Asia/Seoul 기준 취소일", example = "2030-01-01")
+		@Schema(description = "예약 숙소 TimeZone 기준 취소일", example = "2030-01-01")
 		LocalDate cancellationDate,
 		@Schema(description = "취소일부터 체크인까지 남은 달력 일수", example = "9")
 		long daysBeforeCheckIn,

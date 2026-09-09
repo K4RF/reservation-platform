@@ -93,7 +93,7 @@ public class ReservationService {
 				.resolveReservationPriceSnapshot(room, period);
 
 		Reservation reservation = Reservation.create(
-				reservationNumberGenerator.generate(),
+				reservationNumberGenerator.generate(room.getAccommodation().getZoneId()),
 				member,
 				room,
 				request.guestCount(),

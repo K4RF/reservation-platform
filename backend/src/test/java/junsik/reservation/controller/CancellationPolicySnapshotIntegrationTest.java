@@ -86,7 +86,7 @@ class CancellationPolicySnapshotIntegrationTest {
 
 	@BeforeEach
 	void setUpDate() {
-		given(dateProvider.today()).willReturn(TODAY);
+		given(dateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class))).willReturn(TODAY);
 		given(dateProvider.now()).willReturn(NOW);
 	}
 
