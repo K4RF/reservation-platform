@@ -95,6 +95,28 @@ class RoomInventoryServiceIntegrationTest {
 	}
 
 	@Test
+	void incrementsVersionWheneverInventoryIsUpdated() {
+		Room room = saveRoom();
+		roomInventoryService.create(room.getId(), DEFAULT_DATE, 2);
+		RoomInventory inventory = roomInventoryRepository
+				.findByRoomIdAndInventoryDate(room.getId(), DEFAULT_DATE)
+				.orElseThrow();
+		assertThat(inventory.getVersion()).isZero();
+
+		roomInventoryService.reserve(room.getId(), DEFAULT_DATE, 1);
+		roomInventoryRepository.flush();
+		assertThat(inventory.getVersion()).isOne();
+
+		roomInventoryService.release(room.getId(), DEFAULT_DATE, 1);
+		roomInventoryRepository.flush();
+		assertThat(inventory.getVersion()).isEqualTo(2);
+
+		roomInventoryService.changeTotalQuantity(room.getId(), DEFAULT_DATE, 3);
+		roomInventoryRepository.flush();
+		assertThat(inventory.getVersion()).isEqualTo(3);
+	}
+
+	@Test
 	void rejectsDuplicateInventoryForSameRoomAndDate() {
 		Room room = saveRoom();
 		roomInventoryService.create(room.getId(), DEFAULT_DATE, 2);

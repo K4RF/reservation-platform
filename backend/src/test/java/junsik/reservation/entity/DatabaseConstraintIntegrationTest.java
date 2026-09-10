@@ -294,12 +294,23 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		Room room = saveRoom(saveAccommodation());
 		LocalDate inventoryDate = LocalDate.of(2030, 1, 1);
 		insertRoomInventory(room.getId(), inventoryDate, 3, 1);
+		assertThat(jdbcTemplate.queryForObject(
+				"select version from room_inventories where room_id = ? and inventory_date = ?",
+				Long.class,
+				room.getId(),
+				inventoryDate
+		)).isZero();
 
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate, 3, 0));
 		assertConstraintViolation(() -> insertRoomInventory(999999L, inventoryDate.plusDays(1), 3, 0));
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), -1, 0));
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), inventoryDate.plusDays(1), 1, 2));
 		assertConstraintViolation(() -> insertRoomInventory(room.getId(), null, 1, 0));
+		assertConstraintViolation(() -> jdbcTemplate.update(
+				"update room_inventories set version = null where room_id = ? and inventory_date = ?",
+				room.getId(),
+				inventoryDate
+		));
 		assertConstraintViolation(() -> jdbcTemplate.update(
 				"""
 				insert into room_inventories (

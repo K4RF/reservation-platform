@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,8 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+
+import junsik.reservation.entity.RoomInventory;
 
 class GlobalExceptionHandlerTest {
 
@@ -47,6 +50,17 @@ class GlobalExceptionHandlerTest {
 				.andExpect(jsonPath("$.code").value("TEST_001"))
 				.andExpect(jsonPath("$.message").value("테스트 비즈니스 규칙을 위반했습니다."))
 				.andExpect(jsonPath("$.path").value("/test/business-error"))
+				.andExpect(jsonPath("$.errors").isEmpty());
+	}
+
+	@Test
+	void handlesOptimisticLockConflictAsInventoryConflict() throws Exception {
+		mockMvc.perform(get("/test/optimistic-lock-error"))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.status").value(409))
+				.andExpect(jsonPath("$.code").value("INVENTORY_011"))
+				.andExpect(jsonPath("$.message").value("객실 재고가 다른 요청에 의해 변경되었습니다. 다시 시도해 주세요."))
+				.andExpect(jsonPath("$.path").value("/test/optimistic-lock-error"))
 				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
@@ -129,6 +143,11 @@ class GlobalExceptionHandlerTest {
 		@GetMapping("/business-error")
 		void businessError() {
 			throw new BusinessException(TestErrorCode.CONFLICT);
+		}
+
+		@GetMapping("/optimistic-lock-error")
+		void optimisticLockError() {
+			throw new ObjectOptimisticLockingFailureException(RoomInventory.class, 1L);
 		}
 
 		@PostMapping("/validation")
