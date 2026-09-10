@@ -17,6 +17,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.ColumnDefault;
 
@@ -63,6 +64,11 @@ public class RoomInventory {
 	@ColumnDefault("0")
 	private int reservedQuantity;
 
+	@Version
+	@Column(nullable = false)
+	@ColumnDefault("0")
+	private long version;
+
 	@Enumerated(EnumType.STRING)
 	@Column(name = "sale_status", nullable = false, length = 20)
 	@ColumnDefault("'OPEN'")
@@ -102,6 +108,10 @@ public class RoomInventory {
 
 	public int getReservedQuantity() {
 		return reservedQuantity;
+	}
+
+	public long getVersion() {
+		return version;
 	}
 
 	public int getAvailableQuantity() {

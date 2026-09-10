@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -20,6 +21,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import junsik.reservation.enums.ReservationErrorCode;
+import junsik.reservation.enums.RoomInventoryErrorCode;
 import junsik.reservation.global.exception.ErrorResponse.ValidationError;
 
 @RestControllerAdvice
@@ -47,6 +49,17 @@ public class GlobalExceptionHandler {
 			case CANCEL -> ReservationErrorCode.ALREADY_CANCELLED;
 			case CHANGE_SCHEDULE -> ReservationErrorCode.SCHEDULE_CHANGE_NOT_ALLOWED;
 		};
+		return ResponseEntity
+				.status(errorCode.getStatus())
+				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+	}
+
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	public ResponseEntity<ErrorResponse> handleOptimisticLockingFailureException(
+			ObjectOptimisticLockingFailureException exception,
+			HttpServletRequest request
+	) {
+		ErrorCode errorCode = RoomInventoryErrorCode.CONCURRENT_UPDATE;
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
