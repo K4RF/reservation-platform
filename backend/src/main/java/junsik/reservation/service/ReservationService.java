@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -86,7 +87,10 @@ public class ReservationService {
 		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), period);
 		CancellationPolicySnapshot cancellationPolicySnapshot = accommodationCancellationPolicyService
 				.resolveSnapshot(room.getAccommodation());
-		Map<LocalDate, RoomInventory> inventories = getInventories(room.getId(), period);
+		Map<LocalDate, RoomInventory> inventories = getInventoriesForUpdate(
+				room.getId(),
+				period.stayDates()
+		);
 		validateAvailable(inventories.values());
 		inventories.values().forEach(inventory -> inventory.reserve(1));
 		ReservationPriceSnapshot priceSnapshot = roomDailyPriceService
@@ -145,9 +149,9 @@ public class ReservationService {
 		validateOwner(reservation, memberId);
 		reservation.verifyCancellationAllowed();
 		ReservationCancellationQuote cancellationQuote = cancellationPolicy.evaluate(reservation);
-		Map<LocalDate, RoomInventory> inventories = getInventories(
+		Map<LocalDate, RoomInventory> inventories = getInventoriesForUpdate(
 				reservation.getRoom().getId(),
-				reservation.getPeriod()
+				reservation.getPeriod().stayDates()
 		);
 		validateReserved(inventories.values());
 		inventories.values().forEach(inventory -> inventory.release(1));
@@ -171,11 +175,27 @@ public class ReservationService {
 		ReservationPeriod newPeriod = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
 		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), newPeriod);
 
-		Map<LocalDate, RoomInventory> previousInventories = getInventories(
+		List<LocalDate> previousStayDates = reservation.getPeriod().stayDates();
+		List<LocalDate> newStayDates = newPeriod.stayDates();
+		List<LocalDate> inventoryDatesToLock = Stream.concat(
+				previousStayDates.stream(),
+				newStayDates.stream()
+		)
+				.distinct()
+				.sorted()
+				.toList();
+		Map<LocalDate, RoomInventory> lockedInventories = getInventoriesForUpdate(
 				room.getId(),
-				reservation.getPeriod()
+				inventoryDatesToLock
 		);
-		Map<LocalDate, RoomInventory> newInventories = getInventories(room.getId(), newPeriod);
+		Map<LocalDate, RoomInventory> previousInventories = selectInventories(
+				lockedInventories,
+				previousStayDates
+		);
+		Map<LocalDate, RoomInventory> newInventories = selectInventories(
+				lockedInventories,
+				newStayDates
+		);
 		List<RoomInventory> inventoriesToRelease = previousInventories.entrySet().stream()
 				.filter(entry -> !newInventories.containsKey(entry.getKey()))
 				.map(Map.Entry::getValue)
@@ -228,23 +248,34 @@ public class ReservationService {
 		}
 	}
 
-	private Map<LocalDate, RoomInventory> getInventories(Long roomId, ReservationPeriod period) {
+	private Map<LocalDate, RoomInventory> getInventoriesForUpdate(
+			Long roomId,
+			List<LocalDate> inventoryDates
+	) {
 		List<RoomInventory> inventories = roomInventoryRepository
-				.findAllByRoomIdAndInventoryDateGreaterThanEqualAndInventoryDateLessThanOrderByInventoryDateAsc(
+				.findAllForUpdateByRoomIdAndInventoryDateIn(
 						roomId,
-						period.checkInDate(),
-						period.checkOutDate()
+						inventoryDates
 				);
-		List<LocalDate> inventoryDates = inventories.stream()
+		List<LocalDate> foundDates = inventories.stream()
 				.map(RoomInventory::getInventoryDate)
 				.toList();
-		if (!inventoryDates.equals(period.stayDates())) {
+		if (!foundDates.equals(inventoryDates)) {
 			throw new BusinessException(RoomInventoryErrorCode.NOT_FOUND);
 		}
 
 		Map<LocalDate, RoomInventory> inventoryByDate = new LinkedHashMap<>();
 		inventories.forEach(inventory -> inventoryByDate.put(inventory.getInventoryDate(), inventory));
 		return inventoryByDate;
+	}
+
+	private Map<LocalDate, RoomInventory> selectInventories(
+			Map<LocalDate, RoomInventory> lockedInventories,
+			List<LocalDate> inventoryDates
+	) {
+		Map<LocalDate, RoomInventory> selected = new LinkedHashMap<>();
+		inventoryDates.forEach(date -> selected.put(date, lockedInventories.get(date)));
+		return selected;
 	}
 
 	private void validateAvailable(Iterable<RoomInventory> inventories) {

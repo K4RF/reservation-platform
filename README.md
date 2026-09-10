@@ -24,8 +24,8 @@
 > 날짜별 객실 전체·예약 재고 모델을 예약 생성·취소·일정 변경 및 예약 가능 객실
 > 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
 > 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
-> 가격 fallback 여부를 조회할 수 있습니다. 동시 요청 Lock과 Race Condition
-> 제어는 아직 구현되지 않았습니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
+> 가격 fallback 여부를 조회할 수 있습니다. 동일 객실·숙박일의 예약 생성·일정 변경·
+> 취소에는 MySQL Pessimistic Write Lock을 적용했습니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
 > 관리할 수 있습니다. 신규 예약은 당시 취소 정책을 Snapshot으로 저장하므로 이후
 > 숙소 정책이 바뀌어도 기존 예약의 무료·부분 수수료·취소 제한 기준은 유지됩니다.
 > 관리자는 객실별 재고 Calendar에서 날짜별 전체 수량과 `OPEN/CLOSED` 판매 상태를
@@ -63,8 +63,9 @@
 
 ## 2. 주요 기능
 
-회원·인증, 숙소·객실·정책·재고 관리와 순차 예약 생성·조회·변경·취소는 구현되어 있습니다.
-동시 요청 제어와 비동기 이벤트는 후속 Roadmap 범위입니다.
+회원·인증, 숙소·객실·정책·재고 관리와 예약 생성·조회·변경·취소는 구현되어 있습니다.
+예약 재고에는 첫 동시성 전략으로 DB 비관적 락을 적용했으며 다른 Lock 전략 비교와
+비동기 이벤트는 후속 Roadmap 범위입니다.
 
 ### 사용자 및 인증
 
@@ -252,8 +253,8 @@ Spring Boot API
 `[checkInDate, checkOutDate)`의 모든 숙박일에 `OPEN` 재고 행과 잔여 수량이 있는
 객실을 반환합니다. 체크아웃 날짜의 재고는 조회·차감하지 않습니다. 관리자가 재고를
 `CLOSED`로 변경해도 이미 생성된 예약과 예약 수량은 유지되며, 이후 신규 예약과
-일정 변경에서 새로 점유할 날짜만 차단됩니다. 조회와 실제 예약 생성
-사이의 Race Condition은 아직 방지하지 않습니다.
+일정 변경에서 새로 점유할 날짜만 차단됩니다. 예약 가능 조회 결과는 예약 생성을
+보장하지 않지만, 실제 예약 생성 시 재고 Row를 잠가 동시 요청의 초과 예약을 방지합니다.
 
 예약 생성 요청은 `memberId`를 받지 않고 JWT 인증 정보의 회원 ID를 사용합니다.
 실제 대표 투숙객은 회원과 다를 수 있으므로 요청에서 이름·이메일·전화번호를 받고,
@@ -269,7 +270,9 @@ Spring Boot API
 처리하므로 기존 예약의 체크아웃 날짜와 다음 예약의 체크인 날짜가 같을 수
 있습니다. 예약 생성은 모든 숙박일 재고의 존재와 잔여 수량을 검증한 뒤 날짜마다
 객실 재고 한 개를 차감하며 Reservation 저장과 같은 Transaction에서 처리합니다.
-동시 요청 Race Condition과 DB·Redis Lock은 후속 작업에서 다룹니다.
+예약 생성·취소는 필요한 숙박일만, 일정 변경은 이전·신규 숙박일의 합집합만 날짜
+오름차순으로 조회하고 `PESSIMISTIC_WRITE` Lock을 획득합니다. 같은 재고를 사용하는
+Transaction은 앞선 Transaction 종료까지 대기한 뒤 최신 수량을 다시 검증합니다.
 
 예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
 있습니다. `CONFIRMED` 예약의 일정 변경은 기존·신규 기간에 공통인 날짜의 차감은
@@ -382,13 +385,14 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 ### v0.2.0 진입 기준과 예정 작업
 
-현재 Transaction은 재고 검증·증감과 예약·Snapshot 변경을 함께 처리하지만,
-동일 재고에 대한 별도 Lock, `@Version`, 조건부 원자 UPDATE는 없습니다.
-Race Condition 가능성이 있으며 실제 Overselling 여부는 다음 Phase에서 검증합니다.
+현재 Transaction은 재고 검증·증감과 예약·Snapshot 변경을 함께 처리하며, 동일
+객실·숙박일 재고에는 MySQL Pessimistic Write Lock을 적용합니다. `@Version`, 조건부
+원자 UPDATE와 Redis 분산 Lock은 아직 적용하지 않았습니다.
 
-* [ ] Lock 미적용 MySQL 동시 예약 Baseline
-* [ ] 성공·실패 수, 최종 재고와 예약 수로 Overselling 재현 여부 검증
-* [ ] Pessimistic Lock과 Optimistic Lock 및 Retry 비교
+* [x] Lock 미적용 MySQL 동시 예약 Baseline
+* [x] 성공·실패 수, 최종 재고와 예약 수로 Overselling 재현 여부 검증
+* [x] Pessimistic Lock 적용 및 예약·일정 변경·Rollback 정합성 검증
+* [ ] Optimistic Lock 및 Retry 비교
 * [ ] Redis Distributed Lock, 획득 실패·Timeout 처리 검토
 * [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
 * [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
@@ -576,6 +580,8 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] 외부 공개 예약번호·대표 투숙객 및 숙소 운영시간
 * [x] 숙소별 IANA TimeZone 기반 날짜 정책과 UTC 취소 시각
 * [x] v0.1.3 MySQL 전체 예약 흐름·Snapshot 재조회 Baseline
+* [x] Lock 미적용 동시 예약 Race Condition 및 Overselling Baseline
+* [x] MySQL Pessimistic Write Lock 기반 예약 재고 동시성 제어
 
 ---
 
@@ -742,7 +748,9 @@ Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트
 [`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.3의 전체 흐름과
 동시성 적용 전 기준선은
 [`docs/testing/reservation-domain-baseline.md`](docs/testing/reservation-domain-baseline.md)에
-정리되어 있습니다.
+정리되어 있습니다. Lock 미적용 재현 결과와 Pessimistic Lock 적용 결과는
+[`docs/testing/reservation-concurrency-baseline.md`](docs/testing/reservation-concurrency-baseline.md)에서
+비교할 수 있습니다.
 
 ## 14. 주요 기술 과제
 

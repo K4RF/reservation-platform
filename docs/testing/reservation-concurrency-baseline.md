@@ -2,9 +2,9 @@
 
 ## 목적
 
-이 문서는 이슈 #93에서 확인한 무잠금 예약 생성의 동시성 특성을 기록한다.
-문제를 해결하는 Lock은 아직 적용하지 않고, 이후 비관적 Lock·낙관적 Lock·원자적
-UPDATE·Redis 분산 Lock을 같은 조건에서 비교하기 위한 기준선을 제공한다.
+이 문서는 이슈 #93에서 확인한 무잠금 예약 생성의 동시성 특성과 이슈 #94에서
+적용한 MySQL 비관적 락 결과를 함께 기록한다. 이후 낙관적 Lock·원자적 UPDATE·
+Redis 분산 Lock을 같은 조건에서 비교하기 위한 기준선을 제공한다.
 
 ## 확인된 현재 Transaction 구조
 
@@ -40,10 +40,9 @@ Testcontainer를 사용한다. 기존 Member·Accommodation·Room Fixture도 재
 | 반복 횟수 | 5 |
 
 각 요청은 별도 Thread에서 실제 `ReservationService.create`를 호출하므로 각각 독립된
-Transaction을 사용한다. `CountDownLatch`로 요청 시작을 맞추고, 테스트 전용
-Repository Proxy와 `CyclicBarrier`로 두 Transaction이 실제 재고 조회를 마친 뒤에
-함께 진행하게 한다. 운영 Bean과 Query는 변경하지 않으며 테스트 종료 후 주입한
-Proxy를 원래 Repository로 복구한다.
+Transaction을 사용한다. #93 측정에서는 `CountDownLatch`로 요청 시작을 맞추고,
+테스트 전용 Repository Proxy와 `CyclicBarrier`로 두 Transaction이 실제 재고 조회를
+마친 뒤에 함께 진행하게 했다. 운영 Bean과 Query는 변경하지 않았다.
 
 재고 조회 직후의 Barrier는 스레드 Scheduling에 따라 간헐적으로 결과가 달라지는
 테스트를 방지하면서, 현재 코드에 존재하는 검증과 갱신 사이의 경쟁 구간을 그대로
@@ -68,11 +67,46 @@ Constraint를 만족하지만, 실제로는 수용 가능한 한 개보다 많�
 확정된다. 즉 재고 값 자체가 음수가 되는 형태가 아니라 마지막 쓰기가 앞선 쓰기를
 덮는 Lost Update와 예약 건수 불일치 형태의 Overselling이다.
 
+## #94 Pessimistic Write Lock 적용
+
+`RoomInventoryRepository.findAllForUpdateByRoomIdAndInventoryDateIn`은
+`@Lock(LockModeType.PESSIMISTIC_WRITE)`를 사용한다. JPQL은 요청한 객실과 숙박일
+목록만 조회하며 `inventoryDate ASC`로 정렬한다.
+
+#94 테스트에서는 조회 완료 Barrier를 제거했다. 첫 Transaction이 Lock을 획득한 뒤
+Barrier에서 두 번째 Transaction을 기다리면, 두 번째 Transaction은 같은 Row Lock을
+얻지 못해 테스트 자체가 교착되기 때문이다. 동시 시작 `CountDownLatch`는 유지하고
+DB Lock이 요청을 직렬화하도록 한다.
+
+- 예약 생성과 취소는 `[check-in, check-out)` 숙박일만 한 번에 잠근다.
+- 일정 변경은 이전·신규 숙박일의 합집합을 중복 제거한 뒤 오름차순으로 한 번에
+  잠근다. 서로 다른 순서로 Row를 점유하는 Schedule 변경 사이의 Deadlock 가능성을
+  줄이기 위한 규칙이다.
+- Lock 조회부터 재고 검증·증감, Reservation 변경까지 기존 Service Transaction을
+  유지한다.
+- 조회용 Repository 메서드는 잠그지 않으므로 관리 Calendar와 테스트용 단순 조회는
+  별도 쓰기 Transaction을 요구하지 않는다.
+
+동일한 재고 1개와 동시 요청 2건 조건을 5회 반복한 결과는 모두 다음과 같았다.
+
+| 지표 | #93 무잠금 | #94 비관적 락 |
+| --- | --- | --- |
+| 성공 예약 수 | 2 | 1 |
+| 재고 부족 실패 수 | 0 | 1 |
+| 저장된 Reservation 수 | 2 | 1 |
+| 최종 `reserved_quantity` | 1 | 1 |
+| 최종 잔여 수량 | 0 | 0 |
+
+3박의 여러 재고 Row에서도 한 요청만 전체 날짜를 점유하고 다른 요청은
+`INVENTORY_005`로 실패했다. 일정 변경과 신규 예약이 같은 마지막 재고를 경쟁하는
+경우에도 해당 날짜의 확정 예약과 `reserved_quantity`는 각각 1을 유지했다. 강제
+Reservation 저장 실패 시 모든 날짜의 재고 변경이 Rollback되고, 같은 Row를 다시
+비관적 Lock으로 조회해 수량 0과 Lock 해제를 확인했다.
+
 ## 테스트가 고정하는 기준
 
-이 테스트는 현재 결함을 의도적으로 보여 주는 Characterization Test다. Lock 전략을
-적용하는 후속 이슈에서는 같은 Fixture와 동시 시작 조건을 유지하되 기대 결과를 아래와
-같이 바꾸어 전후 차이를 비교한다.
+이 테스트는 #93에서는 결함을 보여 주는 Characterization Test였고, #94부터는 같은
+Fixture와 동시 시작 조건에서 아래 정합성을 지키는 Regression Test다.
 
 ```text
 성공 예약 수 = total_quantity
@@ -83,8 +117,27 @@ available_quantity = 0
 ```
 
 비교 시 성공·실패 수와 최종 재고뿐 아니라 같은 요청 수에서의 응답 시간, Retry 횟수,
-Lock 대기·Timeout 및 Deadlock 여부도 함께 기록한다. 이 #93 Baseline 결과는 현재
-구현이 동시성에 안전하다는 의미가 아니다.
+향후 전략 비교 시 같은 요청 수에서의 응답 시간, Retry 횟수, Lock 대기·Timeout 및
+Deadlock 여부도 함께 기록한다. 이번 테스트는 Pessimistic Lock의 정합성을 검증하지만
+대규모 요청의 Throughput이나 운영 Lock Timeout 정책까지 검증한 결과는 아니다.
+
+## Pessimistic Lock 장단점
+
+- 장점: 충돌을 DB에서 직렬화하므로 Application Retry 없이 마지막 재고의 정합성을
+  직접 보장하며, 기존 Transaction 경계를 유지할 수 있다.
+- 단점: 충돌이 많을수록 Connection과 DB Row Lock 대기가 증가해 응답 시간과
+  Throughput이 악화될 수 있다. 긴 Transaction, 서로 다른 Lock 순서, DB 설정에 따른
+  Timeout·Deadlock도 운영 시 고려해야 한다.
+- 현재 범위: 정합성 검증에 집중한다. Lock Timeout의 API Error 매핑, 부하 측정 및
+  낙관적·분산 Lock과의 성능 비교는 후속 이슈 범위다.
+
+## #94 검증 기록 (2026-09-10)
+
+- 동시성·Rollback 집중 테스트: 8 tests, 0 failures, 0 errors, 0 skipped.
+- 전체 Backend 테스트: 227 tests, 0 failures, 0 errors, 0 skipped.
+- `gradlew.bat build -x test`: 성공.
+- MySQL 테스트는 Testcontainer만 사용했으며 로컬 Docker Compose DB와 Volume은
+  사용하거나 변경하지 않았다.
 
 ## 실행 명령
 
