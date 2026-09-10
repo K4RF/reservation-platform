@@ -98,6 +98,7 @@ erDiagram
         date inventory_date
         int total_quantity
         int reserved_quantity
+        bigint version
         enum sale_status
     }
 
@@ -157,7 +158,7 @@ erDiagram
 | `cancellation_policy_fee_rules` | 정책, 순서, 구간 시작일, 정수 요율 | policy+order | policy → accommodation cancellation policies | 구간 시작일 ≥ 0, 요율 1~100 |
 | `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
 | `room_amenities` | room/amenity | room+amenity | room → rooms | enum 허용 값 |
-| `room_inventories` | room/date/total/reserved/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
+| `room_inventories` | room/date/total/reserved/version/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
 | `reservations` | 공개 예약번호/member/room/guest count/dates/prices/cancellation policy·result/status 필수, 대표 투숙객은 레거시 호환 nullable | `uk_reservations_reservation_number(reservation_number)` | member → members, room → rooms | 예약번호와 입력된 대표 투숙객 값은 trim 후 비어 있지 않음, 대표 투숙객은 전부 null이거나 전부 존재, guest count ≥ 1, check-in < check-out, 가격·취소 수수료·환불액 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `reservation_nights` | reservation/stay date/price snapshot | `uk_reservation_nights_reservation_date(reservation_id, stay_date)` | reservation → reservations | price snapshot ≥ 0 |
@@ -222,7 +223,9 @@ DB UNIQUE를 최종 방어선으로 사용합니다. 번호는 일정 변경·�
 전체 수량을 넘거나 반환 후 음수가 되지 않도록 검증합니다. `CLOSED` 재고는 신규
 예약 대상에서 제외하지만 기존 예약과 예약 수량은 변경하지 않습니다. 예약 생성·취소·일정
 변경은 여러 날짜의 재고 변경과 Reservation 저장을 하나의 Transaction으로
-처리합니다. 동시 요청 Lock은 아직 구현되지 않았습니다.
+처리합니다. `version BIGINT NOT NULL DEFAULT 0`은 JPA `@Version` 값이며, 재고를
+변경하는 UPDATE의 Version 조건이 일치하지 않으면 낙관적 락 충돌로 Transaction을
+Rollback합니다. 충돌 Retry는 아직 적용하지 않습니다.
 
 ## Validation Responsibilities
 
@@ -233,8 +236,8 @@ DB UNIQUE를 최종 방어선으로 사용합니다. 번호는 일정 변경·�
 | Database | NOT NULL, UNIQUE, FK, 컬럼 길이, enum 허용값, 음수 금액·잘못된 날짜처럼 어떤 쓰기 경로에서도 깨지면 안 되는 최종 정합성 보장 |
 
 DB CHECK는 예약 총액이 숙박일별 적용 가격 합계인지 또는 날짜별 예약 수량 합계가
-전체 재고를 넘는지 검증하지 않습니다. 현재 Service Transaction은 순차 요청의
-정합성을 보장하며 동시 요청 Race Condition은 이후 Lock 전략으로 다룹니다.
+전체 재고를 넘는지 검증하지 않습니다. 현재 Service Transaction과 RoomInventory
+Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 
 ## Index Review
 
@@ -287,6 +290,12 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 [`mysql-room-inventory-sale-status-upgrade.sql`](mysql-room-inventory-sale-status-upgrade.sql)로
 `OPEN` 상태를 Backfill할 수 있습니다. 기존 판매 가능 동작을 보존하기 위한 값이며,
 실제 판매 중지 날짜는 적용 후 관리 API로 명시적으로 `CLOSED` 처리합니다.
+
+낙관적 락 도입 전 생성된 객실 재고는
+[`mysql-room-inventory-version-upgrade.sql`](mysql-room-inventory-version-upgrade.sql)로
+`version = 0`을 Backfill합니다. 이 값은 과거 변경 횟수를 복원하는 값이 아니라
+낙관적 락의 시작점입니다. 실행 전에 컬럼 존재 여부를 확인하고 이미 적용된 ALTER를
+다시 실행하지 않습니다.
 
 숙박일별 가격과 취소 결과 도입 전 예약 Schema는
 [`mysql-reservation-snapshot-upgrade.sql`](mysql-reservation-snapshot-upgrade.sql)로

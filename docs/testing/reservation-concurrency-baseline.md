@@ -2,9 +2,9 @@
 
 ## 목적
 
-이 문서는 이슈 #93에서 확인한 무잠금 예약 생성의 동시성 특성과 이슈 #94에서
-적용한 MySQL 비관적 락 결과를 함께 기록한다. 이후 낙관적 Lock·원자적 UPDATE·
-Redis 분산 Lock을 같은 조건에서 비교하기 위한 기준선을 제공한다.
+이 문서는 이슈 #93의 무잠금 예약 생성, 이슈 #94의 MySQL 비관적 락, 이슈 #95의
+낙관적 락 결과를 함께 기록한다. 이후 Retry·원자적 UPDATE·Redis 분산 Lock을 같은
+조건에서 비교하기 위한 기준선을 제공한다.
 
 ## 확인된 현재 Transaction 구조
 
@@ -116,9 +116,9 @@ reserved_quantity = total_quantity
 available_quantity = 0
 ```
 
-비교 시 성공·실패 수와 최종 재고뿐 아니라 같은 요청 수에서의 응답 시간, Retry 횟수,
-향후 전략 비교 시 같은 요청 수에서의 응답 시간, Retry 횟수, Lock 대기·Timeout 및
-Deadlock 여부도 함께 기록한다. 이번 테스트는 Pessimistic Lock의 정합성을 검증하지만
+향후 전략 비교 시 성공·실패 수와 최종 재고뿐 아니라 같은 요청 수에서의 응답 시간,
+Retry 횟수, Lock 대기·Timeout 및
+Deadlock 여부도 함께 기록한다. #94 테스트는 Pessimistic Lock의 정합성을 검증하지만
 대규모 요청의 Throughput이나 운영 Lock Timeout 정책까지 검증한 결과는 아니다.
 
 ## Pessimistic Lock 장단점
@@ -136,6 +136,58 @@ Deadlock 여부도 함께 기록한다. 이번 테스트는 Pessimistic Lock의 
 - 동시성·Rollback 집중 테스트: 8 tests, 0 failures, 0 errors, 0 skipped.
 - 전체 Backend 테스트: 227 tests, 0 failures, 0 errors, 0 skipped.
 - `gradlew.bat build -x test`: 성공.
+- MySQL 테스트는 Testcontainer만 사용했으며 로컬 Docker Compose DB와 Volume은
+  사용하거나 변경하지 않았다.
+
+## #95 Optimistic Lock 적용
+
+현재 활성 전략은 `RoomInventory.version`과 JPA `@Version`을 사용하는 낙관적 락이다.
+#94의 `PESSIMISTIC_WRITE` 조회는 제거했으며, 필요한 숙박일을 날짜 오름차순으로
+조회하는 범위와 Service Transaction 경계는 유지했다.
+
+```text
+Transaction A: inventory(version=0) 조회 → reservedQuantity 변경
+Transaction B: inventory(version=0) 조회 → reservedQuantity 변경
+Transaction A: UPDATE ... SET version=1 WHERE id=? AND version=0 → 성공
+Transaction B: UPDATE ... SET version=1 WHERE id=? AND version=0 → 갱신 0건
+→ ObjectOptimisticLockingFailureException → B 전체 Rollback
+```
+
+#95 테스트는 #93과 같은 테스트 전용 조회 Barrier를 사용해 두 Transaction이 동일
+Version을 읽도록 고정한다. 조회 자체는 Row Lock을 보유하지 않으므로 두 요청 모두
+Barrier에 도달할 수 있다. Retry는 적용하지 않아 충돌한 요청은 그대로 실패한다.
+
+| 지표 | #93 무잠금 | #94 비관적 락 | #95 낙관적 락 |
+| --- | --- | --- | --- |
+| 성공 예약 수 | 2 | 1 | 1 |
+| 실패 수 | 0 | 재고 부족 1 | 낙관적 충돌 1 |
+| 저장된 Reservation 수 | 2 | 1 | 1 |
+| 최종 `reserved_quantity` | 1 | 1 | 1 |
+| 최종 잔여 수량 | 0 | 0 | 0 |
+
+3박 예약 충돌에서는 실패 Transaction의 Reservation과 모든 숙박일 재고 변경이 함께
+Rollback됐다. 일정 변경과 신규 예약의 충돌에서도 대상 날짜의 확정 예약과 예약
+재고는 각각 1을 유지했다. 예약 취소는 재고를 반환하면서 Version을 증가시켰고,
+기존 강제 저장 실패 테스트도 재고 0을 유지했다.
+
+### 비관적 락과의 구조적 차이
+
+| 항목 | Pessimistic Write Lock | Optimistic Lock |
+| --- | --- | --- |
+| 충돌 시점 | 조회 시 Row Lock 획득 | UPDATE 시 Version 비교 |
+| 대기 방식 | 선행 Transaction 종료까지 DB에서 대기 | 조회는 진행하고 후행 Commit이 실패 |
+| 실패 형태 | 최신 재고 재검증 후 비즈니스 오류 | `ObjectOptimisticLockingFailureException` |
+| 장점 | Retry 없이 충돌 요청 직렬화 | 조회 중 Row Lock을 오래 유지하지 않음 |
+| 비용 | 충돌 시 DB Connection·Lock 대기 | 충돌 시 Transaction 작업 Rollback·Retry 필요 |
+
+현재는 충돌을 정확히 감지하고 정합성을 보장하는 단계다. API는 낙관적 충돌을
+`409 Conflict`와 `INVENTORY_011`로 응답한다. 서버 내부 Retry 횟수·Backoff는 다음
+이슈에서 다룬다.
+
+## #95 검증 기록 (2026-09-10)
+
+- 전체 Backend 테스트: 230 tests, 0 failures, 0 errors, 0 skipped.
+- `RoomInventory` Version 기본값·NOT NULL 제약은 MySQL 8.4에서 검증했다.
 - MySQL 테스트는 Testcontainer만 사용했으며 로컬 Docker Compose DB와 Volume은
   사용하거나 변경하지 않았다.
 

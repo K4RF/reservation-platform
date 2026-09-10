@@ -5,10 +5,10 @@
 `Reservation Platform` is a personal backend portfolio project focused on
 preventing reservation conflicts under concurrent traffic.
 
-The sequential reservation-domain baseline is complete. MySQL pessimistic write
-locking is the first implemented inventory concurrency-control strategy; other
-strategies remain roadmap work. Features listed in `README.md` must not be
-treated as already implemented without source verification.
+The sequential reservation-domain baseline is complete. MySQL pessimistic locking
+was verified first; the active inventory concurrency strategy is now JPA optimistic
+locking with `RoomInventory.version`. Retry and other strategies remain roadmap
+work. Features in `README.md` require source verification.
 
 ## Source of Truth
 
@@ -239,10 +239,11 @@ Before completing a change:
 - `RoomInventoryService` supports creation, Calendar lookup, total/status changes,
   reservation, and release. Reservation creation, cancellation, and schedule changes update
   every `[check-in, check-out)` inventory date and the reservation in one
-  transaction. These paths acquire `PESSIMISTIC_WRITE` locks for exactly the
-  required inventory dates in ascending date order. Schedule changes lock the
-  sorted union of old and new stay dates in one query to avoid inconsistent
-  acquisition order.
+  transaction. `RoomInventory.version` uses JPA `@Version`; concurrent writes to
+  the same inventory are detected at update time and the losing transaction is
+  rolled back. The API maps the conflict to `409 INVENTORY_011`; server-side retry
+  is not implemented. Schedule changes load the sorted union of old and new stay
+  dates in one query.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
@@ -250,8 +251,8 @@ Before completing a change:
   date. New reservations for inactive rooms or accommodations are rejected,
   while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  full-text/Elasticsearch search, optimistic locking, atomic conditional inventory
-  updates, and distributed locking are not implemented.
+  full-text/Elasticsearch search, optimistic-lock retry, custom atomic conditional
+  inventory updates, and distributed locking are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
   monetary values, positive daily prices, and valid reservation periods.
@@ -269,6 +270,8 @@ Before completing a change:
   values null.
   The issue-82 TimeZone upgrade backfills accommodations to `Asia/Seoul` to
   preserve the earlier fixed business-zone behavior.
+  The issue-95 inventory upgrade initializes existing `RoomInventory.version`
+  values to zero as the optimistic-lock starting point.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.
@@ -278,7 +281,8 @@ Before completing a change:
 - Logout deletes the member's Refresh Token. Access Token blacklisting is not
   implemented, so an existing Access Token remains valid until expiration.
 - Redis distributed locks, Redis caching, alternative database concurrency
-  strategies, and Kafka integration are not implemented.
+  strategies beyond the recorded pessimistic/optimistic variants, and Kafka
+  integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
@@ -322,6 +326,7 @@ Before completing a change:
   daily/default price reservation, schedule repricing and inventory movement,
   cancellation fees, and complete inventory restoration. MySQL rollback testing
   verifies that forced reservation persistence failure restores all inventory
-  and releases acquired locks. MySQL concurrency tests cover the lock-free
-  overselling baseline and the pessimistic-lock behavior for one-night,
-  multi-night, and schedule-change races.
+  after failure. MySQL concurrency tests cover the lock-free overselling baseline,
+  the recorded pessimistic-lock behavior, and active optimistic Version conflicts
+  for one-night, multi-night, and schedule-change races. Inventory tests verify
+  Version increments for reserve, release, and total-quantity updates.
