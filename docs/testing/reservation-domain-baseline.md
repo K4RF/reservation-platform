@@ -139,17 +139,21 @@ MySQL 기반 테스트를 포함하므로 전체 실행에는 Docker 호환 Cont
 
 Backend GitHub Actions는 PR과 `develop`에서 `./gradlew test` 후
 `./gradlew build -x test`를 실행하므로 로컬 검증과 같은 테스트 범위를 사용합니다.
-실제 원격 CI 결과는 이 브랜치를 Push하고 PR을 생성한 뒤 확인해야 합니다.
+HEAD `27303ce`의 원격 Backend CI는 성공했습니다.
 
 ## #83 검증 기록 (2026-09-10)
 
-- `gradlew.bat test build`: 220 tests, 0 failures, 0 errors, 0 skipped.
+- 문서 동기화 작업에서 `gradlew.bat test --rerun-tasks`를 다시 실행했습니다.
+  결과는 220 tests, 0 failures, 0 errors, 0 skipped입니다. 이번 재검증에서 별도
+  `build` 명령은 실행하지 않았습니다.
 - 기존 OpenAPI/Swagger, MySQL Constraint 및 Rollback 테스트를 포함합니다.
-- 원격 CI: 이번 브랜치는 아직 Push하지 않았으므로 이번 커밋의 실행 결과는 미확인입니다.
+- 원격 CI: [Backend CI run 34386171540](https://github.com/K4RF/reservation-platform/actions/runs/34386171540)이
+  HEAD `27303ce`에서 성공했습니다.
 - Notion [예약 생성 명세](https://app.notion.com/p/3c33bbc0582a813a92aed9abf4412c80)는
   직접 읽어 대조한 결과 현재 구현과 불일치합니다. 요청의 필수 `representativeGuest`,
   응답의 `reservationNumber`, `nights`, `cancellationPolicySnapshot`, 취소 결과 필드가
   빠져 있고 Booking Policy 오류와 `INVENTORY_009`도 반영이 필요합니다.
-  Notion 전체 명세의 일치나 동기화 완료를 의미하지 않습니다.
+  이 기록은 동기화 전 발견 사항이며, Notion 전체 명세의 일치나 동기화 완료를
+  의미하지 않습니다.
 - 기존 ERD 문서에는 숙박일 Snapshot, 대표 투숙객, 공개번호, 취소 결과와 숙소
   TimeZone이 반영되어 있습니다. DB 제약 검증은 일회용 MySQL 8.4에서 수행했습니다.
