@@ -6,9 +6,8 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.2 — Reservation Domain Completion**을 완료했으며, 다음 기능 단계는
-> **v0.1.3 — Booking Policy & Catalog Completion**입니다. 이후
-> **v0.2.0 — Concurrency Control**로 이동합니다. Spring Boot 프로젝트,
+> **v0.1.0부터 v0.1.3 — Booking Policy & Catalog Completion까지** 기능 개발을
+> 완료했으며, 다음 Backend Phase는 **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -64,7 +63,8 @@
 
 ## 2. 주요 기능
 
-아래 항목은 프로젝트에서 단계적으로 구현할 **예정 기능**입니다.
+회원·인증, 숙소·객실·정책·재고 관리와 순차 예약 생성·조회·변경·취소는 구현되어 있습니다.
+동시 요청 제어와 비동기 이벤트는 후속 Roadmap 범위입니다.
 
 ### 사용자 및 인증
 
@@ -89,7 +89,7 @@
 * 중복 예약 방지
 * 동시 예약 요청 제어
 
-### 비동기 이벤트
+### 비동기 이벤트 (예정)
 
 예약 완료 이벤트를 발행하고 후속 작업을 비동기로 처리합니다.
 
@@ -141,7 +141,9 @@
 
 ## 4. 시스템 구성
 
-아래 구성은 프로젝트가 단계적으로 구현하려는 **목표 아키텍처**입니다.
+현재는 하나의 Spring Boot Application에서 Controller → Service → Entity/Repository
+흐름으로 정책·재고·가격·Snapshot을 처리합니다. DTO는 도메인별 request/response
+패키지로 분리되어 있습니다. 아래 그림의 Redis Lock/Cache와 Kafka는 **목표 아키텍처**입니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
 Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
@@ -338,129 +340,69 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 ## 6. 개발 로드맵
 
-### Phase 0 — Project Setup
+현재 Repository는 `backend/`와 `frontend/`를 함께 관리하는 Monorepo입니다.
+`v*`는 Backend / Platform, `f*`는 Frontend Milestone이며 같은 Repository에서
+아래 순서로 진행합니다. Frontend는 현재 placeholder이고 기술 스택은 미선정입니다.
 
-프로젝트 개발을 위한 기본 환경과 협업 규칙을 설정합니다.
+| 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
+| --- | --- | --- | --- |
+| Backend Functional | v0.1.0 — Basic Reservation MVP | Completed | 회원·인증·기본 예약 흐름 |
+| Backend Functional | v0.1.1 — Reservation Service Enhancement | Completed | 검색·가격·일정·상태·테스트 기반 |
+| Backend Functional | v0.1.2 — Reservation Domain Completion | Completed | 날짜별 재고·가격과 순차 Transaction |
+| Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
+| Backend Architecture | v0.2.0 — Concurrency Control | Planned / Next | 동일 재고 동시 요청의 정합성 검증 |
+| Backend Architecture | v0.3.0 — Cache & Query Optimization | Planned | SQL·실행 계획·Index 분석 후 Query/Cache 최적화 |
+| Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
+| Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
+| Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
+| Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
+| Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
+| Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
+| Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 검증 |
+| Platform | v0.5.0 — Performance & Load Testing | Planned | 실제 사용자 Flow 기반 부하·병목 측정 |
+| Platform | v0.6.0 — Observability & Reliability | Planned | 시스템 상태와 장애 징후의 지속 관측 |
+| Production | v1.0.0 — Production Deployment | Planned | 검증된 Full-Stack 시스템 배포 |
 
-* [x] GitHub Issue 및 Pull Request Template 적용
-* [x] 브랜치 및 커밋 규칙 정의
-* [x] 프로젝트 기본 디렉터리 구성
-* [x] Spring Boot 프로젝트 생성
-* [x] 로컬 개발용 Docker Compose 구성
-* [x] 기본 CI Workflow 구성
-* [x] 프로젝트 문서 구조 설정
-* [x] 최상위 README 작성
+### v0.1.3 완료 범위
 
-### Phase 1 — Basic Reservation (`v0.1.0`, `v0.1.1`, `v0.1.2` 완료)
+* [x] 숙소별 최소·최대 숙박일과 최소·최대 사전 예약 **일수**
+* [x] 조회·예약 생성·일정 변경의 Booking Policy 적용
+* [x] 숙소별 Cancellation Policy와 예약 시점 정책 Snapshot
+* [x] 관리자 재고 Calendar 및 `OPEN/CLOSED` 판매 상태
+* [x] `ReservationNight` 숙박일별 가격과 취소 결과 Snapshot
+* [x] 국가·도시·지역·상세 주소, 숙소/객실 편의시설과 AND 검색
+* [x] 공개 예약번호, 대표 투숙객, 숙소 체크인·체크아웃 운영시간
+* [x] IANA TimeZone 기반 비즈니스 날짜 및 UTC 이벤트 시각
+* [x] H2 회귀 테스트와 MySQL 8.4 전체 흐름·Constraint·Rollback Baseline
 
-기본 예약 서비스를 구현합니다.
+예약 사이 준비 기간, 시간 단위 사전 예약 제한, 운영시간을 이용한 시각별 예약 마감은
+구현 범위에 포함되지 않습니다. 운영시간과 TimeZone은 예약별 Snapshot이 아니며
+예약 응답에 운영시간·TimeZone 필드를 추가하지 않습니다. 실제 결제 취소와 환불 실행도
+아직 구현되지 않았습니다.
 
-* [x] 회원가입
-* [x] JWT 인증 기반 구성
-* [x] 로그인 및 JWT 발급 API
-* [x] OAuth2 로그인
-* [x] 숙소 등록
-* [x] 숙소 목록 및 상세 조회
-* [x] 객실 등록 및 숙소별 목록·상세 조회
-* [x] 예약 생성
-* [x] 예약 조회
-* [x] 예약 취소
-* [x] 날짜·인원 기준 예약 가능 객실 조회
-* [x] 숙소명 검색 및 객실 조건·정렬 조회
-* [x] 객실 1박 가격 및 예약 가격 Snapshot·총 금액 계산
-* [x] 본인 예약 일정 변경 및 금액 재계산
-* [x] 예약 상태별 허용 동작 및 도메인 상태 전이 규칙
-* [x] 숙소·객실 정보 수정 및 운영 상태 관리
-* [x] 본인 예약 상태·기간 조건 조회 및 제한된 정렬·Pagination
-* [x] 주요 테이블 제약조건·인덱스 검토 및 DB 정합성 강화
-* [x] 공통 예외 처리와 API Validation·Error Response 정책 정리
-* [x] Swagger/OpenAPI 기반 API 문서화
-* [x] Basic Reservation MVP 종단간 통합 테스트
-* [x] 공통 테스트 Fixture 및 MySQL Testcontainers 기반 DB 제약 테스트
+### v0.2.0 진입 기준과 예정 작업
 
-### Phase 1.3 — Booking Policy & Catalog Completion (예정)
+현재 Transaction은 재고 검증·증감과 예약·Snapshot 변경을 함께 처리하지만,
+동일 재고에 대한 별도 Lock, `@Version`, 조건부 원자 UPDATE는 없습니다.
+Race Condition 가능성이 있으며 실제 Overselling 여부는 다음 Phase에서 검증합니다.
 
-동시성 제어에 들어가기 전 실제 숙박 예약 서비스에 필요한 정책과 Catalog를
-마지막으로 보완합니다. 아래 항목은 저장소 구현 상태를 기준으로 표시합니다.
+* [ ] Lock 미적용 MySQL 동시 예약 Baseline
+* [ ] 성공·실패 수, 최종 재고와 예약 수로 Overselling 재현 여부 검증
+* [ ] Pessimistic Lock과 Optimistic Lock 및 Retry 비교
+* [ ] Redis Distributed Lock, 획득 실패·Timeout 처리 검토
+* [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
+* [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
 
-* [x] 숙소 TimeZone 기반 날짜·시간 정책
-* [x] 숙소별 Booking Policy와 예약 가능 조건
-* [x] 숙소별 Cancellation Policy와 예약 시점 Snapshot
-* [x] 날짜별 재고 Calendar 및 `OPEN/CLOSED` 판매 상태 관리 API
-* [x] 숙박일별 가격 및 취소 결과 Snapshot 고도화
-* [x] 구조화된 숙소 위치와 편의시설
-* [x] 예약 번호·대표 투숙객·Check-in/Check-out 운영 정보
-* [x] Booking Policy & Catalog Completion 통합 테스트 (로컬; 원격 CI 확인 별도)
-
-### Phase 2 — Concurrency Control
-
-동일 객실에 대한 동시 예약 문제를 재현하고 해결합니다.
-
-> v0.1.2에서 예약 생성·일정 변경·취소, 날짜별 재고·가격, 숙소 통합 검색을
-> 실제 MySQL 전체 흐름으로 검증해 순차 요청의 Baseline을 확립했습니다. 이제 같은
-> 마지막 재고에 대한 동시 요청 Race Condition을 재현하고 제어 전략을 비교합니다.
-
-* [x] 날짜별 객실 재고 모델과 순차 요청 기준 증감 규칙 구성
-* [x] 예약 생성·취소·일정 변경 및 가용 객실 조회와 재고 연동
-* [x] 여러 날짜 재고와 Reservation 저장의 Transaction·Rollback 검증
-* [x] 날짜별 객실 가격 등록·수정 및 기본 가격 fallback 조회
-* [x] 숙박일별 가격 합산과 예약 가격 Snapshot 정책 연결
-* [x] 체크인 잔여 일수 기반 취소 제한·수수료 및 예상 환불액 계산
-* [x] 기간·인원·객실 가격·상태·재고 기반 숙소 통합 검색
-* [x] MySQL 기반 Reservation Domain Completion 전체 흐름·Rollback Baseline 검증
-* [ ] 동시 예약 테스트 환경 구성
-* [ ] 데이터베이스 기반 동시성 제어 검토
-* [ ] Redis 분산 락 적용
-* [ ] Lettuce와 Redisson 방식 비교
-* [ ] 락 획득 실패 및 타임아웃 처리
-* [ ] 1,000건 동시 예약 테스트
-* [ ] TPS, 성공률, 실패율 측정
-* [ ] 적용 전후 결과 분석
-
-### Phase 3 — Cache Optimization
-
-조회 API의 부하를 측정하고 Redis Cache를 적용합니다.
-
-* [ ] 조회 성능 기준값 측정
-* [ ] 캐시 대상 선정
-* [ ] Redis Cache 적용
-* [ ] 캐시 무효화 정책 구현
-* [ ] Cache Hit Ratio 측정
-* [ ] 적용 전후 응답 시간 비교
-
-### Phase 4 — Event-Driven Processing
-
-예약 이후 후속 작업을 Kafka 이벤트로 분리합니다.
-
-* [ ] 예약 완료 이벤트 설계
-* [ ] Kafka Producer 구현
-* [ ] 이메일 Consumer 구현
-* [ ] 포인트 Consumer 구현
-* [ ] 알림 Consumer 구현
-* [ ] 이벤트 중복 처리 방지
-* [ ] Retry 정책 구현
-* [ ] 실패 이벤트 처리 전략 수립
-
-### Phase 5 — Deployment and Monitoring
-
-배포 자동화와 운영 지표 모니터링 환경을 구축합니다.
-
-* [ ] 애플리케이션 Docker 이미지 구성
-* [x] GitHub Actions CI 구성
-* [ ] GitHub Actions CD 구성
-* [ ] AWS 배포 환경 구성
-* [ ] Prometheus 연동
-* [ ] Grafana Dashboard 구성
-* [ ] API 응답 시간 측정
-* [ ] CPU 및 Memory 모니터링
-* [ ] DB Connection Pool 모니터링
-* [ ] Cache Hit Ratio 모니터링
+일부 기존 Index·실행 계획 검증은 구현되어 있지만, v0.3.0의 조회 성능 최적화와
+Redis Cache는 아직 예정입니다. Kafka, k6, Prometheus, Grafana, CD 및 Production
+배포도 각 후속 Milestone에서 진행합니다.
 
 ---
 
 ## 7. 성능 테스트
 
-예약 API에 동시 요청을 발생시켜 다음 항목을 측정합니다.
+v0.5.0에서 Frontend와 Backend가 연결된 사용자 Flow를 대상으로 다음 항목을 측정할 예정입니다.
+v0.2.0의 동시성 전략 비교 측정과 전체 서비스 부하 테스트는 별도 단계입니다.
 
 * TPS
 * 평균 응답 시간
@@ -580,9 +522,9 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.1.2 — Reservation Domain Completion**까지 완료했으며,
-**v0.1.3 — Booking Policy & Catalog Completion**을 다음 기능 단계로 준비하고
-있습니다. v0.1.3 완료 후 **v0.2.0 — Concurrency Control**로 이동할 예정입니다.
+**v0.1.3 — Booking Policy & Catalog Completion**까지 기능 개발을 완료했습니다.
+다음은 **v0.2.0 — Concurrency Control**이며 Query/Cache → Event-Driven →
+Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용
@@ -631,6 +573,9 @@ docs: add concurrency test results
 * [x] 관리자 재고 Calendar API 및 날짜별 `OPEN/CLOSED` 판매 상태 관리
 * [x] 숙박일별 가격 행과 예약 취소 결과 Snapshot 영속화
 * [x] 숙소 국가·도시·지역 구조화 및 숙소·객실 편의시설 관리·AND 검색
+* [x] 외부 공개 예약번호·대표 투숙객 및 숙소 운영시간
+* [x] 숙소별 IANA TimeZone 기반 날짜 정책과 UTC 취소 시각
+* [x] v0.1.3 MySQL 전체 예약 흐름·Snapshot 재조회 Baseline
 
 ---
 
@@ -794,7 +739,7 @@ Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 MySQL 8.4 Testcontainer를 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
 호환 Container Runtime이 실행 중이어야 하며, 테스트는 로컬 Docker Compose DB와
 Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트 DB 선택 기준은
-[`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.2의 전체 흐름과
+[`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.3의 전체 흐름과
 동시성 적용 전 기준선은
 [`docs/testing/reservation-domain-baseline.md`](docs/testing/reservation-domain-baseline.md)에
 정리되어 있습니다.
