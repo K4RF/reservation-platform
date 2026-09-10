@@ -9,7 +9,6 @@ import static junsik.reservation.support.MemberFixture.member;
 import static junsik.reservation.support.RoomFixture.room;
 
 import java.time.LocalDate;
-import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -17,8 +16,6 @@ import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import junsik.reservation.dto.reservation.request.CreateReservationRequest;
 import junsik.reservation.dto.reservation.request.RepresentativeGuestRequest;
@@ -56,9 +53,6 @@ class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSu
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-
-	@Autowired
-	private PlatformTransactionManager transactionManager;
 
 	@MockitoBean
 	private ReservationRepository reservationRepository;
@@ -108,15 +102,12 @@ class ReservationInventoryRollbackIntegrationTest extends MySqlIntegrationTestSu
 				Integer.class
 		)).isZero();
 
-		List<Integer> quantitiesAfterLockReacquisition = new TransactionTemplate(transactionManager)
-				.execute(status -> roomInventoryRepository
-						.findAllForUpdateByRoomIdAndInventoryDateIn(
-								room.getId(),
-								CHECK_IN.datesUntil(CHECK_OUT).toList()
-						)
-						.stream()
-						.map(RoomInventory::getReservedQuantity)
-						.toList());
-		assertThat(quantitiesAfterLockReacquisition).containsOnly(0);
+		assertThat(roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateInOrderByInventoryDateAsc(
+						room.getId(),
+						CHECK_IN.datesUntil(CHECK_OUT).toList()
+				))
+				.extracting(RoomInventory::getReservedQuantity)
+				.containsOnly(0);
 	}
 }
