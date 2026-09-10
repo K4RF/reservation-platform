@@ -5,9 +5,10 @@
 `Reservation Platform` is a personal backend portfolio project focused on
 preventing reservation conflicts under concurrent traffic.
 
-The sequential reservation-domain baseline is complete and the backend is ready
-for concurrency-control work. Features listed in `README.md` include roadmap
-items and must not be treated as already implemented.
+The sequential reservation-domain baseline is complete. MySQL pessimistic write
+locking is the first implemented inventory concurrency-control strategy; other
+strategies remain roadmap work. Features listed in `README.md` must not be
+treated as already implemented without source verification.
 
 ## Source of Truth
 
@@ -238,8 +239,10 @@ Before completing a change:
 - `RoomInventoryService` supports creation, Calendar lookup, total/status changes,
   reservation, and release. Reservation creation, cancellation, and schedule changes update
   every `[check-in, check-out)` inventory date and the reservation in one
-  transaction. These rules prevent negative inventory for sequential requests,
-  but concurrent updates are not protected by a database or distributed lock.
+  transaction. These paths acquire `PESSIMISTIC_WRITE` locks for exactly the
+  required inventory dates in ascending date order. Schedule changes lock the
+  sorted union of old and new stay dates in one query to avoid inconsistent
+  acquisition order.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
@@ -247,7 +250,8 @@ Before completing a change:
   date. New reservations for inactive rooms or accommodations are rejected,
   while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  full-text/Elasticsearch search and concurrency control are not implemented.
+  full-text/Elasticsearch search, optimistic locking, atomic conditional inventory
+  updates, and distributed locking are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
   monetary values, positive daily prices, and valid reservation periods.
@@ -273,8 +277,8 @@ Before completing a change:
   validated for Access Token reissue.
 - Logout deletes the member's Refresh Token. Access Token blacklisting is not
   implemented, so an existing Access Token remains valid until expiration.
-- Redis distributed locks, Redis caching, concurrency control, and Kafka
-  integration are not implemented.
+- Redis distributed locks, Redis caching, alternative database concurrency
+  strategies, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
@@ -317,4 +321,7 @@ Before completing a change:
   accommodation search, available-room and effective-price queries, mixed
   daily/default price reservation, schedule repricing and inventory movement,
   cancellation fees, and complete inventory restoration. MySQL rollback testing
-  verifies that forced reservation persistence failure restores all inventory.
+  verifies that forced reservation persistence failure restores all inventory
+  and releases acquired locks. MySQL concurrency tests cover the lock-free
+  overselling baseline and the pessimistic-lock behavior for one-night,
+  multi-night, and schedule-change races.
