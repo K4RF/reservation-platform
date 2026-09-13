@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.redisson.client.RedisException;
 
 import junsik.reservation.config.ReservationLockProperties;
 import junsik.reservation.enums.RoomInventoryErrorCode;
@@ -27,6 +28,7 @@ class ReservationDistributedLockManagerTest {
 
 	private static final Long ROOM_ID = 7L;
 	private static final long WAIT_MILLIS = 3_000L;
+	private static final long LEASE_MILLIS = 30_000L;
 
 	@Mock
 	private RedissonClient redissonClient;
@@ -53,7 +55,7 @@ class ReservationDistributedLockManagerTest {
 
 	@Test
 	void executesOperationAndUnlocksOwnedLock() throws InterruptedException {
-		when(lock.tryLock(WAIT_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(true);
 
 		String result = lockManager.executeWithLock(ROOM_ID, () -> "completed");
@@ -65,7 +67,7 @@ class ReservationDistributedLockManagerTest {
 	@Test
 	void unlocksOwnedLockWhenOperationFails() throws InterruptedException {
 		IllegalStateException failure = new IllegalStateException("reservation failed");
-		when(lock.tryLock(WAIT_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(true);
 
 		assertThatThrownBy(() -> lockManager.executeWithLock(ROOM_ID, () -> {
@@ -76,7 +78,7 @@ class ReservationDistributedLockManagerTest {
 
 	@Test
 	void doesNotUnlockWhenCurrentThreadLostOwnership() throws InterruptedException {
-		when(lock.tryLock(WAIT_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(false);
 
 		assertThat(lockManager.executeWithLock(ROOM_ID, () -> "completed"))
@@ -86,7 +88,7 @@ class ReservationDistributedLockManagerTest {
 
 	@Test
 	void rejectsRequestWhenLockWaitTimeExpires() throws InterruptedException {
-		when(lock.tryLock(WAIT_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(false);
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(false);
 
 		assertLockAcquisitionFailure();
 		verify(lock, never()).unlock();
@@ -94,10 +96,30 @@ class ReservationDistributedLockManagerTest {
 
 	@Test
 	void restoresInterruptedFlagAndRejectsRequest() throws InterruptedException {
-		when(lock.tryLock(WAIT_MILLIS, TimeUnit.MILLISECONDS)).thenThrow(new InterruptedException());
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS))
+				.thenThrow(new InterruptedException());
 
 		assertLockAcquisitionFailure();
 		assertThat(Thread.currentThread().isInterrupted()).isTrue();
+		verify(lock, never()).unlock();
+	}
+
+	@Test
+	void rejectsRequestWhenRedisFailsDuringAcquisition() throws InterruptedException {
+		RedisException failure = new RedisException("redis unavailable");
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenThrow(failure);
+
+		assertLockServiceUnavailable(failure);
+		verify(lock, never()).unlock();
+	}
+
+	@Test
+	void rejectsRequestWhenRedisFailsDuringRelease() throws InterruptedException {
+		RedisException failure = new RedisException("redis unavailable");
+		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
+		when(lock.isHeldByCurrentThread()).thenThrow(failure);
+
+		assertLockServiceUnavailable(failure);
 		verify(lock, never()).unlock();
 	}
 
@@ -106,5 +128,13 @@ class ReservationDistributedLockManagerTest {
 				.isInstanceOf(BusinessException.class)
 				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
 						.isEqualTo(RoomInventoryErrorCode.LOCK_ACQUISITION_FAILED));
+	}
+
+	private void assertLockServiceUnavailable(RedisException cause) {
+		assertThatThrownBy(() -> lockManager.executeWithLock(ROOM_ID, () -> "not executed"))
+				.isInstanceOf(BusinessException.class)
+				.hasCause(cause)
+				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
+						.isEqualTo(RoomInventoryErrorCode.LOCK_SERVICE_UNAVAILABLE));
 	}
 }

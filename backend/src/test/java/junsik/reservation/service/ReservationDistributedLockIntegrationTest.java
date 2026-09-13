@@ -6,6 +6,7 @@ import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -20,10 +21,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import junsik.reservation.config.ReservationLockProperties;
 import junsik.reservation.dto.reservation.request.CreateReservationRequest;
 import junsik.reservation.dto.reservation.request.RepresentativeGuestRequest;
 import junsik.reservation.entity.Accommodation;
@@ -142,6 +145,77 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
 						.isEqualTo(RoomErrorCode.NOT_FOUND));
 		assertThat(redissonClient.getLock(lockManager.keyFor(missingRoomId)).isLocked()).isFalse();
+	}
+
+	@Test
+	@Timeout(10)
+	void rejectsRequestWhenAnotherOwnerExceedsWaitTime() throws Exception {
+		ReservationDistributedLockManager timeoutManager = new ReservationDistributedLockManager(
+				redissonClient,
+				new ReservationLockProperties(Duration.ofMillis(200), Duration.ofSeconds(5))
+		);
+		RLock competingLock = redissonClient.getLock(timeoutManager.keyFor(room.getId()));
+		CountDownLatch ownerAcquired = new CountDownLatch(1);
+		CountDownLatch releaseOwner = new CountDownLatch(1);
+		AtomicInteger operationInvocations = new AtomicInteger();
+
+		Future<?> owner = executor.submit(() -> {
+			competingLock.lock(5, TimeUnit.SECONDS);
+			ownerAcquired.countDown();
+			try {
+				if (!releaseOwner.await(5, TimeUnit.SECONDS)) {
+					throw new IllegalStateException("분산 락 소유자 해제 대기 시간이 초과되었습니다.");
+				}
+			} catch (InterruptedException exception) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("분산 락 소유자 대기가 중단되었습니다.", exception);
+			} finally {
+				if (competingLock.isHeldByCurrentThread()) {
+					competingLock.unlock();
+				}
+			}
+		});
+
+		assertThat(ownerAcquired.await(5, TimeUnit.SECONDS)).isTrue();
+		try {
+			assertThatThrownBy(() -> timeoutManager.executeWithLock(room.getId(), () -> {
+				operationInvocations.incrementAndGet();
+				return "not executed";
+			}))
+					.isInstanceOf(BusinessException.class)
+					.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
+							.isEqualTo(RoomInventoryErrorCode.LOCK_ACQUISITION_FAILED));
+		} finally {
+			releaseOwner.countDown();
+		}
+
+		owner.get(5, TimeUnit.SECONDS);
+		assertThat(operationInvocations).hasValue(0);
+		assertThat(competingLock.isLocked()).isFalse();
+	}
+
+	@Test
+	@Timeout(10)
+	void fixedLeaseReleasesLockWhenOwnerDoesNotUnlock() throws Exception {
+		Duration leaseTime = Duration.ofMillis(300);
+		ReservationDistributedLockManager leaseManager = new ReservationDistributedLockManager(
+				redissonClient,
+				new ReservationLockProperties(Duration.ofSeconds(2), leaseTime)
+		);
+		RLock abandonedLock = redissonClient.getLock(leaseManager.keyFor(room.getId()));
+		CountDownLatch ownerAcquired = new CountDownLatch(1);
+
+		Future<?> owner = executor.submit(() -> {
+			abandonedLock.lock(leaseTime.toMillis(), TimeUnit.MILLISECONDS);
+			ownerAcquired.countDown();
+		});
+
+		assertThat(ownerAcquired.await(5, TimeUnit.SECONDS)).isTrue();
+		owner.get(5, TimeUnit.SECONDS);
+
+		assertThat(leaseManager.executeWithLock(room.getId(), () -> "completed"))
+				.isEqualTo("completed");
+		assertThat(abandonedLock.isLocked()).isFalse();
 	}
 
 	private ReservationAttempt attempt(Runnable operation) {

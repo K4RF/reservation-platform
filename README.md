@@ -118,7 +118,7 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
-| Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·Watchdog·소유권 기반 해제 |
+| Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·고정 Lease·소유권 기반 해제 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
@@ -281,9 +281,10 @@ Transaction의 충돌을 Commit 시점에 감지합니다. 충돌은 `409 Confli
 `INVENTORY_011`로 응답합니다. 예약 생성은 충돌 시 새 Transaction에서 재고를 다시
 조회하며 최초 시도 1회와 재시도 최대 2회까지만 수행합니다. Retry 후 재고가
 소진됐다면 `INVENTORY_005`로 종료합니다. 예약 생성 전에
-`reservation:lock:room:{roomId}` Redis Lock을 최대 3초 기다리고, Redisson의 30초
-Watchdog Lease 갱신과 소유 Thread 확인 후 Unlock을 사용합니다. 획득 실패는
-`INVENTORY_012`로 응답합니다.
+`reservation:lock:room:{roomId}` Redis Lock을 최대 3초 기다리고 30초의 고정
+Lease와 소유 Thread 확인 후 Unlock을 사용합니다. 획득 대기 시간 초과나 대기 중단은
+`409 / INVENTORY_012`, Redis 통신 장애는 `503 / INVENTORY_013`으로 응답하며
+DB Lock으로 우회하지 않고 fail-fast합니다.
 
 예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
 있습니다. `CONFIRMED` 예약의 일정 변경은 기존·신규 기간에 공통인 날짜의 차감은
@@ -407,7 +408,7 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 * [x] Optimistic Lock 적용 및 Version 충돌·Rollback 검증
 * [x] Optimistic Lock Retry 최대 횟수·새 Transaction 경계 및 최종 오류 정책
 * [ ] 고충돌 환경의 Retry Backoff·Jitter 정책 비교
-* [x] Redis Distributed Lock, 획득 대기·Watchdog Lease·안전한 Unlock 적용
+* [x] Redis Distributed Lock, 획득 대기·고정 Lease·안전한 Unlock·장애 응답 적용
 * [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
 * [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
 
@@ -659,7 +660,7 @@ JWT_REFRESH_TOKEN_EXPIRATION=14d
 REDIS_HOST=localhost
 REDIS_PORT=6380
 RESERVATION_LOCK_WAIT_TIME=3s
-RESERVATION_LOCK_WATCHDOG_TIMEOUT=30s
+RESERVATION_LOCK_LEASE_TIME=30s
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 ```

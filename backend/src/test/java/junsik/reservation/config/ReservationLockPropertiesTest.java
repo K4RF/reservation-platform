@@ -10,14 +10,14 @@ import org.junit.jupiter.api.Test;
 class ReservationLockPropertiesTest {
 
 	@Test
-	void acceptsPositiveWaitAndWatchdogDurations() {
+	void acceptsPositiveWaitAndLeaseDurations() {
 		ReservationLockProperties properties = new ReservationLockProperties(
 				Duration.ofSeconds(3),
 				Duration.ofSeconds(30)
 		);
 
 		assertThat(properties.waitTime()).isEqualTo(Duration.ofSeconds(3));
-		assertThat(properties.watchdogTimeout()).isEqualTo(Duration.ofSeconds(30));
+		assertThat(properties.leaseTime()).isEqualTo(Duration.ofSeconds(30));
 	}
 
 	@Test
@@ -29,7 +29,7 @@ class ReservationLockPropertiesTest {
 	}
 
 	@Test
-	void rejectsNonPositiveWatchdogTimeout() {
+	void rejectsNonPositiveLeaseTime() {
 		assertThatIllegalArgumentException().isThrownBy(() -> new ReservationLockProperties(
 				Duration.ofSeconds(3),
 				Duration.ofSeconds(-1)

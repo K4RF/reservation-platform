@@ -7,12 +7,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "reservation.distributed-lock")
 public record ReservationLockProperties(
 		Duration waitTime,
-		Duration watchdogTimeout
+		Duration leaseTime
 ) {
 
 	public ReservationLockProperties {
 		validatePositive(waitTime, "wait-time");
-		validatePositive(watchdogTimeout, "watchdog-timeout");
+		validatePositive(leaseTime, "lease-time");
 	}
 
 	private static void validatePositive(Duration duration, String propertyName) {

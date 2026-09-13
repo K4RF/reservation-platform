@@ -39,4 +39,4 @@ jwt:
 reservation:
   distributed-lock:
     wait-time: ${RESERVATION_LOCK_WAIT_TIME:3s}
-    watchdog-timeout: ${RESERVATION_LOCK_WATCHDOG_TIMEOUT:30s}
+    lease-time: ${RESERVATION_LOCK_LEASE_TIME:30s}

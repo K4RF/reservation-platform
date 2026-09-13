@@ -28,6 +28,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.enums.RoomInventoryErrorCode;
 
 class GlobalExceptionHandlerTest {
 
@@ -61,6 +62,17 @@ class GlobalExceptionHandlerTest {
 				.andExpect(jsonPath("$.code").value("INVENTORY_011"))
 				.andExpect(jsonPath("$.message").value("객실 재고가 다른 요청에 의해 변경되었습니다. 다시 시도해 주세요."))
 				.andExpect(jsonPath("$.path").value("/test/optimistic-lock-error"))
+				.andExpect(jsonPath("$.errors").isEmpty());
+	}
+
+	@Test
+	void handlesRedisLockServiceFailureAsServiceUnavailable() throws Exception {
+		mockMvc.perform(get("/test/redis-lock-error"))
+				.andExpect(status().isServiceUnavailable())
+				.andExpect(jsonPath("$.status").value(503))
+				.andExpect(jsonPath("$.code").value("INVENTORY_013"))
+				.andExpect(jsonPath("$.message").value("분산 락 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요."))
+				.andExpect(jsonPath("$.path").value("/test/redis-lock-error"))
 				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
@@ -148,6 +160,11 @@ class GlobalExceptionHandlerTest {
 		@GetMapping("/optimistic-lock-error")
 		void optimisticLockError() {
 			throw new ObjectOptimisticLockingFailureException(RoomInventory.class, 1L);
+		}
+
+		@GetMapping("/redis-lock-error")
+		void redisLockError() {
+			throw new BusinessException(RoomInventoryErrorCode.LOCK_SERVICE_UNAVAILABLE);
 		}
 
 		@PostMapping("/validation")

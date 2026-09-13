@@ -184,6 +184,9 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/reservations'].post.responses['409'].content['application/json'].schema['$ref']"
 				).value(endsWith("/ErrorResponse")))
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/reservations'].post.responses['503'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations/{reservationId}'].get.responses['403'].content['application/json'].schema['$ref']"
 				).value(endsWith("/ErrorResponse")))
 				.andExpect(jsonPath(

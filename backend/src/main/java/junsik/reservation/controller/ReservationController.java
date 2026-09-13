@@ -40,7 +40,7 @@ import junsik.reservation.service.ReservationService;
 
 @Tag(name = "Reservations", description = "예약 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
-@ApiResponses({
+		@ApiResponses({
 		@ApiResponse(
 				responseCode = "400",
 				description = "입력값 또는 요청 형식 오류",
@@ -96,8 +96,13 @@ public class ReservationController {
 					responseCode = "409",
 					description = "재고 부족, 비활성 숙소·객실, 분산 락 획득 실패 또는 낙관적 락 재시도 한도 초과",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
+			),
+			@ApiResponse(
+					responseCode = "503",
+					description = "Redis 분산 락 서비스 연결 실패",
+					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			)
-	})
+		})
 	public ResponseEntity<ReservationResponse> create(
 			@AuthenticationPrincipal MemberPrincipal principal,
 			@Valid @RequestBody CreateReservationRequest request

@@ -135,6 +135,7 @@ Validation 상세는 필드명과 메시지 순으로 정렬하여 같은 입력
 | `INVENTORY_010` | 400 | 시작일이 종료일보다 늦은 재고 Calendar 조회 |
 | `INVENTORY_011` | 409 | 낙관적 락 Retry 한도 초과 |
 | `INVENTORY_012` | 409 | 예약 생성용 Redis 분산 락 대기 시간 초과 또는 대기 중단 |
+| `INVENTORY_013` | 503 | Redis 분산 락 서비스 통신 실패 |
 
 ### Room Daily Price
 

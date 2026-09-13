@@ -247,11 +247,12 @@ Room 단위 Key는 한 예약의 모든 숙박일을 하나의 임계 구역으�
 해제, 일정 변경과의 Key 집합 일치가 필요하다. 첫 Redis 전략은 안전성과 분석
 용이성을 우선해 Room 단위를 선택했다.
 
-Redisson `RLock.tryLock(waitTime, unit)`을 사용하고 명시적 고정 Lease Time 인자는
-전달하지 않는다. 대신 Watchdog Timeout을 기본 30초로 설정해 소유 Client가 살아
-있는 동안 Lease를 갱신한다. 획득은 기본 3초만 기다리며 실패하거나 대기 Thread가
-중단되면 `409 / INVENTORY_012`로 종료한다. `finally`에서는 획득 성공 여부와
-`isHeldByCurrentThread()`를 모두 확인해 다른 소유자의 Lock을 해제하지 않는다.
+Redisson `RLock.tryLock(waitTime, leaseTime, unit)`을 사용한다. 획득은 기본 3초만
+기다리고 Lease는 30초로 고정해 Client 단절이나 Unlock 실패 시에도 TTL 뒤 자동
+해제되도록 한다. 획득 실패나 대기 Thread 중단은 `409 / INVENTORY_012`, Redis 통신
+실패는 `503 / INVENTORY_013`으로 종료한다. Redis 장애 시 DB Lock fallback은 사용하지
+않는다. `finally`에서는 획득 성공 여부와 `isHeldByCurrentThread()`를 모두 확인해
+다른 소유자의 Lock을 해제하지 않는다.
 
 Redis Lock은 같은 Key 규칙과 Redis Deployment를 공유하는 Application Instance
 사이에서 예약 생성을 조정할 수 있다. 하지만 모든 Writer가 이 경로를 사용해야 하는
@@ -263,13 +264,14 @@ Advisory Lock이며 Redis 장애·Failover 안전성은 Deployment 구성의 영
 | 항목 | DB Pessimistic Lock | Optimistic + Retry | Redis RLock + Optimistic |
 | --- | --- | --- | --- |
 | 조정 위치 | MySQL Row | DB Version + Application | Redis 임계 구역 + DB Version |
-| 대기 시점 | Row 조회 | 대기 없이 충돌 후 재시도 | Transaction 시작 전 최대 3초 |
+| 대기 시점 | Row 조회 | 대기 없이 충돌 후 재시도 | Transaction 시작 전 최대 3초, Lease 30초 |
 | 다중 Instance | 같은 DB가 직렬화 | 같은 DB가 충돌 감지 | 같은 Redis Key 공유 시 직렬화 |
 | 주요 비용 | DB Lock·Connection 대기 | 충돌 Transaction Rollback | Redis 왕복·별도 운영 의존성 |
 | 잔여 위험 | Deadlock·Lock Timeout | 고충돌 Retry 증폭 | Redis 장애·Lease·Advisory 경로 누락 |
 
-단위 테스트는 Key, 획득 Timeout, Interrupt 복원, 정상·예외 Unlock과 소유권 검사를
-확인한다. MySQL·Redis 통합 테스트는 첫 예약이 Lock 안에 머무는 동안 두 번째
+단위 테스트는 Key, 획득 Timeout, Interrupt 복원, Redis 장애 응답, 정상·예외 Unlock과
+소유권 검사를 확인한다. MySQL·Redis 통합 테스트는 실제 대기 Timeout과 Lease 자동
+만료를 확인하고, 첫 예약이 Lock 안에 머무는 동안 두 번째
 요청이 Transaction에 진입하지 못하는 것을 확인하고, 해제 후 최신 재고를 읽어 한
 건만 성공하는지 검증한다. Transaction 실패 뒤 Redis Key가 해제되는 것도 확인한다.
 
@@ -277,8 +279,22 @@ Advisory Lock이며 Redis 장애·Failover 안전성은 Deployment 구성의 영
 
 - 전체 Backend 테스트: 246 tests, 0 failures, 0 errors, 0 skipped.
 - Redisson Runtime 의존성은 4.7.0으로 해석됐다.
-- MySQL 8.4와 Redis 7.4 Testcontainer만 사용했으며 로컬 Docker Compose DB,
-  Redis와 Volume은 사용하거나 변경하지 않았다.
+- MySQL 동시성 테스트와 분산 락 통합 테스트는 각각 MySQL 8.4 및 Redis 7.4
+  Testcontainer를 사용한다. 그 밖의 Spring Context 테스트는 로컬 또는 CI에서
+  제공하는 `localhost:6380` Redis를 사용하며 MySQL Docker Compose Volume은
+  사용하거나 변경하지 않는다.
+
+## #98 Timeout 및 실패 정책 검증 기록 (2026-09-13)
+
+- 실제 Redis에서 다른 Owner가 Lock을 점유한 동안 200ms Wait Time이 지나면
+  `INVENTORY_012`로 실패하고 예약 작업을 호출하지 않는 것을 확인했다.
+- Owner가 Unlock하지 않아도 300ms 고정 Lease 뒤 다른 요청이 Lock을 획득하는 것을
+  확인했다.
+- Redis Client 예외는 cause를 유지한 `503 / INVENTORY_013`으로 변환하고,
+  획득 대기 Thread의 Interrupt 상태는 복원한다.
+- 전체 Backend 테스트: 251 tests, 0 failures, 0 errors, 0 skipped.
+- Backend GitHub Actions와 같은 `test`, `build -x test` 명령을 통과했다. 새 의존성은
+  없으며 CI의 Redis 7.4 Service와 `localhost:6380` 설정을 그대로 사용한다.
 
 ## 실행 명령
 
