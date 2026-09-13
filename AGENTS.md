@@ -251,8 +251,10 @@ Before completing a change:
   A retry reloads inventory in a fresh transaction. Exhaustion maps to
   `409 INVENTORY_011`; no delay or Backoff is implemented. Reservation creation
   first acquires `reservation:lock:room:{roomId}` with a three-second wait and a
-  30-second Redisson Watchdog timeout. Only the owning Thread unlocks it. Lock wait
-  failure maps to `409 INVENTORY_012`. Schedule changes load the sorted union of
+  30-second fixed Lease. Only the owning Thread unlocks it, and the Lease bounds
+  lock retention after client or unlock failure. Lock wait failure maps to
+  `409 INVENTORY_012`; Redis communication failure fails fast as
+  `503 INVENTORY_013` without a database-lock fallback. Schedule changes load the sorted union of
   old and new stay dates in one query and are not locked or retried.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only

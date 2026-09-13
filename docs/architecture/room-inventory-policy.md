@@ -97,11 +97,16 @@ Lost Update와 초과 예약을 방지합니다.
 직렬화합니다. 여러 날짜 Lock의 부분 획득·해제와 교착을 피하는 대신 같은 객실의
 겹치지 않는 기간도 직렬화하는 보수적인 Granularity입니다.
 
-Lock 획득 대기는 기본 3초이며, 명시적 고정 Lease 대신 Redisson Watchdog의 30초
-Timeout을 사용합니다. Lock 소유 Client가 살아 있는 동안 Lease가 갱신되고 Client가
-사라지면 Timeout 후 해제됩니다. 작업 성공과 Runtime Exception 모두 `finally`에서
-현재 Thread가 여전히 소유한 Lock만 해제합니다. 대기 시간 초과 또는 대기 중단은
-`INVENTORY_012`의 `409 Conflict`로 응답합니다.
+Lock 획득 대기는 기본 3초이며 Lease는 30초로 고정합니다. 정상 경로에서는 작업 성공과
+Runtime Exception 모두 `finally`에서 현재 Thread가 여전히 소유한 Lock만 해제하고,
+Client 단절이나 Unlock 실패 시에도 Redis TTL이 Lease 상한 뒤 Lock을 자동 해제합니다.
+Lease는 예약 생성 Transaction의 최대 실행 시간보다 길게 운영해야 합니다. 대기 시간
+초과 또는 대기 중단은 `INVENTORY_012`의 `409 Conflict`, Redis 통신 실패는
+`INVENTORY_013`의 `503 Service Unavailable`로 응답합니다.
+
+Redis 장애 중 DB Lock으로 우회하면 정상 Redis 경로와 fallback 경로가 동시에 재고를
+변경할 수 있으므로 fallback 없이 fail-fast합니다. 최종 데이터 정합성 방어는 기존
+`RoomInventory.version`의 낙관적 락을 유지합니다.
 
 Lock 안쪽의 Optimistic Retry는 완료된 Transaction 상태를 재사용하지 않고 Service
 프록시를 다시 호출하므로 새 Transaction에서 최신 재고를 조회합니다. 총 3회(최초
@@ -112,7 +117,7 @@ Lock 안쪽의 Optimistic Retry는 완료된 Transaction 상태를 재사용하�
 분산 락과 Retry는 예약 생성에만 적용합니다. Validation, 재고 부족과 같은 비즈니스
 예외는 재시도하지 않으며 일정 변경·취소에는 분산 락과 Retry를 적용하지 않습니다.
 이 경로들과 분산 락을 사용하지 않는 Writer의 충돌은 `@Version`이 계속 감지합니다.
-조건부 원자 UPDATE, Redis 장애·Failover와 Lock Watchdog 중단 시나리오, Backoff 및
+조건부 원자 UPDATE, Redis Failover와 고정 Lease 중 네트워크 단절 시나리오, Backoff 및
 부하 비교는 후속 동시성 전략 검증 범위입니다.
 
 기존 개발 DB의 확정 예약은 재고 모델 도입 전에 생성되어 날짜별 재고 차감 기록이
