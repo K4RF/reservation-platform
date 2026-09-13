@@ -35,7 +35,7 @@ import junsik.reservation.dto.reservation.response.ReservationCancellationRespon
 import junsik.reservation.dto.reservation.response.ReservationResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.security.MemberPrincipal;
-import junsik.reservation.service.ReservationRetryService;
+import junsik.reservation.service.ReservationDistributedLockService;
 import junsik.reservation.service.ReservationService;
 
 @Tag(name = "Reservations", description = "예약 API")
@@ -63,19 +63,19 @@ import junsik.reservation.service.ReservationService;
 public class ReservationController {
 
 	private final ReservationService reservationService;
-	private final ReservationRetryService reservationRetryService;
+	private final ReservationDistributedLockService reservationDistributedLockService;
 
 	public ReservationController(
 			ReservationService reservationService,
-			ReservationRetryService reservationRetryService
+			ReservationDistributedLockService reservationDistributedLockService
 	) {
 		this.reservationService = reservationService;
-		this.reservationRetryService = reservationRetryService;
+		this.reservationDistributedLockService = reservationDistributedLockService;
 	}
 
 	@Operation(
 			summary = "예약 생성",
-			description = "예약 인원과 체크인부터 체크아웃 전날까지의 날짜별 객실 재고를 검증하고 재고를 차감합니다. 낙관적 락 충돌은 최대 두 번 재시도합니다.",
+			description = "동일 객실 예약 생성을 Redis 분산 락으로 직렬화한 뒤 날짜별 재고를 검증·차감합니다. 낙관적 락 충돌은 최대 두 번 재시도합니다.",
 			responses = @ApiResponse(
 					responseCode = "201",
 					description = "예약 생성 성공",
@@ -94,7 +94,7 @@ public class ReservationController {
 			),
 			@ApiResponse(
 					responseCode = "409",
-					description = "재고 부족, 비활성 숙소·객실 또는 낙관적 락 재시도 한도 초과",
+					description = "재고 부족, 비활성 숙소·객실, 분산 락 획득 실패 또는 낙관적 락 재시도 한도 초과",
 					content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, schema = @Schema(implementation = ErrorResponse.class))
 			)
 	})
@@ -102,7 +102,7 @@ public class ReservationController {
 			@AuthenticationPrincipal MemberPrincipal principal,
 			@Valid @RequestBody CreateReservationRequest request
 	) {
-		ReservationResponse response = reservationRetryService.create(principal.memberId(), request);
+		ReservationResponse response = reservationDistributedLockService.create(principal.memberId(), request);
 		return ResponseEntity
 				.created(URI.create("/api/v1/reservations/" + response.reservationId()))
 				.body(response);
