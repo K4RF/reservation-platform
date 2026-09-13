@@ -64,8 +64,9 @@
 ## 2. 주요 기능
 
 회원·인증, 숙소·객실·정책·재고 관리와 예약 생성·조회·변경·취소는 구현되어 있습니다.
-예약 재고에는 DB 비관적 락 검증에 이어 현재 Optimistic Lock을 적용했으며 충돌
-Retry와 다른 Lock 전략 비교, 비동기 이벤트는 후속 Roadmap 범위입니다.
+예약 재고에는 DB 비관적 락 검증에 이어 현재 Optimistic Lock을 적용했으며 예약
+생성 충돌은 최초 시도 포함 최대 3회 수행합니다. 다른 Lock 전략 비교와 비동기
+이벤트는 후속 Roadmap 범위입니다.
 
 ### 사용자 및 인증
 
@@ -273,7 +274,9 @@ Spring Boot API
 예약 생성·취소는 필요한 숙박일만, 일정 변경은 이전·신규 숙박일의 합집합만 날짜
 오름차순으로 조회합니다. `RoomInventory`의 `@Version`이 같은 재고를 수정하는
 Transaction의 충돌을 Commit 시점에 감지합니다. 충돌은 `409 Conflict`와
-`INVENTORY_011`로 응답하며, 현재 서버 내부 Retry 정책은 적용하지 않습니다.
+`INVENTORY_011`로 응답합니다. 예약 생성은 충돌 시 새 Transaction에서 재고를 다시
+조회하며 최초 시도 1회와 재시도 최대 2회까지만 수행합니다. Retry 후 재고가
+소진됐다면 `INVENTORY_005`로 종료합니다.
 
 예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
 있습니다. `CONFIRMED` 예약의 일정 변경은 기존·신규 기간에 공통인 날짜의 차감은
@@ -394,7 +397,8 @@ UPDATE와 Redis 분산 Lock은 아직 적용하지 않았습니다.
 * [x] 성공·실패 수, 최종 재고와 예약 수로 Overselling 재현 여부 검증
 * [x] Pessimistic Lock 적용 및 예약·일정 변경·Rollback 정합성 검증
 * [x] Optimistic Lock 적용 및 Version 충돌·Rollback 검증
-* [ ] Optimistic Lock Retry 횟수·Backoff 정책
+* [x] Optimistic Lock Retry 최대 횟수·새 Transaction 경계 및 최종 오류 정책
+* [ ] 고충돌 환경의 Retry Backoff·Jitter 정책 비교
 * [ ] Redis Distributed Lock, 획득 실패·Timeout 처리 검토
 * [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
 * [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
@@ -585,6 +589,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] Lock 미적용 동시 예약 Race Condition 및 Overselling Baseline
 * [x] MySQL Pessimistic Write Lock 기반 예약 재고 동시성 제어
 * [x] RoomInventory Version 기반 Optimistic Lock 충돌 감지
+* [x] 예약 생성 Optimistic Lock 제한 Retry 및 재고 재조회
 
 ---
 
