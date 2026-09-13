@@ -9,7 +9,7 @@ import junsik.reservation.dto.reservation.request.CreateReservationRequest;
 import junsik.reservation.dto.reservation.response.ReservationResponse;
 
 @Service
-public class ReservationRetryService {
+public class ReservationRetryService implements ReservationCreator {
 
 	static final int MAX_ATTEMPTS = 3;
 
@@ -21,6 +21,7 @@ public class ReservationRetryService {
 		this.reservationService = reservationService;
 	}
 
+	@Override
 	public ReservationResponse create(Long memberId, CreateReservationRequest request) {
 		for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
 			try {

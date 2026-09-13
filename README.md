@@ -25,7 +25,8 @@
 > 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
 > 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
 > 가격 fallback 여부를 조회할 수 있습니다. 동일 객실·숙박일의 예약 생성·일정 변경·
-> 취소에는 RoomInventory Version 기반 Optimistic Lock을 적용했습니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
+> 취소에는 RoomInventory Version 기반 Optimistic Lock을 적용했고, 예약 생성 진입점은
+> Room 단위 Redis Distributed Lock으로 직렬화합니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
 > 관리할 수 있습니다. 신규 예약은 당시 취소 정책을 Snapshot으로 저장하므로 이후
 > 숙소 정책이 바뀌어도 기존 예약의 무료·부분 수수료·취소 제한 기준은 유지됩니다.
 > 관리자는 객실별 재고 Calendar에서 날짜별 전체 수량과 `OPEN/CLOSED` 판매 상태를
@@ -64,9 +65,9 @@
 ## 2. 주요 기능
 
 회원·인증, 숙소·객실·정책·재고 관리와 예약 생성·조회·변경·취소는 구현되어 있습니다.
-예약 재고에는 DB 비관적 락 검증에 이어 현재 Optimistic Lock을 적용했으며 예약
-생성 충돌은 최초 시도 포함 최대 3회 수행합니다. 다른 Lock 전략 비교와 비동기
-이벤트는 후속 Roadmap 범위입니다.
+예약 재고에는 DB 비관적 락 검증에 이어 Optimistic Lock을 적용했으며, 예약 생성은
+Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 수행합니다. 성능
+비교와 비동기 이벤트는 후속 Roadmap 범위입니다.
 
 ### 사용자 및 인증
 
@@ -117,21 +118,22 @@
 | JWT | Spring Security OAuth2 JOSE | HS256 Access Token 발급·검증 |
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
+| Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·Watchdog·소유권 기반 해제 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
-| Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback 검증 |
+| Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-> Backend는 MySQL과 Redis에 연결됩니다. Redis는 현재 Refresh Token 저장에만
-> 사용하며 분산 락과 Cache는 아직 적용하지 않았습니다.
+> Backend는 MySQL과 Redis에 연결됩니다. Redis는 Refresh Token 저장과 예약 생성
+> 분산 락에 사용하며 Cache는 아직 적용하지 않았습니다.
 
 ### 도입 예정
 
 | 구분 | 기술 |
 | --- | --- |
 | Authentication | 추가 OAuth2 Provider, Access Token Blacklist 정책 |
-| Cache and Lock | Redis, Lettuce 또는 Redisson 검토 |
+| Cache | Redis Cache 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
 | Performance Test | k6 |
@@ -145,11 +147,13 @@
 
 현재는 하나의 Spring Boot Application에서 Controller → Service → Entity/Repository
 흐름으로 정책·재고·가격·Snapshot을 처리합니다. DTO는 도메인별 request/response
-패키지로 분리되어 있습니다. 아래 그림의 Redis Lock/Cache와 Kafka는 **목표 아키텍처**입니다.
+패키지로 분리되어 있습니다. 아래 그림의 Redis Lock은 현재 예약 생성에 적용됐고,
+Redis Cache와 Kafka는 **목표 아키텍처**입니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
 Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
-저장과 TTL 관리에 사용하며 분산 락·Cache 활용과 Kafka 연동은 도입 예정입니다.
+저장·TTL 관리와 Room 단위 예약 생성 Lock에 사용하며 Cache와 Kafka 연동은 도입
+예정입니다.
 
 ```text
 Client
@@ -276,7 +280,10 @@ Spring Boot API
 Transaction의 충돌을 Commit 시점에 감지합니다. 충돌은 `409 Conflict`와
 `INVENTORY_011`로 응답합니다. 예약 생성은 충돌 시 새 Transaction에서 재고를 다시
 조회하며 최초 시도 1회와 재시도 최대 2회까지만 수행합니다. Retry 후 재고가
-소진됐다면 `INVENTORY_005`로 종료합니다.
+소진됐다면 `INVENTORY_005`로 종료합니다. 예약 생성 전에
+`reservation:lock:room:{roomId}` Redis Lock을 최대 3초 기다리고, Redisson의 30초
+Watchdog Lease 갱신과 소유 Thread 확인 후 Unlock을 사용합니다. 획득 실패는
+`INVENTORY_012`로 응답합니다.
 
 예약 조회와 취소는 JWT 인증 정보의 회원 ID를 기준으로 본인 예약에만 접근할 수
 있습니다. `CONFIRMED` 예약의 일정 변경은 기존·신규 기간에 공통인 날짜의 차감은
@@ -390,8 +397,9 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 ### v0.2.0 진입 기준과 예정 작업
 
 현재 Transaction은 재고 검증·증감과 예약·Snapshot 변경을 함께 처리하며, 동일
-객실·숙박일 재고에는 JPA `@Version` 기반 Optimistic Lock을 적용합니다. 조건부 원자
-UPDATE와 Redis 분산 Lock은 아직 적용하지 않았습니다.
+객실·숙박일 재고에는 JPA `@Version` 기반 Optimistic Lock을 적용합니다. 예약 생성은
+Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 원자 UPDATE는 아직
+적용하지 않았습니다.
 
 * [x] Lock 미적용 MySQL 동시 예약 Baseline
 * [x] 성공·실패 수, 최종 재고와 예약 수로 Overselling 재현 여부 검증
@@ -399,7 +407,7 @@ UPDATE와 Redis 분산 Lock은 아직 적용하지 않았습니다.
 * [x] Optimistic Lock 적용 및 Version 충돌·Rollback 검증
 * [x] Optimistic Lock Retry 최대 횟수·새 Transaction 경계 및 최종 오류 정책
 * [ ] 고충돌 환경의 Retry Backoff·Jitter 정책 비교
-* [ ] Redis Distributed Lock, 획득 실패·Timeout 처리 검토
+* [x] Redis Distributed Lock, 획득 대기·Watchdog Lease·안전한 Unlock 적용
 * [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
 * [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
 
@@ -590,6 +598,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] MySQL Pessimistic Write Lock 기반 예약 재고 동시성 제어
 * [x] RoomInventory Version 기반 Optimistic Lock 충돌 감지
 * [x] 예약 생성 Optimistic Lock 제한 Retry 및 재고 재조회
+* [x] Redisson Room 단위 Distributed Lock 기반 예약 생성 직렬화
 
 ---
 
@@ -649,6 +658,8 @@ JWT_ACCESS_TOKEN_EXPIRATION=30m
 JWT_REFRESH_TOKEN_EXPIRATION=14d
 REDIS_HOST=localhost
 REDIS_PORT=6380
+RESERVATION_LOCK_WAIT_TIME=3s
+RESERVATION_LOCK_WATCHDOG_TIMEOUT=30s
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
 ```
@@ -750,13 +761,15 @@ Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
-MySQL 8.4 Testcontainer를 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
+MySQL 8.4 Testcontainer를 사용합니다. 분산 락 테스트는 Redis 7.4 Testcontainer도
+함께 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
 호환 Container Runtime이 실행 중이어야 하며, 테스트는 로컬 Docker Compose DB와
 Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트 DB 선택 기준은
 [`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.3의 전체 흐름과
 동시성 적용 전 기준선은
 [`docs/testing/reservation-domain-baseline.md`](docs/testing/reservation-domain-baseline.md)에
-정리되어 있습니다. Lock 미적용·Pessimistic Lock·Optimistic Lock 적용 결과는
+정리되어 있습니다. Lock 미적용·Pessimistic Lock·Optimistic Lock·Redis Distributed
+Lock 적용 결과는
 [`docs/testing/reservation-concurrency-baseline.md`](docs/testing/reservation-concurrency-baseline.md)에서
 비교할 수 있습니다.
 

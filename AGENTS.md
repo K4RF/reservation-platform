@@ -8,8 +8,10 @@ preventing reservation conflicts under concurrent traffic.
 The sequential reservation-domain baseline is complete. MySQL pessimistic locking
 was verified first; the active inventory concurrency strategy is now JPA optimistic
 locking with `RoomInventory.version`. Reservation creation retries an optimistic
-conflict in a fresh transaction up to two times. Other retry scopes and concurrency
-strategies remain roadmap work. Features in `README.md` require source verification.
+conflict in a fresh transaction up to two times and is serialized by a Room-scoped
+Redisson lock before entering the database transaction. Other retry scopes and
+concurrency strategies remain roadmap work. Features in `README.md` require source
+verification.
 
 ## Source of Truth
 
@@ -50,11 +52,13 @@ The Gradle project root is `backend/`, not the repository root.
 - Spring Security OAuth2 JOSE for HS256 JWT creation and validation
 - Spring Security OAuth2 Client with Google as the initial provider
 - Spring Data Redis for Refresh Token storage and TTL management
+- Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for fast tests
-- Testcontainers 2.0.5 with MySQL 8.4 for database constraint integration tests
+- Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
+  distributed-lock integration tests
 
 Additional OAuth2 providers, Access Token blacklisting, Kafka, Prometheus,
 Grafana, k6, CD, and a frontend framework are planned but are not currently
@@ -245,8 +249,11 @@ Before completing a change:
   rolled back. Reservation creation is wrapped by a non-transactional Retry Service
   and makes at most three attempts, each through the transactional Service proxy.
   A retry reloads inventory in a fresh transaction. Exhaustion maps to
-  `409 INVENTORY_011`; no delay or Backoff is implemented. Schedule changes load
-  the sorted union of old and new stay dates in one query and are not retried.
+  `409 INVENTORY_011`; no delay or Backoff is implemented. Reservation creation
+  first acquires `reservation:lock:room:{roomId}` with a three-second wait and a
+  30-second Redisson Watchdog timeout. Only the owning Thread unlocks it. Lock wait
+  failure maps to `409 INVENTORY_012`. Schedule changes load the sorted union of
+  old and new stay dates in one query and are not locked or retried.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
@@ -284,9 +291,9 @@ Before completing a change:
   validated for Access Token reissue.
 - Logout deletes the member's Refresh Token. Access Token blacklisting is not
   implemented, so an existing Access Token remains valid until expiration.
-- Redis distributed locks, Redis caching, alternative database concurrency
-  strategies beyond the recorded pessimistic/optimistic variants, and Kafka
-  integration are not implemented.
+- Redis caching, distributed locks outside reservation creation, alternative
+  database concurrency strategies beyond the recorded pessimistic/optimistic
+  variants, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
@@ -336,3 +343,6 @@ Before completing a change:
   Version increments for reserve, release, and total-quantity updates. Reservation
   creation Retry tests cover success in a fresh transaction, inventory exhaustion,
   the three-attempt limit, and immediate propagation of non-retryable failures.
+  Redisson tests cover Room-key acquisition timeout, interruption, owner-only
+  unlock, exception cleanup, and same-Room reservation serialization using an
+  ephemeral Redis 7.4 Testcontainer.

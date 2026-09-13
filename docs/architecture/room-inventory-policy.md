@@ -91,17 +91,29 @@ Runtime Exception이 발생하면 재고와 예약 변경이 함께 Rollback됩�
 Transaction은 `ObjectOptimisticLockingFailureException`으로 전체 Rollback되므로
 Lost Update와 초과 예약을 방지합니다.
 
-예약 생성 API는 Transaction 밖의 `ReservationRetryService`에서
-`ReservationService.create`를 호출합니다. 충돌 시 완료된 Transaction 상태를
-재사용하지 않고 Service 프록시를 다시 호출하므로 새 Transaction에서 최신 재고를
-조회합니다. 총 3회(최초 시도 1회와 재시도 최대 2회)까지만 실행하며 Retry 사이에
-인위적인 대기 시간은 두지 않습니다. 재고가 소진되면 `INVENTORY_005`, 세 번째
-시도까지 계속 충돌하면 `INVENTORY_011`의 `409 Conflict`로 응답합니다.
+예약 생성 API는 Transaction 밖에서 Room 단위 Redis `RLock`을 먼저 획득한 뒤
+`ReservationRetryService`가 `ReservationService.create`를 호출합니다. Key는
+`reservation:lock:room:{roomId}`이며 한 객실의 여러 숙박일을 하나의 Key로
+직렬화합니다. 여러 날짜 Lock의 부분 획득·해제와 교착을 피하는 대신 같은 객실의
+겹치지 않는 기간도 직렬화하는 보수적인 Granularity입니다.
 
-Retry는 예약 생성의 낙관적 락 충돌에만 적용합니다. Validation, 재고 부족과 같은
-비즈니스 예외는 재시도하지 않으며 일정 변경·취소에는 아직 Retry를 적용하지
-않습니다. 조건부 원자 UPDATE와 Redis 분산 Lock, Retry Backoff와 부하 비교는 후속
-동시성 전략 검증 범위입니다.
+Lock 획득 대기는 기본 3초이며, 명시적 고정 Lease 대신 Redisson Watchdog의 30초
+Timeout을 사용합니다. Lock 소유 Client가 살아 있는 동안 Lease가 갱신되고 Client가
+사라지면 Timeout 후 해제됩니다. 작업 성공과 Runtime Exception 모두 `finally`에서
+현재 Thread가 여전히 소유한 Lock만 해제합니다. 대기 시간 초과 또는 대기 중단은
+`INVENTORY_012`의 `409 Conflict`로 응답합니다.
+
+Lock 안쪽의 Optimistic Retry는 완료된 Transaction 상태를 재사용하지 않고 Service
+프록시를 다시 호출하므로 새 Transaction에서 최신 재고를 조회합니다. 총 3회(최초
+시도 1회와 재시도 최대 2회)까지만 실행하며 Retry 사이에 인위적인 대기 시간은 두지
+않습니다. 재고가 소진되면 `INVENTORY_005`, 세 번째 시도까지 계속 충돌하면
+`INVENTORY_011`의 `409 Conflict`로 응답합니다.
+
+분산 락과 Retry는 예약 생성에만 적용합니다. Validation, 재고 부족과 같은 비즈니스
+예외는 재시도하지 않으며 일정 변경·취소에는 분산 락과 Retry를 적용하지 않습니다.
+이 경로들과 분산 락을 사용하지 않는 Writer의 충돌은 `@Version`이 계속 감지합니다.
+조건부 원자 UPDATE, Redis 장애·Failover와 Lock Watchdog 중단 시나리오, Backoff 및
+부하 비교는 후속 동시성 전략 검증 범위입니다.
 
 기존 개발 DB의 확정 예약은 재고 모델 도입 전에 생성되어 날짜별 재고 차감 기록이
 없을 수 있습니다. 기존 예약의 취소·일정 변경을 사용하기 전에 각 숙박일의 재고를
