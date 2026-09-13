@@ -22,6 +22,7 @@ The reusable support code lives under
 | `RoomInventoryFixture` | Creates daily room inventory with default or explicit date and quantity |
 | `MvpTestFixture` | Creates the SQL-backed admin and date inventory required by the end-to-end MVP flow |
 | `MySqlIntegrationTestSupport` | Provides one MySQL 8.4 Testcontainer and Spring datasource connection details |
+| `MySqlRedisIntegrationTestSupport` | Adds an ephemeral Redis 7.4 container and dynamic Redis connection details to the MySQL support |
 
 Fixture methods create entities only. A test that needs persisted data must call
 the relevant repository explicitly. This makes flush timing and the database
@@ -36,6 +37,8 @@ tests.
   method rolls its data back.
 - Redis-dependent authentication tests replace `RefreshTokenStore` with a mock;
   the Redis server used for local development is not touched.
+- Distributed-lock integration tests use the disposable Redis 7.4 Testcontainer;
+  they do not connect to the local Docker Compose Redis service.
 - Fixed fixture values are safe because persisted data does not cross test
   method boundaries.
 
@@ -81,11 +84,12 @@ cd backend
 ./gradlew build
 ```
 
-## Concurrency test extension
+## Concurrency test support
 
-Future MySQL locking and same-room concurrency tests should extend
-`MySqlIntegrationTestSupport`. They should create independent members, rooms,
-and reservation periods through the domain fixtures, commit setup data before
-starting worker threads, and clean up through the disposable container rather
-than the developer database. Thread coordination and executor lifecycle belong
-in a concurrency-specific support class when Phase 2 begins.
+Database-only locking and same-room concurrency tests extend
+`MySqlIntegrationTestSupport`. Tests that execute a Redis distributed lock extend
+`MySqlRedisIntegrationTestSupport`. Both create independent members, rooms, and
+reservation periods through domain fixtures, commit setup data before starting
+worker threads, and clean up through disposable containers rather than developer
+infrastructure. Thread coordination and executor lifecycle stay in each
+concurrency test so transaction and lock boundaries remain visible.
