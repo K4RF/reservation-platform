@@ -15,11 +15,9 @@ public class RedissonConfig {
 	@Bean(destroyMethod = "shutdown")
 	RedissonClient redissonClient(
 			@Value("${spring.data.redis.host}") String host,
-			@Value("${spring.data.redis.port}") int port,
-			ReservationLockProperties properties
+			@Value("${spring.data.redis.port}") int port
 	) {
 		Config config = new Config();
-		config.setLockWatchdogTimeout(properties.watchdogTimeout().toMillis());
 		config.useSingleServer().setAddress("redis://" + host + ":" + port);
 		return Redisson.create(config);
 	}

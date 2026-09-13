@@ -17,7 +17,8 @@ public enum RoomInventoryErrorCode implements ErrorCode {
 	CLOSED(HttpStatus.CONFLICT, "INVENTORY_009", "판매 중지된 날짜의 객실 재고는 예약할 수 없습니다."),
 	INVALID_CALENDAR_PERIOD(HttpStatus.BAD_REQUEST, "INVENTORY_010", "재고 Calendar 시작일은 종료일보다 늦을 수 없습니다."),
 	CONCURRENT_UPDATE(HttpStatus.CONFLICT, "INVENTORY_011", "객실 재고가 다른 요청에 의해 변경되었습니다. 다시 시도해 주세요."),
-	LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "INVENTORY_012", "객실 재고 처리 중입니다. 잠시 후 다시 시도해 주세요.");
+	LOCK_ACQUISITION_FAILED(HttpStatus.CONFLICT, "INVENTORY_012", "객실 재고 처리 중입니다. 잠시 후 다시 시도해 주세요."),
+	LOCK_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "INVENTORY_013", "분산 락 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
 
 	private final HttpStatus status;
 	private final String code;
