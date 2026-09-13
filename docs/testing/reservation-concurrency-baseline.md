@@ -155,7 +155,8 @@ Transaction B: UPDATE ... SET version=1 WHERE id=? AND version=0 → 갱신 0건
 
 #95 테스트는 #93과 같은 테스트 전용 조회 Barrier를 사용해 두 Transaction이 동일
 Version을 읽도록 고정한다. 조회 자체는 Row Lock을 보유하지 않으므로 두 요청 모두
-Barrier에 도달할 수 있다. Retry는 적용하지 않아 충돌한 요청은 그대로 실패한다.
+Barrier에 도달할 수 있다. #95 시점에는 Retry를 적용하지 않아 충돌한 요청이 그대로
+실패했다.
 
 | 지표 | #93 무잠금 | #94 비관적 락 | #95 낙관적 락 |
 | --- | --- | --- | --- |
@@ -180,9 +181,8 @@ Rollback됐다. 일정 변경과 신규 예약의 충돌에서도 대상 날짜�
 | 장점 | Retry 없이 충돌 요청 직렬화 | 조회 중 Row Lock을 오래 유지하지 않음 |
 | 비용 | 충돌 시 DB Connection·Lock 대기 | 충돌 시 Transaction 작업 Rollback·Retry 필요 |
 
-현재는 충돌을 정확히 감지하고 정합성을 보장하는 단계다. API는 낙관적 충돌을
-`409 Conflict`와 `INVENTORY_011`로 응답한다. 서버 내부 Retry 횟수·Backoff는 다음
-이슈에서 다룬다.
+#95에서는 충돌을 정확히 감지하고 정합성을 보장하는 데 집중했다. API는 낙관적
+충돌을 `409 Conflict`와 `INVENTORY_011`로 응답했고, Retry는 #96에서 추가했다.
 
 ## #95 검증 기록 (2026-09-10)
 
@@ -190,6 +190,43 @@ Rollback됐다. 일정 변경과 신규 예약의 충돌에서도 대상 날짜�
 - `RoomInventory` Version 기본값·NOT NULL 제약은 MySQL 8.4에서 검증했다.
 - MySQL 테스트는 Testcontainer만 사용했으며 로컬 Docker Compose DB와 Volume은
   사용하거나 변경하지 않았다.
+
+## #96 Optimistic Lock Retry 정책
+
+예약 생성 API는 `ReservationRetryService`를 진입점으로 사용한다. Retry Service에는
+Transaction을 선언하지 않고, 각 시도에서 `@Transactional`인
+`ReservationService.create`를 다시 호출한다. 낙관적 락 예외가 Service 프록시 밖으로
+전달될 때 실패 Transaction은 이미 Rollback됐으므로 다음 호출은 새 Transaction과
+새 영속성 Context에서 Inventory를 다시 조회한다.
+
+적용 대상이 예약 생성 한 경로와 한 예외 유형으로 제한되어 있어 별도 Spring Retry
+의존성이나 Annotation 대신 명시적인 유한 반복으로 정책을 구현했다. Retry 대상과
+시도 횟수가 늘거나 공통 정책이 필요해지면 Spring Retry 도입을 다시 검토한다.
+
+| 정책 | 결정 |
+| --- | --- |
+| Retry 대상 | `ObjectOptimisticLockingFailureException`만 |
+| 최대 시도 | 총 3회: 최초 1회 + 재시도 2회 |
+| Retry 간격 | 없음 |
+| 재고 소진 | Retry하지 않고 `INVENTORY_005` 반환 |
+| 한도 초과 | 마지막 충돌을 `409 / INVENTORY_011`로 반환 |
+| 적용 범위 | 예약 생성 API |
+
+고정 지연은 낮은 충돌 구간에도 불필요한 응답 지연과 요청 Thread 점유를 추가하므로
+이번 단계에서는 사용하지 않는다. 고충돌 부하에서 즉시 Retry가 DB 부하를 키울 수
+있는지는 이후 성능 측정에서 확인하고, 필요하면 Backoff와 Jitter를 비교한다.
+
+MySQL 동시성 테스트는 두 요청이 동일 Version을 읽도록 첫 조회 두 건에만 Barrier를
+적용한다. 재고가 2개이면 충돌한 요청이 새 Transaction에서 남은 재고를 읽고 성공해
+예약 2건과 예약 수량 2개가 일치한다. 재고가 1개이면 충돌한 요청의 재시도는 최신
+재고 0개를 확인하고 `INVENTORY_005`로 종료한다. 단위 테스트는 첫 Retry 성공,
+3회 연속 충돌 후 종료, 비대상 비즈니스 예외의 즉시 전파를 검증한다.
+
+## #96 검증 기록 (2026-09-13)
+
+- 전체 Backend 테스트: 235 tests, 0 failures, 0 errors, 0 skipped.
+- MySQL Retry 테스트는 Testcontainer만 사용했으며 로컬 Docker Compose DB와
+  Volume은 사용하거나 변경하지 않았다.
 
 ## 실행 명령
 

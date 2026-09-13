@@ -7,8 +7,9 @@ preventing reservation conflicts under concurrent traffic.
 
 The sequential reservation-domain baseline is complete. MySQL pessimistic locking
 was verified first; the active inventory concurrency strategy is now JPA optimistic
-locking with `RoomInventory.version`. Retry and other strategies remain roadmap
-work. Features in `README.md` require source verification.
+locking with `RoomInventory.version`. Reservation creation retries an optimistic
+conflict in a fresh transaction up to two times. Other retry scopes and concurrency
+strategies remain roadmap work. Features in `README.md` require source verification.
 
 ## Source of Truth
 
@@ -241,9 +242,11 @@ Before completing a change:
   every `[check-in, check-out)` inventory date and the reservation in one
   transaction. `RoomInventory.version` uses JPA `@Version`; concurrent writes to
   the same inventory are detected at update time and the losing transaction is
-  rolled back. The API maps the conflict to `409 INVENTORY_011`; server-side retry
-  is not implemented. Schedule changes load the sorted union of old and new stay
-  dates in one query.
+  rolled back. Reservation creation is wrapped by a non-transactional Retry Service
+  and makes at most three attempts, each through the transactional Service proxy.
+  A retry reloads inventory in a fresh transaction. Exhaustion maps to
+  `409 INVENTORY_011`; no delay or Backoff is implemented. Schedule changes load
+  the sorted union of old and new stay dates in one query and are not retried.
 - Authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
@@ -251,8 +254,9 @@ Before completing a change:
   date. New reservations for inactive rooms or accommodations are rejected,
   while existing reservation history is retained.
 - Search and filters use Spring Data JPA Specifications. Arbitrary sort fields,
-  full-text/Elasticsearch search, optimistic-lock retry, custom atomic conditional
-  inventory updates, and distributed locking are not implemented.
+  full-text/Elasticsearch search, Retry Backoff/Jitter, Retry for schedule changes
+  or cancellations, custom atomic conditional inventory updates, and distributed
+  locking are not implemented.
 - Entity mappings define NOT NULL, length, enum string storage, named UNIQUE/FK,
   and CHECK constraints for required text, positive capacity, non-negative
   monetary values, positive daily prices, and valid reservation periods.
@@ -329,4 +333,6 @@ Before completing a change:
   after failure. MySQL concurrency tests cover the lock-free overselling baseline,
   the recorded pessimistic-lock behavior, and active optimistic Version conflicts
   for one-night, multi-night, and schedule-change races. Inventory tests verify
-  Version increments for reserve, release, and total-quantity updates.
+  Version increments for reserve, release, and total-quantity updates. Reservation
+  creation Retry tests cover success in a fresh transaction, inventory exhaustion,
+  the three-attempt limit, and immediate propagation of non-retryable failures.

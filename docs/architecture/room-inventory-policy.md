@@ -14,6 +14,7 @@
 | `inventory_date` | 객실을 사용하는 날짜 |
 | `total_quantity` | 해당 날짜에 판매 가능한 전체 객실 수 |
 | `reserved_quantity` | 해당 날짜에 이미 예약된 객실 수 |
+| `version` | 동시 갱신 충돌을 감지하는 JPA Optimistic Lock Version |
 | `sale_status` | 신규 판매 가능 여부인 `OPEN` 또는 `CLOSED` |
 | `availableQuantity` | 저장하지 않고 `total_quantity - reserved_quantity`로 계산하는 잔여 수량 |
 
@@ -85,13 +86,22 @@ Runtime Exception이 발생하면 재고와 예약 변경이 함께 Rollback됩�
 존재와 수량을 변경 전에 먼저 검증하므로 순차 요청에서는 부분 차감과 음수 잔여
 재고를 만들지 않습니다.
 
-그러나 Lock이나 원자적 조건부 UPDATE를 아직 사용하지 않으므로, 여러 Transaction이
-동시에 같은 재고를 읽으면 lost update 또는 초과 예약 Race Condition이 발생할 수
-있습니다.
+`RoomInventory.version`의 JPA `@Version`은 같은 Version을 읽은 Transaction의
+동시 갱신을 UPDATE 시점에 감지합니다. 먼저 Commit한 Transaction만 성공하고 다른
+Transaction은 `ObjectOptimisticLockingFailureException`으로 전체 Rollback되므로
+Lost Update와 초과 예약을 방지합니다.
 
-따라서 현재 구현을 동시 요청에 안전하다고 간주하면 안 됩니다. 후속 동시성 작업에서
-MySQL Lock 또는 Redis 분산 Lock 전략을 결정하고, Testcontainers 기반 동시 요청
-테스트로 검증합니다.
+예약 생성 API는 Transaction 밖의 `ReservationRetryService`에서
+`ReservationService.create`를 호출합니다. 충돌 시 완료된 Transaction 상태를
+재사용하지 않고 Service 프록시를 다시 호출하므로 새 Transaction에서 최신 재고를
+조회합니다. 총 3회(최초 시도 1회와 재시도 최대 2회)까지만 실행하며 Retry 사이에
+인위적인 대기 시간은 두지 않습니다. 재고가 소진되면 `INVENTORY_005`, 세 번째
+시도까지 계속 충돌하면 `INVENTORY_011`의 `409 Conflict`로 응답합니다.
+
+Retry는 예약 생성의 낙관적 락 충돌에만 적용합니다. Validation, 재고 부족과 같은
+비즈니스 예외는 재시도하지 않으며 일정 변경·취소에는 아직 Retry를 적용하지
+않습니다. 조건부 원자 UPDATE와 Redis 분산 Lock, Retry Backoff와 부하 비교는 후속
+동시성 전략 검증 범위입니다.
 
 기존 개발 DB의 확정 예약은 재고 모델 도입 전에 생성되어 날짜별 재고 차감 기록이
 없을 수 있습니다. 기존 예약의 취소·일정 변경을 사용하기 전에 각 숙박일의 재고를
