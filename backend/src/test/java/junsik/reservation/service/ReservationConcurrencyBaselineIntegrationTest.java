@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +36,8 @@ import junsik.reservation.entity.Accommodation;
 import junsik.reservation.entity.Member;
 import junsik.reservation.entity.Room;
 import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.enums.RoomInventoryErrorCode;
+import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
@@ -50,6 +53,9 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 
 	@Autowired
 	private ReservationService reservationService;
+
+	@Autowired
+	private ReservationRetryService reservationRetryService;
 
 	@Autowired
 	private AccommodationRepository accommodationRepository;
@@ -69,6 +75,7 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 	private ExecutorService executor;
 	private ReservationService reservationServiceTarget;
 	private CyclicBarrier inventoryReadBarrier;
+	private AtomicInteger inventoryReadCount;
 	private Member member;
 	private Room room;
 
@@ -105,6 +112,47 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 				request(room.getId(), CHECK_IN_DATE, CHECK_OUT_DATE),
 				List.of(CHECK_IN_DATE)
 		);
+	}
+
+	@Test
+	@Timeout(30)
+	void retriesInANewTransactionAndSucceedsWhenInventoryRemains() throws Exception {
+		RoomInventory inventory = roomInventoryRepository
+				.findByRoomIdAndInventoryDate(room.getId(), CHECK_IN_DATE)
+				.orElseThrow();
+		inventory.changeTotalQuantity(CONCURRENT_REQUESTS);
+		roomInventoryRepository.saveAndFlush(inventory);
+		installInventoryReadBarrier();
+
+		List<ReservationAttempt> attempts = executeConcurrentRetryReservations();
+
+		assertThat(attempts).allMatch(ReservationAttempt::succeeded);
+		assertThat(countConfirmedReservationsFor(CHECK_IN_DATE)).isEqualTo(CONCURRENT_REQUESTS);
+		InventoryState finalInventory = inventoryState(CHECK_IN_DATE);
+		assertThat(finalInventory.reservedQuantity()).isEqualTo(CONCURRENT_REQUESTS);
+		assertThat(finalInventory.availableQuantity()).isZero();
+		assertThat(finalInventory.version()).isEqualTo(3);
+	}
+
+	@Test
+	@Timeout(30)
+	void retriesWithFreshInventoryAndFailsWhenTheWinnerExhaustedIt() throws Exception {
+		installInventoryReadBarrier();
+
+		List<ReservationAttempt> attempts = executeConcurrentRetryReservations();
+
+		assertThat(attempts).filteredOn(ReservationAttempt::succeeded).hasSize(TOTAL_QUANTITY);
+		assertThat(attempts)
+				.filteredOn(attempt -> !attempt.succeeded())
+				.singleElement()
+				.satisfies(attempt -> {
+					assertThat(attempt.failure()).isInstanceOf(BusinessException.class);
+					BusinessException exception = (BusinessException) attempt.failure();
+					assertThat(exception.getErrorCode())
+							.isEqualTo(RoomInventoryErrorCode.INSUFFICIENT_QUANTITY);
+				});
+		assertThat(countConfirmedReservationsFor(CHECK_IN_DATE)).isEqualTo(TOTAL_QUANTITY);
+		assertFullyReserved(CHECK_IN_DATE);
 	}
 
 	@Test
@@ -238,6 +286,26 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 		}
 	}
 
+	private List<ReservationAttempt> executeConcurrentRetryReservations() throws InterruptedException {
+		CountDownLatch ready = new CountDownLatch(CONCURRENT_REQUESTS);
+		CountDownLatch start = new CountDownLatch(1);
+		List<Future<ReservationAttempt>> futures = java.util.stream.IntStream
+				.range(0, CONCURRENT_REQUESTS)
+				.mapToObj(index -> executor.submit(() -> attemptOperation(
+						ready,
+						start,
+						() -> reservationRetryService.create(
+								member.getId(),
+								request(room.getId(), CHECK_IN_DATE, CHECK_OUT_DATE)
+						)
+				)))
+				.toList();
+
+		assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+		start.countDown();
+		return futures.stream().map(this::getResult).toList();
+	}
+
 	private ReservationAttempt getResult(Future<ReservationAttempt> future) {
 		try {
 			return future.get(20, TimeUnit.SECONDS);
@@ -266,6 +334,7 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 
 	private void installInventoryReadBarrier() {
 		inventoryReadBarrier = new CyclicBarrier(CONCURRENT_REQUESTS);
+		inventoryReadCount = new AtomicInteger();
 		RoomInventoryRepository synchronizedRepository = (RoomInventoryRepository) Proxy.newProxyInstance(
 				RoomInventoryRepository.class.getClassLoader(),
 				new Class<?>[]{RoomInventoryRepository.class},
@@ -274,7 +343,7 @@ class ReservationConcurrencyBaselineIntegrationTest extends MySqlIntegrationTest
 						Object result = method.invoke(roomInventoryRepository, arguments);
 						if (method.getName().equals(
 								"findAllByRoomIdAndInventoryDateInOrderByInventoryDateAsc"
-						)) {
+						) && inventoryReadCount.incrementAndGet() <= CONCURRENT_REQUESTS) {
 							inventoryReadBarrier.await(10, TimeUnit.SECONDS);
 						}
 						return result;
