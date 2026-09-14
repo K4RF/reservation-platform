@@ -409,8 +409,9 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 * [x] Optimistic Lock Retry 최대 횟수·새 Transaction 경계 및 최종 오류 정책
 * [ ] 고충돌 환경의 Retry Backoff·Jitter 정책 비교
 * [x] Redis Distributed Lock, 획득 대기·고정 Lease·안전한 Unlock·장애 응답 적용
-* [ ] 정합성·Latency·Throughput·구현/운영 복잡도 비교
-* [ ] 최종 전략 선정과 v0.3.0 조회 성능 기준 확보
+* [x] 동일 재고·동시 요청 조건의 정합성·기본 실행 시간·복잡도 비교
+* [x] Room 단위 Redis Lock + Optimistic Version·제한 Retry 전략 선정
+* [ ] v0.3.0 조회 성능 기준 확보
 
 일부 기존 Index·실행 계획 검증은 구현되어 있지만, v0.3.0의 조회 성능 최적화와
 Redis Cache는 아직 예정입니다. Kafka, k6, Prometheus, Grafana, CD 및 Production
@@ -772,7 +773,10 @@ Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트
 정리되어 있습니다. Lock 미적용·Pessimistic Lock·Optimistic Lock·Redis Distributed
 Lock 적용 결과는
 [`docs/testing/reservation-concurrency-baseline.md`](docs/testing/reservation-concurrency-baseline.md)에서
-비교할 수 있습니다.
+확인할 수 있습니다. 동일 조건의 전략별 정합성·기본 실행 시간 비교와 현재 전략
+선정 근거는
+[`Concurrency Strategy Comparison`](docs/performance/concurrency-strategy-comparison.md)에
+정리되어 있습니다.
 
 ## 14. 주요 기술 과제
 
