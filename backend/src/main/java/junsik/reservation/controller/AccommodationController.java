@@ -34,7 +34,7 @@ import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusReq
 import junsik.reservation.dto.accommodation.response.AccommodationResponse;
 import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.AccommodationService;
+import junsik.reservation.service.accommodation.AccommodationService;
 
 @Tag(name = "Accommodations", description = "숙소 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

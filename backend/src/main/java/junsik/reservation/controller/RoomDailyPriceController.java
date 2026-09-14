@@ -30,7 +30,7 @@ import junsik.reservation.dto.room.request.CreateRoomDailyPriceRequest;
 import junsik.reservation.dto.room.request.UpdateRoomDailyPriceRequest;
 import junsik.reservation.dto.room.response.RoomDailyPriceResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.RoomDailyPriceService;
+import junsik.reservation.service.room.RoomDailyPriceService;
 
 @Tag(name = "Room Daily Prices", description = "날짜별 객실 가격 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

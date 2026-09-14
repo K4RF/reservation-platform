@@ -2,8 +2,8 @@ package junsik.reservation.support;
 
 import java.math.BigDecimal;
 
-import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.entity.room.Room;
 
 public final class RoomFixture {
 

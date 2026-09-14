@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import junsik.reservation.entity.AccommodationBookingPolicy;
+import junsik.reservation.entity.accommodation.AccommodationBookingPolicy;
 
 public interface AccommodationBookingPolicyRepository
 		extends JpaRepository<AccommodationBookingPolicy, Long> {

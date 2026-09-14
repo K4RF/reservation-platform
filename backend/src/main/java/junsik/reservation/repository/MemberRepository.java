@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 

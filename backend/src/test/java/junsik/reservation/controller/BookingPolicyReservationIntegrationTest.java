@@ -23,12 +23,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.AccommodationBookingPolicy;
-import junsik.reservation.entity.Member;
-import junsik.reservation.entity.Reservation;
-import junsik.reservation.entity.Room;
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.entity.accommodation.AccommodationBookingPolicy;
+import junsik.reservation.entity.member.Member;
+import junsik.reservation.entity.reservation.Reservation;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.repository.AccommodationBookingPolicyRepository;
 import junsik.reservation.repository.AccommodationRepository;
@@ -37,7 +37,7 @@ import junsik.reservation.repository.ReservationRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
-import junsik.reservation.service.ReservationDateProvider;
+import junsik.reservation.service.reservation.ReservationDateProvider;
 
 @SpringBootTest
 @AutoConfigureMockMvc

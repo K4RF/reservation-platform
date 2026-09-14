@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
-import junsik.reservation.entity.Member;
-import junsik.reservation.entity.Reservation;
-import junsik.reservation.entity.ReservationCancellationQuote;
-import junsik.reservation.entity.RepresentativeGuest;
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.member.Member;
+import junsik.reservation.entity.reservation.Reservation;
+import junsik.reservation.entity.reservation.ReservationCancellationQuote;
+import junsik.reservation.entity.reservation.RepresentativeGuest;
+import junsik.reservation.entity.room.Room;
 
 public final class ReservationFixture {
 

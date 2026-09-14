@@ -1,7 +1,7 @@
 package junsik.reservation.dto.accommodation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.AccommodationBookingPolicy;
+import junsik.reservation.entity.accommodation.AccommodationBookingPolicy;
 
 public record AccommodationBookingPolicyResponse(
 		@Schema(description = "예약 정책 ID", example = "1")

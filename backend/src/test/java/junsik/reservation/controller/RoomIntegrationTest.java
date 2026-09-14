@@ -24,8 +24,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;

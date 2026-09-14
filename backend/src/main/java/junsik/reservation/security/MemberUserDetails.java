@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 import junsik.reservation.enums.MemberRole;
 
 public class MemberUserDetails implements UserDetails {

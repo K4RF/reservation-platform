@@ -13,7 +13,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import junsik.reservation.dto.auth.response.LoginResponse;
-import junsik.reservation.service.TokenService;
+import junsik.reservation.service.auth.TokenService;
 import tools.jackson.databind.ObjectMapper;
 
 @Component

@@ -3,7 +3,7 @@ package junsik.reservation.dto.accommodation.response;
 import java.time.LocalTime;
 import java.util.List;
 
-import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationStatus;
 

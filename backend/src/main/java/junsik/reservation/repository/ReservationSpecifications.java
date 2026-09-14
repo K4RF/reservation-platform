@@ -8,7 +8,7 @@ import jakarta.persistence.criteria.Predicate;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import junsik.reservation.entity.Reservation;
+import junsik.reservation.entity.reservation.Reservation;
 import junsik.reservation.enums.ReservationStatus;
 
 public final class ReservationSpecifications {

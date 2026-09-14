@@ -3,7 +3,7 @@ package junsik.reservation.dto.room.response;
 import java.math.BigDecimal;
 import java.util.List;
 
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 

@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import junsik.reservation.entity.AccommodationCancellationPolicy;
+import junsik.reservation.entity.accommodation.AccommodationCancellationPolicy;
 
 public interface AccommodationCancellationPolicyRepository
 		extends JpaRepository<AccommodationCancellationPolicy, Long> {

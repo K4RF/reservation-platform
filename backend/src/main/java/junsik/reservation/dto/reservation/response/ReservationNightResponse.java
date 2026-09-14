@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.ReservationNight;
+import junsik.reservation.entity.reservation.ReservationNight;
 
 public record ReservationNightResponse(
 		@Schema(description = "예약이 점유하는 숙박일", example = "2030-01-10")

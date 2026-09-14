@@ -7,7 +7,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.room.RoomInventory;
 
 public interface RoomInventoryRepository extends JpaRepository<RoomInventory, Long> {
 

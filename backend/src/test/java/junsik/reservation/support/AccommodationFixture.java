@@ -1,6 +1,6 @@
 package junsik.reservation.support;
 
-import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.accommodation.Accommodation;
 
 public final class AccommodationFixture {
 

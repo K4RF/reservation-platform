@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.Reservation;
-import junsik.reservation.entity.ReservationCancellationQuote;
+import junsik.reservation.entity.reservation.Reservation;
+import junsik.reservation.entity.reservation.ReservationCancellationQuote;
 import junsik.reservation.enums.ReservationStatus;
 
 public record ReservationCancellationResponse(

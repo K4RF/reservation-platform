@@ -27,7 +27,7 @@ import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.RoomInventoryErrorCode;
 
 class GlobalExceptionHandlerTest {

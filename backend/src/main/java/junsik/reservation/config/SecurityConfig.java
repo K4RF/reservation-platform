@@ -19,7 +19,7 @@ import junsik.reservation.security.JwtAuthenticationEntryPoint;
 import junsik.reservation.security.JwtAuthenticationFilter;
 import junsik.reservation.security.OAuth2AuthenticationFailureHandler;
 import junsik.reservation.security.OAuth2AuthenticationSuccessHandler;
-import junsik.reservation.service.OAuth2MemberService;
+import junsik.reservation.service.auth.OAuth2MemberService;
 
 @Configuration
 public class SecurityConfig {

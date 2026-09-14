@@ -33,7 +33,7 @@ import junsik.reservation.dto.room.request.UpdateRoomInventoryRequest;
 import junsik.reservation.dto.room.response.RoomInventoryCalendarResponse;
 import junsik.reservation.dto.room.response.RoomInventoryResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.RoomInventoryService;
+import junsik.reservation.service.room.RoomInventoryService;
 
 @Tag(name = "Room Inventories", description = "날짜별 객실 재고 Calendar 관리 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

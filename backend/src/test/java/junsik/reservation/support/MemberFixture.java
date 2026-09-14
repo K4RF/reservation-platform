@@ -1,6 +1,6 @@
 package junsik.reservation.support;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 
 public final class MemberFixture {
 

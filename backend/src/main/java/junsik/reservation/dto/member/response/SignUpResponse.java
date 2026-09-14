@@ -1,6 +1,6 @@
 package junsik.reservation.dto.member.response;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 import junsik.reservation.enums.MemberRole;
 
 public record SignUpResponse(

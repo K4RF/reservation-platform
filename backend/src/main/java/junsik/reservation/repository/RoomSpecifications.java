@@ -10,7 +10,7 @@ import jakarta.persistence.criteria.Predicate;
 
 import org.springframework.data.jpa.domain.Specification;
 
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 

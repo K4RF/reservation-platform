@@ -90,20 +90,25 @@ Retry를 최종 정합성 방어로 유지합니다.
 일정 변경·취소·관리자 재고 갱신에는 Redis Lock이 적용되지 않으므로 DB Version은
 계속 필요합니다.
 
+이 결과를 바탕으로 확정한 운영 구조, 대안별 비용과 Transaction 경계는
+[`ADR-006`](../adr/006-reservation-concurrency-strategy.md)에 기록했습니다. 비교용
+다섯 전략은 이 Testcontainer Probe 안에만 있으며 Production 호출 경로에는 런타임
+전략 분기가 없습니다.
+
 ## 재현 방법
 
 Windows PowerShell:
 
 ```powershell
 cd backend
-.\gradlew.bat test --tests junsik.reservation.service.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
+.\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
 ```
 
 macOS/Linux:
 
 ```bash
 cd backend
-./gradlew test --tests junsik.reservation.service.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
+./gradlew test --tests junsik.reservation.service.reservation.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
 ```
 
 Test 결과 XML의 `Concurrency strategy comparison` 로그에 각 반복의 성공·실패,

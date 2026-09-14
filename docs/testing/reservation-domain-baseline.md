@@ -119,7 +119,7 @@ Windows PowerShell:
 ```powershell
 cd backend
 .\gradlew.bat test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
-.\gradlew.bat test --tests junsik.reservation.service.ReservationInventoryRollbackIntegrationTest
+.\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationInventoryRollbackIntegrationTest
 .\gradlew.bat clean test
 .\gradlew.bat build
 ```
@@ -129,7 +129,7 @@ macOS/Linux:
 ```bash
 cd backend
 ./gradlew test --tests junsik.reservation.BookingPolicyCatalogBaselineIntegrationTest
-./gradlew test --tests junsik.reservation.service.ReservationInventoryRollbackIntegrationTest
+./gradlew test --tests junsik.reservation.service.reservation.ReservationInventoryRollbackIntegrationTest
 ./gradlew clean test
 ./gradlew build
 ```
