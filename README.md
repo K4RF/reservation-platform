@@ -322,7 +322,18 @@ reservation-platform/
 │   └── workflows/
 │       └── backend-ci.yml
 ├── backend/
-│   ├── src/main/
+│   ├── src/main/java/junsik/reservation/
+│   │   ├── entity/
+│   │   │   ├── accommodation/
+│   │   │   ├── member/
+│   │   │   ├── reservation/
+│   │   │   └── room/
+│   │   └── service/
+│   │       ├── accommodation/
+│   │       ├── auth/
+│   │       ├── member/
+│   │       ├── reservation/
+│   │       └── room/
 │   ├── src/test/
 │   ├── build.gradle
 │   ├── settings.gradle

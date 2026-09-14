@@ -307,14 +307,14 @@ Windows PowerShell:
 
 ```powershell
 cd backend
-.\gradlew.bat test --tests junsik.reservation.service.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
+.\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
 ```
 
 macOS/Linux:
 
 ```bash
 cd backend
-./gradlew test --tests junsik.reservation.service.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
+./gradlew test --tests junsik.reservation.service.reservation.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
 ```
 
 Docker 호환 Container Runtime이 실행 중이어야 한다.

@@ -101,14 +101,14 @@ Windows PowerShell:
 
 ```powershell
 cd backend
-.\gradlew.bat test --tests junsik.reservation.service.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
+.\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
 ```
 
 macOS/Linux:
 
 ```bash
 cd backend
-./gradlew test --tests junsik.reservation.service.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
+./gradlew test --tests junsik.reservation.service.reservation.ReservationConcurrencyStrategyComparisonIntegrationTest --rerun-tasks
 ```
 
 Test 결과 XML의 `Concurrency strategy comparison` 로그에 각 반복의 성공·실패,

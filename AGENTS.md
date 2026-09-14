@@ -40,6 +40,12 @@ reservation-platform/
 
 The Gradle project root is `backend/`, not the repository root.
 
+Backend code keeps the top-level layered packages. Within `entity/` and
+`service/`, files are grouped by API/domain: `accommodation`, `member`,
+`reservation`, and `room`; authentication services use `service/auth`. Place new
+entities and services in the matching subpackage and mirror that package in focused
+tests. Cross-domain database constraint tests may remain at the shared test package.
+
 ## Current Backend Stack
 
 - Java 21 toolchain
