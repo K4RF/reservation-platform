@@ -193,8 +193,8 @@ Rollback됐다. 일정 변경과 신규 예약의 충돌에서도 대상 날짜�
 
 ## #96 Optimistic Lock Retry 정책
 
-예약 생성 API는 `ReservationRetryService`를 진입점으로 사용한다. Retry Service에는
-Transaction을 선언하지 않고, 각 시도에서 `@Transactional`인
+예약 생성 API는 `ReservationCreationCoordinator`를 진입점으로 사용하고, Lock
+안쪽의 `ReservationRetryService`에는 Transaction을 선언하지 않는다. 각 시도에서 `@Transactional`인
 `ReservationService.create`를 다시 호출한다. 낙관적 락 예외가 Service 프록시 밖으로
 전달될 때 실패 Transaction은 이미 Rollback됐으므로 다음 호출은 새 Transaction과
 새 영속성 Context에서 Inventory를 다시 조회한다.
@@ -234,7 +234,8 @@ MySQL 동시성 테스트는 두 요청이 동일 Version을 읽도록 첫 조�
 
 ```text
 ReservationController
-→ ReservationDistributedLockService
+→ ReservationCreationCoordinator
+→ ReservationCreationLock (`RedisReservationCreationLock`)
 → Redis RLock 획득: reservation:lock:room:{roomId}
 → ReservationRetryService
 → @Transactional ReservationService.create

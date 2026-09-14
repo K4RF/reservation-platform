@@ -91,7 +91,9 @@ Runtime Exception이 발생하면 재고와 예약 변경이 함께 Rollback됩�
 Transaction은 `ObjectOptimisticLockingFailureException`으로 전체 Rollback되므로
 Lost Update와 초과 예약을 방지합니다.
 
-예약 생성 API는 Transaction 밖에서 Room 단위 Redis `RLock`을 먼저 획득한 뒤
+예약 생성 API는 Transaction 밖의 `ReservationCreationCoordinator`를 단일 진입점으로
+사용합니다. Coordinator는 `ReservationCreationLock`을 호출하며 운영 구현인
+`RedisReservationCreationLock`이 Room 단위 Redis `RLock`을 먼저 획득한 뒤
 `ReservationRetryService`가 `ReservationService.create`를 호출합니다. Key는
 `reservation:lock:room:{roomId}`이며 한 객실의 여러 숙박일을 하나의 Key로
 직렬화합니다. 여러 날짜 Lock의 부분 획득·해제와 교착을 피하는 대신 같은 객실의
@@ -119,6 +121,11 @@ Lock 안쪽의 Optimistic Retry는 완료된 Transaction 상태를 재사용하�
 이 경로들과 분산 락을 사용하지 않는 Writer의 충돌은 `@Version`이 계속 감지합니다.
 조건부 원자 UPDATE, Redis Failover와 고정 Lease 중 네트워크 단절 시나리오, Backoff 및
 부하 비교는 후속 동시성 전략 검증 범위입니다.
+
+최종 전략의 대안 비교, 선택 근거와 Production 책임 경계는
+[`ADR-006`](../adr/006-reservation-concurrency-strategy.md)에 기록합니다. No Lock,
+Pessimistic Lock 등 비교 구현은 테스트에만 존재하며 Production Service에는 전략
+선택 분기가 없습니다.
 
 기존 개발 DB의 확정 예약은 재고 모델 도입 전에 생성되어 날짜별 재고 차감 기록이
 없을 수 있습니다. 기존 예약의 취소·일정 변경을 사용하기 전에 각 숙박일의 재고를

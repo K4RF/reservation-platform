@@ -6,8 +6,8 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.0부터 v0.1.3 — Booking Policy & Catalog Completion까지** 기능 개발을
-> 완료했으며, 다음 Backend Phase는 **v0.2.0 — Concurrency Control**입니다. Spring Boot 프로젝트,
+> **v0.1.0부터 v0.2.0 — Concurrency Control까지** 기능 및 동시성 전략 검증을
+> 완료했으며, 다음 Backend Phase는 **v0.3.0 — Cache & Query Optimization**입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -365,8 +365,8 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.1 — Reservation Service Enhancement | Completed | 검색·가격·일정·상태·테스트 기반 |
 | Backend Functional | v0.1.2 — Reservation Domain Completion | Completed | 날짜별 재고·가격과 순차 Transaction |
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
-| Backend Architecture | v0.2.0 — Concurrency Control | Planned / Next | 동일 재고 동시 요청의 정합성 검증 |
-| Backend Architecture | v0.3.0 — Cache & Query Optimization | Planned | SQL·실행 계획·Index 분석 후 Query/Cache 최적화 |
+| Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
+| Backend Architecture | v0.3.0 — Cache & Query Optimization | Planned / Next | SQL·실행 계획·Index 분석 후 Query/Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
@@ -395,7 +395,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 예약 응답에 운영시간·TimeZone 필드를 추가하지 않습니다. 실제 결제 취소와 환불 실행도
 아직 구현되지 않았습니다.
 
-### v0.2.0 진입 기준과 예정 작업
+### v0.2.0 완료 범위
 
 현재 Transaction은 재고 검증·증감과 예약·Snapshot 변경을 함께 처리하며, 동일
 객실·숙박일 재고에는 JPA `@Version` 기반 Optimistic Lock을 적용합니다. 예약 생성은
@@ -407,10 +407,11 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 * [x] Pessimistic Lock 적용 및 예약·일정 변경·Rollback 정합성 검증
 * [x] Optimistic Lock 적용 및 Version 충돌·Rollback 검증
 * [x] Optimistic Lock Retry 최대 횟수·새 Transaction 경계 및 최종 오류 정책
-* [ ] 고충돌 환경의 Retry Backoff·Jitter 정책 비교
+* [ ] v0.5.0 고충돌 환경의 Retry Backoff·Jitter 정책 비교
 * [x] Redis Distributed Lock, 획득 대기·고정 Lease·안전한 Unlock·장애 응답 적용
 * [x] 동일 재고·동시 요청 조건의 정합성·기본 실행 시간·복잡도 비교
 * [x] Room 단위 Redis Lock + Optimistic Version·제한 Retry 전략 선정
+* [x] 예약 생성 조정·Lock 구현·Retry·Transaction Domain 책임 분리 및 ADR 기록
 * [ ] v0.3.0 조회 성능 기준 확보
 
 일부 기존 Index·실행 계획 검증은 구현되어 있지만, v0.3.0의 조회 성능 최적화와
@@ -542,8 +543,8 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.1.3 — Booking Policy & Catalog Completion**까지 기능 개발을 완료했습니다.
-다음은 **v0.2.0 — Concurrency Control**이며 Query/Cache → Event-Driven →
+**v0.2.0 — Concurrency Control**까지 기능 개발과 전략 검증을 완료했습니다.
+다음은 **v0.3.0 — Cache & Query Optimization**이며 Event-Driven →
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -776,7 +777,8 @@ Lock 적용 결과는
 확인할 수 있습니다. 동일 조건의 전략별 정합성·기본 실행 시간 비교와 현재 전략
 선정 근거는
 [`Concurrency Strategy Comparison`](docs/performance/concurrency-strategy-comparison.md)에
-정리되어 있습니다.
+정리되어 있습니다. 최종 Production 전략과 책임·Transaction 경계는
+[`ADR-006`](docs/adr/006-reservation-concurrency-strategy.md)에 기록했습니다.
 
 ## 14. 주요 기술 과제
 
