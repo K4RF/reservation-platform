@@ -423,6 +423,7 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 * [x] 동일 재고·동시 요청 조건의 정합성·기본 실행 시간·복잡도 비교
 * [x] Room 단위 Redis Lock + Optimistic Version·제한 Retry 전략 선정
 * [x] 예약 생성 조정·Lock 구현·Retry·Transaction Domain 책임 분리 및 ADR 기록
+* [x] 최종 전략의 동일 객실 다수 요청·다중 숙박일·여러 객실 통합 검증
 * [ ] v0.3.0 조회 성능 기준 확보
 
 일부 기존 Index·실행 계획 검증은 구현되어 있지만, v0.3.0의 조회 성능 최적화와
@@ -613,6 +614,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] RoomInventory Version 기반 Optimistic Lock 충돌 감지
 * [x] 예약 생성 Optimistic Lock 제한 Retry 및 재고 재조회
 * [x] Redisson Room 단위 Distributed Lock 기반 예약 생성 직렬화
+* [x] v0.2.0 최종 동시성 전략 통합 Regression 및 Architecture Baseline 문서화
 
 ---
 
@@ -789,7 +791,10 @@ Lock 적용 결과는
 선정 근거는
 [`Concurrency Strategy Comparison`](docs/performance/concurrency-strategy-comparison.md)에
 정리되어 있습니다. 최종 Production 전략과 책임·Transaction 경계는
-[`ADR-006`](docs/adr/006-reservation-concurrency-strategy.md)에 기록했습니다.
+[`ADR-006`](docs/adr/006-reservation-concurrency-strategy.md)에 기록했습니다. 전체 예약
+Flow의 동시성·Regression 검증 Matrix와 v0.3.0 진입 기준은
+[`Concurrency Control Integration Baseline`](docs/testing/concurrency-control-integration.md)에서
+확인할 수 있습니다.
 
 ## 14. 주요 기술 과제
 

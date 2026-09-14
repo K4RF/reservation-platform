@@ -275,6 +275,11 @@ Advisory Lock이며 Redis 장애·Failover 안전성은 Deployment 구성의 영
 만료를 확인하고, 첫 예약이 Lock 안에 머무는 동안 두 번째
 요청이 Transaction에 진입하지 못하는 것을 확인하고, 해제 후 최신 재고를 읽어 한
 건만 성공하는지 검증한다. Transaction 실패 뒤 Redis Key가 해제되는 것도 확인한다.
+#101에서는 같은 운영 경로에 재고 1개·3박·동시 요청 10개를 적용해 예약 한 건과
+모든 숙박일 재고가 일치하는지 확인하고, 서로 다른 두 객실은 별도 Key로 동시에
+진입하는지 추가 검증했다. 전체 체크리스트와 Regression 범위는
+[`Concurrency Control Integration Baseline`](concurrency-control-integration.md)에
+정리한다.
 
 ## #97 검증 기록 (2026-09-13)
 
@@ -308,6 +313,7 @@ Windows PowerShell:
 ```powershell
 cd backend
 .\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
+.\gradlew.bat test --tests junsik.reservation.service.reservation.ReservationDistributedLockIntegrationTest --rerun-tasks
 ```
 
 macOS/Linux:
@@ -315,6 +321,7 @@ macOS/Linux:
 ```bash
 cd backend
 ./gradlew test --tests junsik.reservation.service.reservation.ReservationConcurrencyBaselineIntegrationTest --rerun-tasks
+./gradlew test --tests junsik.reservation.service.reservation.ReservationDistributedLockIntegrationTest --rerun-tasks
 ```
 
 Docker 호환 Container Runtime이 실행 중이어야 한다.
