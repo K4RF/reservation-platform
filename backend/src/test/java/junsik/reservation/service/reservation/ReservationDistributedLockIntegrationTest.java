@@ -11,11 +11,13 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +46,7 @@ import junsik.reservation.support.MySqlRedisIntegrationTestSupport;
 
 class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTestSupport {
 
+	private static final int CONCURRENT_REQUESTS = 10;
 	private static final LocalDate CHECK_IN_DATE = LocalDate.of(2036, 3, 10);
 	private static final LocalDate CHECK_OUT_DATE = CHECK_IN_DATE.plusDays(1);
 
@@ -52,6 +55,9 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 
 	@Autowired
 	private ReservationRetryService reservationRetryService;
+
+	@Autowired
+	private ReservationCreationCoordinator reservationCreationCoordinator;
 
 	@Autowired
 	private RedissonClient redissonClient;
@@ -84,7 +90,7 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		room = roomRepository.saveAndFlush(room(accommodation));
 		member = memberRepository.saveAndFlush(member("distributed-lock-" + fixtureId + "@example.com"));
 		roomInventoryRepository.saveAndFlush(RoomInventory.create(room, CHECK_IN_DATE, 1));
-		executor = Executors.newFixedThreadPool(2);
+		executor = Executors.newFixedThreadPool(CONCURRENT_REQUESTS);
 	}
 
 	@AfterEach
@@ -130,6 +136,88 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		assertThat(confirmedReservationCount()).isOne();
 		assertThat(reservedQuantity()).isOne();
 		assertThat(redissonClient.getLock(creationLock.keyFor(room.getId())).isLocked()).isFalse();
+	}
+
+	@Test
+	@Timeout(30)
+	void keepsMultiNightInventoryConsistentWhenTenRequestsCompeteForOneRoom() throws Exception {
+		List<LocalDate> stayDates = CHECK_IN_DATE.datesUntil(CHECK_IN_DATE.plusDays(3)).toList();
+		roomInventoryRepository.saveAllAndFlush(
+				stayDates.stream()
+						.skip(1)
+						.map(date -> RoomInventory.create(room, date, 1))
+						.toList()
+		);
+		CreateReservationRequest request = request(
+				room.getId(),
+				CHECK_IN_DATE,
+				CHECK_IN_DATE.plusDays(3)
+		);
+		CountDownLatch ready = new CountDownLatch(CONCURRENT_REQUESTS);
+		CountDownLatch start = new CountDownLatch(1);
+
+		List<Future<ReservationAttempt>> futures = IntStream.range(0, CONCURRENT_REQUESTS)
+				.mapToObj(index -> executor.submit(() -> {
+					ready.countDown();
+					if (!start.await(10, TimeUnit.SECONDS)) {
+						return ReservationAttempt.failed(
+								new IllegalStateException("동시 예약 시작 대기 시간이 초과되었습니다.")
+						);
+					}
+					return attempt(() -> reservationCreationCoordinator.create(member.getId(), request));
+				}))
+				.toList();
+
+		assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+		start.countDown();
+		List<ReservationAttempt> attempts = futures.stream()
+				.map(this::resultOf)
+				.toList();
+
+		assertThat(attempts).filteredOn(ReservationAttempt::succeeded).hasSize(1);
+		assertThat(attempts)
+				.filteredOn(attempt -> !attempt.succeeded())
+				.hasSize(CONCURRENT_REQUESTS - 1)
+				.allSatisfy(attempt -> {
+					assertThat(attempt.failure()).isInstanceOf(BusinessException.class);
+					assertThat(((BusinessException) attempt.failure()).getErrorCode())
+							.isEqualTo(RoomInventoryErrorCode.INSUFFICIENT_QUANTITY);
+				});
+		assertThat(confirmedReservationCount(room.getId())).isOne();
+		stayDates.forEach(date -> assertThat(reservedQuantity(room.getId(), date)).isOne());
+		assertThat(redissonClient.getLock(creationLock.keyFor(room.getId())).isLocked()).isFalse();
+	}
+
+	@Test
+	@Timeout(30)
+	void usesIndependentLocksForDifferentRooms() throws Exception {
+		Room otherRoom = roomRepository.saveAndFlush(
+				room(room.getAccommodation(), "Parallel Room", 2, "100000.00")
+		);
+		roomInventoryRepository.saveAndFlush(RoomInventory.create(otherRoom, CHECK_IN_DATE, 1));
+		CyclicBarrier bothRoomsEntered = new CyclicBarrier(2);
+		ReservationCreator parallelRoomCreator = (memberId, request) -> {
+			await(bothRoomsEntered);
+			return reservationRetryService.create(memberId, request);
+		};
+		ReservationCreationCoordinator coordinator = new ReservationCreationCoordinator(
+				creationLock,
+				parallelRoomCreator
+		);
+
+		Future<ReservationAttempt> firstRoom = executor.submit(() -> attempt(
+				() -> coordinator.create(member.getId(), request(room.getId()))
+		));
+		Future<ReservationAttempt> secondRoom = executor.submit(() -> attempt(
+				() -> coordinator.create(member.getId(), request(otherRoom.getId()))
+		));
+		List<ReservationAttempt> attempts = List.of(firstRoom.get(), secondRoom.get());
+
+		assertThat(attempts).allMatch(ReservationAttempt::succeeded);
+		assertThat(confirmedReservationCount(room.getId())).isOne();
+		assertThat(confirmedReservationCount(otherRoom.getId())).isOne();
+		assertThat(reservedQuantity(room.getId(), CHECK_IN_DATE)).isOne();
+		assertThat(reservedQuantity(otherRoom.getId(), CHECK_IN_DATE)).isOne();
 	}
 
 	@Test
@@ -227,29 +315,57 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		}
 	}
 
+	private ReservationAttempt resultOf(Future<ReservationAttempt> future) {
+		try {
+			return future.get(20, TimeUnit.SECONDS);
+		} catch (Exception exception) {
+			return ReservationAttempt.failed(exception);
+		}
+	}
+
+	private void await(CyclicBarrier barrier) {
+		try {
+			barrier.await(10, TimeUnit.SECONDS);
+		} catch (Exception exception) {
+			throw new IllegalStateException("객실별 Lock 진입 대기가 실패했습니다.", exception);
+		}
+	}
+
 	private int confirmedReservationCount() {
+		return confirmedReservationCount(room.getId());
+	}
+
+	private int confirmedReservationCount(Long roomId) {
 		return jdbcTemplate.queryForObject(
 				"select count(*) from reservations where room_id = ? and status = 'CONFIRMED'",
 				Integer.class,
-				room.getId()
+				roomId
 		);
 	}
 
 	private int reservedQuantity() {
+		return reservedQuantity(room.getId(), CHECK_IN_DATE);
+	}
+
+	private int reservedQuantity(Long roomId, LocalDate inventoryDate) {
 		return jdbcTemplate.queryForObject(
 				"select reserved_quantity from room_inventories where room_id = ? and inventory_date = ?",
 				Integer.class,
-				room.getId(),
-				CHECK_IN_DATE
+				roomId,
+				inventoryDate
 		);
 	}
 
 	private CreateReservationRequest request(Long roomId) {
+		return request(roomId, CHECK_IN_DATE, CHECK_OUT_DATE);
+	}
+
+	private CreateReservationRequest request(Long roomId, LocalDate checkInDate, LocalDate checkOutDate) {
 		return new CreateReservationRequest(
 				roomId,
 				1,
-				CHECK_IN_DATE,
-				CHECK_OUT_DATE,
+				checkInDate,
+				checkOutDate,
 				new RepresentativeGuestRequest(
 						"Distributed Lock Guest",
 						"distributed-lock-guest@example.com",
