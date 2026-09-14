@@ -86,8 +86,8 @@ cd backend
 
 ## Concurrency test support
 
-Database-only locking and same-room concurrency tests extend
-`MySqlIntegrationTestSupport`. Tests that execute a Redis distributed lock extend
+Database-only locking tests extend `MySqlIntegrationTestSupport`. Tests that execute
+a Redis distributed lock, including same-room and different-room concurrency, extend
 `MySqlRedisIntegrationTestSupport`. Both create independent members, rooms, and
 reservation periods through domain fixtures, commit setup data before starting
 worker threads, and clean up through disposable containers rather than developer
