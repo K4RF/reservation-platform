@@ -1,6 +1,6 @@
 package junsik.reservation.dto.reservation.response;
 
-import junsik.reservation.entity.RepresentativeGuest;
+import junsik.reservation.entity.reservation.RepresentativeGuest;
 
 public record RepresentativeGuestResponse(String name, String email, String phone) {
 

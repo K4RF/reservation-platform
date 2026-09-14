@@ -1,0 +1,134 @@
+package junsik.reservation.service.accommodation;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
+import junsik.reservation.dto.accommodation.request.CreateAccommodationRequest;
+import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
+import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationResponse;
+import junsik.reservation.dto.common.response.PageResponse;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.enums.AccommodationErrorCode;
+import junsik.reservation.global.exception.BusinessException;
+import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.AccommodationSpecifications;
+
+@Service
+public class AccommodationService {
+
+	private final AccommodationRepository accommodationRepository;
+	private final AccommodationBookingPolicyService bookingPolicyService;
+
+	public AccommodationService(
+			AccommodationRepository accommodationRepository,
+			AccommodationBookingPolicyService bookingPolicyService
+	) {
+		this.accommodationRepository = accommodationRepository;
+		this.bookingPolicyService = bookingPolicyService;
+	}
+
+	@Transactional
+	public AccommodationResponse create(CreateAccommodationRequest request) {
+		Accommodation accommodation = Accommodation.create(
+				request.name().trim(),
+				request.description().trim(),
+				request.country(),
+				request.city(),
+				request.region(),
+				request.address(),
+				request.amenities(),
+				request.checkInTime(),
+				request.checkOutTime(),
+				request.timeZone()
+		);
+		return AccommodationResponse.from(accommodationRepository.save(accommodation));
+	}
+
+	@Transactional(readOnly = true)
+	public AccommodationResponse getById(Long accommodationId) {
+		return accommodationRepository.findById(accommodationId)
+				.map(AccommodationResponse::from)
+				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<AccommodationResponse> getAll(AccommodationSearchRequest request) {
+		validateSearchRequest(request);
+		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
+				.and(Sort.by(Sort.Direction.ASC, "id"));
+		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
+		Map<String, LocalDate> todayByTimeZone = accommodationRepository.findDistinctTimeZoneIds()
+				.stream()
+				.collect(Collectors.toMap(
+						timeZone -> timeZone,
+						timeZone -> bookingPolicyService.today(ZoneId.of(timeZone))
+				));
+		Page<AccommodationResponse> accommodations = accommodationRepository
+				.findAll(AccommodationSpecifications.withFilters(
+						request,
+						todayByTimeZone
+				), pageRequest)
+				.map(AccommodationResponse::from);
+		return PageResponse.from(accommodations);
+	}
+
+	@Transactional
+	public AccommodationResponse update(Long accommodationId, UpdateAccommodationRequest request) {
+		Accommodation accommodation = getAccommodation(accommodationId);
+		accommodation.update(
+				request.name().trim(),
+				request.description().trim(),
+				request.country(),
+				request.city(),
+				request.region(),
+				request.address(),
+				request.amenities(),
+				request.checkInTime(),
+				request.checkOutTime(),
+				request.timeZone()
+		);
+		return AccommodationResponse.from(accommodation);
+	}
+
+	@Transactional
+	public AccommodationResponse updateStatus(
+			Long accommodationId,
+			UpdateAccommodationStatusRequest request
+	) {
+		Accommodation accommodation = getAccommodation(accommodationId);
+		accommodation.changeStatus(request.status());
+		return AccommodationResponse.from(accommodation);
+	}
+
+	private Accommodation getAccommodation(Long accommodationId) {
+		return accommodationRepository.findById(accommodationId)
+				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
+	}
+
+	private void validateSearchRequest(AccommodationSearchRequest request) {
+		boolean hasCheckIn = request.checkInDate() != null;
+		boolean hasCheckOut = request.checkOutDate() != null;
+		if (hasCheckIn != hasCheckOut
+				|| (hasCheckIn && !request.checkInDate().isBefore(request.checkOutDate()))) {
+			throw new BusinessException(AccommodationErrorCode.INVALID_SEARCH_PERIOD);
+		}
+		if (request.available() != null && !hasCheckIn) {
+			throw new BusinessException(AccommodationErrorCode.AVAILABILITY_REQUIRES_PERIOD);
+		}
+		if (request.minPrice() != null
+				&& request.maxPrice() != null
+				&& request.minPrice().compareTo(request.maxPrice()) > 0) {
+			throw new BusinessException(AccommodationErrorCode.INVALID_PRICE_RANGE);
+		}
+	}
+}

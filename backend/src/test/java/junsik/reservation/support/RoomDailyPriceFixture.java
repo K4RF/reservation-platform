@@ -3,8 +3,8 @@ package junsik.reservation.support;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import junsik.reservation.entity.Room;
-import junsik.reservation.entity.RoomDailyPrice;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomDailyPrice;
 
 public final class RoomDailyPriceFixture {
 

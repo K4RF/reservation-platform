@@ -26,7 +26,7 @@ import junsik.reservation.config.OpenApiConfig;
 import junsik.reservation.dto.accommodation.request.AccommodationBookingPolicyRequest;
 import junsik.reservation.dto.accommodation.response.AccommodationBookingPolicyResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.AccommodationBookingPolicyService;
+import junsik.reservation.service.accommodation.AccommodationBookingPolicyService;
 
 @Tag(name = "Accommodation Booking Policies", description = "숙소별 예약 정책 관리 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

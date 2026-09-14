@@ -2,7 +2,7 @@ package junsik.reservation.dto.room.response;
 
 import java.time.LocalDate;
 
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.RoomInventorySaleStatus;
 
 public record RoomInventoryResponse(

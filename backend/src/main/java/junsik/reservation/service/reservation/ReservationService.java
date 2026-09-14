@@ -1,0 +1,314 @@
+package junsik.reservation.service.reservation;
+
+import junsik.reservation.service.accommodation.AccommodationBookingPolicyService;
+import junsik.reservation.service.accommodation.AccommodationCancellationPolicyService;
+import junsik.reservation.service.room.RoomDailyPriceService;
+
+import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import junsik.reservation.dto.common.response.PageResponse;
+import junsik.reservation.dto.reservation.request.CreateReservationRequest;
+import junsik.reservation.dto.reservation.request.ReservationSearchRequest;
+import junsik.reservation.dto.reservation.request.UpdateReservationScheduleRequest;
+import junsik.reservation.dto.reservation.response.ReservationCancellationResponse;
+import junsik.reservation.dto.reservation.response.ReservationResponse;
+import junsik.reservation.entity.reservation.CancellationPolicySnapshot;
+import junsik.reservation.entity.member.Member;
+import junsik.reservation.entity.reservation.Reservation;
+import junsik.reservation.entity.reservation.ReservationCancellationQuote;
+import junsik.reservation.entity.reservation.ReservationPeriod;
+import junsik.reservation.entity.reservation.ReservationPriceSnapshot;
+import junsik.reservation.entity.reservation.RepresentativeGuest;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomInventory;
+import junsik.reservation.enums.AccommodationErrorCode;
+import junsik.reservation.enums.MemberErrorCode;
+import junsik.reservation.enums.ReservationErrorCode;
+import junsik.reservation.enums.RoomErrorCode;
+import junsik.reservation.enums.RoomInventoryErrorCode;
+import junsik.reservation.global.exception.BusinessException;
+import junsik.reservation.repository.MemberRepository;
+import junsik.reservation.repository.ReservationRepository;
+import junsik.reservation.repository.ReservationSpecifications;
+import junsik.reservation.repository.RoomInventoryRepository;
+import junsik.reservation.repository.RoomRepository;
+
+@Service
+public class ReservationService {
+
+	private final ReservationRepository reservationRepository;
+	private final MemberRepository memberRepository;
+	private final RoomRepository roomRepository;
+	private final RoomInventoryRepository roomInventoryRepository;
+	private final RoomDailyPriceService roomDailyPriceService;
+	private final ReservationCancellationPolicy cancellationPolicy;
+	private final AccommodationBookingPolicyService bookingPolicyService;
+	private final AccommodationCancellationPolicyService accommodationCancellationPolicyService;
+	private final ReservationNumberGenerator reservationNumberGenerator;
+
+	public ReservationService(
+			ReservationRepository reservationRepository,
+			MemberRepository memberRepository,
+			RoomRepository roomRepository,
+			RoomInventoryRepository roomInventoryRepository,
+			RoomDailyPriceService roomDailyPriceService,
+			ReservationCancellationPolicy cancellationPolicy,
+			AccommodationBookingPolicyService bookingPolicyService,
+			AccommodationCancellationPolicyService accommodationCancellationPolicyService,
+			ReservationNumberGenerator reservationNumberGenerator
+	) {
+		this.reservationRepository = reservationRepository;
+		this.memberRepository = memberRepository;
+		this.roomRepository = roomRepository;
+		this.roomInventoryRepository = roomInventoryRepository;
+		this.roomDailyPriceService = roomDailyPriceService;
+		this.cancellationPolicy = cancellationPolicy;
+		this.bookingPolicyService = bookingPolicyService;
+		this.accommodationCancellationPolicyService = accommodationCancellationPolicyService;
+		this.reservationNumberGenerator = reservationNumberGenerator;
+	}
+
+	@Transactional
+	public ReservationResponse create(Long memberId, CreateReservationRequest request) {
+		validatePeriod(request.checkInDate(), request.checkOutDate());
+		Member member = memberRepository.findById(memberId)
+				.orElseThrow(() -> new BusinessException(MemberErrorCode.NOT_FOUND));
+		Room room = roomRepository.findById(request.roomId())
+				.orElseThrow(() -> new BusinessException(RoomErrorCode.NOT_FOUND));
+		validateOperationalStatus(room);
+		validateGuestCount(room, request.guestCount());
+		ReservationPeriod period = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
+		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), period);
+		CancellationPolicySnapshot cancellationPolicySnapshot = accommodationCancellationPolicyService
+				.resolveSnapshot(room.getAccommodation());
+		Map<LocalDate, RoomInventory> inventories = getInventories(
+				room.getId(),
+				period.stayDates()
+		);
+		validateAvailable(inventories.values());
+		inventories.values().forEach(inventory -> inventory.reserve(1));
+		ReservationPriceSnapshot priceSnapshot = roomDailyPriceService
+				.resolveReservationPriceSnapshot(room, period);
+
+		Reservation reservation = Reservation.create(
+				reservationNumberGenerator.generate(room.getAccommodation().getZoneId()),
+				member,
+				room,
+				request.guestCount(),
+				new RepresentativeGuest(
+						request.representativeGuest().name(),
+						request.representativeGuest().email(),
+						request.representativeGuest().phone()
+				),
+				request.checkInDate(),
+				request.checkOutDate(),
+				priceSnapshot,
+				cancellationPolicySnapshot
+		);
+		return ReservationResponse.from(reservationRepository.save(reservation));
+	}
+
+	@Transactional(readOnly = true)
+	public ReservationResponse getById(Long memberId, Long reservationId) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		return ReservationResponse.from(reservation);
+	}
+
+	@Transactional(readOnly = true)
+	public PageResponse<ReservationResponse> getAllByMember(Long memberId, ReservationSearchRequest request) {
+		validateSearchPeriod(request);
+
+		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty());
+		if (!"id".equals(request.sortBy().getProperty())) {
+			sort = sort.and(Sort.by(Sort.Direction.ASC, "id"));
+		}
+		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
+		Page<ReservationResponse> reservations = reservationRepository
+				.findAll(ReservationSpecifications.withFilters(
+						memberId,
+						request.status(),
+						request.checkInFrom(),
+						request.checkInTo(),
+						request.checkOutFrom(),
+						request.checkOutTo()
+				), pageRequest)
+				.map(ReservationResponse::from);
+		return PageResponse.from(reservations);
+	}
+
+	@Transactional
+	public ReservationCancellationResponse cancel(Long memberId, Long reservationId) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		reservation.verifyCancellationAllowed();
+		ReservationCancellationQuote cancellationQuote = cancellationPolicy.evaluate(reservation);
+		Map<LocalDate, RoomInventory> inventories = getInventories(
+				reservation.getRoom().getId(),
+				reservation.getPeriod().stayDates()
+		);
+		validateReserved(inventories.values());
+		inventories.values().forEach(inventory -> inventory.release(1));
+		reservation.cancel(cancellationQuote);
+		return ReservationCancellationResponse.from(reservation, cancellationQuote);
+	}
+
+	@Transactional
+	public ReservationResponse updateSchedule(
+			Long memberId,
+			Long reservationId,
+			UpdateReservationScheduleRequest request
+	) {
+		Reservation reservation = getReservation(reservationId);
+		validateOwner(reservation, memberId);
+		reservation.verifyScheduleChangeAllowed();
+		validatePeriod(request.checkInDate(), request.checkOutDate());
+		Room room = reservation.getRoom();
+		validateOperationalStatus(room);
+		validateGuestCount(room, reservation.getGuestCount());
+		ReservationPeriod newPeriod = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
+		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), newPeriod);
+
+		List<LocalDate> previousStayDates = reservation.getPeriod().stayDates();
+		List<LocalDate> newStayDates = newPeriod.stayDates();
+		List<LocalDate> inventoryDatesToLock = Stream.concat(
+				previousStayDates.stream(),
+				newStayDates.stream()
+		)
+				.distinct()
+				.sorted()
+				.toList();
+		Map<LocalDate, RoomInventory> loadedInventories = getInventories(
+				room.getId(),
+				inventoryDatesToLock
+		);
+		Map<LocalDate, RoomInventory> previousInventories = selectInventories(
+				loadedInventories,
+				previousStayDates
+		);
+		Map<LocalDate, RoomInventory> newInventories = selectInventories(
+				loadedInventories,
+				newStayDates
+		);
+		List<RoomInventory> inventoriesToRelease = previousInventories.entrySet().stream()
+				.filter(entry -> !newInventories.containsKey(entry.getKey()))
+				.map(Map.Entry::getValue)
+				.toList();
+		List<RoomInventory> inventoriesToReserve = newInventories.entrySet().stream()
+				.filter(entry -> !previousInventories.containsKey(entry.getKey()))
+				.map(Map.Entry::getValue)
+				.toList();
+
+		validateReserved(previousInventories.values());
+		validateAvailable(inventoriesToReserve);
+		inventoriesToRelease.forEach(inventory -> inventory.release(1));
+		inventoriesToReserve.forEach(inventory -> inventory.reserve(1));
+		ReservationPriceSnapshot priceSnapshot = roomDailyPriceService
+				.resolveReservationPriceSnapshot(room, newPeriod);
+
+		reservation.changeSchedule(request.checkInDate(), request.checkOutDate(), priceSnapshot);
+		return ReservationResponse.from(reservation);
+	}
+
+	private Reservation getReservation(Long reservationId) {
+		return reservationRepository.findById(reservationId)
+				.orElseThrow(() -> new BusinessException(ReservationErrorCode.NOT_FOUND));
+	}
+
+	private void validateOwner(Reservation reservation, Long memberId) {
+		if (!reservation.getMember().getId().equals(memberId)) {
+			throw new BusinessException(ReservationErrorCode.ACCESS_DENIED);
+		}
+	}
+
+	private void validatePeriod(LocalDate checkInDate, LocalDate checkOutDate) {
+		if (!checkInDate.isBefore(checkOutDate)) {
+			throw new BusinessException(ReservationErrorCode.INVALID_PERIOD);
+		}
+	}
+
+	private void validateGuestCount(Room room, int guestCount) {
+		if (!room.canAccommodate(guestCount)) {
+			throw new BusinessException(ReservationErrorCode.CAPACITY_EXCEEDED);
+		}
+	}
+
+	private void validateOperationalStatus(Room room) {
+		if (!room.getAccommodation().isActive()) {
+			throw new BusinessException(AccommodationErrorCode.INACTIVE);
+		}
+		if (!room.isActive()) {
+			throw new BusinessException(RoomErrorCode.INACTIVE);
+		}
+	}
+
+	private Map<LocalDate, RoomInventory> getInventories(
+			Long roomId,
+			List<LocalDate> inventoryDates
+	) {
+		List<RoomInventory> inventories = roomInventoryRepository
+				.findAllByRoomIdAndInventoryDateInOrderByInventoryDateAsc(
+						roomId,
+						inventoryDates
+				);
+		List<LocalDate> foundDates = inventories.stream()
+				.map(RoomInventory::getInventoryDate)
+				.toList();
+		if (!foundDates.equals(inventoryDates)) {
+			throw new BusinessException(RoomInventoryErrorCode.NOT_FOUND);
+		}
+
+		Map<LocalDate, RoomInventory> inventoryByDate = new LinkedHashMap<>();
+		inventories.forEach(inventory -> inventoryByDate.put(inventory.getInventoryDate(), inventory));
+		return inventoryByDate;
+	}
+
+	private Map<LocalDate, RoomInventory> selectInventories(
+			Map<LocalDate, RoomInventory> loadedInventories,
+			List<LocalDate> inventoryDates
+	) {
+		Map<LocalDate, RoomInventory> selected = new LinkedHashMap<>();
+		inventoryDates.forEach(date -> selected.put(date, loadedInventories.get(date)));
+		return selected;
+	}
+
+	private void validateAvailable(Iterable<RoomInventory> inventories) {
+		for (RoomInventory inventory : inventories) {
+			if (!inventory.isOpen()) {
+				throw new BusinessException(RoomInventoryErrorCode.CLOSED);
+			}
+			if (inventory.getAvailableQuantity() < 1) {
+				throw new BusinessException(RoomInventoryErrorCode.INSUFFICIENT_QUANTITY);
+			}
+		}
+	}
+
+	private void validateReserved(Iterable<RoomInventory> inventories) {
+		for (RoomInventory inventory : inventories) {
+			if (inventory.getReservedQuantity() < 1) {
+				throw new BusinessException(RoomInventoryErrorCode.RELEASE_EXCEEDS_RESERVED);
+			}
+		}
+	}
+
+	private void validateSearchPeriod(ReservationSearchRequest request) {
+		if (isReversed(request.checkInFrom(), request.checkInTo())
+				|| isReversed(request.checkOutFrom(), request.checkOutTo())) {
+			throw new BusinessException(ReservationErrorCode.INVALID_SEARCH_PERIOD);
+		}
+	}
+
+	private boolean isReversed(LocalDate from, LocalDate to) {
+		return from != null && to != null && from.isAfter(to);
+	}
+}

@@ -38,7 +38,7 @@ import junsik.reservation.dto.room.request.UpdateRoomRequest;
 import junsik.reservation.dto.room.request.UpdateRoomStatusRequest;
 import junsik.reservation.dto.room.response.RoomResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.RoomService;
+import junsik.reservation.service.room.RoomService;
 
 @Tag(name = "Rooms", description = "객실 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

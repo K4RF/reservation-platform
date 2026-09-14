@@ -1,7 +1,7 @@
 package junsik.reservation.dto.accommodation.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.CancellationFeeRule;
+import junsik.reservation.entity.accommodation.CancellationFeeRule;
 
 public record CancellationFeeRuleResponse(
 		@Schema(description = "수수료 구간 시작일", example = "3")

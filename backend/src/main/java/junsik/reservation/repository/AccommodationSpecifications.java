@@ -17,11 +17,11 @@ import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
-import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.AccommodationBookingPolicy;
-import junsik.reservation.entity.ReservationPeriod;
-import junsik.reservation.entity.Room;
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.entity.accommodation.AccommodationBookingPolicy;
+import junsik.reservation.entity.reservation.ReservationPeriod;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.RoomAmenity;

@@ -3,7 +3,7 @@ package junsik.reservation.dto.accommodation.response;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.AccommodationCancellationPolicy;
+import junsik.reservation.entity.accommodation.AccommodationCancellationPolicy;
 
 public record AccommodationCancellationPolicyResponse(
 		@Schema(description = "취소 정책 ID", example = "1")

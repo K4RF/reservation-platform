@@ -2,8 +2,8 @@ package junsik.reservation.support;
 
 import java.time.LocalDate;
 
-import junsik.reservation.entity.Room;
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomInventory;
 
 public final class RoomInventoryFixture {
 

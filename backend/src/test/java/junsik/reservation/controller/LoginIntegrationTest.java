@@ -31,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.security.MemberPrincipal;

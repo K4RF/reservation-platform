@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import junsik.reservation.entity.Room;
+import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;

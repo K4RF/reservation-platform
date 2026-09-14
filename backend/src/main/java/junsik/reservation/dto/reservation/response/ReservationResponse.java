@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import junsik.reservation.entity.Reservation;
+import junsik.reservation.entity.reservation.Reservation;
 import junsik.reservation.enums.ReservationStatus;
 
 public record ReservationResponse(

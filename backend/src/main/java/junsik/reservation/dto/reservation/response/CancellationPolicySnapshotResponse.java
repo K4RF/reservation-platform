@@ -4,7 +4,7 @@ import java.util.List;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import junsik.reservation.dto.accommodation.response.CancellationFeeRuleResponse;
-import junsik.reservation.entity.CancellationPolicySnapshot;
+import junsik.reservation.entity.reservation.CancellationPolicySnapshot;
 
 public record CancellationPolicySnapshotResponse(
 		@Schema(description = "무료 취소 기준일", example = "7")

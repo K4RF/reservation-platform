@@ -35,8 +35,8 @@ import junsik.reservation.dto.reservation.response.ReservationCancellationRespon
 import junsik.reservation.dto.reservation.response.ReservationResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.security.MemberPrincipal;
-import junsik.reservation.service.ReservationCreationCoordinator;
-import junsik.reservation.service.ReservationService;
+import junsik.reservation.service.reservation.ReservationCreationCoordinator;
+import junsik.reservation.service.reservation.ReservationService;
 
 @Tag(name = "Reservations", description = "예약 API")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)

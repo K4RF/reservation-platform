@@ -10,7 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import junsik.reservation.entity.Member;
+import junsik.reservation.entity.member.Member;
 import junsik.reservation.enums.MemberRole;
 
 public class OAuth2MemberPrincipal implements OAuth2User {

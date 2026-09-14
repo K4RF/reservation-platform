@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.dto.member.request.SignUpRequest;
 import junsik.reservation.dto.member.response.SignUpResponse;
 import junsik.reservation.global.exception.ErrorResponse;
-import junsik.reservation.service.MemberService;
+import junsik.reservation.service.member.MemberService;
 
 @Tag(name = "Members", description = "회원 API")
 @ApiResponses({

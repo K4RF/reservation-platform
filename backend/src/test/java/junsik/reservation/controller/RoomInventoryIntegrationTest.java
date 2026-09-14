@@ -22,10 +22,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.entity.Accommodation;
-import junsik.reservation.entity.Member;
-import junsik.reservation.entity.Room;
-import junsik.reservation.entity.RoomInventory;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.entity.member.Member;
+import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomInventorySaleStatus;

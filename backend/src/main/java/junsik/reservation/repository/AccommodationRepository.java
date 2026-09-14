@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
-import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.accommodation.Accommodation;
 
 public interface AccommodationRepository extends
 		JpaRepository<Accommodation, Long>,

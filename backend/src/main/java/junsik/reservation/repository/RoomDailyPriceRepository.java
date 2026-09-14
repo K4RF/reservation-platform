@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import junsik.reservation.entity.RoomDailyPrice;
+import junsik.reservation.entity.room.RoomDailyPrice;
 
 public interface RoomDailyPriceRepository extends JpaRepository<RoomDailyPrice, Long> {
 

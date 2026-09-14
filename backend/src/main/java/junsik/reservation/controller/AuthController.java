@@ -24,8 +24,8 @@ import junsik.reservation.dto.auth.response.LoginResponse;
 import junsik.reservation.dto.auth.response.ReissueTokenResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.security.MemberPrincipal;
-import junsik.reservation.service.LoginService;
-import junsik.reservation.service.TokenService;
+import junsik.reservation.service.auth.LoginService;
+import junsik.reservation.service.auth.TokenService;
 
 @Tag(name = "Authentication", description = "인증 API")
 @ApiResponses({

@@ -19,7 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import junsik.reservation.entity.Accommodation;
+import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.AccommodationStatus;
