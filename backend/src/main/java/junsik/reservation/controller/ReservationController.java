@@ -35,7 +35,7 @@ import junsik.reservation.dto.reservation.response.ReservationCancellationRespon
 import junsik.reservation.dto.reservation.response.ReservationResponse;
 import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.security.MemberPrincipal;
-import junsik.reservation.service.ReservationDistributedLockService;
+import junsik.reservation.service.ReservationCreationCoordinator;
 import junsik.reservation.service.ReservationService;
 
 @Tag(name = "Reservations", description = "예약 API")
@@ -63,14 +63,14 @@ import junsik.reservation.service.ReservationService;
 public class ReservationController {
 
 	private final ReservationService reservationService;
-	private final ReservationDistributedLockService reservationDistributedLockService;
+	private final ReservationCreationCoordinator reservationCreationCoordinator;
 
 	public ReservationController(
 			ReservationService reservationService,
-			ReservationDistributedLockService reservationDistributedLockService
+			ReservationCreationCoordinator reservationCreationCoordinator
 	) {
 		this.reservationService = reservationService;
-		this.reservationDistributedLockService = reservationDistributedLockService;
+		this.reservationCreationCoordinator = reservationCreationCoordinator;
 	}
 
 	@Operation(
@@ -107,7 +107,7 @@ public class ReservationController {
 			@AuthenticationPrincipal MemberPrincipal principal,
 			@Valid @RequestBody CreateReservationRequest request
 	) {
-		ReservationResponse response = reservationDistributedLockService.create(principal.memberId(), request);
+		ReservationResponse response = reservationCreationCoordinator.create(principal.memberId(), request);
 		return ResponseEntity
 				.created(URI.create("/api/v1/reservations/" + response.reservationId()))
 				.body(response);

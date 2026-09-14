@@ -48,7 +48,7 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 	private static final LocalDate CHECK_OUT_DATE = CHECK_IN_DATE.plusDays(1);
 
 	@Autowired
-	private ReservationDistributedLockManager lockManager;
+	private RedisReservationCreationLock creationLock;
 
 	@Autowired
 	private ReservationRetryService reservationRetryService;
@@ -99,18 +99,18 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		BlockingReservationCreator blockingRetryService = new BlockingReservationCreator(
 				reservationRetryService
 		);
-		ReservationDistributedLockService distributedLockService = new ReservationDistributedLockService(
-				lockManager,
+		ReservationCreationCoordinator creationCoordinator = new ReservationCreationCoordinator(
+				creationLock,
 				blockingRetryService
 		);
 		CreateReservationRequest request = request(room.getId());
 
 		Future<ReservationAttempt> first = executor.submit(() -> attempt(
-				() -> distributedLockService.create(member.getId(), request)
+				() -> creationCoordinator.create(member.getId(), request)
 		));
 		assertThat(blockingRetryService.firstAttemptEntered.await(10, TimeUnit.SECONDS)).isTrue();
 		Future<ReservationAttempt> second = executor.submit(() -> attempt(
-				() -> distributedLockService.create(member.getId(), request)
+				() -> creationCoordinator.create(member.getId(), request)
 		));
 
 		assertThat(blockingRetryService.secondAttemptEntered.await(300, TimeUnit.MILLISECONDS)).isFalse();
@@ -129,32 +129,32 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		assertThat(blockingRetryService.secondAttemptEntered.getCount()).isZero();
 		assertThat(confirmedReservationCount()).isOne();
 		assertThat(reservedQuantity()).isOne();
-		assertThat(redissonClient.getLock(lockManager.keyFor(room.getId())).isLocked()).isFalse();
+		assertThat(redissonClient.getLock(creationLock.keyFor(room.getId())).isLocked()).isFalse();
 	}
 
 	@Test
 	void releasesLockWhenReservationTransactionFails() {
 		Long missingRoomId = Long.MAX_VALUE;
-		ReservationDistributedLockService distributedLockService = new ReservationDistributedLockService(
-				lockManager,
+		ReservationCreationCoordinator creationCoordinator = new ReservationCreationCoordinator(
+				creationLock,
 				reservationRetryService
 		);
 
-		assertThatThrownBy(() -> distributedLockService.create(member.getId(), request(missingRoomId)))
+		assertThatThrownBy(() -> creationCoordinator.create(member.getId(), request(missingRoomId)))
 				.isInstanceOf(BusinessException.class)
 				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
 						.isEqualTo(RoomErrorCode.NOT_FOUND));
-		assertThat(redissonClient.getLock(lockManager.keyFor(missingRoomId)).isLocked()).isFalse();
+		assertThat(redissonClient.getLock(creationLock.keyFor(missingRoomId)).isLocked()).isFalse();
 	}
 
 	@Test
 	@Timeout(10)
 	void rejectsRequestWhenAnotherOwnerExceedsWaitTime() throws Exception {
-		ReservationDistributedLockManager timeoutManager = new ReservationDistributedLockManager(
+		RedisReservationCreationLock timeoutLock = new RedisReservationCreationLock(
 				redissonClient,
 				new ReservationLockProperties(Duration.ofMillis(200), Duration.ofSeconds(5))
 		);
-		RLock competingLock = redissonClient.getLock(timeoutManager.keyFor(room.getId()));
+		RLock competingLock = redissonClient.getLock(timeoutLock.keyFor(room.getId()));
 		CountDownLatch ownerAcquired = new CountDownLatch(1);
 		CountDownLatch releaseOwner = new CountDownLatch(1);
 		AtomicInteger operationInvocations = new AtomicInteger();
@@ -178,7 +178,7 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 
 		assertThat(ownerAcquired.await(5, TimeUnit.SECONDS)).isTrue();
 		try {
-			assertThatThrownBy(() -> timeoutManager.executeWithLock(room.getId(), () -> {
+			assertThatThrownBy(() -> timeoutLock.execute(room.getId(), () -> {
 				operationInvocations.incrementAndGet();
 				return "not executed";
 			}))
@@ -198,11 +198,11 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 	@Timeout(10)
 	void fixedLeaseReleasesLockWhenOwnerDoesNotUnlock() throws Exception {
 		Duration leaseTime = Duration.ofMillis(300);
-		ReservationDistributedLockManager leaseManager = new ReservationDistributedLockManager(
+		RedisReservationCreationLock leaseLock = new RedisReservationCreationLock(
 				redissonClient,
 				new ReservationLockProperties(Duration.ofSeconds(2), leaseTime)
 		);
-		RLock abandonedLock = redissonClient.getLock(leaseManager.keyFor(room.getId()));
+		RLock abandonedLock = redissonClient.getLock(leaseLock.keyFor(room.getId()));
 		CountDownLatch ownerAcquired = new CountDownLatch(1);
 
 		Future<?> owner = executor.submit(() -> {
@@ -213,7 +213,7 @@ class ReservationDistributedLockIntegrationTest extends MySqlRedisIntegrationTes
 		assertThat(ownerAcquired.await(5, TimeUnit.SECONDS)).isTrue();
 		owner.get(5, TimeUnit.SECONDS);
 
-		assertThat(leaseManager.executeWithLock(room.getId(), () -> "completed"))
+		assertThat(leaseLock.execute(room.getId(), () -> "completed"))
 				.isEqualTo("completed");
 		assertThat(abandonedLock.isLocked()).isFalse();
 	}

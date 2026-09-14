@@ -47,7 +47,7 @@ class ReservationConcurrencyStrategyComparisonIntegrationTest extends MySqlRedis
 	private PlatformTransactionManager transactionManager;
 
 	@Autowired
-	private ReservationDistributedLockManager lockManager;
+	private ReservationCreationLock creationLock;
 
 	private TransactionTemplate transactionTemplate;
 	private ExecutorService executor;
@@ -230,7 +230,7 @@ class ReservationConcurrencyStrategyComparisonIntegrationTest extends MySqlRedis
 
 	private AttemptOutcome redisLockAttempt() {
 		try {
-			return lockManager.executeWithLock(
+			return creationLock.execute(
 					INVENTORY_ID,
 					() -> transactionTemplate.execute(status -> guardedRedisAttempt())
 			);

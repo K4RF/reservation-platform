@@ -15,15 +15,15 @@ import junsik.reservation.enums.RoomInventoryErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 
 @Component
-public class ReservationDistributedLockManager {
+public class RedisReservationCreationLock implements ReservationCreationLock {
 
-	private static final Logger log = LoggerFactory.getLogger(ReservationDistributedLockManager.class);
+	private static final Logger log = LoggerFactory.getLogger(RedisReservationCreationLock.class);
 	private static final String KEY_PREFIX = "reservation:lock:room:";
 
 	private final RedissonClient redissonClient;
 	private final ReservationLockProperties properties;
 
-	public ReservationDistributedLockManager(
+	public RedisReservationCreationLock(
 			RedissonClient redissonClient,
 			ReservationLockProperties properties
 	) {
@@ -31,10 +31,11 @@ public class ReservationDistributedLockManager {
 		this.properties = properties;
 	}
 
-	public <T> T executeWithLock(Long roomId, Supplier<T> operation) {
+	@Override
+	public <T> T execute(Long roomId, Supplier<T> operation) {
 		try {
 			RLock lock = redissonClient.getLock(keyFor(roomId));
-			return executeWithLock(lock, operation);
+			return execute(lock, operation);
 		} catch (InterruptedException exception) {
 			Thread.currentThread().interrupt();
 			throw new BusinessException(RoomInventoryErrorCode.LOCK_ACQUISITION_FAILED, exception);
@@ -44,7 +45,7 @@ public class ReservationDistributedLockManager {
 		}
 	}
 
-	private <T> T executeWithLock(RLock lock, Supplier<T> operation) throws InterruptedException {
+	private <T> T execute(RLock lock, Supplier<T> operation) throws InterruptedException {
 		boolean acquired = false;
 		try {
 			acquired = lock.tryLock(

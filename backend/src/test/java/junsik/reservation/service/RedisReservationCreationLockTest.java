@@ -24,7 +24,7 @@ import junsik.reservation.enums.RoomInventoryErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 
 @ExtendWith(MockitoExtension.class)
-class ReservationDistributedLockManagerTest {
+class RedisReservationCreationLockTest {
 
 	private static final Long ROOM_ID = 7L;
 	private static final long WAIT_MILLIS = 3_000L;
@@ -36,7 +36,7 @@ class ReservationDistributedLockManagerTest {
 	@Mock
 	private RLock lock;
 
-	private ReservationDistributedLockManager lockManager;
+	private RedisReservationCreationLock creationLock;
 
 	@BeforeEach
 	void setUp() {
@@ -44,7 +44,7 @@ class ReservationDistributedLockManagerTest {
 				Duration.ofMillis(WAIT_MILLIS),
 				Duration.ofSeconds(30)
 		);
-		lockManager = new ReservationDistributedLockManager(redissonClient, properties);
+		creationLock = new RedisReservationCreationLock(redissonClient, properties);
 		when(redissonClient.getLock("reservation:lock:room:{7}")).thenReturn(lock);
 	}
 
@@ -58,7 +58,7 @@ class ReservationDistributedLockManagerTest {
 		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(true);
 
-		String result = lockManager.executeWithLock(ROOM_ID, () -> "completed");
+		String result = creationLock.execute(ROOM_ID, () -> "completed");
 
 		assertThat(result).isEqualTo("completed");
 		verify(lock).unlock();
@@ -70,7 +70,7 @@ class ReservationDistributedLockManagerTest {
 		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(true);
 
-		assertThatThrownBy(() -> lockManager.executeWithLock(ROOM_ID, () -> {
+		assertThatThrownBy(() -> creationLock.execute(ROOM_ID, () -> {
 			throw failure;
 		})).isSameAs(failure);
 		verify(lock).unlock();
@@ -81,7 +81,7 @@ class ReservationDistributedLockManagerTest {
 		when(lock.tryLock(WAIT_MILLIS, LEASE_MILLIS, TimeUnit.MILLISECONDS)).thenReturn(true);
 		when(lock.isHeldByCurrentThread()).thenReturn(false);
 
-		assertThat(lockManager.executeWithLock(ROOM_ID, () -> "completed"))
+		assertThat(creationLock.execute(ROOM_ID, () -> "completed"))
 				.isEqualTo("completed");
 		verify(lock, never()).unlock();
 	}
@@ -124,14 +124,14 @@ class ReservationDistributedLockManagerTest {
 	}
 
 	private void assertLockAcquisitionFailure() {
-		assertThatThrownBy(() -> lockManager.executeWithLock(ROOM_ID, () -> "not executed"))
+		assertThatThrownBy(() -> creationLock.execute(ROOM_ID, () -> "not executed"))
 				.isInstanceOf(BusinessException.class)
 				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
 						.isEqualTo(RoomInventoryErrorCode.LOCK_ACQUISITION_FAILED));
 	}
 
 	private void assertLockServiceUnavailable(RedisException cause) {
-		assertThatThrownBy(() -> lockManager.executeWithLock(ROOM_ID, () -> "not executed"))
+		assertThatThrownBy(() -> creationLock.execute(ROOM_ID, () -> "not executed"))
 				.isInstanceOf(BusinessException.class)
 				.hasCause(cause)
 				.satisfies(exception -> assertThat(((BusinessException) exception).getErrorCode())
