@@ -298,6 +298,10 @@ Advisory Lock이며 Redis 장애·Failover 안전성은 Deployment 구성의 영
 
 ## 실행 명령
 
+다섯 전략을 재고 1개·동시 요청 10개 조건에서 직접 비교한 결과와 해석은
+[`Concurrency Strategy Comparison`](../performance/concurrency-strategy-comparison.md)에
+정리되어 있다.
+
 Windows PowerShell:
 
 ```powershell

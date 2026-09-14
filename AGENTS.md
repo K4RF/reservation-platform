@@ -347,4 +347,8 @@ Before completing a change:
   the three-attempt limit, and immediate propagation of non-retryable failures.
   Redisson tests cover Room-key acquisition timeout, interruption, owner-only
   unlock, exception cleanup, and same-Room reservation serialization using an
-  ephemeral Redis 7.4 Testcontainer.
+  ephemeral Redis 7.4 Testcontainer. A five-run comparison Probe applies ten
+  simultaneous requests to one inventory item for no Lock, MySQL pessimistic,
+  optimistic, optimistic with Retry, and Redis distributed-lock strategies. It
+  records reservation success/failure, Overselling, Retry, Lock failure, and
+  elapsed time; it is not a substitute for v0.5.0 load testing.
