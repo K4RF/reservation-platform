@@ -23,6 +23,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnDefault;
 
 import junsik.reservation.enums.RoomAmenity;
@@ -61,6 +62,7 @@ public class Room {
 	private BigDecimal nightlyPrice;
 
 	@ElementCollection(fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
 	@CollectionTable(
 			name = "room_amenities",
 			joinColumns = @JoinColumn(name = "room_id", nullable = false),
