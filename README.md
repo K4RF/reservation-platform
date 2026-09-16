@@ -205,6 +205,7 @@ Spring Boot API
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
 | `GET` | `/api/v1/reservations?status=CONFIRMED&checkInFrom=2030-01-01&checkInTo=2030-12-31&checkOutFrom=2030-01-02&checkOutTo=2031-01-01&sortBy=CHECK_IN_DATE&direction=ASC&page=0&size=20` | 인증 사용자 | 본인 예약 조건·정렬·페이지 조회 |
+| `GET` | `/api/v1/reservations/cursor?status=CONFIRMED&cursor=100&size=20` | 인증 사용자 | 본인 예약 ID 내림차순 Cursor 조회 (`cursor`는 첫 요청에서 생략) |
 | `PATCH` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 체크인·체크아웃 일정 변경 |
 | `PATCH` | `/api/v1/reservations/{reservationId}/cancel` | 예약 소유자 | 본인 예약 취소 |
 
@@ -227,7 +228,12 @@ Spring Boot API
 `CONFIRMED/CANCELLED` 상태와 체크인·체크아웃 날짜의
 `From/To` 조건을 선택적으로 조합할 수 있으며 각 날짜 경계는 포함됩니다.
 `From`과 `To`를 함께 전달하면 `From`은 `To` 이하여야 합니다. 모든 예약 목록
-조건에는 JWT 회원 ID가 적용되므로 다른 회원의 예약은 반환되지 않습니다.
+조건에는 JWT 회원 ID가 적용되므로 다른 회원의 예약은 반환되지 않습니다. 기존
+예약 목록은 임의 정렬·페이지 번호·전체 건수가 필요한 화면을 위한 Offset 방식이며,
+`/reservations/cursor`는 전체 Count 없이 `size + 1`건을 읽는 예약 이력 연속 조회용
+Keyset 방식입니다. Cursor 조회의 정렬은 안정적인 `ID DESC`로 고정됩니다. 선택 근거와
+MySQL 실행 계획은
+[`Pagination Strategy`](docs/performance/pagination-strategy.md)에 정리되어 있습니다.
 
 객실 등록 시 양수인 `nightlyPrice`가 필요하며 객실 응답에도 1박 가격이 포함됩니다.
 날짜별 객실 가격도 양수만 등록할 수 있고 동일 객실·날짜는 하나만 존재합니다.

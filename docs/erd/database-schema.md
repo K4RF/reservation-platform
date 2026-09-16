@@ -256,7 +256,7 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 | `uk_room_amenities_room_amenity(room_id,amenity)` | 같은 활성 객실의 복수 편의시설 포함 여부와 중복 방지 | UNIQUE가 room 선두 인덱스를 제공 |
 | `uk_reservation_nights_reservation_date(reservation_id,stay_date)` | 예약 상세의 날짜순 숙박일 가격 조회와 중복 방지 | UNIQUE가 reservation 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_reservations_reservation_number(reservation_number)` | 고객 문의·결제·알림의 공개 예약 식별 | 공개 식별자의 유일성을 보장하므로 별도 인덱스 없음 |
-| `idx_reservations_member(member_id)` | JWT 회원 기준 본인 예약 조회 | 모든 예약 목록 조건의 필수 선두 조건이므로 유지 |
+| `idx_reservations_member_id(member_id,id)` | JWT 회원 기준 본인 예약 조회와 ID Cursor 범위·정렬 | `member_id` Equality 뒤 `id < cursor ORDER BY id DESC`를 지원하고 기존 단일 인덱스의 Leftmost Prefix를 포함 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
 효과를 기대하기 어렵습니다. 선택적인 예약 상태·날짜·금액 정렬마다 복합 인덱스를
@@ -264,6 +264,12 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 않습니다. 숙소·객실·가용성 검색의 MySQL 8.4 실행 계획과 Index 선정 근거는
 [`Search Query Execution Plan`](../performance/search-query-execution-plan.md)에
 기록했습니다.
+
+예약 목록의 Offset/Count와 ID Keyset 실행 계획 비교 및 Cursor API 선택 근거는
+[`Pagination Strategy`](../performance/pagination-strategy.md)에 기록했습니다. 신규
+Database는 Entity 매핑으로 복합 인덱스를 생성하고, 기존 개발 Volume은
+[`mysql-pagination-index-optimization.sql`](mysql-pagination-index-optimization.sql)을
+검토 후 한 번 적용합니다.
 
 기간 중복 및 가용 객실 조회가 `reservations`가 아닌 `room_inventories`를 기준으로
 변경되어 새 Schema는 기존 room/status/period 예약 인덱스를 생성하지 않습니다.
