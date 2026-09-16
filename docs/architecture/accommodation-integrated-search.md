@@ -52,23 +52,22 @@ MySQL 8.4의 현재 Schema와 조회 조건을 기준으로 다음 접근 경로
 
 - 숙소명과 레거시 주소의 `LIKE '%keyword%'`는 선행 wildcard 때문에 일반 B-tree
   텍스트 인덱스를 활용하기 어렵습니다. 구조화된 도시·지역 정확 일치는
-  `idx_accommodations_city_region`, 지역 단독 검색은 `idx_accommodations_region`을
-  후보 접근 경로로 사용합니다.
-- `rooms(accommodation_id)` 외래 키 인덱스는 존재하지만 작은 테스트 데이터의
-  대표 계획에서는 Optimizer가 `EXISTS`를 Semi-join으로 바꾸고 객실을 먼저
-  스캔한 뒤 숙소를 PK로 조회했습니다. 데이터 분포에 따라 외래 키 인덱스 계획을
-  선택할 수 있으므로 운영 데이터의 계획을 다시 측정해야 합니다.
+  `idx_accommodations_city_region_status_id`, 지역 단독 검색은
+  `idx_accommodations_region`을 후보 접근 경로로 사용합니다.
+- 숙소별 객실과 가용 객실 조회는
+  `idx_rooms_accommodation_status_id(accommodation_id,status,id)`로 숙소와 운영 상태
+  후보를 줄이고 기본 ID 정렬을 지원합니다.
 - 기간 재고는 UNIQUE 인덱스
   `uk_room_inventories_room_date(room_id, inventory_date)`의 `room_id` 동등 조건과
   `inventory_date` 범위 조건을 사용합니다.
-- `status`, `capacity`, `nightly_price`를 위한 추가 복합 인덱스는 데이터 분포와
-  대표 트래픽이 없는 현 단계에서 쓰기 비용만 늘릴 수 있어 추가하지 않았습니다.
+- 선택적인 Range인 `capacity`, `nightly_price`와 동적 정렬 조합별 Index는 쓰기
+  비용을 고려해 추가하지 않았습니다.
 
-격리된 MySQL 8.4 Testcontainer에서 대표 조건의 `EXPLAIN FORMAT=TREE`를 실행해
-객실 선행 스캔과 숙소 PK 조회, 재고의 room/date UNIQUE 인덱스 범위 조회를
-테스트로 확인합니다. 실제 데이터 규모와 검색 트래픽이 확보되면
-`EXPLAIN ANALYZE`와 응답 시간 측정을 통해 전문 검색 또는 별도 복합 인덱스를
-검토합니다.
+격리된 MySQL 8.4 Testcontainer에서 적용 전후 `EXPLAIN`과 `EXPLAIN ANALYZE`를
+실행해 숙소·객실 후보 감소와 재고 room/date UNIQUE 인덱스 범위 조회를 검증합니다.
+데이터셋, Plan과 Trade-off는
+[`Search Query Execution Plan`](../performance/search-query-execution-plan.md)에
+기록했습니다.
 
 ## Examples
 
