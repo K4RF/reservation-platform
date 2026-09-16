@@ -429,8 +429,11 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 주요 조회 API의 SQL·Query 수·Loading 수와 실행 시간 Baseline은
 [`Read API Query Baseline`](docs/performance/read-api-query-baseline.md)에 기록했습니다.
 숙소·객실 목록의 편의시설 N+1은 LAZY Collection Batch Fetch로 제거했습니다. 가용
-재고 Query의 실행 계획 분석·최적화 및 Redis Cache는 아직 예정입니다. Kafka, k6,
-Prometheus, Grafana, CD 및 Production 배포도 각 후속 Milestone에서 진행합니다.
+재고를 포함한 주요 검색 실행 계획을 MySQL 8.4에서 검증하고 구조화 위치와 객실 후보
+Composite Index를 적용했습니다. 상세 결과는
+[`Search Query Execution Plan`](docs/performance/search-query-execution-plan.md)에
+기록했습니다. Redis Cache는 아직 예정이며 Kafka, k6, Prometheus, Grafana, CD 및
+Production 배포도 각 후속 Milestone에서 진행합니다.
 
 ---
 

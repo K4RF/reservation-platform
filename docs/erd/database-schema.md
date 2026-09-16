@@ -245,12 +245,12 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 | --- | --- | --- |
 | `uk_members_email(email)` | 회원가입 중복 확인, 이메일 로그인 | UNIQUE가 인덱스를 제공하므로 별도 email 인덱스 없음 |
 | 소셜 계정 UNIQUE 2개 | provider 계정 조회, 회원별 provider 중복 방지 | 조회와 정합성에 모두 필요 |
-| rooms의 accommodation FK 인덱스 | 숙소별 객실 목록과 예약 가능 객실 후보 축소 | MySQL이 FK 인덱스를 제공하므로 중복 인덱스 없음 |
+| `idx_rooms_accommodation_status_id(accommodation_id,status,id)` | 숙소별 운영 상태 객실 목록, 예약 가능 객실 후보 축소와 기본 ID 정렬 | 단일 accommodation FK 인덱스의 Leftmost Prefix를 포함하므로 중복 단일 인덱스는 제거 |
 | `uk_booking_policies_accommodation(accommodation_id)` | 숙소별 선택 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
 | `uk_cancellation_policies_accommodation(accommodation_id)` | 숙소별 현재 취소 정책 단건 조회 및 중복 방지 | UNIQUE가 조회 인덱스를 함께 제공하므로 별도 인덱스 없음 |
 | `uk_room_inventories_room_date(room_id,inventory_date)` | 객실·날짜 단건 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_room_daily_prices_room_date(room_id,stay_date)` | 객실·날짜 적용 가격 조회와 기간 범위 조회 | UNIQUE가 room 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
-| `idx_accommodations_city_region(city,region)` | 도시와 지역 조합의 구조화 위치 검색 | 도시 단독 또는 도시+지역 정확 일치에 사용 |
+| `idx_accommodations_city_region_status_id(city,region,status,id)` | 도시·지역·운영 상태 조합의 구조화 위치 검색과 기본 ID 정렬 | 기존 city/region Prefix를 포함하면서 상태 필터 후보를 줄이므로 기존 2-Column Index를 대체 |
 | `idx_accommodations_region(region)` | 도시 없이 지역만 지정하는 구조화 위치 검색 | 선택적 지역 단독 조건을 지원하기 위해 유지 |
 | `uk_accommodation_amenities_accommodation_amenity(accommodation_id,amenity)` | 숙소의 복수 편의시설 포함 여부와 중복 방지 | UNIQUE가 accommodation 선두 인덱스를 제공 |
 | `uk_room_amenities_room_amenity(room_id,amenity)` | 같은 활성 객실의 복수 편의시설 포함 여부와 중복 방지 | UNIQUE가 room 선두 인덱스를 제공 |
@@ -261,7 +261,9 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
 효과를 기대하기 어렵습니다. 선택적인 예약 상태·날짜·금액 정렬마다 복합 인덱스를
 추가하면 쓰기 비용과 중복 인덱스가 늘어나므로 현재 트래픽 측정 없이 추가하지
-않습니다. 실행 계획과 데이터 분포가 확보되면 인덱스를 다시 검토합니다.
+않습니다. 숙소·객실·가용성 검색의 MySQL 8.4 실행 계획과 Index 선정 근거는
+[`Search Query Execution Plan`](../performance/search-query-execution-plan.md)에
+기록했습니다.
 
 기간 중복 및 가용 객실 조회가 `reservations`가 아닌 `room_inventories`를 기준으로
 변경되어 새 Schema는 기존 room/status/period 예약 인덱스를 생성하지 않습니다.

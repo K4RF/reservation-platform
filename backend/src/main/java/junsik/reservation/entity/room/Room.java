@@ -18,6 +18,7 @@ import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -32,6 +33,10 @@ import junsik.reservation.enums.RoomStatus;
 @Entity
 @Table(
 		name = "rooms",
+		indexes = @Index(
+				name = "idx_rooms_accommodation_status_id",
+				columnList = "accommodation_id, status, id"
+		),
 		check = @CheckConstraint(
 				name = "chk_rooms_business_values",
 				constraint = "char_length(trim(name)) > 0 and capacity >= 1 and nightly_price >= 0"

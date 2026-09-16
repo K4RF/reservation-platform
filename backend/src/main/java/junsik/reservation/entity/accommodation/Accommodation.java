@@ -33,7 +33,10 @@ import junsik.reservation.enums.AccommodationStatus;
 @Table(
 		name = "accommodations",
 		indexes = {
-				@Index(name = "idx_accommodations_city_region", columnList = "city, region"),
+				@Index(
+						name = "idx_accommodations_city_region_status_id",
+						columnList = "city, region, status, id"
+				),
 				@Index(name = "idx_accommodations_region", columnList = "region")
 		},
 		check = {
