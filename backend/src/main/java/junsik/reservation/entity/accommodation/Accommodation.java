@@ -23,6 +23,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.ColumnDefault;
 
 import junsik.reservation.enums.AccommodationAmenity;
@@ -72,6 +73,7 @@ public class Accommodation {
 	private AccommodationLocation location;
 
 	@ElementCollection(fetch = FetchType.LAZY)
+	@BatchSize(size = 100)
 	@CollectionTable(
 			name = "accommodation_amenities",
 			joinColumns = @JoinColumn(name = "accommodation_id", nullable = false),

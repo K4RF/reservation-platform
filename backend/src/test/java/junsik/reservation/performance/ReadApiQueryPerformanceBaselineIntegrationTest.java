@@ -180,17 +180,39 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 
 		assertThat(search.result().content()).hasSize(5);
 		assertThat(search.result().totalElements()).isEqualTo(ACCOMMODATION_COUNT);
+		assertThat(search.result().content()).allSatisfy(accommodation ->
+				assertThat(accommodation.amenities()).containsExactlyInAnyOrder(
+						AccommodationAmenity.PARKING,
+						AccommodationAmenity.BREAKFAST
+				)
+		);
 		assertThat(detail.result().accommodationId()).isEqualTo(accommodationId);
+		assertThat(detail.result().amenities()).containsExactlyInAnyOrder(
+				AccommodationAmenity.PARKING,
+				AccommodationAmenity.BREAKFAST
+		);
 		assertThat(rooms.result().content()).hasSize(3);
 		assertThat(rooms.result().totalElements()).isEqualTo(ROOMS_PER_ACCOMMODATION);
+		assertThat(rooms.result().content()).allSatisfy(room ->
+				assertThat(room.amenities()).containsExactlyInAnyOrder(
+						RoomAmenity.WIFI,
+						RoomAmenity.AIR_CONDITIONER
+				)
+		);
 		assertThat(availableRooms.result().content()).hasSize(3);
 		assertThat(availableRooms.result().totalElements()).isEqualTo(ROOMS_PER_ACCOMMODATION);
+		assertThat(availableRooms.result().content()).allSatisfy(room ->
+				assertThat(room.amenities()).containsExactlyInAnyOrder(
+						RoomAmenity.WIFI,
+						RoomAmenity.AIR_CONDITIONER
+				)
+		);
 		assertThat(effectivePrice.result().roomId()).isEqualTo(roomId);
 		assertThat(effectivePrice.result().nightlyPrice()).isEqualByComparingTo("120000.00");
-		assertQueryBaseline(search, 8, 5);
+		assertQueryBaseline(search, 4, 1);
 		assertQueryBaseline(detail, 2, 1);
-		assertQueryBaseline(rooms, 6, 3);
-		assertQueryBaseline(availableRooms, 7, 3);
+		assertQueryBaseline(rooms, 4, 1);
+		assertQueryBaseline(availableRooms, 5, 1);
 		assertQueryBaseline(effectivePrice, 2, 0);
 
 		List.of(search, detail, rooms, availableRooms, effectivePrice)
