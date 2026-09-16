@@ -149,7 +149,7 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 				)
 				from information_schema.statistics
 				where table_schema = database()
-				  and table_name in ('accommodations', 'rooms')
+				  and table_name in ('accommodations', 'rooms', 'reservations')
 				group by table_name, index_name
 				""",
 				String.class
@@ -158,7 +158,8 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		assertThat(indexDefinitions).contains(
 				"accommodations.idx_accommodations_city_region_status_id(city,region,status,id)",
 				"accommodations.idx_accommodations_region(region)",
-				"rooms.idx_rooms_accommodation_status_id(accommodation_id,status,id)"
+				"rooms.idx_rooms_accommodation_status_id(accommodation_id,status,id)",
+				"reservations.idx_reservations_member_id(member_id,id)"
 		);
 	}
 
