@@ -424,11 +424,13 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 * [x] Room 단위 Redis Lock + Optimistic Version·제한 Retry 전략 선정
 * [x] 예약 생성 조정·Lock 구현·Retry·Transaction Domain 책임 분리 및 ADR 기록
 * [x] 최종 전략의 동일 객실 다수 요청·다중 숙박일·여러 객실 통합 검증
-* [ ] v0.3.0 조회 성능 기준 확보
+* [x] v0.3.0 주요 조회 API Query 성능 기준 확보
 
-일부 기존 Index·실행 계획 검증은 구현되어 있지만, v0.3.0의 조회 성능 최적화와
-Redis Cache는 아직 예정입니다. Kafka, k6, Prometheus, Grafana, CD 및 Production
-배포도 각 후속 Milestone에서 진행합니다.
+주요 조회 API의 SQL·Query 수·Loading 수와 실행 시간 Baseline은
+[`Read API Query Baseline`](docs/performance/read-api-query-baseline.md)에 기록했습니다.
+확인된 N+1과 가용 재고 Query의 실행 계획 분석·최적화 및 Redis Cache는 아직
+예정입니다. Kafka, k6, Prometheus, Grafana, CD 및 Production 배포도 각 후속
+Milestone에서 진행합니다.
 
 ---
 
@@ -461,7 +463,10 @@ v0.2.0의 동시성 전략 비교 측정과 전체 서비스 부하 테스트는
 → 한계 및 후속 과제 정리
 ```
 
-테스트 결과와 분석 문서는 `docs/performance`에서 관리할 예정입니다.
+테스트 결과와 분석 문서는 `docs/performance`에서 관리합니다. 현재 조회 성능 기준은
+[`Read API Query Baseline`](docs/performance/read-api-query-baseline.md), 동시성 전략 비교는
+[`Concurrency Strategy Comparison`](docs/performance/concurrency-strategy-comparison.md)에
+기록되어 있습니다.
 
 ---
 
