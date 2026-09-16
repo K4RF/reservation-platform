@@ -16,8 +16,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.dto.common.response.CursorPageResponse;
 import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.dto.reservation.request.CreateReservationRequest;
+import junsik.reservation.dto.reservation.request.ReservationCursorSearchRequest;
 import junsik.reservation.dto.reservation.request.ReservationSearchRequest;
 import junsik.reservation.dto.reservation.request.UpdateReservationScheduleRequest;
 import junsik.reservation.dto.reservation.response.ReservationCancellationResponse;
@@ -145,6 +147,36 @@ public class ReservationService {
 				), pageRequest)
 				.map(ReservationResponse::from);
 		return PageResponse.from(reservations);
+	}
+
+	@Transactional(readOnly = true)
+	public CursorPageResponse<ReservationResponse> getAllByMemberCursor(
+			Long memberId,
+			ReservationCursorSearchRequest request
+	) {
+		validateSearchPeriod(
+				request.checkInFrom(),
+				request.checkInTo(),
+				request.checkOutFrom(),
+				request.checkOutTo()
+		);
+		List<Reservation> fetched = reservationRepository.findAllByCursor(
+				memberId,
+				request.status(),
+				request.checkInFrom(),
+				request.checkInTo(),
+				request.checkOutFrom(),
+				request.checkOutTo(),
+				request.cursor(),
+				PageRequest.of(0, request.size() + 1)
+		);
+		boolean hasNext = fetched.size() > request.size();
+		List<Reservation> page = fetched.subList(0, Math.min(fetched.size(), request.size()));
+		List<ReservationResponse> content = page.stream()
+				.map(ReservationResponse::from)
+				.toList();
+		Long nextCursor = hasNext ? page.getLast().getId() : null;
+		return new CursorPageResponse<>(content, request.size(), nextCursor, hasNext);
 	}
 
 	@Transactional
@@ -302,8 +334,21 @@ public class ReservationService {
 	}
 
 	private void validateSearchPeriod(ReservationSearchRequest request) {
-		if (isReversed(request.checkInFrom(), request.checkInTo())
-				|| isReversed(request.checkOutFrom(), request.checkOutTo())) {
+		validateSearchPeriod(
+				request.checkInFrom(),
+				request.checkInTo(),
+				request.checkOutFrom(),
+				request.checkOutTo()
+		);
+	}
+
+	private void validateSearchPeriod(
+			LocalDate checkInFrom,
+			LocalDate checkInTo,
+			LocalDate checkOutFrom,
+			LocalDate checkOutTo
+	) {
+		if (isReversed(checkInFrom, checkInTo) || isReversed(checkOutFrom, checkOutTo)) {
 			throw new BusinessException(ReservationErrorCode.INVALID_SEARCH_PERIOD);
 		}
 	}

@@ -27,8 +27,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
+import junsik.reservation.dto.common.response.CursorPageResponse;
 import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.dto.reservation.request.CreateReservationRequest;
+import junsik.reservation.dto.reservation.request.ReservationCursorSearchRequest;
 import junsik.reservation.dto.reservation.request.ReservationSearchRequest;
 import junsik.reservation.dto.reservation.request.UpdateReservationScheduleRequest;
 import junsik.reservation.dto.reservation.response.ReservationCancellationResponse;
@@ -141,6 +143,20 @@ public class ReservationController {
 			@Valid @ModelAttribute @ParameterObject ReservationSearchRequest request
 	) {
 		return ResponseEntity.ok(reservationService.getAllByMember(principal.memberId(), request));
+	}
+
+	@Operation(
+			summary = "본인 예약 Cursor 목록 조회",
+			description = "예약 ID 내림차순 Keyset Pagination입니다. 다음 조회에는 응답의 nextCursor를 전달합니다."
+	)
+	@GetMapping("/cursor")
+	public ResponseEntity<CursorPageResponse<ReservationResponse>> getAllByMemberCursor(
+			@AuthenticationPrincipal MemberPrincipal principal,
+			@Valid @ModelAttribute @ParameterObject ReservationCursorSearchRequest request
+	) {
+		return ResponseEntity.ok(
+				reservationService.getAllByMemberCursor(principal.memberId(), request)
+		);
 	}
 
 	@Operation(

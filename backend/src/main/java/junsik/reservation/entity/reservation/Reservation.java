@@ -51,7 +51,7 @@ import junsik.reservation.global.exception.InvalidReservationStateTransitionExce
 				name = "uk_reservations_reservation_number",
 				columnNames = "reservation_number"
 		),
-		indexes = @Index(name = "idx_reservations_member", columnList = "member_id"),
+		indexes = @Index(name = "idx_reservations_member_id", columnList = "member_id, id"),
 		check = {
 				@CheckConstraint(
 						name = "chk_reservations_business_values",
