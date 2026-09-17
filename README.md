@@ -119,21 +119,21 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·고정 Lease·소유권 기반 해제 |
+| Cache | Spring Cache, Spring Data Redis, Redis 7.4 | 숙소·객실 단건 Response Cache, TTL 및 변경 시 무효화 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-> Backend는 MySQL과 Redis에 연결됩니다. Redis는 Refresh Token 저장과 예약 생성
-> 분산 락에 사용하며 Cache는 아직 적용하지 않았습니다.
+> Backend는 MySQL과 Redis에 연결됩니다. Redis는 Refresh Token 저장, 예약 생성
+> 분산 락, 숙소·객실 단건 조회 Cache에 사용합니다.
 
 ### 도입 예정
 
 | 구분 | 기술 |
 | --- | --- |
 | Authentication | 추가 OAuth2 Provider, Access Token Blacklist 정책 |
-| Cache | Redis Cache 검토 |
 | Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
 | Performance Test | k6 |
@@ -147,13 +147,13 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 
 현재는 하나의 Spring Boot Application에서 Controller → Service → Entity/Repository
 흐름으로 정책·재고·가격·Snapshot을 처리합니다. DTO는 도메인별 request/response
-패키지로 분리되어 있습니다. 아래 그림의 Redis Lock은 현재 예약 생성에 적용됐고,
-Redis Cache와 Kafka는 **목표 아키텍처**입니다.
+패키지로 분리되어 있습니다. 아래 그림의 Redis Lock은 예약 생성에, Redis Cache는
+숙소·객실 단건 조회에 적용됐으며 Kafka는 **목표 아키텍처**입니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
 Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
-저장·TTL 관리와 Room 단위 예약 생성 Lock에 사용하며 Cache와 Kafka 연동은 도입
-예정입니다.
+저장·TTL 관리, Room 단위 예약 생성 Lock, 숙소·객실 단건 Response Cache에 사용하며
+Kafka 연동은 도입 예정입니다.
 
 ```text
 Client
@@ -383,7 +383,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.2 — Reservation Domain Completion | Completed | 날짜별 재고·가격과 순차 Transaction |
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
-| Backend Architecture | v0.3.0 — Cache & Query Optimization | Planned / Next | SQL·실행 계획·Index 분석 후 Query/Cache 최적화 |
+| Backend Architecture | v0.3.0 — Cache & Query Optimization | In Progress | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
@@ -438,8 +438,11 @@ Room 단위 Redis Distributed Lock으로 먼저 직렬화합니다. 조건부 �
 재고를 포함한 주요 검색 실행 계획을 MySQL 8.4에서 검증하고 구조화 위치와 객실 후보
 Composite Index를 적용했습니다. 상세 결과는
 [`Search Query Execution Plan`](docs/performance/search-query-execution-plan.md)에
-기록했습니다. Redis Cache는 아직 예정이며 Kafka, k6, Prometheus, Grafana, CD 및
-Production 배포도 각 후속 Milestone에서 진행합니다.
+기록했습니다. 숙소·객실 단건 조회에는 Cache Aside 기반 Redis Cache를 적용했으며
+대상 선정, TTL, Key 및 무효화 기준은
+[`Redis Cache Strategy`](docs/performance/redis-cache-strategy.md)에 기록했습니다.
+Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
+진행합니다.
 
 ---
 
@@ -597,6 +600,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] Swagger UI 및 JWT Bearer 인증 기반 API 테스트 환경 구성
 * [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
 * [x] Backend와 Redis Refresh Token 저장 연동
+* [x] 숙소·객실 단건 조회 Redis Cache 및 TTL·변경 무효화 적용
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
@@ -791,8 +795,8 @@ Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
-MySQL 8.4 Testcontainer를 사용합니다. 분산 락 테스트는 Redis 7.4 Testcontainer도
-함께 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
+MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
+Testcontainer도 사용합니다. 전체 테스트와 빌드를 실행하려면 Docker
 호환 Container Runtime이 실행 중이어야 하며, 테스트는 로컬 Docker Compose DB와
 Volume을 사용하거나 변경하지 않습니다. Fixture 구성과 테스트 DB 선택 기준은
 [`docs/testing/test-fixtures.md`](docs/testing/test-fixtures.md), v0.1.3의 전체 흐름과
