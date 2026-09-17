@@ -119,7 +119,7 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 | Social Login | Spring Security OAuth2 Client, Google | Google 계정 로그인 및 회원 연결 |
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·고정 Lease·소유권 기반 해제 |
-| Cache | Spring Cache, Spring Data Redis, Redis 7.4 | 숙소·객실 단건 Response Cache, TTL 및 변경 시 무효화 |
+| Cache | Spring Cache, Spring Data Redis, Redis 7.4 | 숙소·객실 단건 Response Cache, TTL·변경 무효화·동시 Miss 병합·DB fallback |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
@@ -444,6 +444,9 @@ Composite Index를 적용했습니다. 상세 결과는
 Command별 Cache 의존성과 Commit/rollback 정합성 정책은
 [`Cache Invalidation Policy`](docs/architecture/cache-invalidation-policy.md)에
 정리했습니다.
+동시 Cache Miss와 Redis 장애·Timeout 시 Database fallback 정책은
+[`Cache Resilience Policy`](docs/architecture/cache-resilience-policy.md)에
+정리했습니다.
 Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
 진행합니다.
 
@@ -695,6 +698,12 @@ JWT_ACCESS_TOKEN_EXPIRATION=30m
 JWT_REFRESH_TOKEN_EXPIRATION=14d
 REDIS_HOST=localhost
 REDIS_PORT=6380
+REDIS_CONNECT_TIMEOUT=2s
+REDIS_COMMAND_TIMEOUT=1s
+RESERVATION_CACHE_ENABLED=true
+RESERVATION_DETAIL_CACHE_TTL=10m
+RESERVATION_CACHE_MISS_LOCK_RETRY_INTERVAL=50ms
+RESERVATION_CACHE_MISS_LOCK_TTL=5s
 RESERVATION_LOCK_WAIT_TIME=3s
 RESERVATION_LOCK_LEASE_TIME=30s
 GOOGLE_CLIENT_ID=<google-oauth-client-id>

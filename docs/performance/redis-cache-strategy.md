@@ -66,6 +66,10 @@ Spring Boot가 제공하는 Jackson `ObjectMapper`와 Cache별
 | --- | --- | --- |
 | `RESERVATION_CACHE_ENABLED` | `true` | 상세 조회 Cache 활성화 |
 | `RESERVATION_DETAIL_CACHE_TTL` | `10m` | 숙소·객실 상세 Cache TTL |
+| `RESERVATION_CACHE_MISS_LOCK_RETRY_INTERVAL` | `50ms` | Cache Lock 재확인 간격 |
+| `RESERVATION_CACHE_MISS_LOCK_TTL` | `5s` | 고아 Cache Lock 만료 시간 |
+| `REDIS_CONNECT_TIMEOUT` | `2s` | Spring Data Redis 연결 제한 시간 |
+| `REDIS_COMMAND_TIMEOUT` | `1s` | Spring Data Redis 명령 제한 시간 |
 
 TTL은 양수만 허용한다. Cache Hit 때 TTL을 연장하지 않는 고정 만료 방식이며 null은
 저장하지 않는다. 이 설정은 Refresh Token TTL과 Redisson Lock Lease에 영향을 주지
@@ -81,6 +85,8 @@ TTL은 양수만 허용한다. Cache Hit 때 TTL을 연장하지 않는 고정 �
 - 숙소·객실 상태 변경 후 해당 상세 Key 제거 및 최신 값 재조회
 - 외부 Transaction Commit 전에는 Key를 유지하고 Commit 후 여러 Key를 함께 제거
 - 외부 Transaction rollback 시 Database와 기존 Cache Value를 모두 유지
+- 동일 Key 동시 Miss 20건을 Repository 원본 조회 1회로 병합
+- Redis 연결 실패·명령 Timeout의 Database fallback과 복구 후 재적재
 
 일반 H2 통합 테스트는 Transaction Rollback과 반복되는 Entity ID 때문에 Cache를
 비활성화한다. Cache 전용 테스트만 독립 Redis Container에서 활성화하므로 개발용
@@ -88,10 +94,11 @@ Docker Compose Redis의 Key나 데이터는 사용하거나 삭제하지 않는�
 기존 Docker 실행 환경과 Redis Service를 유지하며 새 의존성이나 별도 외부 Service는
 필요하지 않다.
 
+Stampede, Timeout, 장애 fallback과 Redis 용도별 책임 경계는
+[`Cache Resilience Policy`](../architecture/cache-resilience-policy.md)에 기록했다.
+
 ## 제한과 후속 검토
 
-- Cache 장애 시 세부 fallback 정책과 관측 지표는 아직 별도로 구성하지 않았다.
 - Cache Hit Ratio, 명령 지연, 메모리·Eviction 지표는 Observability 단계에서 추가한다.
-- 다중 요청의 동시 Miss를 합치는 Stampede 방지는 현재 적용하지 않았다.
 - 검색 조건 Cache, 유효 가격 Cache, 예약 Cache는 실제 Traffic과 무효화 비용을
   측정하기 전까지 추가하지 않는다.

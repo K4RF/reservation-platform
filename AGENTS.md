@@ -59,7 +59,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Spring Security OAuth2 Client with Google as the initial provider
 - Spring Data Redis for Refresh Token storage and TTL management
 - Spring Cache with Redis for accommodation and room detail Response caching
-  using transaction-aware, after-success eviction and a configurable TTL
+  using transaction-aware after-success eviction, a configurable TTL, locking
+  Cache Writer request coalescing, and Database fallback on Cache-only failures
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J

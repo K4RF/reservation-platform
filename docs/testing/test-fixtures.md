@@ -42,8 +42,9 @@ tests.
   they do not connect to the local Docker Compose Redis service.
 - Regular tests disable the read cache to prevent shared Redis keys from crossing H2
   transaction boundaries. Dedicated cache integration tests enable it against a disposable
-  Redis 7.4 Testcontainer and verify hit, miss, TTL, commit-time eviction, rollback,
-  and multiple-key behavior.
+  Redis 7.4 Testcontainer and verify hit, miss, TTL, concurrent-Miss coalescing,
+  connection/timeout fallback, recovery, commit-time eviction, rollback, and
+  multiple-key behavior.
 - Fixed fixture values are safe because persisted data does not cross test
   method boundaries.
 
