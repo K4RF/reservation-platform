@@ -5,11 +5,15 @@ import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.JacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
@@ -26,7 +30,7 @@ import tools.jackson.databind.ObjectMapper;
 		matchIfMissing = true
 )
 @EnableConfigurationProperties(ReservationCacheProperties.class)
-public class RedisCacheConfig {
+public class RedisCacheConfig implements CachingConfigurer {
 
 	public static final String ACCOMMODATION_DETAIL_CACHE = "accommodation-detail";
 	public static final String ROOM_DETAIL_CACHE = "room-detail";
@@ -48,13 +52,25 @@ public class RedisCacheConfig {
 				ROOM_DETAIL_CACHE,
 				withJsonValue(defaults, objectMapper, RoomResponse.class)
 		);
+		RedisCacheWriter cacheWriter = RedisCacheWriter.lockingRedisCacheWriter(
+				connectionFactory,
+				properties.missLockRetryInterval(),
+				RedisCacheWriter.TtlFunction.just(properties.missLockTtl()),
+				BatchStrategies.scan(1_000)
+		);
 
-		return RedisCacheManager.builder(connectionFactory)
+		return RedisCacheManager.builder(cacheWriter)
 				.cacheDefaults(defaults)
 				.withInitialCacheConfigurations(cacheConfigurations)
 				.disableCreateOnMissingCache()
 				.transactionAware()
 				.build();
+	}
+
+	@Override
+	@Bean
+	public CacheErrorHandler errorHandler() {
+		return new RedisCacheFallbackErrorHandler();
 	}
 
 	private <T> RedisCacheConfiguration withJsonValue(

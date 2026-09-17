@@ -34,6 +34,9 @@ jwt:
 reservation:
   cache:
     enabled: false
+    detail-ttl: 10m
+    miss-lock-retry-interval: 50ms
+    miss-lock-ttl: 5s
   distributed-lock:
     wait-time: 3s
     lease-time: 30s

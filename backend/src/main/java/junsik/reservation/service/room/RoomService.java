@@ -61,7 +61,7 @@ public class RoomService {
 	}
 
 	@Transactional(readOnly = true)
-	@Cacheable(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
+	@Cacheable(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0", sync = true)
 	public RoomResponse getById(Long roomId) {
 		return roomRepository.findById(roomId)
 				.map(RoomResponse::from)

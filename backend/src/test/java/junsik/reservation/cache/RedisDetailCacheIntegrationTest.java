@@ -3,10 +3,19 @@ package junsik.reservation.cache;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.persistence.EntityManager;
@@ -21,6 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import junsik.reservation.config.RedisCacheConfig;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
@@ -54,7 +64,7 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 	@Autowired
 	private RoomService roomService;
 
-	@Autowired
+	@MockitoSpyBean
 	private AccommodationRepository accommodationRepository;
 
 	@Autowired
@@ -108,6 +118,42 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		assertThat(cachedAccommodation).isEqualTo(firstAccommodation);
 		assertThat(cachedRoom).isEqualTo(firstRoom);
 		assertThat(statistics.getPrepareStatementCount()).isZero();
+	}
+
+	@Test
+	void coalescesConcurrentMissesForTheSameAccommodation() throws Exception {
+		Accommodation accommodation = accommodationRepository.saveAndFlush(accommodation());
+		entityManager.clear();
+		statistics.clear();
+		clearInvocations(accommodationRepository);
+		int requestCount = 20;
+		CountDownLatch ready = new CountDownLatch(requestCount);
+		CountDownLatch start = new CountDownLatch(1);
+
+		try (ExecutorService executor = Executors.newFixedThreadPool(requestCount)) {
+			List<Future<AccommodationResponse>> futures = new ArrayList<>();
+			for (int index = 0; index < requestCount; index++) {
+				futures.add(executor.submit(() -> {
+					ready.countDown();
+					start.await();
+					return accommodationService.getById(accommodation.getId());
+				}));
+			}
+			assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+			start.countDown();
+
+			for (Future<AccommodationResponse> future : futures) {
+				assertThat(future.get(5, TimeUnit.SECONDS).accommodationId())
+						.isEqualTo(accommodation.getId());
+			}
+		}
+
+		verify(accommodationRepository, times(1)).findById(accommodation.getId());
+		assertThat(statistics.getPrepareStatementCount()).isPositive();
+		assertThat(redisTemplate.hasKey(cacheKey(
+				RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE,
+				accommodation.getId()
+		))).isTrue();
 	}
 
 	@Test
@@ -168,8 +214,8 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 				)
 		);
 
-		assertThat(redisTemplate.hasKey(accommodationKey)).isFalse();
-		assertThat(redisTemplate.hasKey(roomKey)).isFalse();
+		assertKeyEventuallyAbsent(accommodationKey);
+		assertKeyEventuallyAbsent(roomKey);
 		entityManager.clear();
 		assertThat(accommodationService.getById(accommodation.getId()).name())
 				.isEqualTo("Updated Accommodation");
@@ -195,8 +241,8 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		);
 		roomService.updateStatus(room.getId(), new UpdateRoomStatusRequest(RoomStatus.INACTIVE));
 
-		assertThat(redisTemplate.hasKey(accommodationKey)).isFalse();
-		assertThat(redisTemplate.hasKey(roomKey)).isFalse();
+		assertKeyEventuallyAbsent(accommodationKey);
+		assertKeyEventuallyAbsent(roomKey);
 		entityManager.clear();
 		assertThat(accommodationService.getById(accommodation.getId()).status())
 				.isEqualTo(AccommodationStatus.INACTIVE);
@@ -211,5 +257,18 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 
 	private String cacheKey(String cacheName, Long id) {
 		return RedisCacheConfig.KEY_PREFIX + cacheName + "::" + id;
+	}
+
+	private void assertKeyEventuallyAbsent(String key) {
+		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+		while (Boolean.TRUE.equals(redisTemplate.hasKey(key)) && System.nanoTime() < deadline) {
+			try {
+				Thread.sleep(20L);
+			} catch (InterruptedException exception) {
+				Thread.currentThread().interrupt();
+				throw new IllegalStateException("Interrupted while waiting for cache eviction", exception);
+			}
+		}
+		assertThat(redisTemplate.hasKey(key)).isFalse();
 	}
 }
