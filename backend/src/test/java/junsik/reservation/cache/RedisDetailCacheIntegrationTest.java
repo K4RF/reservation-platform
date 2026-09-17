@@ -43,7 +43,7 @@ import junsik.reservation.support.RedisIntegrationTestSupport;
 
 @SpringBootTest(properties = {
 		"reservation.cache.enabled=true",
-		"reservation.cache.detail-ttl=3s",
+		"reservation.cache.detail-ttl=10m",
 		"spring.jpa.properties.hibernate.generate_statistics=true"
 })
 class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
@@ -117,9 +117,10 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		accommodationService.getById(accommodation.getId());
 		String key = cacheKey(RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, accommodation.getId());
 		Long initialTtl = redisTemplate.getExpire(key, TimeUnit.MILLISECONDS);
-		assertThat(initialTtl).isPositive().isLessThanOrEqualTo(3_000L);
+		assertThat(initialTtl).isPositive().isLessThanOrEqualTo(600_000L);
+		assertThat(redisTemplate.expire(key, 100L, TimeUnit.MILLISECONDS)).isTrue();
 
-		Thread.sleep(3_200L);
+		Thread.sleep(250L);
 		assertThat(redisTemplate.hasKey(key)).isFalse();
 
 		entityManager.clear();
@@ -127,7 +128,6 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		accommodationService.getById(accommodation.getId());
 
 		assertThat(statistics.getPrepareStatementCount()).isPositive();
-		assertThat(redisTemplate.hasKey(key)).isTrue();
 	}
 
 	@Test

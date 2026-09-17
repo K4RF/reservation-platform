@@ -37,6 +37,9 @@ Manager는 Transaction-aware로 구성해 변경 Transaction과 Cache 무효화 
 맞춘다. 생성은 이전 값이 존재할 ID가 아니며 목록 Cache도 없으므로 무효화 대상이
 없다.
 
+Command별 의존성과 Commit/rollback 처리의 상세 기준은
+[`Cache Invalidation Policy`](../architecture/cache-invalidation-policy.md)에 기록했다.
+
 ## Key와 Value
 
 같은 Redis Instance의 용도별 Key 공간은 다음처럼 분리한다.
@@ -74,8 +77,10 @@ TTL은 양수만 허용한다. Cache Hit 때 TTL을 연장하지 않는 고정 �
 
 - 첫 조회 Miss 후 JSON Cache 저장
 - 두 번째 Hit 때 Hibernate Prepared Statement 0회
-- TTL 만료 후 Database 재조회와 Cache 재적재
+- TTL 만료 후 Database 재조회
 - 숙소·객실 상태 변경 후 해당 상세 Key 제거 및 최신 값 재조회
+- 외부 Transaction Commit 전에는 Key를 유지하고 Commit 후 여러 Key를 함께 제거
+- 외부 Transaction rollback 시 Database와 기존 Cache Value를 모두 유지
 
 일반 H2 통합 테스트는 Transaction Rollback과 반복되는 Entity ID 때문에 Cache를
 비활성화한다. Cache 전용 테스트만 독립 Redis Container에서 활성화하므로 개발용

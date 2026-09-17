@@ -119,7 +119,11 @@ public class RoomService {
 	}
 
 	@Transactional
-	@CacheEvict(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
+	@CacheEvict(
+			cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE,
+			key = "#p0",
+			beforeInvocation = false
+	)
 	public RoomResponse update(Long roomId, UpdateRoomRequest request) {
 		Room room = getRoom(roomId);
 		room.update(
@@ -132,7 +136,11 @@ public class RoomService {
 	}
 
 	@Transactional
-	@CacheEvict(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
+	@CacheEvict(
+			cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE,
+			key = "#p0",
+			beforeInvocation = false
+	)
 	public RoomResponse updateStatus(Long roomId, UpdateRoomStatusRequest request) {
 		Room room = getRoom(roomId);
 		room.changeStatus(request.status());

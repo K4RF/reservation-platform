@@ -87,7 +87,11 @@ public class AccommodationService {
 	}
 
 	@Transactional
-	@CacheEvict(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
+	@CacheEvict(
+			cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE,
+			key = "#p0",
+			beforeInvocation = false
+	)
 	public AccommodationResponse update(Long accommodationId, UpdateAccommodationRequest request) {
 		Accommodation accommodation = getAccommodation(accommodationId);
 		accommodation.update(
@@ -106,7 +110,11 @@ public class AccommodationService {
 	}
 
 	@Transactional
-	@CacheEvict(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
+	@CacheEvict(
+			cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE,
+			key = "#p0",
+			beforeInvocation = false
+	)
 	public AccommodationResponse updateStatus(
 			Long accommodationId,
 			UpdateAccommodationStatusRequest request

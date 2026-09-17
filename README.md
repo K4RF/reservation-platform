@@ -441,6 +441,9 @@ Composite Index를 적용했습니다. 상세 결과는
 기록했습니다. 숙소·객실 단건 조회에는 Cache Aside 기반 Redis Cache를 적용했으며
 대상 선정, TTL, Key 및 무효화 기준은
 [`Redis Cache Strategy`](docs/performance/redis-cache-strategy.md)에 기록했습니다.
+Command별 Cache 의존성과 Commit/rollback 정합성 정책은
+[`Cache Invalidation Policy`](docs/architecture/cache-invalidation-policy.md)에
+정리했습니다.
 Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
 진행합니다.
 
