@@ -5,12 +5,15 @@ import java.time.ZoneId;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.config.RedisCacheConfig;
 import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
 import junsik.reservation.dto.accommodation.request.CreateAccommodationRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
@@ -55,6 +58,7 @@ public class AccommodationService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
 	public AccommodationResponse getById(Long accommodationId) {
 		return accommodationRepository.findById(accommodationId)
 				.map(AccommodationResponse::from)
@@ -83,6 +87,7 @@ public class AccommodationService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
 	public AccommodationResponse update(Long accommodationId, UpdateAccommodationRequest request) {
 		Accommodation accommodation = getAccommodation(accommodationId);
 		accommodation.update(
@@ -101,6 +106,7 @@ public class AccommodationService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
 	public AccommodationResponse updateStatus(
 			Long accommodationId,
 			UpdateAccommodationStatusRequest request

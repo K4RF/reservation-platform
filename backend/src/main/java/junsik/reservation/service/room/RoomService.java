@@ -1,13 +1,14 @@
 package junsik.reservation.service.room;
 
-import junsik.reservation.service.accommodation.AccommodationBookingPolicyService;
-
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.config.RedisCacheConfig;
 import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.dto.room.request.AvailableRoomRequest;
 import junsik.reservation.dto.room.request.CreateRoomRequest;
@@ -27,6 +28,7 @@ import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.repository.RoomSpecifications;
+import junsik.reservation.service.accommodation.AccommodationBookingPolicyService;
 
 @Service
 public class RoomService {
@@ -59,6 +61,7 @@ public class RoomService {
 	}
 
 	@Transactional(readOnly = true)
+	@Cacheable(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
 	public RoomResponse getById(Long roomId) {
 		return roomRepository.findById(roomId)
 				.map(RoomResponse::from)
@@ -116,6 +119,7 @@ public class RoomService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
 	public RoomResponse update(Long roomId, UpdateRoomRequest request) {
 		Room room = getRoom(roomId);
 		room.update(
@@ -128,6 +132,7 @@ public class RoomService {
 	}
 
 	@Transactional
+	@CacheEvict(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0")
 	public RoomResponse updateStatus(Long roomId, UpdateRoomStatusRequest request) {
 		Room room = getRoom(roomId);
 		room.changeStatus(request.status());
