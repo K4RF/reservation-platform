@@ -58,7 +58,7 @@ public class AccommodationService {
 	}
 
 	@Transactional(readOnly = true)
-	@Cacheable(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0")
+	@Cacheable(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0", sync = true)
 	public AccommodationResponse getById(Long accommodationId) {
 		return accommodationRepository.findById(accommodationId)
 				.map(AccommodationResponse::from)
