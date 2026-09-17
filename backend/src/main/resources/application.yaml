@@ -37,6 +37,9 @@ jwt:
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
 
 reservation:
+  cache:
+    enabled: ${RESERVATION_CACHE_ENABLED:true}
+    detail-ttl: ${RESERVATION_DETAIL_CACHE_TTL:10m}
   distributed-lock:
     wait-time: ${RESERVATION_LOCK_WAIT_TIME:3s}
     lease-time: ${RESERVATION_LOCK_LEASE_TIME:30s}

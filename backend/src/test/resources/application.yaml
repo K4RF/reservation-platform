@@ -32,6 +32,8 @@ jwt:
   refresh-token-expiration: 14d
 
 reservation:
+  cache:
+    enabled: false
   distributed-lock:
     wait-time: 3s
     lease-time: 30s

@@ -22,6 +22,7 @@ The reusable support code lives under
 | `RoomInventoryFixture` | Creates daily room inventory with default or explicit date and quantity |
 | `MvpTestFixture` | Creates the SQL-backed admin and date inventory required by the end-to-end MVP flow |
 | `MySqlIntegrationTestSupport` | Provides one MySQL 8.4 Testcontainer and Spring datasource connection details |
+| `RedisIntegrationTestSupport` | Provides an ephemeral Redis 7.4 container for cache integration tests while regular persistence uses H2 |
 | `MySqlRedisIntegrationTestSupport` | Adds an ephemeral Redis 7.4 container and dynamic Redis connection details to the MySQL support |
 
 Fixture methods create entities only. A test that needs persisted data must call
@@ -39,6 +40,9 @@ tests.
   the Redis server used for local development is not touched.
 - Distributed-lock integration tests use the disposable Redis 7.4 Testcontainer;
   they do not connect to the local Docker Compose Redis service.
+- Regular tests disable the read cache to prevent shared Redis keys from crossing H2
+  transaction boundaries. Dedicated cache integration tests enable it against a disposable
+  Redis 7.4 Testcontainer and verify hit, miss, TTL, and eviction behavior.
 - Fixed fixture values are safe because persisted data does not cross test
   method boundaries.
 

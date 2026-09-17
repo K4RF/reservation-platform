@@ -58,6 +58,7 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Spring Security OAuth2 JOSE for HS256 JWT creation and validation
 - Spring Security OAuth2 Client with Google as the initial provider
 - Spring Data Redis for Refresh Token storage and TTL management
+- Spring Cache with Redis for accommodation and room detail Response caching
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
@@ -299,7 +300,7 @@ Before completing a change:
   validated for Access Token reissue.
 - Logout deletes the member's Refresh Token. Access Token blacklisting is not
   implemented, so an existing Access Token remains valid until expiration.
-- Redis caching, distributed locks outside reservation creation, alternative
+- Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
   variants, and Kafka integration are not implemented.
 - Docker Compose defines MySQL and Redis services.
