@@ -447,6 +447,9 @@ Command별 Cache 의존성과 Commit/rollback 정합성 정책은
 동시 Cache Miss와 Redis 장애·Timeout 시 Database fallback 정책은
 [`Cache Resilience Policy`](docs/architecture/cache-resilience-policy.md)에
 정리했습니다.
+v0.3.0 Query·Index·Pagination·Cache 최적화의 동일 조건 최종 측정은
+[`Query & Cache Optimization Comparison`](docs/performance/query-cache-optimization-comparison.md)에
+기록했습니다.
 Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
 진행합니다.
 
@@ -607,6 +610,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] 회원가입부터 예약 취소까지 MVP 종단간 통합 테스트 구성
 * [x] Backend와 Redis Refresh Token 저장 연동
 * [x] 숙소·객실 단건 조회 Redis Cache 및 TTL·변경 무효화 적용
+* [x] Query·Index·Pagination·Cache 최적화 전후 동일 조건 성능 비교
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산

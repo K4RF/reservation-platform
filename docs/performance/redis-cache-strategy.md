@@ -102,3 +102,6 @@ Stampede, Timeout, 장애 fallback과 Redis 용도별 책임 경계는
 - Cache Hit Ratio, 명령 지연, 메모리·Eviction 지표는 Observability 단계에서 추가한다.
 - 검색 조건 Cache, 유효 가격 Cache, 예약 Cache는 실제 Traffic과 무효화 비용을
   측정하기 전까지 추가하지 않는다.
+
+동일 Query Fixture의 Cold Miss와 Warm Hit 비교 결과는
+[`Query 및 Cache 최적화 전후 비교`](query-cache-optimization-comparison.md)에 기록했다.
