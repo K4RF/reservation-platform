@@ -10,6 +10,7 @@ Reservation Platform의 시스템 및 애플리케이션 아키텍처 문서를 
 - [날짜별 객실 가격 정책](room-daily-price-policy.md)
 - [예약 취소 및 수수료 정책](reservation-cancellation-policy.md)
 - [숙소별 예약 정책](accommodation-booking-policy.md)
+- [조회 Query 및 Cache 최종 구조](read-query-cache-architecture.md)
 - 전체 시스템 구성
 - 모듈 구조
 - 요청 처리 흐름

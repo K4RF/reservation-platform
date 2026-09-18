@@ -65,6 +65,12 @@ The Query-only performance test keeps caching disabled, while the Cache comparis
 uses `MySqlRedisIntegrationTestSupport`. Both use `ReadApiPerformanceFixture`, so
 Redis time is not misreported as a JPA Query optimization effect.
 
+`QueryCacheArchitectureIntegrationTest` also uses `MySqlRedisIntegrationTestSupport`
+to run the selected production search, availability, price, policy and detail-cache
+paths against MySQL and Redis together. Admin changes in the test verify both
+commit-time detail eviction and immediate Database reads for deliberately uncached
+data.
+
 MySQL test contexts use `ddl-auto=create`. The container is disposable, so a
 delayed schema drop is unnecessary. Each test class uses transaction rollback
 or explicit cleanup, while a new Spring context recreates the schema before use.

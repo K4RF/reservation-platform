@@ -305,6 +305,11 @@ Before completing a change:
 - Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
   variants, and Kafka integration are not implemented.
+- The v0.3.0 read architecture is finalized in
+  `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
+  of truth; only accommodation and room detail response snapshots are cached.
+  Search, lists, availability, inventory, price, policy, and reservation reads
+  deliberately bypass the response cache.
 - Docker Compose defines MySQL and Redis services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
@@ -365,3 +370,6 @@ Before completing a change:
   keeping Query-only MySQL measurements separate from Redis Cold/Warm measurements.
   They record SQL/Collection Fetch counts and local timing samples; timing is not
   an API SLO or a substitute for v0.5.0 multi-user load testing.
+  `QueryCacheArchitectureIntegrationTest` runs the selected production search,
+  room, availability, effective-price, policy, detail-cache, and admin-update
+  paths against disposable MySQL 8.4 and Redis 7.4 together.

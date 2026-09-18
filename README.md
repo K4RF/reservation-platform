@@ -6,8 +6,8 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.0부터 v0.2.0 — Concurrency Control까지** 기능 및 동시성 전략 검증을
-> 완료했으며, 다음 Backend Phase는 **v0.3.0 — Cache & Query Optimization**입니다. Spring Boot 프로젝트,
+> **v0.1.0부터 v0.3.0 — Cache & Query Optimization까지** 기능 및 조회 구조 검증을
+> 완료했으며, 다음 Backend Phase는 **v0.4.0 — Event-Driven Processing**입니다. Spring Boot 프로젝트,
 > MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
@@ -383,7 +383,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.2 — Reservation Domain Completion | Completed | 날짜별 재고·가격과 순차 Transaction |
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
-| Backend Architecture | v0.3.0 — Cache & Query Optimization | In Progress | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
+| Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
@@ -450,6 +450,11 @@ Command별 Cache 의존성과 Commit/rollback 정합성 정책은
 v0.3.0 Query·Index·Pagination·Cache 최적화의 동일 조건 최종 측정은
 [`Query & Cache Optimization Comparison`](docs/performance/query-cache-optimization-comparison.md)에
 기록했습니다.
+최종 Production 조회 경로, Index·Pagination 결정, Cache 대상·Key·TTL·무효화·Fallback과
+통합 회귀 테스트 Matrix는
+[`Read Query and Cache Architecture`](docs/architecture/read-query-cache-architecture.md)에
+정리했습니다. MySQL 8.4와 Redis 7.4를 함께 사용하는 통합 테스트로 검색·가용성·가격·
+정책과 관리자 변경 이후 Database/Cache 정합성을 확인했습니다.
 Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
 진행합니다.
 
@@ -581,8 +586,8 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.2.0 — Concurrency Control**까지 기능 개발과 전략 검증을 완료했습니다.
-다음은 **v0.3.0 — Cache & Query Optimization**이며 Event-Driven →
+**v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했습니다.
+다음은 **v0.4.0 — Event-Driven Processing**이며
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -611,6 +616,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] Backend와 Redis Refresh Token 저장 연동
 * [x] 숙소·객실 단건 조회 Redis Cache 및 TTL·변경 무효화 적용
 * [x] Query·Index·Pagination·Cache 최적화 전후 동일 조건 성능 비교
+* [x] 최종 조회·Index·Pagination·Cache 구조 정리 및 MySQL·Redis 통합 Regression 검증
 * [x] 운영 중인 객실의 기간·인원 기준 예약 가능 목록 조회
 * [x] 숙소명 검색 및 객실 수용 인원·가격·상태 필터와 제한된 정렬
 * [x] 예약 시점 객실 가격 Snapshot 및 숙박 일수 기반 총 금액 계산
