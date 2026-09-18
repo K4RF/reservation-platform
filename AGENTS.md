@@ -361,3 +361,7 @@ Before completing a change:
   optimistic, optimistic with Retry, and Redis distributed-lock strategies. It
   records reservation success/failure, Overselling, Retry, Lock failure, and
   elapsed time; it is not a substitute for v0.5.0 load testing.
+  Query/Cache comparison tests reuse one 10-accommodation, 50-room Fixture while
+  keeping Query-only MySQL measurements separate from Redis Cold/Warm measurements.
+  They record SQL/Collection Fetch counts and local timing samples; timing is not
+  an API SLO or a substitute for v0.5.0 multi-user load testing.

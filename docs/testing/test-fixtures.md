@@ -24,6 +24,7 @@ The reusable support code lives under
 | `MySqlIntegrationTestSupport` | Provides one MySQL 8.4 Testcontainer and Spring datasource connection details |
 | `RedisIntegrationTestSupport` | Provides an ephemeral Redis 7.4 container for cache integration tests while regular persistence uses H2 |
 | `MySqlRedisIntegrationTestSupport` | Adds an ephemeral Redis 7.4 container and dynamic Redis connection details to the MySQL support |
+| `ReadApiPerformanceFixture` | Creates the shared 10-accommodation, 50-room Query/Cache comparison dataset |
 
 Fixture methods create entities only. A test that needs persisted data must call
 the relevant repository explicitly. This makes flush timing and the database
@@ -59,6 +60,10 @@ supplies its JDBC connection details through `@DynamicPropertySource`, so
 multiple MySQL test classes can share it without one class stopping the
 container used by another. The developer's Docker Compose database, `.env`, and
 volumes are never used.
+
+The Query-only performance test keeps caching disabled, while the Cache comparison
+uses `MySqlRedisIntegrationTestSupport`. Both use `ReadApiPerformanceFixture`, so
+Redis time is not misreported as a JPA Query optimization effect.
 
 MySQL test contexts use `ddl-auto=create`. The container is disposable, so a
 delayed schema drop is unnecessary. Each test class uses transaction rollback

@@ -141,3 +141,6 @@ macOS/Linux에서는 `./gradlew`을 사용한다. 상세 SQL과 실행 시간은
 
 후속 최적화는 Fixture와 조회 조건을 유지하고 Query 수, 결과 정합성, 실행 계획을 변경
 전후로 함께 기록해야 한다. 부하 환경의 평균·P95·P99 응답 시간과 TPS는 v0.5.0 범위다.
+
+#118에서 최적화 직전 Commit과 최종 구현을 현재 환경에서 다시 실행한 종합 결과는
+[`Query 및 Cache 최적화 전후 비교`](query-cache-optimization-comparison.md)에 기록했다.

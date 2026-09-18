@@ -117,3 +117,6 @@ cd backend
 
 macOS/Linux에서는 `./gradlew`을 사용한다. Plan과 `EXPLAIN ANALYZE` Tree는 Gradle Test
 Result의 `system-out`에 기록된다.
+
+Query 수, Pagination 및 Cache 결과와 함께 재측정한 최종 비교는
+[`Query 및 Cache 최적화 전후 비교`](query-cache-optimization-comparison.md)에 기록했다.
