@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,11 +32,6 @@ import junsik.reservation.dto.room.request.AvailableRoomRequest;
 import junsik.reservation.dto.room.request.RoomSearchRequest;
 import junsik.reservation.dto.room.response.RoomDailyPriceResponse;
 import junsik.reservation.dto.room.response.RoomResponse;
-import junsik.reservation.entity.accommodation.Accommodation;
-import junsik.reservation.entity.accommodation.AccommodationBookingPolicy;
-import junsik.reservation.entity.room.Room;
-import junsik.reservation.entity.room.RoomDailyPrice;
-import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.AccommodationAmenity;
 import junsik.reservation.enums.AccommodationSortField;
 import junsik.reservation.enums.AccommodationStatus;
@@ -66,13 +60,13 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 	private static final Logger log = LoggerFactory.getLogger(
 			ReadApiQueryPerformanceBaselineIntegrationTest.class
 	);
-	private static final int ACCOMMODATION_COUNT = 10;
-	private static final int ROOMS_PER_ACCOMMODATION = 5;
-	private static final int STAY_NIGHTS = 3;
+	private static final int ACCOMMODATION_COUNT = ReadApiPerformanceFixture.ACCOMMODATION_COUNT;
+	private static final int ROOMS_PER_ACCOMMODATION = ReadApiPerformanceFixture.ROOMS_PER_ACCOMMODATION;
+	private static final int STAY_NIGHTS = ReadApiPerformanceFixture.STAY_NIGHTS;
 	private static final int WARM_UP_RUNS = 1;
 	private static final int MEASURED_RUNS = 5;
-	private static final LocalDate CHECK_IN_DATE = LocalDate.of(2035, 5, 10);
-	private static final LocalDate CHECK_OUT_DATE = CHECK_IN_DATE.plusDays(STAY_NIGHTS);
+	private static final LocalDate CHECK_IN_DATE = ReadApiPerformanceFixture.CHECK_IN_DATE;
+	private static final LocalDate CHECK_OUT_DATE = ReadApiPerformanceFixture.CHECK_OUT_DATE;
 
 	@Autowired
 	private AccommodationService accommodationService;
@@ -111,7 +105,9 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 		statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
 		statistics.setStatisticsEnabled(true);
 		fixtureNamePrefix = "Query Baseline " + UUID.randomUUID();
-		createFixture();
+		ReadApiPerformanceFixture.Fixture fixture = performanceFixture().create(fixtureNamePrefix);
+		accommodationId = fixture.accommodationId();
+		roomId = fixture.roomId();
 	}
 
 	@Test
@@ -232,58 +228,14 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 		assertThat(call.measurement().collectionFetchCount()).isEqualTo(expectedCollectionFetches);
 	}
 
-	private void createFixture() {
-		List<Room> rooms = new ArrayList<>();
-		List<RoomInventory> inventories = new ArrayList<>();
-		List<RoomDailyPrice> dailyPrices = new ArrayList<>();
-
-		for (int accommodationIndex = 0; accommodationIndex < ACCOMMODATION_COUNT; accommodationIndex++) {
-			Accommodation accommodation = accommodationRepository.saveAndFlush(Accommodation.create(
-					fixtureNamePrefix + " " + accommodationIndex,
-					"Reproducible query performance fixture",
-					"KR",
-					"Seoul",
-					"Gangnam",
-					"Baseline address " + accommodationIndex,
-					Set.of(AccommodationAmenity.PARKING, AccommodationAmenity.BREAKFAST),
-					LocalTime.of(15, 0),
-					LocalTime.of(11, 0),
-					"Asia/Seoul"
-			));
-			bookingPolicyRepository.save(AccommodationBookingPolicy.create(
-					accommodation,
-					1,
-					30,
-					0,
-					10_000
-			));
-			for (int roomIndex = 0; roomIndex < ROOMS_PER_ACCOMMODATION; roomIndex++) {
-				Room room = Room.create(
-						accommodation,
-						"Baseline Room " + accommodationIndex + "-" + roomIndex,
-						4,
-						new BigDecimal("100000.00").add(BigDecimal.valueOf(roomIndex * 1000L)),
-						Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
-				);
-				rooms.add(room);
-			}
-		}
-		bookingPolicyRepository.flush();
-		roomRepository.saveAllAndFlush(rooms);
-		for (Room room : rooms) {
-			CHECK_IN_DATE.datesUntil(CHECK_OUT_DATE)
-					.map(date -> RoomInventory.create(room, date, 3))
-					.forEach(inventories::add);
-			dailyPrices.add(RoomDailyPrice.create(
-					room,
-					CHECK_IN_DATE,
-					new BigDecimal("120000.00")
-			));
-		}
-		roomInventoryRepository.saveAllAndFlush(inventories);
-		roomDailyPriceRepository.saveAllAndFlush(dailyPrices);
-		accommodationId = rooms.getFirst().getAccommodation().getId();
-		roomId = rooms.getFirst().getId();
+	private ReadApiPerformanceFixture performanceFixture() {
+		return new ReadApiPerformanceFixture(
+				accommodationRepository,
+				bookingPolicyRepository,
+				roomRepository,
+				roomInventoryRepository,
+				roomDailyPriceRepository
+		);
 	}
 
 	private <T> MeasuredCall<T> measure(String api, Supplier<T> operation) {
@@ -311,13 +263,17 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 
 		assertThat(statementCounts).containsOnly(statementCounts.getFirst());
 		List<Long> sorted = elapsedNanos.stream().sorted(Comparator.naturalOrder()).toList();
+		long averageNanos = Math.round(elapsedNanos.stream().mapToLong(Long::longValue).average().orElseThrow());
+		int p95Index = (int) Math.ceil(sorted.size() * 0.95) - 1;
 		QueryMeasurement measurement = new QueryMeasurement(
 				api,
 				statementCounts.getFirst(),
 				entityLoadCount,
 				collectionFetchCount,
 				Duration.ofNanos(sorted.getFirst()),
+				Duration.ofNanos(averageNanos),
 				Duration.ofNanos(sorted.get(sorted.size() / 2)),
+				Duration.ofNanos(sorted.get(p95Index)),
 				Duration.ofNanos(sorted.getLast()),
 				sql
 		);
@@ -333,7 +289,9 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 			long entityLoadCount,
 			long collectionFetchCount,
 			Duration minimum,
-			Duration median,
+			Duration average,
+			Duration p50,
+			Duration p95,
 			Duration maximum,
 			List<String> sql
 	) {
