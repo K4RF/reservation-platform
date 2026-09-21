@@ -16,8 +16,6 @@ import junsik.reservation.enums.RoomStatus;
 
 public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificationExecutor<Room> {
 
-	Page<Room> findAllByAccommodationId(Long accommodationId, Pageable pageable);
-
 	@Query("""
 			select room
 			from Room room

@@ -271,6 +271,11 @@ Database는 Entity 매핑으로 복합 인덱스를 생성하고, 기존 개발 
 [`mysql-pagination-index-optimization.sql`](mysql-pagination-index-optimization.sql)을
 검토 후 한 번 적용합니다.
 
+최종 Production 조회 경로와 Cache 포함·제외 기준은
+[`Read Query and Cache Architecture`](../architecture/read-query-cache-architecture.md)에
+정리했습니다. 객실 목록은 `RoomSpecifications` 경로로 통합했으며 이전의 미사용
+`findAllByAccommodationId` 파생 Query는 제거했습니다.
+
 기간 중복 및 가용 객실 조회가 `reservations`가 아닌 `room_inventories`를 기준으로
 변경되어 새 Schema는 기존 room/status/period 예약 인덱스를 생성하지 않습니다.
 기존 개발 Volume에 남아 있는 해당 인덱스는 정합성에는 영향을 주지 않으며, 실제
