@@ -384,7 +384,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
-| Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
+| Backend Architecture | v0.4.0 — Event-Driven Processing | Next | 핵심 Transaction과 비동기 후처리 분리 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
