@@ -74,6 +74,9 @@ class AccommodationIntegratedSearchIntegrationTest {
 	@BeforeEach
 	void setUpBusinessDate() {
 		given(dateProvider.today(any(ZoneId.class))).willReturn(CHECK_IN.minusDays(5));
+		given(dateProvider.now()).willReturn(
+				CHECK_IN.minusDays(5).atStartOfDay(java.time.ZoneOffset.UTC).toInstant()
+		);
 	}
 
 	@Test

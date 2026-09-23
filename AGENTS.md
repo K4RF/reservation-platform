@@ -63,7 +63,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
   Cache Writer request coalescing, and Database fallback on Cache-only failures
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Spring Kafka 4.0.6 and Apache Kafka 4.3.1 for the Reservation lifecycle Event
-  contract, versioned Topic declaration, and Producer/Consumer base configuration
+  contract, versioned Topic declaration, Producer/Consumer base configuration, and
+  after-commit Reservation Event publication
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -71,7 +72,7 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
   distributed-lock integration tests
 
-Actual Kafka event publication/consumption, additional OAuth2 providers, Access Token blacklisting, Prometheus,
+Kafka consumption, additional OAuth2 providers, Access Token blacklisting, Prometheus,
 Grafana, k6, CD, and a frontend framework are planned but are not currently
 configured unless the repository is updated to include them.
 
@@ -306,9 +307,11 @@ Before completing a change:
   implemented, so an existing Access Token remains valid until expiration.
 - Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
-  variants, and Kafka Producer/Consumer business flows are not implemented. Kafka
-  infrastructure, a versioned Reservation Topic, and Entity-independent Created/Changed/
-  Cancelled Event contracts are configured.
+  variants, and Kafka Consumer business flows are not implemented. Kafka infrastructure,
+  a versioned Reservation Topic, and Entity-independent Created/Changed/Cancelled Event
+  contracts are configured. Reservation changes publish through a Spring transaction Event;
+  the Kafka Producer sends only after commit and logs asynchronous results. Database/Kafka
+  atomicity, Outbox persistence, application retries, and DLQ processing are not implemented.
 - The v0.3.0 read architecture is finalized in
   `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
   of truth; only accommodation and room detail response snapshots are cached.

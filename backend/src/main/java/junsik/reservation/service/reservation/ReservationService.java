@@ -38,6 +38,8 @@ import junsik.reservation.enums.MemberErrorCode;
 import junsik.reservation.enums.ReservationErrorCode;
 import junsik.reservation.enums.RoomErrorCode;
 import junsik.reservation.enums.RoomInventoryErrorCode;
+import junsik.reservation.event.reservation.ReservationEventFactory;
+import junsik.reservation.event.reservation.ReservationEventPublisher;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
@@ -57,6 +59,8 @@ public class ReservationService {
 	private final AccommodationBookingPolicyService bookingPolicyService;
 	private final AccommodationCancellationPolicyService accommodationCancellationPolicyService;
 	private final ReservationNumberGenerator reservationNumberGenerator;
+	private final ReservationEventFactory reservationEventFactory;
+	private final ReservationEventPublisher reservationEventPublisher;
 
 	public ReservationService(
 			ReservationRepository reservationRepository,
@@ -67,7 +71,9 @@ public class ReservationService {
 			ReservationCancellationPolicy cancellationPolicy,
 			AccommodationBookingPolicyService bookingPolicyService,
 			AccommodationCancellationPolicyService accommodationCancellationPolicyService,
-			ReservationNumberGenerator reservationNumberGenerator
+			ReservationNumberGenerator reservationNumberGenerator,
+			ReservationEventFactory reservationEventFactory,
+			ReservationEventPublisher reservationEventPublisher
 	) {
 		this.reservationRepository = reservationRepository;
 		this.memberRepository = memberRepository;
@@ -78,6 +84,8 @@ public class ReservationService {
 		this.bookingPolicyService = bookingPolicyService;
 		this.accommodationCancellationPolicyService = accommodationCancellationPolicyService;
 		this.reservationNumberGenerator = reservationNumberGenerator;
+		this.reservationEventFactory = reservationEventFactory;
+		this.reservationEventPublisher = reservationEventPublisher;
 	}
 
 	@Transactional
@@ -117,7 +125,9 @@ public class ReservationService {
 				priceSnapshot,
 				cancellationPolicySnapshot
 		);
-		return ReservationResponse.from(reservationRepository.save(reservation));
+		Reservation savedReservation = reservationRepository.save(reservation);
+		reservationEventPublisher.publish(reservationEventFactory.created(savedReservation));
+		return ReservationResponse.from(savedReservation);
 	}
 
 	@Transactional(readOnly = true)
@@ -192,6 +202,7 @@ public class ReservationService {
 		validateReserved(inventories.values());
 		inventories.values().forEach(inventory -> inventory.release(1));
 		reservation.cancel(cancellationQuote);
+		reservationEventPublisher.publish(reservationEventFactory.cancelled(reservation));
 		return ReservationCancellationResponse.from(reservation, cancellationQuote);
 	}
 
@@ -211,7 +222,8 @@ public class ReservationService {
 		ReservationPeriod newPeriod = new ReservationPeriod(request.checkInDate(), request.checkOutDate());
 		bookingPolicyService.validateReservationPeriod(room.getAccommodation(), newPeriod);
 
-		List<LocalDate> previousStayDates = reservation.getPeriod().stayDates();
+		ReservationPeriod previousPeriod = reservation.getPeriod();
+		List<LocalDate> previousStayDates = previousPeriod.stayDates();
 		List<LocalDate> newStayDates = newPeriod.stayDates();
 		List<LocalDate> inventoryDatesToLock = Stream.concat(
 				previousStayDates.stream(),
@@ -249,6 +261,11 @@ public class ReservationService {
 				.resolveReservationPriceSnapshot(room, newPeriod);
 
 		reservation.changeSchedule(request.checkInDate(), request.checkOutDate(), priceSnapshot);
+		reservationEventPublisher.publish(reservationEventFactory.changed(
+				reservation,
+				previousPeriod.checkInDate(),
+				previousPeriod.checkOutDate()
+		));
 		return ReservationResponse.from(reservation);
 	}
 
