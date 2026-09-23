@@ -77,6 +77,7 @@ class BookingPolicyReservationIntegrationTest {
 	@BeforeEach
 	void setUpDate() {
 		given(dateProvider.today(org.mockito.ArgumentMatchers.any(java.time.ZoneId.class))).willReturn(TODAY);
+		given(dateProvider.now()).willReturn(TODAY.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
 	}
 
 	@Test

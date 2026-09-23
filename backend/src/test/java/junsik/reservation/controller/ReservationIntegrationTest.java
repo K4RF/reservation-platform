@@ -3,6 +3,7 @@ package junsik.reservation.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -24,6 +25,7 @@ import jakarta.persistence.EntityManager;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -44,6 +46,12 @@ import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.enums.AccommodationStatus;
+import junsik.reservation.event.reservation.ReservationCancelledEvent;
+import junsik.reservation.event.reservation.ReservationChangedEvent;
+import junsik.reservation.event.reservation.ReservationCreatedEvent;
+import junsik.reservation.event.reservation.ReservationEvent;
+import junsik.reservation.event.reservation.ReservationEventPublisher;
+import junsik.reservation.event.reservation.ReservationEventType;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.MemberRepository;
 import junsik.reservation.repository.ReservationRepository;
@@ -98,6 +106,9 @@ class ReservationIntegrationTest {
 
 	@MockitoBean
 	private ReservationDateProvider reservationDateProvider;
+
+	@MockitoBean
+	private ReservationEventPublisher reservationEventPublisher;
 
 	@BeforeEach
 	void setUpCancellationDate() {
@@ -168,6 +179,16 @@ class ReservationIntegrationTest {
 				.containsOnly(1);
 		assertThat(roomInventoryRepository.findByRoomIdAndInventoryDate(room.getId(), CHECK_OUT))
 				.isEmpty();
+
+		ReservationCreatedEvent event = publishedEvent(ReservationCreatedEvent.class);
+		assertThat(event.metadata().eventType()).isEqualTo(ReservationEventType.RESERVATION_CREATED);
+		assertThat(event.metadata().aggregateId()).isEqualTo(reservation.getId());
+		assertThat(event.metadata().occurredAt()).isEqualTo(CANCELLATION_INSTANT);
+		assertThat(event.payload().memberId()).isEqualTo(member.getId());
+		assertThat(event.payload().roomId()).isEqualTo(room.getId());
+		assertThat(event.payload().checkInDate()).isEqualTo(CHECK_IN);
+		assertThat(event.payload().checkOutDate()).isEqualTo(CHECK_OUT);
+		assertThat(event.payload().totalAmount()).isEqualByComparingTo("625000.00");
 	}
 
 	@Test
@@ -353,6 +374,15 @@ class ReservationIntegrationTest {
 		assertThat(inventories(room, LocalDate.of(2030, 2, 10), LocalDate.of(2030, 2, 13)))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(1);
+
+		ReservationChangedEvent event = publishedEvent(ReservationChangedEvent.class);
+		assertThat(event.metadata().eventType()).isEqualTo(ReservationEventType.RESERVATION_CHANGED);
+		assertThat(event.metadata().aggregateId()).isEqualTo(reservation.getId());
+		assertThat(event.payload().previousCheckInDate()).isEqualTo(CHECK_IN);
+		assertThat(event.payload().previousCheckOutDate()).isEqualTo(CHECK_OUT);
+		assertThat(event.payload().checkInDate()).isEqualTo(LocalDate.of(2030, 2, 10));
+		assertThat(event.payload().checkOutDate()).isEqualTo(LocalDate.of(2030, 2, 13));
+		assertThat(event.payload().totalAmount()).isEqualByComparingTo("640000.00");
 	}
 
 	@Test
@@ -1013,6 +1043,14 @@ class ReservationIntegrationTest {
 		assertThat(inventories(room, CHECK_IN, CHECK_OUT))
 				.extracting(RoomInventory::getReservedQuantity)
 				.containsOnly(0);
+
+		ReservationCancelledEvent event = publishedEvent(ReservationCancelledEvent.class);
+		assertThat(event.metadata().eventType()).isEqualTo(ReservationEventType.RESERVATION_CANCELLED);
+		assertThat(event.metadata().aggregateId()).isEqualTo(reservation.getId());
+		assertThat(event.metadata().occurredAt()).isEqualTo(CANCELLATION_INSTANT);
+		assertThat(event.payload().cancelledAt()).isEqualTo(CANCELLATION_INSTANT);
+		assertThat(event.payload().cancellationFeeAmount()).isEqualByComparingTo("0.00");
+		assertThat(event.payload().refundAmount()).isEqualByComparingTo("625000.00");
 	}
 
 	@Test
@@ -1269,5 +1307,11 @@ class ReservationIntegrationTest {
 				  "checkOutDate": "%s"
 				}
 				""".formatted(checkInDate, checkOutDate);
+	}
+
+	private <T extends ReservationEvent> T publishedEvent(Class<T> eventType) {
+		ArgumentCaptor<ReservationEvent> captor = ArgumentCaptor.forClass(ReservationEvent.class);
+		then(reservationEventPublisher).should().publish(captor.capture());
+		return eventType.cast(captor.getValue());
 	}
 }
