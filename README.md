@@ -68,8 +68,8 @@
 예약 재고에는 DB 비관적 락 검증에 이어 Optimistic Lock을 적용했으며, 예약 생성은
 Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 수행합니다. 성능
 비교는 후속 Roadmap 범위입니다. 예약 생성·일정 변경·취소 Event 계약과 Kafka 개발
-환경, Commit 이후 Producer 발행은 구성했으며 Consumer 비즈니스 로직은 아직
-구현하지 않았습니다.
+환경, Commit 이후 Producer 발행과 Event별 Consumer Handler, 비동기 Audit Log Stub을
+구성했습니다.
 
 ### 사용자 및 인증
 
@@ -94,10 +94,12 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 * 중복 예약 방지
 * 동시 예약 요청 제어
 
-### 비동기 이벤트 (기반 구성)
+### 비동기 이벤트
 
 예약 생성·일정 변경·취소 Event 계약과 Kafka Topic을 정의하고, Database Commit 이후
-Producer가 Event를 발행합니다. 아래 후속 작업의 Consumer는 예정 범위입니다.
+Producer가 Event를 발행합니다. 하나의 Consumer Group이 세 Event를 Event별 Handler로
+분기하며 현재는 구조화 Audit Log를 비동기 후처리 Stub으로 남깁니다. 아래 외부 연동은
+예정 범위입니다.
 
 * 이메일 발송
 * 포인트 적립
@@ -123,7 +125,7 @@ Producer가 Event를 발행합니다. 아래 후속 작업의 Consumer는 예정
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·고정 Lease·소유권 기반 해제 |
 | Cache | Spring Cache, Spring Data Redis, Redis 7.4 | 숙소·객실 단건 Response Cache, TTL·변경 무효화·동시 Miss 병합·DB fallback |
-| Messaging | Spring Kafka 4.0.6, Apache Kafka 4.3.1 | 예약 생명주기 Event 계약, Versioned Topic, Commit 이후 Kafka Producer 발행 |
+| Messaging | Spring Kafka 4.0.6, Apache Kafka 4.3.1 | 예약 생명주기 Event 계약, Versioned Topic, Commit 이후 Producer 발행, Consumer Handler와 Audit Log Stub |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
@@ -132,7 +134,8 @@ Producer가 Event를 발행합니다. 아래 후속 작업의 Consumer는 예정
 
 > Backend는 MySQL, Redis, Kafka에 연결되도록 구성됩니다. Redis는 Refresh Token 저장,
 > 예약 생성 분산 락, 숙소·객실 단건 조회 Cache에 사용합니다. Kafka는 예약 생성·일정
-> 변경·취소 Event를 Commit 이후 발행하며 Consumer는 아직 연결되지 않았습니다.
+> 변경·취소 Event를 Commit 이후 발행하고 Event별 Consumer Handler를 통해 Audit Log
+> Stub을 비동기로 실행합니다.
 
 ### 도입 예정
 
@@ -152,14 +155,14 @@ Producer가 Event를 발행합니다. 아래 후속 작업의 Consumer는 예정
 현재는 하나의 Spring Boot Application에서 Controller → Service → Entity/Repository
 흐름으로 정책·재고·가격·Snapshot을 처리합니다. DTO는 도메인별 request/response
 패키지로 분리되어 있습니다. 아래 그림의 Redis Lock은 예약 생성에, Redis Cache는
-숙소·객실 단건 조회에 적용됐습니다. Kafka Broker와 Event 계약, Producer는
-구성됐지만 Consumer는 아직 **목표 아키텍처**입니다.
+숙소·객실 단건 조회에 적용됐습니다. Kafka Broker와 Event 계약, Producer 및 기본
+Consumer 후처리 흐름이 구성되어 있습니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
 Filter, MySQL·Redis·Kafka 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
 저장·TTL 관리, Room 단위 예약 생성 Lock, 숙소·객실 단건 Response Cache에 사용하며
-Kafka에는 예약 Event용 Versioned Topic과 Commit 이후 Producer 발행이 구성되어 있으며
-Consumer 연동은 예정입니다.
+Kafka에는 예약 Event용 Versioned Topic, Commit 이후 Producer 발행과 Event별 Consumer
+Handler가 구성되어 있습니다.
 
 ```text
 Client
@@ -174,9 +177,10 @@ Spring Boot API
   ├── MySQL
   │
   └── Kafka
-       ├── Email Event Consumer (planned)
-       ├── Point Event Consumer (planned)
-       └── Notification Event Consumer (planned)
+       └── Reservation Event Consumer
+            ├── Event별 Handler
+            ├── Audit Log Stub
+            └── 외부 알림·통계 연동 (planned)
 ```
 
 ### 현재 인증·숙소·객실 가격·예약 API
@@ -390,7 +394,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
-| Backend Architecture | v0.4.0 — Event-Driven Processing | In Progress | Kafka 기반·예약 Event 계약·Producer 구성, Consumer·Outbox 예정 |
+| Backend Architecture | v0.4.0 — Event-Driven Processing | In Progress | Kafka 기반·예약 Event 계약·Producer·기본 Consumer 구성, 전달 보장 강화 예정 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
@@ -461,8 +465,8 @@ v0.3.0 Query·Index·Pagination·Cache 최적화의 동일 조건 최종 측정�
 [`Read Query and Cache Architecture`](docs/architecture/read-query-cache-architecture.md)에
 정리했습니다. MySQL 8.4와 Redis 7.4를 함께 사용하는 통합 테스트로 검색·가용성·가격·
 정책과 관리자 변경 이후 Database/Cache 정합성을 확인했습니다.
-Kafka Consumer·Outbox, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속
-Milestone에서 진행합니다. 예약 Event 계약과 Topic·Producer 전략은
+Kafka Consumer의 Retry·DLQ·멱등성과 Outbox, k6, Prometheus, Grafana, CD 및 Production
+배포는 각 후속 Milestone에서 진행합니다. 예약 Event 계약과 Topic·Producer·Consumer 전략은
 [`Reservation Event Contract`](docs/architecture/reservation-event-contract.md)에
 정리했습니다.
 
@@ -595,8 +599,8 @@ docs: add concurrency test results
 ## 11. 현재 진행 상태
 
 **v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했고,
-**v0.4.0 — Event-Driven Processing**의 Kafka 기반, 예약 Event 계약과 Producer를
-구성했습니다. 다음 단계는 Consumer와 전달 보장 강화이며
+**v0.4.0 — Event-Driven Processing**의 Kafka 기반, 예약 Event 계약, Producer와 기본
+Consumer 후처리 흐름을 구성했습니다. 다음 단계는 Retry·DLQ·멱등성·Outbox 기반 전달 보장 강화이며
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -660,6 +664,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] v0.2.0 최종 동시성 전략 통합 Regression 및 Architecture Baseline 문서화
 * [x] Kafka 개발 Broker·Spring Kafka 기본 설정과 예약 생명주기 Event 계약 구성
 * [x] 예약 생성·일정 변경·취소 Transaction Commit 이후 Kafka Event 발행
+* [x] 예약 Event Consumer Group·Event별 Handler·비동기 Audit Log Stub 구성
 
 ---
 
@@ -723,7 +728,7 @@ REDIS_CONNECT_TIMEOUT=2s
 REDIS_COMMAND_TIMEOUT=1s
 KAFKA_PORT=9092
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
-KAFKA_CONSUMER_GROUP_ID=reservation-platform
+KAFKA_CONSUMER_GROUP_ID=reservation-platform-reservation-post-processing-v1
 KAFKA_RESERVATION_TOPIC=reservation.events.v1
 KAFKA_RESERVATION_TOPIC_PARTITIONS=3
 KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR=1

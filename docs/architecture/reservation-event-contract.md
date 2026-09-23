@@ -3,13 +3,15 @@
 ## 1. 범위
 
 이 문서는 v0.4.0 Event-Driven Processing의 예약 생명주기 Event 계약과 Kafka 개발
-환경, 기본 Producer 발행 흐름을 정의합니다.
+환경, Producer 발행 흐름과 Consumer의 비동기 후처리 책임을 정의합니다.
 
 현재 예약 생성·일정 변경·취소의 핵심 Transaction은 기존처럼 MySQL에서 동기적으로
 완료됩니다. Kafka Producer는 Commit된 예약 상태 변화를 후속 처리용 Topic에
-전달합니다. Consumer, 애플리케이션 수준 재시도, DLQ, 알림·메일 같은 후속 비즈니스
-처리는 포함되지 않습니다. Database Commit과 Event 저장의 원자성은 아직 보장하지
-않으며, 다음 구현 단계에서 Transactional Outbox 같은 전달 보장 전략을 결정해야 합니다.
+전달합니다. Consumer는 세 Event를 역직렬화해 Event별 Handler로 전달하고, 현재는
+내부에서 검증 가능한 구조화 Audit Log를 비동기 후처리 Stub으로 남깁니다. 외부 알림·
+메일, 통계 집계, 애플리케이션 수준 재시도, DLQ는 포함되지 않습니다. Database Commit과
+Event 저장의 원자성도 아직 보장하지 않으며, 다음 구현 단계에서 Transactional Outbox
+같은 전달 보장 전략을 결정해야 합니다.
 
 ## 2. 현재 동기 처리 흐름
 
@@ -87,10 +89,13 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 
 - Producer는 JSON으로 직렬화하고 `acks=all`, idempotence를 사용합니다.
 - Consumer는 별도 Group ID를 사용하고 자동 Commit을 끕니다.
+- 기본 Group ID는 `reservation-platform-reservation-post-processing-v1`입니다. 같은
+  Group의 Application Instance는 Topic Partition을 나눠 처리합니다.
 - Listener의 기본 Ack Mode는 Record 단위입니다.
 - JSON 역직렬화 허용 Package는 Reservation Event Package로 제한합니다.
-- 일반 Test Profile에서는 Kafka Topic 생성을 끄므로 GitHub Actions에 별도 Kafka
-  Service가 없어도 기존 단위·통합 테스트가 외부 Broker에 의존하지 않습니다.
+- 일반 Test Profile에서는 Kafka 기능을 끄므로 기존 단위·통합 테스트는 외부 Broker에
+  의존하지 않습니다. Consumer 통합 테스트만 Embedded Kafka를 명시적으로 활성화해
+  실제 JSON 직렬화·역직렬화와 Listener Routing을 검증합니다.
 
 ## 7. 발행 결과와 실패 정책
 
@@ -106,3 +111,32 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 잃을 수 있습니다. Producer 실패를 단순히 무시한다는 의미가 아니라, 로그로 장애를
 관찰하는 임시 정책입니다. Outbox 저장·재발행, Consumer 멱등성, Retry 및 DLQ가 구현되기
 전에는 At-least-once 전달을 보장하지 않습니다.
+
+## 8. Consumer와 비동기 후처리
+
+```text
+reservation.events.v1
+  -> ReservationEventConsumer
+  -> ReservationEventHandlerRegistry
+  -> Created / Changed / Cancelled Handler
+  -> ReservationEventAuditLogService
+```
+
+- `ReservationEventConsumer`는 Kafka Record 수신, Reservation ID Message Key 검증,
+  수신·성공·실패 Logging과 Handler Dispatch만 담당합니다.
+- `ReservationEventHandlerRegistry`는 세 Event Type별 Handler가 정확히 하나씩
+  등록됐는지 Application 시작 시 검증합니다.
+- 각 Handler는 구체 Event Type을 확인한 뒤 후처리 Service를 호출합니다. 현재 후처리는
+  Event ID, Type, Reservation ID, 공개 예약번호만 남기는 비영속 Audit Log Stub입니다.
+  회원 이메일·전화번호 같은 개인정보는 Logging하지 않습니다.
+- 동일 Reservation ID가 Message Key이므로 같은 예약의 Event는 같은 Partition에
+  배치되어 Kafka Partition 순서를 따릅니다.
+
+Handler 또는 후처리 Service에서 예외가 발생하면 Consumer는 실패 식별 정보를 남기고
+예외를 Listener Container에 다시 전달합니다. 실패한 처리를 성공으로 기록하지 않으며,
+Producer가 이미 Reservation Transaction Commit 이후 Event를 전송하므로 Consumer의
+성공·실패가 완료된 예약 Transaction을 Rollback하거나 API 응답을 변경하지 않습니다.
+
+현재 별도 Error Handler, Retry Topic, DLQ, 중복 소비 방지 저장소, 영속 Audit 저장소는
+없습니다. 따라서 기본 Container 오류 처리 외의 재처리·격리·멱등성 보장은 후속 범위이며,
+외부 알림을 연결하기 전 해당 정책을 먼저 확정해야 합니다.
