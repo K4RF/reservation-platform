@@ -7,8 +7,8 @@
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
 > **v0.1.0부터 v0.3.0 — Cache & Query Optimization까지** 기능 및 조회 구조 검증을
-> 완료했으며, 다음 Backend Phase는 **v0.4.0 — Event-Driven Processing**입니다. Spring Boot 프로젝트,
-> MySQL·Redis용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
+> 완료했으며, **v0.4.0 — Event-Driven Processing**을 진행 중입니다. Spring Boot 프로젝트,
+> MySQL·Redis·Kafka용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
@@ -67,7 +67,8 @@
 회원·인증, 숙소·객실·정책·재고 관리와 예약 생성·조회·변경·취소는 구현되어 있습니다.
 예약 재고에는 DB 비관적 락 검증에 이어 Optimistic Lock을 적용했으며, 예약 생성은
 Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 수행합니다. 성능
-비교와 비동기 이벤트는 후속 Roadmap 범위입니다.
+비교는 후속 Roadmap 범위입니다. 예약 생성·일정 변경·취소 Event 계약과 Kafka 개발
+환경은 구성했으며, 실제 발행·소비 비즈니스 로직은 아직 구현하지 않았습니다.
 
 ### 사용자 및 인증
 
@@ -92,9 +93,10 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 * 중복 예약 방지
 * 동시 예약 요청 제어
 
-### 비동기 이벤트 (예정)
+### 비동기 이벤트 (기반 구성)
 
-예약 완료 이벤트를 발행하고 후속 작업을 비동기로 처리합니다.
+예약 생성·일정 변경·취소 Event 계약과 Kafka Topic은 정의했습니다. Event 발행과
+아래 후속 작업의 Consumer는 예정 범위입니다.
 
 * 이메일 발송
 * 포인트 적립
@@ -120,21 +122,22 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 | Token Store | Spring Data Redis, Redis 7.4 | Refresh Token 저장·TTL·로그아웃 삭제 |
 | Distributed Lock | Redisson 4.7.0, Redis 7.4 | Room 단위 예약 생성 직렬화, Lock 대기·고정 Lease·소유권 기반 해제 |
 | Cache | Spring Cache, Spring Data Redis, Redis 7.4 | 숙소·객실 단건 Response Cache, TTL·변경 무효화·동시 Miss 병합·DB fallback |
+| Messaging | Spring Kafka 4.0.6, Apache Kafka 4.3.1 | 예약 생명주기 Event 계약, Versioned Topic과 Producer/Consumer 기본 설정 |
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
-| Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4 | 컨테이너와 헬스 체크 정의 |
+| Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4, Kafka 4.3.1 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
 
-> Backend는 MySQL과 Redis에 연결됩니다. Redis는 Refresh Token 저장, 예약 생성
-> 분산 락, 숙소·객실 단건 조회 Cache에 사용합니다.
+> Backend는 MySQL, Redis, Kafka에 연결되도록 구성됩니다. Redis는 Refresh Token 저장,
+> 예약 생성 분산 락, 숙소·객실 단건 조회 Cache에 사용합니다. Kafka는 현재 Topic과
+> Event 계약까지 구성됐으며 실제 Event 발행·소비는 아직 연결되지 않았습니다.
 
 ### 도입 예정
 
 | 구분 | 기술 |
 | --- | --- |
 | Authentication | 추가 OAuth2 Provider, Access Token Blacklist 정책 |
-| Messaging | Apache Kafka |
 | Monitoring | Prometheus, Grafana |
 | Performance Test | k6 |
 | Deployment | AWS EC2, RDS, ElastiCache |
@@ -148,12 +151,13 @@ Room 단위 Redis Distributed Lock 안에서 최초 시도 포함 최대 3회 �
 현재는 하나의 Spring Boot Application에서 Controller → Service → Entity/Repository
 흐름으로 정책·재고·가격·Snapshot을 처리합니다. DTO는 도메인별 request/response
 패키지로 분리되어 있습니다. 아래 그림의 Redis Lock은 예약 생성에, Redis Cache는
-숙소·객실 단건 조회에 적용됐으며 Kafka는 **목표 아키텍처**입니다.
+숙소·객실 단건 조회에 적용됐습니다. Kafka Broker와 Event 계약은 구성됐지만
+Producer와 Consumer는 아직 **목표 아키텍처**입니다.
 현재는 Spring Boot API, 회원가입·이메일 로그인·Google OAuth2 로그인과 MySQL
 저장 기능, Stateless SecurityFilterChain, JWT Access Token 발급·검증 및 인증
-Filter, MySQL·Redis 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
+Filter, MySQL·Redis·Kafka 로컬 컨테이너가 구성되어 있습니다. Redis는 Refresh Token
 저장·TTL 관리, Room 단위 예약 생성 Lock, 숙소·객실 단건 Response Cache에 사용하며
-Kafka 연동은 도입 예정입니다.
+Kafka에는 예약 Event용 Versioned Topic 기본 설정이 있으며 발행·소비 연동은 예정입니다.
 
 ```text
 Client
@@ -168,9 +172,9 @@ Spring Boot API
   ├── MySQL
   │
   └── Kafka
-       ├── Email Event Consumer
-       ├── Point Event Consumer
-       └── Notification Event Consumer
+       ├── Email Event Consumer (planned)
+       ├── Point Event Consumer (planned)
+       └── Notification Event Consumer (planned)
 ```
 
 ### 현재 인증·숙소·객실 가격·예약 API
@@ -384,7 +388,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
-| Backend Architecture | v0.4.0 — Event-Driven Processing | Planned | 핵심 Transaction과 비동기 후처리 분리 |
+| Backend Architecture | v0.4.0 — Event-Driven Processing | In Progress | Kafka 기반과 예약 Event 계약 구성, 발행·소비 구현 예정 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
@@ -455,8 +459,10 @@ v0.3.0 Query·Index·Pagination·Cache 최적화의 동일 조건 최종 측정�
 [`Read Query and Cache Architecture`](docs/architecture/read-query-cache-architecture.md)에
 정리했습니다. MySQL 8.4와 Redis 7.4를 함께 사용하는 통합 테스트로 검색·가용성·가격·
 정책과 관리자 변경 이후 Database/Cache 정합성을 확인했습니다.
-Kafka, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속 Milestone에서
-진행합니다.
+Kafka Producer·Consumer, k6, Prometheus, Grafana, CD 및 Production 배포는 각 후속
+Milestone에서 진행합니다. 예약 Event 계약과 Topic 전략은
+[`Reservation Event Contract`](docs/architecture/reservation-event-contract.md)에
+정리했습니다.
 
 ---
 
@@ -586,8 +592,9 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했습니다.
-다음은 **v0.4.0 — Event-Driven Processing**이며
+**v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했고,
+**v0.4.0 — Event-Driven Processing**의 Kafka 기반과 예약 Event 계약을 구성했습니다.
+다음 단계는 실제 Event 발행·소비이며
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -600,7 +607,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] Label 정리
 * [x] 기본 디렉터리 생성
 * [x] Spring Boot 프로젝트 초기화
-* [x] MySQL·Redis 로컬 Docker Compose 구성
+* [x] MySQL·Redis·Kafka 로컬 Docker Compose 구성
 * [x] CI Workflow 구성
 * [x] 회원가입 및 비밀번호 해시 저장
 * [x] Spring Security 및 JWT 인증 기반 구성
@@ -649,6 +656,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] 예약 생성 Optimistic Lock 제한 Retry 및 재고 재조회
 * [x] Redisson Room 단위 Distributed Lock 기반 예약 생성 직렬화
 * [x] v0.2.0 최종 동시성 전략 통합 Regression 및 Architecture Baseline 문서화
+* [x] Kafka 개발 Broker·Spring Kafka 기본 설정과 예약 생명주기 Event 계약 구성
 
 ---
 
@@ -710,6 +718,13 @@ REDIS_HOST=localhost
 REDIS_PORT=6380
 REDIS_CONNECT_TIMEOUT=2s
 REDIS_COMMAND_TIMEOUT=1s
+KAFKA_PORT=9092
+KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+KAFKA_CONSUMER_GROUP_ID=reservation-platform
+KAFKA_RESERVATION_TOPIC=reservation.events.v1
+KAFKA_RESERVATION_TOPIC_PARTITIONS=3
+KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR=1
+RESERVATION_KAFKA_ENABLED=true
 RESERVATION_CACHE_ENABLED=true
 RESERVATION_DETAIL_CACHE_TTL=10m
 RESERVATION_CACHE_MISS_LOCK_RETRY_INTERVAL=50ms
@@ -739,7 +754,8 @@ cd reservation-platform
 ### 로컬 인프라 실행
 
 Docker MySQL은 Host의 `3307` 포트를 컨테이너의 `3306` 포트에 연결합니다.
-Backend는 프로젝트 루트 `.env`의 `MYSQL_PORT`와 동일한 포트를 사용합니다.
+Kafka는 기본적으로 Host와 컨테이너의 `9092` 포트를 사용합니다. Backend는 프로젝트
+루트 `.env`의 `MYSQL_PORT`, `REDIS_PORT`, `KAFKA_BOOTSTRAP_SERVERS` 값을 사용합니다.
 
 ```bash
 docker compose up -d
@@ -772,7 +788,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-Backend 기본 설정은 MySQL을 사용하므로 애플리케이션 실행 전에 MySQL
+Backend 기본 설정은 MySQL, Redis, Kafka를 사용하므로 애플리케이션 실행 전에 해당
 컨테이너가 필요합니다. Backend는 프로젝트 루트의 `.env`를 로컬 설정으로
 읽습니다. 다른 데이터베이스를 사용할 때는 `DB_URL`, `MYSQL_USER`,
 `MYSQL_PASSWORD`를 실행 환경에서 재정의할 수 있습니다.

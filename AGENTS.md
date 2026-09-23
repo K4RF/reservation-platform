@@ -62,6 +62,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
   using transaction-aware after-success eviction, a configurable TTL, locking
   Cache Writer request coalescing, and Database fallback on Cache-only failures
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
+- Spring Kafka 4.0.6 and Apache Kafka 4.3.1 for the Reservation lifecycle Event
+  contract, versioned Topic declaration, and Producer/Consumer base configuration
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -69,7 +71,7 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
   distributed-lock integration tests
 
-Additional OAuth2 providers, Access Token blacklisting, Kafka, Prometheus,
+Actual Kafka event publication/consumption, additional OAuth2 providers, Access Token blacklisting, Prometheus,
 Grafana, k6, CD, and a frontend framework are planned but are not currently
 configured unless the repository is updated to include them.
 
@@ -103,7 +105,7 @@ The full test and build tasks require a Docker-compatible container runtime for
 the MySQL Testcontainers suite. Tests must not use or mutate the local Docker
 Compose database or its volumes.
 
-`docker-compose.yml` defines MySQL 8.4 and Redis 7.4 for local development.
+`docker-compose.yml` defines MySQL 8.4, Redis 7.4, and Kafka 4.3.1 for local development.
 Do not report application integration as available until the corresponding
 Backend configuration and behavior are implemented and verified.
 
@@ -304,13 +306,15 @@ Before completing a change:
   implemented, so an existing Access Token remains valid until expiration.
 - Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
-  variants, and Kafka integration are not implemented.
+  variants, and Kafka Producer/Consumer business flows are not implemented. Kafka
+  infrastructure, a versioned Reservation Topic, and Entity-independent Created/Changed/
+  Cancelled Event contracts are configured.
 - The v0.3.0 read architecture is finalized in
   `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
   of truth; only accommodation and room detail response snapshots are cached.
   Search, lists, availability, inventory, price, policy, and reservation reads
   deliberately bypass the response cache.
-- Docker Compose defines MySQL and Redis services.
+- Docker Compose defines MySQL, Redis, and single-node Kafka services.
 - A Backend GitHub Actions workflow runs tests and builds for `develop`.
 - Swagger UI (`/swagger-ui.html`) and OpenAPI JSON (`/v3/api-docs`) are publicly
   accessible for development and API verification. Protected controller
