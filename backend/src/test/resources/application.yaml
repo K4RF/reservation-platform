@@ -24,7 +24,7 @@ spring:
         enable.idempotence: true
         spring.json.add.type.headers: true
     consumer:
-      group-id: reservation-platform-test
+      group-id: reservation-platform-reservation-post-processing-test
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
       auto-offset-reset: earliest
