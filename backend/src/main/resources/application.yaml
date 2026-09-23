@@ -21,6 +21,25 @@ spring:
       timeout: ${REDIS_COMMAND_TIMEOUT:1s}
       repositories:
         enabled: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: true
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:reservation-platform}
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: junsik.reservation.event.reservation
+    listener:
+      ack-mode: record
   security:
     oauth2:
       client:
@@ -39,6 +58,11 @@ jwt:
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:14d}
 
 reservation:
+  kafka:
+    enabled: ${RESERVATION_KAFKA_ENABLED:true}
+    reservation-topic: ${KAFKA_RESERVATION_TOPIC:reservation.events.v1}
+    partitions: ${KAFKA_RESERVATION_TOPIC_PARTITIONS:3}
+    replication-factor: ${KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR:1}
   cache:
     enabled: ${RESERVATION_CACHE_ENABLED:true}
     detail-ttl: ${RESERVATION_DETAIL_CACHE_TTL:10m}

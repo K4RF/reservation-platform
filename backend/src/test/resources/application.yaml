@@ -14,6 +14,25 @@ spring:
       port: 6380
       repositories:
         enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JacksonJsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: true
+    consumer:
+      group-id: reservation-platform-test
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.trusted.packages: junsik.reservation.event.reservation
+    listener:
+      ack-mode: record
   security:
     oauth2:
       client:
@@ -32,6 +51,11 @@ jwt:
   refresh-token-expiration: 14d
 
 reservation:
+  kafka:
+    enabled: false
+    reservation-topic: reservation.events.v1
+    partitions: 3
+    replication-factor: 1
   cache:
     enabled: false
     detail-ttl: 10m
