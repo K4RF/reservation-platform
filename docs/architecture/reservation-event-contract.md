@@ -2,14 +2,14 @@
 
 ## 1. 범위
 
-이 문서는 v0.4.0 Event-Driven Processing의 첫 단계로 예약 생명주기 Event의
-계약과 Kafka 개발 환경을 정의합니다.
+이 문서는 v0.4.0 Event-Driven Processing의 예약 생명주기 Event 계약과 Kafka 개발
+환경, 기본 Producer 발행 흐름을 정의합니다.
 
 현재 예약 생성·일정 변경·취소의 핵심 Transaction은 기존처럼 MySQL에서 동기적으로
-완료됩니다. 이번 단계에는 Kafka Producer, Consumer, 재시도, DLQ, 알림·메일 같은
-후속 비즈니스 처리가 포함되지 않습니다. 따라서 아직 Database Commit과 Event 발행의
-원자성을 보장하지 않으며, 다음 구현 단계에서 Transactional Outbox 같은 전달 보장
-전략을 먼저 결정해야 합니다.
+완료됩니다. Kafka Producer는 Commit된 예약 상태 변화를 후속 처리용 Topic에
+전달합니다. Consumer, 애플리케이션 수준 재시도, DLQ, 알림·메일 같은 후속 비즈니스
+처리는 포함되지 않습니다. Database Commit과 Event 저장의 원자성은 아직 보장하지
+않으며, 다음 구현 단계에서 Transactional Outbox 같은 전달 보장 전략을 결정해야 합니다.
 
 ## 2. 현재 동기 처리 흐름
 
@@ -22,8 +22,10 @@
 - 취소는 `ReservationService.cancel`의 한 Transaction에서 수수료를 계산하고 재고를
   복구한 뒤 Reservation 상태와 취소 결과 Snapshot을 함께 변경합니다.
 
-Event는 이 핵심 흐름을 대체하지 않습니다. 실제 발행 기능을 구현할 때도 실패한
-Transaction의 Event가 노출되지 않도록 Commit 경계를 보존해야 합니다.
+Event는 이 핵심 흐름을 대체하지 않습니다. `ReservationService`는 상태 변경 뒤
+`ReservationEventPublisher`에 Event를 전달하고, Spring의 Transaction Event가 Commit
+성공을 확인한 뒤 `KafkaReservationEventProducer`를 호출합니다. Rollback된 Transaction의
+Event는 Kafka로 전송하지 않습니다.
 
 ## 3. Topic
 
@@ -90,6 +92,17 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 - 일반 Test Profile에서는 Kafka Topic 생성을 끄므로 GitHub Actions에 별도 Kafka
   Service가 없어도 기존 단위·통합 테스트가 외부 Broker에 의존하지 않습니다.
 
-이 설정은 전달 보장 정책의 완성이 아닙니다. 실제 Producer/Consumer를 추가할 때는
-Commit 이후 발행 경계, Outbox Polling, Consumer 멱등성, Retry 및 DLQ 정책을 함께
-검증해야 합니다.
+## 7. 발행 결과와 실패 정책
+
+1. Reservation Transaction 안에서 Entity와 분리된 Event Snapshot을 생성합니다.
+2. Transaction Commit 성공 후 `KafkaTemplate`로 `reservation.events.v1`에 비동기
+   전송합니다.
+3. 전송 성공 시 Event ID, Event Type, Reservation ID, Topic, Partition, Offset을
+   기록합니다. Payload의 개인정보는 Logging하지 않습니다.
+4. 동기·비동기 전송 실패는 동일한 식별 정보와 예외를 Error로 기록합니다. 이미
+   Commit된 예약 API 응답을 Kafka 장애 때문에 실패로 바꾸지는 않습니다.
+
+현재 구조는 Database Commit 직후 Process가 종료되거나 Kafka 전송이 실패하면 Event를
+잃을 수 있습니다. Producer 실패를 단순히 무시한다는 의미가 아니라, 로그로 장애를
+관찰하는 임시 정책입니다. Outbox 저장·재발행, Consumer 멱등성, Retry 및 DLQ가 구현되기
+전에는 At-least-once 전달을 보장하지 않습니다.
