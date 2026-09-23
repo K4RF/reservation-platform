@@ -64,7 +64,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Spring Kafka 4.0.6 and Apache Kafka 4.3.1 for the Reservation lifecycle Event
   contract, versioned Topic declaration, Producer/Consumer base configuration, and
-  after-commit Reservation Event publication
+  after-commit Reservation Event publication, plus typed Consumer handlers and an
+  asynchronous structured Audit Log stub
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -72,9 +73,10 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
   distributed-lock integration tests
 
-Kafka consumption, additional OAuth2 providers, Access Token blacklisting, Prometheus,
-Grafana, k6, CD, and a frontend framework are planned but are not currently
-configured unless the repository is updated to include them.
+External Kafka post-processing, Consumer retry/DLQ/idempotency, additional OAuth2
+providers, Access Token blacklisting, Prometheus, Grafana, k6, CD, and a frontend
+framework are planned but are not currently configured unless the repository is
+updated to include them.
 
 ## Build and Test Commands
 
@@ -307,11 +309,14 @@ Before completing a change:
   implemented, so an existing Access Token remains valid until expiration.
 - Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
-  variants, and Kafka Consumer business flows are not implemented. Kafka infrastructure,
-  a versioned Reservation Topic, and Entity-independent Created/Changed/Cancelled Event
-  contracts are configured. Reservation changes publish through a Spring transaction Event;
-  the Kafka Producer sends only after commit and logs asynchronous results. Database/Kafka
-  atomicity, Outbox persistence, application retries, and DLQ processing are not implemented.
+  variants, and external Kafka Consumer business integrations are not implemented. Kafka
+  infrastructure, a versioned Reservation Topic, and Entity-independent
+  Created/Changed/Cancelled Event contracts are configured. Reservation changes publish
+  through a Spring transaction Event; the Kafka Producer sends only after commit and logs
+  asynchronous results. One Consumer group dispatches all three Event types to dedicated
+  handlers and records a structured, non-durable Audit Log stub. Consumer failures propagate
+  to the listener container. Database/Kafka atomicity, Outbox persistence, Consumer
+  idempotency, application retries, and DLQ processing are not implemented.
 - The v0.3.0 read architecture is finalized in
   `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
   of truth; only accommodation and room detail response snapshots are cached.
@@ -379,4 +384,7 @@ Before completing a change:
   an API SLO or a substitute for v0.5.0 multi-user load testing.
   `QueryCacheArchitectureIntegrationTest` runs the selected production search,
   room, availability, effective-price, policy, detail-cache, and admin-update
-  paths against disposable MySQL 8.4 and Redis 7.4 together.
+  paths against disposable MySQL 8.4 and Redis 7.4 together. Reservation Event
+  Consumer tests verify key validation, failure propagation, complete handler
+  registration, and Created/Changed/Cancelled JSON deserialization and dispatch
+  against an Embedded Kafka broker without requiring the local Compose broker.
