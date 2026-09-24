@@ -2,6 +2,8 @@ package junsik.reservation.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
+
 import org.apache.kafka.clients.admin.NewTopic;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +51,32 @@ class KafkaConfigurationTest {
 		NewTopic topic = new KafkaTopicConfig().reservationEventsTopic(properties);
 
 		assertThat(topic.name()).isEqualTo("reservation.events.v1");
+		assertThat(topic.numPartitions()).isEqualTo(3);
+		assertThat(topic.replicationFactor()).isEqualTo((short) 1);
+	}
+
+	@Test
+	void declaresReservationDeadLetterTopicWithTheSourcePartitionCount() {
+		ReservationKafkaProperties kafkaProperties = new ReservationKafkaProperties(
+				true,
+				"reservation.events.v1",
+				3,
+				(short) 1
+		);
+		ReservationKafkaConsumerProperties consumerProperties =
+				new ReservationKafkaConsumerProperties(
+						"reservation.events.v1.dlt",
+						2,
+						Duration.ofSeconds(1),
+						Duration.ofSeconds(5)
+				);
+
+		NewTopic topic = new KafkaTopicConfig().reservationEventsDeadLetterTopic(
+				kafkaProperties,
+				consumerProperties
+		);
+
+		assertThat(topic.name()).isEqualTo("reservation.events.v1.dlt");
 		assertThat(topic.numPartitions()).isEqualTo(3);
 		assertThat(topic.replicationFactor()).isEqualTo((short) 1);
 	}

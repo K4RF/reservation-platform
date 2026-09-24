@@ -56,6 +56,11 @@ reservation:
     reservation-topic: reservation.events.v1
     partitions: 3
     replication-factor: 1
+    consumer:
+      dead-letter-topic: reservation.events.v1.dlt
+      max-retries: 2
+      retry-backoff: 1s
+      dead-letter-publish-timeout: 5s
     outbox:
       enabled: false
       scheduling-enabled: false
