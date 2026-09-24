@@ -1,7 +1,5 @@
 package junsik.reservation.event.reservation.consumer;
 
-import java.util.Objects;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +32,10 @@ public class ReservationEventConsumer {
 			groupId = "${spring.kafka.consumer.group-id}"
 	)
 	public void consume(ConsumerRecord<String, ReservationEvent> record) {
-		ReservationEvent event = Objects.requireNonNull(record.value(), "event must not be null");
+		ReservationEvent event = record.value();
+		if (event == null) {
+			throw new IllegalArgumentException("event must not be null");
+		}
 		validateKey(record.key(), event);
 		log.info(
 				"Reservation event received: eventId={}, eventType={}, reservationId={}, topic={}, partition={}, offset={}",

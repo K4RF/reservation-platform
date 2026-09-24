@@ -10,8 +10,9 @@
 Commit하고, 별도 Outbox Publisher가 이를 Kafka Topic에 전달합니다. Consumer는 세
 Event를 역직렬화해 Event별 Handler로 전달하고, 현재는
 내부에서 검증 가능한 구조화 Audit Log를 비동기 후처리 Stub으로 남깁니다. 외부 알림·
-메일, 통계 집계, Consumer Retry Topic과 DLQ는 포함되지 않습니다. Consumer는
-영속 처리 이력으로 같은 Event ID의 재전달을 제거합니다.
+메일, 통계 집계와 자동 DLT 재처리는 포함되지 않습니다. Consumer는 영속 처리 이력으로
+같은 Event ID의 재전달을 제거하고, 제한된 동일 Partition Retry 뒤에도 실패한 Event를
+Dead Letter Topic으로 격리합니다.
 
 ## 2. 현재 동기 처리 흐름
 
@@ -93,6 +94,11 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 - 기본 Group ID는 `reservation-platform-reservation-post-processing-v1`입니다. 같은
   Group의 Application Instance는 Topic Partition을 나눠 처리합니다.
 - Listener의 기본 Ack Mode는 Record 단위입니다.
+- Consumer 처리 실패는 기본 1초 간격으로 최대 2회 재시도합니다. 최초 시도까지 합치면
+  총 3회이며 `KAFKA_CONSUMER_MAX_RETRIES`, `KAFKA_CONSUMER_RETRY_BACKOFF`으로 조정합니다.
+- DLT는 `reservation.events.v1.dlt`이며 원본 Topic과 같은 3개 Partition을 선언합니다.
+  이름과 발행 확인 제한은 `KAFKA_RESERVATION_DLT_TOPIC`,
+  `KAFKA_DLT_PUBLISH_TIMEOUT`으로 조정합니다.
 - JSON 역직렬화 허용 Package는 Reservation Event Package로 제한합니다.
 - 일반 Test Profile에서는 Kafka와 Outbox Scheduling을 끄므로 기존 단위·통합 테스트는
   외부 Broker에 의존하지 않습니다. Kafka 통합 테스트만 Embedded Kafka를 명시적으로
@@ -124,6 +130,7 @@ reservation.events.v1
   -> ReservationEventHandlerRegistry
   -> Created / Changed / Cancelled Handler
   -> ReservationEventAuditLogService
+  -> 실패: DefaultErrorHandler -> 제한 Retry -> reservation.events.v1.dlt
 ```
 
 - `ReservationEventConsumer`는 Kafka Record 수신, Reservation ID Message Key 검증,
@@ -154,13 +161,39 @@ Transaction에 참여해야 이력과 부수 효과가 원자적으로 Commit됩
 Database Transaction으로 Rollback할 수 없는 부수 효과는 수신 멱등성만으로 원자성을
 보장할 수 없으므로 별도 Outbox 또는 상대 시스템의 Idempotency Key가 필요합니다.
 
-현재 별도 Error Handler, Retry Topic, DLQ와 영속 Audit 저장소는 없습니다. 처리 이력은
-Consumer 재시작 뒤에도 유지하며 자동 삭제하지 않습니다. 보존 기간은 최소 Kafka의
-최대 Retention 및 운영상 Replay 가능 기간보다 길어야 합니다. 실제 Event 양과 Replay
-정책이 정해지기 전에 임의 Cleanup을 추가하지 않고, Outbox 보존·Archive 정책과 함께
-후속 운영 작업에서 결정합니다.
+처리 이력은 Consumer 재시작 뒤에도 유지하며 자동 삭제하지 않습니다. 보존 기간은 최소
+Kafka의 최대 Retention 및 운영상 Replay 가능 기간보다 길어야 합니다. 실제 Event 양과
+Replay 정책이 정해지기 전에 임의 Cleanup을 추가하지 않고, Outbox 보존·Archive 정책과
+함께 후속 운영 작업에서 결정합니다.
 
-## 9. Transactional Outbox
+## 9. Consumer Retry와 Dead Letter Topic
+
+현재 Consumer는 Spring Kafka `DefaultErrorHandler`와 `DeadLetterPublishingRecoverer`를
+사용합니다. 별도 Retry Topic을 만들지 않고 원본 Partition에서 고정 Backoff로 재시도하므로
+실패 Event가 재시도되는 동안 같은 Partition의 다음 Event는 대기합니다. Retry 횟수가
+유한하므로 한 Event가 Partition을 무기한 막지는 않습니다.
+
+- 일시적인 Database·Network Runtime Exception은 기본적으로 Retry 대상입니다.
+- Kafka Key 불일치, null Event, Event Type 불일치처럼 동일 입력으로 성공할 수 없는
+  `IllegalArgumentException`은 재시도하지 않고 즉시 DLT로 보냅니다.
+- Spring Kafka가 기본 Fatal로 분류하는 변환·Method Resolution·Class Cast 계열 오류도
+  재시도하지 않습니다. 현재 직접 Jackson Deserializer 단계에서 Consumer Record 생성
+  전에 발생하는 원시 역직렬화 오류의 DLT 복원은 포함하지 않습니다.
+- Retry가 소진되거나 Non-Retryable로 분류된 Record는 같은 Partition 번호의
+  `reservation.events.v1.dlt`로 보냅니다. DLT 발행 실패는 성공으로 간주하지 않으며 원본
+  Offset도 진행하지 않습니다.
+- DLT Record는 원본 Key와 Event Payload를 유지하고 Spring Kafka 표준 Header에 원본
+  Topic·Partition·Offset·Consumer Group, Exception Class·Message·Stack Trace를 기록합니다.
+  애플리케이션 Log에는 Payload나 개인정보를 남기지 않고 Key와 위치, 시도 횟수,
+  Exception Class만 기록합니다.
+
+DLT를 자동 소비하거나 원본 Topic으로 자동 재발행하지 않습니다. 운영자가 원인을 수정하고
+Event Schema 호환성과 부수 효과 상태를 확인한 뒤 원본 Key·Payload를 유지해 통제된 방식으로
+재발행해야 합니다. 이미 정상 처리된 Event는 동일 `eventId` 처리 이력이 다시 실행되는 것을
+막습니다. DLT 보존 기간, 접근 권한, 수동 Replay 도구와 원시 역직렬화 실패 처리는 실제 운영
+요구가 정해진 뒤 별도 작업으로 결정합니다.
+
+## 10. Transactional Outbox
 
 `reservation_outbox_events`는 Event ID, Aggregate Type/ID, Event Type, Schema Version,
 전체 JSON Payload, 생성 시각, 발행 상태와 시도 정보를 저장합니다. Event ID는 UNIQUE로
