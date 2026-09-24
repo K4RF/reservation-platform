@@ -36,6 +36,22 @@ erDiagram
         varchar_255 provider_user_id
     }
 
+    RESERVATION_OUTBOX_EVENTS {
+        bigint id PK
+        varchar_36 event_id UK
+        varchar_50 aggregate_type
+        bigint aggregate_id
+        enum event_type
+        int event_version
+        longtext payload
+        enum status
+        datetime created_at
+        datetime published_at
+        int publish_attempts
+        datetime last_attempt_at
+        varchar_1000 last_error
+    }
+
     ACCOMMODATIONS {
         bigint id PK
         varchar_100 name
@@ -257,6 +273,8 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 | `uk_reservation_nights_reservation_date(reservation_id,stay_date)` | 예약 상세의 날짜순 숙박일 가격 조회와 중복 방지 | UNIQUE가 reservation 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_reservations_reservation_number(reservation_number)` | 고객 문의·결제·알림의 공개 예약 식별 | 공개 식별자의 유일성을 보장하므로 별도 인덱스 없음 |
 | `idx_reservations_member_id(member_id,id)` | JWT 회원 기준 본인 예약 조회와 ID Cursor 범위·정렬 | `member_id` Equality 뒤 `id < cursor ORDER BY id DESC`를 지원하고 기존 단일 인덱스의 Leftmost Prefix를 포함 |
+| `uk_reservation_outbox_events_event_id(event_id)` | Event 고유 식별과 향후 Consumer 멱등성 기준 | 동일 Event ID의 중복 Outbox 저장 방지 |
+| `idx_reservation_outbox_status_created(status,created_at,id)` | 미발행 Event의 오래된 순서 Batch 조회 | `PENDING` Equality 뒤 안정적인 생성 순서 조회와 Lock 범위 지원 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
 효과를 기대하기 어렵습니다. 선택적인 예약 상태·날짜·금액 정렬마다 복합 인덱스를
@@ -332,6 +350,12 @@ nullable 위치 컬럼, 검색 인덱스와 두 편의시설 관계 테이블을
 갱신합니다. 위치 문자열로 TimeZone을 추측하지 않고 기존 전역 정책이었던
 `Asia/Seoul`을 호환 기본값으로 사용하며, 이후 관리 API에서 검증된 IANA ZoneId로
 변경할 수 있습니다.
+
+Transactional Outbox 도입 전 Schema는
+[`mysql-reservation-outbox-upgrade.sql`](mysql-reservation-outbox-upgrade.sql)로 새
+`reservation_outbox_events` 테이블을 생성합니다. 기존 예약에서 과거 Event를 정확히
+복원할 수 없으므로 기존 행을 임의로 Backfill하지 않고 적용 이후 상태 변경부터
+Outbox에 기록합니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지
