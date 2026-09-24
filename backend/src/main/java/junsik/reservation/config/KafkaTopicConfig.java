@@ -13,7 +13,10 @@ import org.springframework.kafka.config.TopicBuilder;
 		havingValue = "true",
 		matchIfMissing = true
 )
-@EnableConfigurationProperties(ReservationKafkaProperties.class)
+@EnableConfigurationProperties({
+		ReservationKafkaProperties.class,
+		ReservationKafkaConsumerProperties.class
+})
 public class KafkaTopicConfig {
 
 	@Bean
@@ -21,6 +24,22 @@ public class KafkaTopicConfig {
 		return TopicBuilder.name(properties.reservationTopic())
 				.partitions(properties.partitions())
 				.replicas(properties.replicationFactor())
+				.build();
+	}
+
+	@Bean
+	NewTopic reservationEventsDeadLetterTopic(
+			ReservationKafkaProperties kafkaProperties,
+			ReservationKafkaConsumerProperties consumerProperties
+	) {
+		if (kafkaProperties.reservationTopic().equals(consumerProperties.deadLetterTopic())) {
+			throw new IllegalArgumentException(
+					"Reservation event topic and dead letter topic must be different"
+			);
+		}
+		return TopicBuilder.name(consumerProperties.deadLetterTopic())
+				.partitions(kafkaProperties.partitions())
+				.replicas(kafkaProperties.replicationFactor())
 				.build();
 	}
 }

@@ -63,6 +63,11 @@ reservation:
     reservation-topic: ${KAFKA_RESERVATION_TOPIC:reservation.events.v1}
     partitions: ${KAFKA_RESERVATION_TOPIC_PARTITIONS:3}
     replication-factor: ${KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR:1}
+    consumer:
+      dead-letter-topic: ${KAFKA_RESERVATION_DLT_TOPIC:${KAFKA_RESERVATION_TOPIC:reservation.events.v1}.dlt}
+      max-retries: ${KAFKA_CONSUMER_MAX_RETRIES:2}
+      retry-backoff: ${KAFKA_CONSUMER_RETRY_BACKOFF:1s}
+      dead-letter-publish-timeout: ${KAFKA_DLT_PUBLISH_TIMEOUT:5s}
     outbox:
       enabled: ${RESERVATION_KAFKA_OUTBOX_ENABLED:true}
       scheduling-enabled: ${RESERVATION_KAFKA_OUTBOX_SCHEDULING_ENABLED:true}
