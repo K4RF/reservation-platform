@@ -52,6 +52,14 @@ erDiagram
         varchar_1000 last_error
     }
 
+    PROCESSED_RESERVATION_EVENTS {
+        bigint id PK
+        varchar_36 event_id UK
+        enum event_type
+        bigint aggregate_id
+        datetime processed_at
+    }
+
     ACCOMMODATIONS {
         bigint id PK
         varchar_100 name
@@ -179,6 +187,7 @@ erDiagram
 | `reservations` | 공개 예약번호/member/room/guest count/dates/prices/cancellation policy·result/status 필수, 대표 투숙객은 레거시 호환 nullable | `uk_reservations_reservation_number(reservation_number)` | member → members, room → rooms | 예약번호와 입력된 대표 투숙객 값은 trim 후 비어 있지 않음, 대표 투숙객은 전부 null이거나 전부 존재, guest count ≥ 1, check-in < check-out, 가격·취소 수수료·환불액 ≥ 0, 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `reservation_nights` | reservation/stay date/price snapshot | `uk_reservation_nights_reservation_date(reservation_id, stay_date)` | reservation → reservations | price snapshot ≥ 0 |
 | `reservation_cancellation_fee_snapshots` | 예약, 순서, 구간 시작일, 정수 요율 | reservation+order | reservation → reservations | 구간 시작일 ≥ 0, 요율 1~100 |
+| `processed_reservation_events` | Event ID/Type, Aggregate ID, 처리 시각 | `uk_processed_reservation_events_event_id(event_id)` | - | aggregate ID > 0 |
 
 Enum은 모두 `EnumType.STRING`으로 저장합니다. MySQL에서는 현재 enum 값에 대응하는
 `ENUM`, H2 테스트 Schema에서는 허용 값 CHECK가 생성됩니다. 숫자 enum ordinal은
@@ -273,8 +282,9 @@ Version 충돌이 동일 재고의 Lost Update를 방지합니다.
 | `uk_reservation_nights_reservation_date(reservation_id,stay_date)` | 예약 상세의 날짜순 숙박일 가격 조회와 중복 방지 | UNIQUE가 reservation 선두 복합 인덱스를 제공하므로 별도 인덱스 없음 |
 | `uk_reservations_reservation_number(reservation_number)` | 고객 문의·결제·알림의 공개 예약 식별 | 공개 식별자의 유일성을 보장하므로 별도 인덱스 없음 |
 | `idx_reservations_member_id(member_id,id)` | JWT 회원 기준 본인 예약 조회와 ID Cursor 범위·정렬 | `member_id` Equality 뒤 `id < cursor ORDER BY id DESC`를 지원하고 기존 단일 인덱스의 Leftmost Prefix를 포함 |
-| `uk_reservation_outbox_events_event_id(event_id)` | Event 고유 식별과 향후 Consumer 멱등성 기준 | 동일 Event ID의 중복 Outbox 저장 방지 |
+| `uk_reservation_outbox_events_event_id(event_id)` | Event 고유 식별과 Consumer 멱등성 기준 보존 | 동일 Event ID의 중복 Outbox 저장 방지 |
 | `idx_reservation_outbox_status_created(status,created_at,id)` | 미발행 Event의 오래된 순서 Batch 조회 | `PENDING` Equality 뒤 안정적인 생성 순서 조회와 Lock 범위 지원 |
+| `uk_processed_reservation_events_event_id(event_id)` | Consumer의 Event ID 중복 확인과 동시 수신 직렬화 | UNIQUE INSERT를 처리 선점 기준으로 사용하며 별도 중복 인덱스 없음 |
 
 숙소명 검색은 `lower(name) like '%keyword%'`이므로 일반 B-tree name 인덱스의
 효과를 기대하기 어렵습니다. 선택적인 예약 상태·날짜·금액 정렬마다 복합 인덱스를
@@ -356,6 +366,13 @@ Transactional Outbox 도입 전 Schema는
 `reservation_outbox_events` 테이블을 생성합니다. 기존 예약에서 과거 Event를 정확히
 복원할 수 없으므로 기존 행을 임의로 Backfill하지 않고 적용 이후 상태 변경부터
 Outbox에 기록합니다.
+
+Consumer 멱등성 도입 전 Schema는
+[`mysql-processed-reservation-event-upgrade.sql`](mysql-processed-reservation-event-upgrade.sql)로
+`processed_reservation_events` 테이블을 생성합니다. 기존 Kafka Event의 실제 처리 여부는
+Database만으로 확정할 수 없어 Backfill하지 않습니다. 처리 이력은 현재 자동 삭제하지
+않으며 Kafka Retention·Replay 기간과 Outbox 보존 정책을 함께 확정한 뒤 Cleanup을
+도입해야 합니다.
 
 현재 프로젝트에는 Flyway 같은 Migration 도구가 없습니다. 이 SQL은 기존 개발
 DB 보강을 위한 명시적 일회성 스크립트이며 애플리케이션 시작 시 자동 실행되지

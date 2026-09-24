@@ -10,7 +10,8 @@
 Commit하고, 별도 Outbox Publisher가 이를 Kafka Topic에 전달합니다. Consumer는 세
 Event를 역직렬화해 Event별 Handler로 전달하고, 현재는
 내부에서 검증 가능한 구조화 Audit Log를 비동기 후처리 Stub으로 남깁니다. 외부 알림·
-메일, 통계 집계, Consumer Retry Topic과 DLQ는 포함되지 않습니다.
+메일, 통계 집계, Consumer Retry Topic과 DLQ는 포함되지 않습니다. Consumer는
+영속 처리 이력으로 같은 Event ID의 재전달을 제거합니다.
 
 ## 2. 현재 동기 처리 흐름
 
@@ -57,8 +58,9 @@ Broker 수와 가용성 요구에 맞춰 Replication Factor를 별도로 정해�
 | `eventType` | Enum | `RESERVATION_CREATED`, `RESERVATION_CHANGED`, `RESERVATION_CANCELLED` |
 | `schemaVersion` | Integer | Payload 계약 Version, 현재 `1` |
 
-`eventId`는 향후 Consumer 멱등성 처리의 식별자로 사용할 수 있지만, 이번 범위에는
-처리 이력 저장이나 중복 제거 구현이 포함되지 않습니다.
+`eventId`는 Consumer 멱등성 처리의 식별자입니다. 같은 생명주기 Event가 Outbox 재발행,
+Kafka 재전달 또는 Consumer 재시작 뒤 다시 도착해도 최초 성공 처리만 Handler로
+전달합니다.
 
 ## 5. Event별 Payload
 
@@ -117,13 +119,22 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 ```text
 reservation.events.v1
   -> ReservationEventConsumer
+  -> ReservationEventIdempotencyService
+  -> processed_reservation_events UNIQUE(event_id)
   -> ReservationEventHandlerRegistry
   -> Created / Changed / Cancelled Handler
   -> ReservationEventAuditLogService
 ```
 
 - `ReservationEventConsumer`는 Kafka Record 수신, Reservation ID Message Key 검증,
-  수신·성공·실패 Logging과 Handler Dispatch만 담당합니다.
+  수신·성공·중복 Skip·실패 Logging과 멱등 처리 진입만 담당합니다.
+- `ReservationEventIdempotencyService`는 Event ID 처리 이력을 영속 Database에서
+  확인합니다. 처리 Transaction은 `processed_reservation_events` INSERT를 Flush한 뒤
+  Handler를 호출하며 두 작업을 함께 Commit합니다.
+- `event_id` UNIQUE 제약이 같은 Event의 동시 처리도 직렬화합니다. 먼저 성공한
+  Transaction이 Commit되면 나머지 요청은 UNIQUE 충돌을 기존 처리 이력으로 확인하고
+  Handler를 다시 호출하지 않습니다. 선행 처리가 실패해 Rollback되면 대기 중인 요청이
+  이력을 저장하고 처리할 수 있습니다.
 - `ReservationEventHandlerRegistry`는 세 Event Type별 Handler가 정확히 하나씩
   등록됐는지 Application 시작 시 검증합니다.
 - 각 Handler는 구체 Event Type을 확인한 뒤 후처리 Service를 호출합니다. 현재 후처리는
@@ -133,13 +144,21 @@ reservation.events.v1
   배치되어 Kafka Partition 순서를 따릅니다.
 
 Handler 또는 후처리 Service에서 예외가 발생하면 Consumer는 실패 식별 정보를 남기고
-예외를 Listener Container에 다시 전달합니다. 실패한 처리를 성공으로 기록하지 않으며,
+예외를 Listener Container에 다시 전달합니다. 처리 이력 INSERT도 같은 Transaction에서
+Rollback하므로 실패한 처리를 성공으로 기록하지 않으며,
 Producer가 이미 Reservation Transaction Commit 이후 Event를 전송하므로 Consumer의
 성공·실패가 완료된 예약 Transaction을 Rollback하거나 API 응답을 변경하지 않습니다.
 
-현재 별도 Error Handler, Retry Topic, DLQ, 중복 소비 방지 저장소, 영속 Audit 저장소는
-없습니다. 따라서 기본 Container 오류 처리 외의 재처리·격리·멱등성 보장은 후속 범위이며,
-외부 알림을 연결하기 전 해당 정책을 먼저 확정해야 합니다.
+현재 후처리는 비영속 Audit Log Stub입니다. 이후 Handler가 Database를 변경할 때는 같은
+Transaction에 참여해야 이력과 부수 효과가 원자적으로 Commit됩니다. 외부 API 호출처럼
+Database Transaction으로 Rollback할 수 없는 부수 효과는 수신 멱등성만으로 원자성을
+보장할 수 없으므로 별도 Outbox 또는 상대 시스템의 Idempotency Key가 필요합니다.
+
+현재 별도 Error Handler, Retry Topic, DLQ와 영속 Audit 저장소는 없습니다. 처리 이력은
+Consumer 재시작 뒤에도 유지하며 자동 삭제하지 않습니다. 보존 기간은 최소 Kafka의
+최대 Retention 및 운영상 Replay 가능 기간보다 길어야 합니다. 실제 Event 양과 Replay
+정책이 정해지기 전에 임의 Cleanup을 추가하지 않고, Outbox 보존·Archive 정책과 함께
+후속 운영 작업에서 결정합니다.
 
 ## 9. Transactional Outbox
 
@@ -152,8 +171,8 @@ Producer가 이미 Reservation Transaction Commit 이후 Event를 전송하므�
 발행과 상태 변경을 처리합니다. 이 방식은 같은 행을 여러 Application Instance가 동시에
 선택하는 것을 막습니다. 다만 Kafka Acknowledgement 이후 `PUBLISHED` DB Commit 전에
 Process가 종료되거나, Client Timeout 뒤 실제 전송이 완료되면 같은 Event가 재발행될 수
-있습니다. 이는 Outbox만으로 제거할 수 없는 At-least-once 경계이므로 Consumer는 향후
-`eventId` 기반 멱등 처리를 구현해야 합니다.
+있습니다. Consumer는 이 At-least-once 경계에서 재전달된 같은 `eventId`를 영속 처리
+이력으로 Skip합니다.
 
 기본 Polling 간격은 1초, 배치는 50개, Kafka 대기 제한은 5초이며 환경변수로 조정할 수
 있습니다. `PUBLISHED` 행은 현재 자동 삭제하지 않습니다. 운영 검증과 장애 추적에 필요한
