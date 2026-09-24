@@ -1,5 +1,6 @@
 package junsik.reservation.event.reservation.consumer;
 
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -8,6 +9,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,11 +25,13 @@ import junsik.reservation.event.reservation.ReservationChangedPayload;
 import junsik.reservation.event.reservation.ReservationCreatedEvent;
 import junsik.reservation.event.reservation.ReservationCreatedPayload;
 import junsik.reservation.event.reservation.ReservationEvent;
+import junsik.reservation.repository.ProcessedReservationEventRepository;
 import junsik.reservation.service.reservation.ReservationEventAuditLogService;
 
 @SpringBootTest(properties = {
 		"reservation.kafka.enabled=true",
-		"spring.kafka.consumer.group-id=reservation-platform-reservation-post-processing-integration-test"
+		"spring.kafka.consumer.group-id=reservation-platform-reservation-post-processing-integration-test",
+		"spring.datasource.url=jdbc:h2:mem:reservation-event-consumer;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 })
 @EmbeddedKafka(
 		partitions = 3,
@@ -48,6 +52,14 @@ class ReservationEventConsumerIntegrationTest {
 	@MockitoBean
 	private ReservationEventAuditLogService auditLogService;
 
+	@Autowired
+	private ProcessedReservationEventRepository processedEventRepository;
+
+	@BeforeEach
+	void cleanUp() {
+		processedEventRepository.deleteAll();
+	}
+
 	@Test
 	void deserializesAndDispatchesAllReservationEventTypes() throws Exception {
 		ReservationCreatedEvent created = createdEvent();
@@ -61,6 +73,17 @@ class ReservationEventConsumerIntegrationTest {
 		verify(auditLogService, timeout(10_000)).recordCreated(created);
 		verify(auditLogService, timeout(10_000)).recordChanged(changed);
 		verify(auditLogService, timeout(10_000)).recordCancelled(cancelled);
+	}
+
+	@Test
+	void skipsARepeatedKafkaDeliveryAfterTheFirstSuccessfulHandling() throws Exception {
+		ReservationCreatedEvent event = createdEvent();
+
+		send(event);
+		verify(auditLogService, timeout(10_000)).recordCreated(event);
+
+		send(event);
+		verify(auditLogService, after(2_000).times(1)).recordCreated(event);
 	}
 
 	private void send(ReservationEvent event) throws Exception {

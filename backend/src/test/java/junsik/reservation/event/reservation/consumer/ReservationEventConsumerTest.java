@@ -2,9 +2,11 @@ package junsik.reservation.event.reservation.consumer;
 
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,24 +17,38 @@ import org.junit.jupiter.api.Test;
 
 import junsik.reservation.event.reservation.ReservationCreatedEvent;
 import junsik.reservation.event.reservation.ReservationCreatedPayload;
-import junsik.reservation.event.reservation.handler.ReservationEventHandlerRegistry;
+import junsik.reservation.service.reservation.ReservationEventIdempotencyService;
+import junsik.reservation.service.reservation.ReservationEventProcessingResult;
 
 class ReservationEventConsumerTest {
 
-	private final ReservationEventHandlerRegistry handlerRegistry =
-			mock(ReservationEventHandlerRegistry.class);
+	private final ReservationEventIdempotencyService idempotencyService =
+			mock(ReservationEventIdempotencyService.class);
 	private final ReservationEventConsumer consumer =
-			new ReservationEventConsumer(handlerRegistry);
+			new ReservationEventConsumer(idempotencyService);
 
 	@Test
 	void dispatchesAnEventWhoseKafkaKeyMatchesTheReservationId() {
 		ReservationCreatedEvent event = createdEvent();
 		ConsumerRecord<String, junsik.reservation.event.reservation.ReservationEvent> record =
 				new ConsumerRecord<>("reservation.events.v1", 0, 0L, event.partitionKey(), event);
+		when(idempotencyService.process(event)).thenReturn(ReservationEventProcessingResult.PROCESSED);
 
 		consumer.consume(record);
 
-		verify(handlerRegistry).handle(event);
+		verify(idempotencyService).process(event);
+	}
+
+	@Test
+	void acknowledgesAnAlreadyProcessedDuplicateWithoutDispatchingAgain() {
+		ReservationCreatedEvent event = createdEvent();
+		ConsumerRecord<String, junsik.reservation.event.reservation.ReservationEvent> record =
+				new ConsumerRecord<>("reservation.events.v1", 0, 1L, event.partitionKey(), event);
+		when(idempotencyService.process(event)).thenReturn(ReservationEventProcessingResult.DUPLICATE);
+
+		consumer.consume(record);
+
+		verify(idempotencyService).process(event);
 	}
 
 	@Test
@@ -42,7 +58,7 @@ class ReservationEventConsumerTest {
 				new ConsumerRecord<>("reservation.events.v1", 0, 0L, "999", event);
 
 		assertThatIllegalArgumentException().isThrownBy(() -> consumer.consume(record));
-		verify(handlerRegistry, never()).handle(event);
+		verify(idempotencyService, never()).process(event);
 	}
 
 	@Test
@@ -51,7 +67,7 @@ class ReservationEventConsumerTest {
 		ConsumerRecord<String, junsik.reservation.event.reservation.ReservationEvent> record =
 				new ConsumerRecord<>("reservation.events.v1", 0, 0L, event.partitionKey(), event);
 		RuntimeException failure = new RuntimeException("post-processing failed");
-		org.mockito.Mockito.doThrow(failure).when(handlerRegistry).handle(event);
+		doThrow(failure).when(idempotencyService).process(event);
 
 		assertThatThrownBy(() -> consumer.consume(record)).isSameAs(failure);
 	}
