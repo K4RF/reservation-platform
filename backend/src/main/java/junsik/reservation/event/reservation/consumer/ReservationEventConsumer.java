@@ -10,7 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import junsik.reservation.event.reservation.ReservationEvent;
-import junsik.reservation.event.reservation.handler.ReservationEventHandlerRegistry;
+import junsik.reservation.service.reservation.ReservationEventIdempotencyService;
+import junsik.reservation.service.reservation.ReservationEventProcessingResult;
 
 @Component
 @ConditionalOnProperty(
@@ -22,10 +23,10 @@ public class ReservationEventConsumer {
 
 	private static final Logger log = LoggerFactory.getLogger(ReservationEventConsumer.class);
 
-	private final ReservationEventHandlerRegistry handlerRegistry;
+	private final ReservationEventIdempotencyService idempotencyService;
 
-	public ReservationEventConsumer(ReservationEventHandlerRegistry handlerRegistry) {
-		this.handlerRegistry = handlerRegistry;
+	public ReservationEventConsumer(ReservationEventIdempotencyService idempotencyService) {
+		this.idempotencyService = idempotencyService;
 	}
 
 	@KafkaListener(
@@ -46,7 +47,16 @@ public class ReservationEventConsumer {
 		);
 
 		try {
-			handlerRegistry.handle(event);
+			ReservationEventProcessingResult result = idempotencyService.process(event);
+			if (result == ReservationEventProcessingResult.DUPLICATE) {
+				log.info(
+						"Duplicate reservation event skipped: eventId={}, eventType={}, reservationId={}",
+						event.metadata().eventId(),
+						event.metadata().eventType(),
+						event.metadata().aggregateId()
+				);
+				return;
+			}
 			log.info(
 					"Reservation event processed: eventId={}, eventType={}, reservationId={}",
 					event.metadata().eventId(),
