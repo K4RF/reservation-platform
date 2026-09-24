@@ -63,6 +63,12 @@ reservation:
     reservation-topic: ${KAFKA_RESERVATION_TOPIC:reservation.events.v1}
     partitions: ${KAFKA_RESERVATION_TOPIC_PARTITIONS:3}
     replication-factor: ${KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR:1}
+    outbox:
+      enabled: ${RESERVATION_KAFKA_OUTBOX_ENABLED:true}
+      scheduling-enabled: ${RESERVATION_KAFKA_OUTBOX_SCHEDULING_ENABLED:true}
+      publish-interval: ${RESERVATION_KAFKA_OUTBOX_PUBLISH_INTERVAL:1s}
+      batch-size: ${RESERVATION_KAFKA_OUTBOX_BATCH_SIZE:50}
+      publish-timeout: ${RESERVATION_KAFKA_OUTBOX_PUBLISH_TIMEOUT:5s}
   cache:
     enabled: ${RESERVATION_CACHE_ENABLED:true}
     detail-ttl: ${RESERVATION_DETAIL_CACHE_TTL:10m}
