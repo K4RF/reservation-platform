@@ -64,8 +64,9 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Spring Kafka 4.0.6 and Apache Kafka 4.3.1 for the Reservation lifecycle Event
   contract, versioned Topic declaration, Producer/Consumer base configuration, and
-  Transactional Outbox publication, plus Event-ID-based persistent Consumer idempotency,
-  typed Consumer handlers, and an asynchronous structured Audit Log stub
+  Transactional Outbox publication, Event-ID-based persistent Consumer idempotency,
+  bounded fixed-backoff Consumer retry and Dead Letter Topic recovery, typed Consumer
+  handlers, and an asynchronous structured Audit Log stub
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -73,7 +74,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
   distributed-lock integration tests
 
-External Kafka post-processing, Consumer retry/DLQ, Outbox/processed-event Cleanup,
+External Kafka post-processing, automatic DLT replay, raw deserialization-error recovery,
+Outbox/processed-event Cleanup,
 additional OAuth2
 providers, Access Token blacklisting, Prometheus, Grafana, k6, CD, and a frontend
 framework are planned but are not currently configured unless the repository is
@@ -326,7 +328,12 @@ Before completing a change:
   Handler run in one transaction, so a Handler failure rolls the ledger back and propagates to
   the listener container for retry. The Outbox remains at-least-once across the Kafka
   acknowledgement/Outbox commit boundary, while the Consumer provides effectively-once
-  handling for transactional database side effects. Retry Topics, DLQ processing, external
+  handling for transactional database side effects. Consumer failures retry twice with a
+  fixed configurable Backoff (three total attempts); exhausted failures go to
+  `reservation.events.v1.dlt` with the original key/payload/location and standard exception
+  Headers. Contract `IllegalArgumentException`s go directly to DLT. Successful DLT recovery
+  advances the source record so later records continue, while DLT publication failure does not.
+  Automatic DLT replay, Retry Topics, raw pre-record deserialization recovery, external
   side-effect atomicity, and Outbox/processed-row Cleanup are not implemented.
 - The v0.3.0 read architecture is finalized in
   `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
@@ -397,7 +404,8 @@ Before completing a change:
   room, availability, effective-price, policy, detail-cache, and admin-update
   paths against disposable MySQL 8.4 and Redis 7.4 together. Reservation Event
   Consumer tests verify key validation, failure propagation, Event-ID duplicate skipping,
-  processing-ledger rollback, concurrent same-event handling, restart persistence, complete handler
+  processing-ledger rollback, concurrent same-event handling, restart persistence, bounded
+  transient retries, immediate non-retryable recovery, DLT metadata, post-DLT continuation, complete handler
   registration, and Created/Changed/Cancelled JSON deserialization and dispatch
   against an Embedded Kafka broker without requiring the local Compose broker. Outbox tests
   verify commit/rollback atomicity, mandatory transaction participation, failure retention,
