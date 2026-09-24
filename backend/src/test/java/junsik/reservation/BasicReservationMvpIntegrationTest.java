@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.repository.RefreshTokenStore;
+import junsik.reservation.repository.ReservationOutboxEventRepository;
 import junsik.reservation.repository.ReservationRepository;
 import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.support.MvpTestFixture;
@@ -58,6 +59,9 @@ class BasicReservationMvpIntegrationTest {
 
 	@Autowired
 	private ReservationRepository reservationRepository;
+
+	@Autowired
+	private ReservationOutboxEventRepository outboxEventRepository;
 
 	@Autowired
 	private RoomInventoryRepository roomInventoryRepository;
@@ -220,6 +224,14 @@ class BasicReservationMvpIntegrationTest {
 				roomId
 		);
 		assertThat(reservedQuantity).isZero();
+		assertThat(outboxEventRepository.findAll())
+				.hasSize(3)
+				.extracting(event -> event.getEventType().name())
+				.containsExactly(
+						"RESERVATION_CREATED",
+						"RESERVATION_CHANGED",
+						"RESERVATION_CANCELLED"
+				);
 	}
 
 	private String login(String email, String password, String expectedRole) throws Exception {

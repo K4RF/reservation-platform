@@ -56,6 +56,12 @@ reservation:
     reservation-topic: reservation.events.v1
     partitions: 3
     replication-factor: 1
+    outbox:
+      enabled: false
+      scheduling-enabled: false
+      publish-interval: 1s
+      batch-size: 50
+      publish-timeout: 5s
   cache:
     enabled: false
     detail-ttl: 10m

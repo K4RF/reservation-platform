@@ -1,6 +1,7 @@
 package junsik.reservation.event.reservation;
 
-import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
@@ -34,7 +35,7 @@ class KafkaReservationEventProducerTest {
 	}
 
 	@Test
-	void routesEventWithReservationIdKeyAndHandlesSuccessfulResult() {
+	void routesEventWithReservationIdKeyAndReturnsKafkaFuture() {
 		ReservationCreatedEvent event = createdEvent();
 		CompletableFuture<SendResult<Object, Object>> future = new CompletableFuture<>();
 		SendResult<Object, Object> sendResult = mock();
@@ -45,32 +46,34 @@ class KafkaReservationEventProducerTest {
 		given(metadata.partition()).willReturn(2);
 		given(metadata.offset()).willReturn(42L);
 
-		producer.publishAfterCommit(event);
+		CompletableFuture<SendResult<Object, Object>> actual = producer.send(event);
 		future.complete(sendResult);
 
+		assertThat(actual).isSameAs(future);
 		then(kafkaTemplate).should().send("reservation.events.v1", "101", event);
 	}
 
 	@Test
-	void recordsAsynchronousSendFailureWithoutThrowingAfterDatabaseCommit() {
+	void exposesAsynchronousSendFailureToTheOutboxPublisher() {
 		ReservationCreatedEvent event = createdEvent();
 		CompletableFuture<SendResult<Object, Object>> future = new CompletableFuture<>();
 		given(kafkaTemplate.send("reservation.events.v1", "101", event)).willReturn(future);
 
-		producer.publishAfterCommit(event);
+		CompletableFuture<SendResult<Object, Object>> actual = producer.send(event);
+		future.completeExceptionally(new IllegalStateException("broker unavailable"));
 
-		assertThatNoException().isThrownBy(
-				() -> future.completeExceptionally(new IllegalStateException("broker unavailable"))
-		);
+		assertThat(actual).isCompletedExceptionally();
 	}
 
 	@Test
-	void recordsSynchronousSendFailureWithoutReportingCommittedReservationAsFailed() {
+	void propagatesSynchronousSendFailureToTheOutboxPublisher() {
 		ReservationCreatedEvent event = createdEvent();
 		given(kafkaTemplate.send("reservation.events.v1", "101", event))
 				.willThrow(new IllegalStateException("metadata unavailable"));
 
-		assertThatNoException().isThrownBy(() -> producer.publishAfterCommit(event));
+		assertThatThrownBy(() -> producer.send(event))
+				.isInstanceOf(IllegalStateException.class)
+				.hasMessage("metadata unavailable");
 	}
 
 	private ReservationCreatedEvent createdEvent() {

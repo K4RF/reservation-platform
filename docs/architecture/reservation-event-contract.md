@@ -3,15 +3,14 @@
 ## 1. 범위
 
 이 문서는 v0.4.0 Event-Driven Processing의 예약 생명주기 Event 계약과 Kafka 개발
-환경, Producer 발행 흐름과 Consumer의 비동기 후처리 책임을 정의합니다.
+환경, Transactional Outbox 발행 흐름과 Consumer의 비동기 후처리 책임을 정의합니다.
 
 현재 예약 생성·일정 변경·취소의 핵심 Transaction은 기존처럼 MySQL에서 동기적으로
-완료됩니다. Kafka Producer는 Commit된 예약 상태 변화를 후속 처리용 Topic에
-전달합니다. Consumer는 세 Event를 역직렬화해 Event별 Handler로 전달하고, 현재는
+완료됩니다. 같은 Transaction이 예약 상태와 발행할 Event의 Outbox 행을 함께
+Commit하고, 별도 Outbox Publisher가 이를 Kafka Topic에 전달합니다. Consumer는 세
+Event를 역직렬화해 Event별 Handler로 전달하고, 현재는
 내부에서 검증 가능한 구조화 Audit Log를 비동기 후처리 Stub으로 남깁니다. 외부 알림·
-메일, 통계 집계, 애플리케이션 수준 재시도, DLQ는 포함되지 않습니다. Database Commit과
-Event 저장의 원자성도 아직 보장하지 않으며, 다음 구현 단계에서 Transactional Outbox
-같은 전달 보장 전략을 결정해야 합니다.
+메일, 통계 집계, Consumer Retry Topic과 DLQ는 포함되지 않습니다.
 
 ## 2. 현재 동기 처리 흐름
 
@@ -24,10 +23,10 @@ Event 저장의 원자성도 아직 보장하지 않으며, 다음 구현 단계
 - 취소는 `ReservationService.cancel`의 한 Transaction에서 수수료를 계산하고 재고를
   복구한 뒤 Reservation 상태와 취소 결과 Snapshot을 함께 변경합니다.
 
-Event는 이 핵심 흐름을 대체하지 않습니다. `ReservationService`는 상태 변경 뒤
-`ReservationEventPublisher`에 Event를 전달하고, Spring의 Transaction Event가 Commit
-성공을 확인한 뒤 `KafkaReservationEventProducer`를 호출합니다. Rollback된 Transaction의
-Event는 Kafka로 전송하지 않습니다.
+Event는 이 핵심 흐름을 대체하지 않습니다. `ReservationService`는 상태 변경 뒤 같은
+Transaction에서 `OutboxReservationEventPublisher`를 호출합니다. Publisher는 Kafka를
+직접 호출하지 않고 직렬화한 Event를 `reservation_outbox_events`에 `PENDING`으로
+저장합니다. 예약 Transaction이 Rollback되면 Outbox 행도 함께 Rollback됩니다.
 
 ## 3. Topic
 
@@ -93,24 +92,25 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
   Group의 Application Instance는 Topic Partition을 나눠 처리합니다.
 - Listener의 기본 Ack Mode는 Record 단위입니다.
 - JSON 역직렬화 허용 Package는 Reservation Event Package로 제한합니다.
-- 일반 Test Profile에서는 Kafka 기능을 끄므로 기존 단위·통합 테스트는 외부 Broker에
-  의존하지 않습니다. Consumer 통합 테스트만 Embedded Kafka를 명시적으로 활성화해
-  실제 JSON 직렬화·역직렬화와 Listener Routing을 검증합니다.
+- 일반 Test Profile에서는 Kafka와 Outbox Scheduling을 끄므로 기존 단위·통합 테스트는
+  외부 Broker에 의존하지 않습니다. Kafka 통합 테스트만 Embedded Kafka를 명시적으로
+  활성화해 Outbox 발행, 실제 JSON 직렬화·역직렬화와 Listener Routing을 검증합니다.
 
 ## 7. 발행 결과와 실패 정책
 
-1. Reservation Transaction 안에서 Entity와 분리된 Event Snapshot을 생성합니다.
-2. Transaction Commit 성공 후 `KafkaTemplate`로 `reservation.events.v1`에 비동기
-   전송합니다.
-3. 전송 성공 시 Event ID, Event Type, Reservation ID, Topic, Partition, Offset을
-   기록합니다. Payload의 개인정보는 Logging하지 않습니다.
-4. 동기·비동기 전송 실패는 동일한 식별 정보와 예외를 Error로 기록합니다. 이미
-   Commit된 예약 API 응답을 Kafka 장애 때문에 실패로 바꾸지는 않습니다.
+1. Reservation Transaction 안에서 Entity와 분리된 Event Snapshot을 만들고 Outbox에
+   `PENDING`으로 저장합니다.
+2. Transaction Commit 뒤 Scheduler가 생성 시각과 ID 순으로 미발행 Event를 조회합니다.
+3. `KafkaTemplate`의 Broker Acknowledgement를 제한 시간 안에 받은 경우에만
+   `PUBLISHED`, `publishedAt`으로 갱신합니다.
+4. 직렬화·전송·Timeout 실패는 시도 횟수, 마지막 시각과 오류를 기록하되 상태를
+   `PENDING`으로 유지합니다. 다음 Polling에서 다시 처리할 수 있습니다.
+5. 성공과 실패 모두 Event ID, Type, Reservation ID를 기록하며 개인정보 Payload는
+   Logging하지 않습니다. Kafka 장애는 이미 Commit된 예약 API 응답을 바꾸지 않습니다.
 
-현재 구조는 Database Commit 직후 Process가 종료되거나 Kafka 전송이 실패하면 Event를
-잃을 수 있습니다. Producer 실패를 단순히 무시한다는 의미가 아니라, 로그로 장애를
-관찰하는 임시 정책입니다. Outbox 저장·재발행, Consumer 멱등성, Retry 및 DLQ가 구현되기
-전에는 At-least-once 전달을 보장하지 않습니다.
+따라서 DB Commit 성공 뒤 Kafka가 일시적으로 실패해도 발행할 Event 자체를 잃지
+않습니다. 반대로 예약 Transaction이 Rollback되면 Outbox도 없어져 Kafka로 발행되지
+않습니다.
 
 ## 8. Consumer와 비동기 후처리
 
@@ -140,3 +140,22 @@ Producer가 이미 Reservation Transaction Commit 이후 Event를 전송하므�
 현재 별도 Error Handler, Retry Topic, DLQ, 중복 소비 방지 저장소, 영속 Audit 저장소는
 없습니다. 따라서 기본 Container 오류 처리 외의 재처리·격리·멱등성 보장은 후속 범위이며,
 외부 알림을 연결하기 전 해당 정책을 먼저 확정해야 합니다.
+
+## 9. Transactional Outbox
+
+`reservation_outbox_events`는 Event ID, Aggregate Type/ID, Event Type, Schema Version,
+전체 JSON Payload, 생성 시각, 발행 상태와 시도 정보를 저장합니다. Event ID는 UNIQUE로
+관리하고 `status, created_at, id` 인덱스로 미발행 배치를 조회합니다. Aggregate 행이
+삭제되더라도 발행 Snapshot을 유지할 수 있도록 Reservation FK는 두지 않습니다.
+
+한 Publisher Transaction은 `PESSIMISTIC_WRITE`로 제한된 `PENDING` 배치를 잠그고 Kafka
+발행과 상태 변경을 처리합니다. 이 방식은 같은 행을 여러 Application Instance가 동시에
+선택하는 것을 막습니다. 다만 Kafka Acknowledgement 이후 `PUBLISHED` DB Commit 전에
+Process가 종료되거나, Client Timeout 뒤 실제 전송이 완료되면 같은 Event가 재발행될 수
+있습니다. 이는 Outbox만으로 제거할 수 없는 At-least-once 경계이므로 Consumer는 향후
+`eventId` 기반 멱등 처리를 구현해야 합니다.
+
+기본 Polling 간격은 1초, 배치는 50개, Kafka 대기 제한은 5초이며 환경변수로 조정할 수
+있습니다. `PUBLISHED` 행은 현재 자동 삭제하지 않습니다. 운영 검증과 장애 추적에 필요한
+보존 기간, Batch Cleanup, Archive 기준은 실제 Event 양과 Consumer 멱등성 저장소 정책을
+함께 측정한 뒤 후속 작업에서 결정합니다.

@@ -64,8 +64,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Redisson 4.7.0 for Room-scoped reservation-creation distributed locks
 - Spring Kafka 4.0.6 and Apache Kafka 4.3.1 for the Reservation lifecycle Event
   contract, versioned Topic declaration, Producer/Consumer base configuration, and
-  after-commit Reservation Event publication, plus typed Consumer handlers and an
-  asynchronous structured Audit Log stub
+  Transactional Outbox publication, plus typed Consumer handlers and an asynchronous
+  structured Audit Log stub
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -73,7 +73,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 - Testcontainers 2.0.5 with MySQL 8.4 for database constraints and Redis 7.4 for
   distributed-lock integration tests
 
-External Kafka post-processing, Consumer retry/DLQ/idempotency, additional OAuth2
+External Kafka post-processing, Consumer retry/DLQ/idempotency, Outbox Cleanup,
+additional OAuth2
 providers, Access Token blacklisting, Prometheus, Grafana, k6, CD, and a frontend
 framework are planned but are not currently configured unless the repository is
 updated to include them.
@@ -299,6 +300,8 @@ Before completing a change:
   preserve the earlier fixed business-zone behavior.
   The issue-95 inventory upgrade initializes existing `RoomInventory.version`
   values to zero as the optimistic-lock starting point.
+  The issue-132 Outbox upgrade creates `reservation_outbox_events`; historical
+  Reservation Events are not reconstructed or backfilled.
   Historical per-night prices and past cancellation results cannot be inferred
   exactly and are intentionally not backfilled. A formal migration tool and
   `ddl-auto=validate` production policy are not implemented yet.
@@ -311,12 +314,15 @@ Before completing a change:
   database concurrency strategies beyond the recorded pessimistic/optimistic
   variants, and external Kafka Consumer business integrations are not implemented. Kafka
   infrastructure, a versioned Reservation Topic, and Entity-independent
-  Created/Changed/Cancelled Event contracts are configured. Reservation changes publish
-  through a Spring transaction Event; the Kafka Producer sends only after commit and logs
-  asynchronous results. One Consumer group dispatches all three Event types to dedicated
-  handlers and records a structured, non-durable Audit Log stub. Consumer failures propagate
-  to the listener container. Database/Kafka atomicity, Outbox persistence, Consumer
-  idempotency, application retries, and DLQ processing are not implemented.
+  Created/Changed/Cancelled Event contracts are configured. Reservation changes and a
+  `PENDING` JSON Outbox snapshot are stored in one Database Transaction. A scheduled Publisher
+  locks a bounded pending batch, waits for Kafka acknowledgement, and changes successful rows
+  to `PUBLISHED`; failed rows remain `PENDING` with attempt details for a later poll. One
+  Consumer group dispatches all three Event types to dedicated handlers and records a
+  structured, non-durable Audit Log stub. Consumer failures propagate to the listener
+  container. The Outbox closes the Reservation/Outbox database atomicity gap but remains
+  at-least-once across the Kafka acknowledgement/Outbox commit boundary. Consumer idempotency,
+  Retry Topics, DLQ processing, and published-row Cleanup are not implemented.
 - The v0.3.0 read architecture is finalized in
   `docs/architecture/read-query-cache-architecture.md`. MySQL remains the source
   of truth; only accommodation and room detail response snapshots are cached.
@@ -387,4 +393,6 @@ Before completing a change:
   paths against disposable MySQL 8.4 and Redis 7.4 together. Reservation Event
   Consumer tests verify key validation, failure propagation, complete handler
   registration, and Created/Changed/Cancelled JSON deserialization and dispatch
-  against an Embedded Kafka broker without requiring the local Compose broker.
+  against an Embedded Kafka broker without requiring the local Compose broker. Outbox tests
+  verify commit/rollback atomicity, mandatory transaction participation, failure retention,
+  later retry, and the complete Outbox-to-Kafka-to-Consumer path.
