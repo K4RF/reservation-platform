@@ -9,6 +9,10 @@ public sealed interface ReservationEvent permits
 
 	Object payload();
 
+	/**
+	 * Uses the Reservation Aggregate ID as the Kafka key so every lifecycle event
+	 * for one Reservation is assigned to the same Topic partition.
+	 */
 	default String partitionKey() {
 		return metadata().aggregateId().toString();
 	}

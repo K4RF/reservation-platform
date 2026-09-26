@@ -40,6 +40,7 @@ spring:
         spring.json.trusted.packages: junsik.reservation.event.reservation
     listener:
       ack-mode: record
+      concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
   security:
     oauth2:
       client:
