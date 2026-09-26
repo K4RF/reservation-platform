@@ -7,6 +7,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import java.time.LocalDate;
@@ -14,6 +17,8 @@ import java.time.LocalDate;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -27,6 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.enums.ReservationOutboxStatus;
 import junsik.reservation.enums.ReservationStatus;
 import junsik.reservation.repository.RefreshTokenStore;
 import junsik.reservation.repository.ReservationOutboxEventRepository;
@@ -72,11 +78,21 @@ class BasicReservationMvpIntegrationTest {
 	@MockitoBean
 	private RefreshTokenStore refreshTokenStore;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
 	private MvpTestFixture fixture;
 
 	@BeforeEach
-	void setUp() {
+	void setUp() throws InterruptedException {
 		fixture = new MvpTestFixture(jdbcTemplate, passwordEncoder);
+		RLock roomLock = mock(RLock.class);
+		given(redissonClient.getLock(anyString())).willReturn(roomLock);
+		given(roomLock.tryLock(
+				org.mockito.ArgumentMatchers.anyLong(),
+				org.mockito.ArgumentMatchers.anyLong(),
+				org.mockito.ArgumentMatchers.eq(java.util.concurrent.TimeUnit.MILLISECONDS)
+		)).willReturn(true);
 	}
 
 	@Test
@@ -226,6 +242,9 @@ class BasicReservationMvpIntegrationTest {
 		assertThat(reservedQuantity).isZero();
 		assertThat(outboxEventRepository.findAll())
 				.hasSize(3)
+				.extracting(event -> event.getStatus())
+				.containsOnly(ReservationOutboxStatus.PENDING);
+		assertThat(outboxEventRepository.findAll())
 				.extracting(event -> event.getEventType().name())
 				.containsExactly(
 						"RESERVATION_CREATED",

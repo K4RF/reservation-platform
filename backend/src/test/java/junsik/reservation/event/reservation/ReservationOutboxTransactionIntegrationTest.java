@@ -9,8 +9,10 @@ import java.time.LocalDate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.IllegalTransactionStateException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -23,6 +25,9 @@ import junsik.reservation.repository.ReservationOutboxEventRepository;
 		"spring.datasource.url=jdbc:h2:mem:reservation-outbox-transaction;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 )
 class ReservationOutboxTransactionIntegrationTest {
+
+	@MockitoBean
+	private RedissonClient redissonClient;
 
 	@Autowired
 	private ReservationEventPublisher eventPublisher;
