@@ -66,7 +66,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
   contract, versioned Topic declaration, Producer/Consumer base configuration, and
   Transactional Outbox publication, Event-ID-based persistent Consumer idempotency,
   bounded fixed-backoff Consumer retry and Dead Letter Topic recovery, typed Consumer
-  handlers, and an asynchronous structured Audit Log stub
+  handlers, an asynchronous structured Audit Log stub, and Reservation-ID Key based
+  aggregate ordering across a three-partition Topic
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
 - MySQL Connector/J
 - Lombok
@@ -317,8 +318,9 @@ Before completing a change:
 - Redis caching outside accommodation/room detail reads, distributed locks outside reservation creation, alternative
   database concurrency strategies beyond the recorded pessimistic/optimistic
   variants, and external Kafka Consumer business integrations are not implemented. Kafka
-  infrastructure, a versioned Reservation Topic, and Entity-independent
-  Created/Changed/Cancelled Event contracts are configured. Reservation changes and a
+  infrastructure, a three-partition versioned Reservation Topic, Reservation-ID Key based
+  aggregate ordering, and Entity-independent Created/Changed/Cancelled Event contracts are
+  configured. Reservation changes and a
   `PENDING` JSON Outbox snapshot are stored in one Database Transaction. A scheduled Publisher
   locks a bounded pending batch, waits for Kafka acknowledgement, and changes successful rows
   to `PUBLISHED`; failed rows remain `PENDING` with attempt details for a later poll. One
@@ -406,7 +408,8 @@ Before completing a change:
   Consumer tests verify key validation, failure propagation, Event-ID duplicate skipping,
   processing-ledger rollback, concurrent same-event handling, restart persistence, bounded
   transient retries, immediate non-retryable recovery, DLT metadata, post-DLT continuation, complete handler
-  registration, and Created/Changed/Cancelled JSON deserialization and dispatch
-  against an Embedded Kafka broker without requiring the local Compose broker. Outbox tests
+  registration, Created/Changed/Cancelled JSON deserialization and dispatch, same-Reservation
+  lifecycle ordering, and different-Reservation distribution across multiple partitions against
+  an Embedded Kafka broker without requiring the local Compose broker. Outbox tests
   verify commit/rollback atomicity, mandatory transaction participation, failure retention,
   later retry, and the complete Outbox-to-Kafka-to-Consumer path.

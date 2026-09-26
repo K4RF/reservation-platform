@@ -35,7 +35,7 @@ Transaction에서 `OutboxReservationEventPublisher`를 호출합니다. Publishe
 | 항목 | 개발 환경 값 | 근거 |
 | --- | --- | --- |
 | Topic | `reservation.events.v1` | 예약 Aggregate의 생명주기 Event를 하나의 Versioned Topic으로 관리 |
-| Message Key | Reservation ID의 문자열 표현 | 같은 예약의 순서를 동일 Partition에서 유지 |
+| Message Key | Reservation ID의 문자열 표현 | Kafka Key partitioner가 같은 예약의 모든 Event를 동일 Partition에 배치 |
 | Partition | `3` | 로컬에서 병렬 소비와 Key 기반 순서를 함께 검증할 수 있는 최소 개발 기준 |
 | Replication Factor | `1` | 단일 Broker인 로컬 Docker Compose 전용 값 |
 | Auto Creation | 비활성화 | 애플리케이션의 `NewTopic` 선언을 Topic 설정의 기준으로 사용 |
@@ -44,6 +44,33 @@ Topic 이름, Partition 수, Replication Factor는 각각
 `KAFKA_RESERVATION_TOPIC`, `KAFKA_RESERVATION_TOPIC_PARTITIONS`,
 `KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR`로 재정의할 수 있습니다. 운영 환경의
 Broker 수와 가용성 요구에 맞춰 Replication Factor를 별도로 정해야 합니다.
+
+### 3.1 Reservation Aggregate 순서와 Partition 전략
+
+- 순서 보장 범위는 **하나의 Reservation Aggregate**입니다. 서로 다른 Reservation 간에는
+  전역 발생 순서를 보장하지 않으며, 서로 다른 Key는 서로 다른 Partition에서 병렬 처리될 수
+  있습니다.
+- Producer는 Partition 번호를 직접 지정하지 않고 모든 `ReservationEvent`의
+  `aggregateId`를 문자열 Key로 전달합니다. 같은 Key와 같은 Topic Partition 수에서는 Kafka
+  Key partitioner가 같은 Partition을 선택하므로 `CREATED → CHANGED → CANCELLED` 같은
+  동일 예약의 연속 Event는 Partition 기록 순서를 따릅니다.
+- Source Topic과 DLT는 모두 3 Partition으로 선언합니다. DLT 복구 시 원본 Partition 번호를
+  유지하므로 장애 분석에서도 원래 Partition 위치를 확인할 수 있습니다.
+- Listener concurrency는 기본 3(`KAFKA_CONSUMER_CONCURRENCY`)으로 Source Topic의
+  Partition 수와 맞춥니다. 한 Consumer Group 안에서 한 Partition은 한 Consumer Thread만
+  처리하므로 동일 Reservation Key의 순서를 깨지 않으면서 다른 Partition은 병렬 처리합니다.
+- Producer는 `acks=all`과 idempotence를 사용합니다. 전송 재시도와 Outbox의 at-least-once
+  재발행은 같은 `eventId`를 다시 전달할 수 있지만, Consumer의 영속 Event-ID 멱등성이
+  중복 부수 효과를 막습니다. Outbox Publisher는 `createdAt`, `id` 순으로 PENDING 배치를
+  조회해 발행합니다.
+
+Partition 수를 실행 중인 Topic에 늘리면 Key-to-Partition mapping이 바뀔 수 있습니다. 따라서
+동일 Reservation의 이전 Event와 이후 Event가 다른 Partition에 배치될 수 있으므로, 활성
+Topic의 Partition 증설은 순서 보장이 필요한 기간에는 임의로 수행하지 않습니다. 증설이
+필요하면 새 Versioned Topic으로 전환하거나 기존 처리 완료를 확인한 뒤 통제된 Cutover를
+계획합니다. 특정 Reservation이 비정상적으로 많은 Event를 만들면 하나의 Key를 분할할 수
+없으므로 해당 Partition lag와 Key 분포를 관찰하고, Aggregate 순서를 포기하지 않는 범위에서
+별도 처리 전략을 검토합니다.
 
 ## 4. 공통 Metadata
 
@@ -94,6 +121,9 @@ Event에는 JPA 연관관계, 비밀번호, JWT, 내부 Lock Version 등 후속 
 - 기본 Group ID는 `reservation-platform-reservation-post-processing-v1`입니다. 같은
   Group의 Application Instance는 Topic Partition을 나눠 처리합니다.
 - Listener의 기본 Ack Mode는 Record 단위입니다.
+- Listener concurrency 기본값은 Topic Partition 수와 같은 `3`이며,
+  `KAFKA_CONSUMER_CONCURRENCY`로 조정할 수 있습니다. concurrency가 Partition 수보다
+  커도 추가 Thread가 순서를 높이거나 처리량을 늘리지는 않습니다.
 - Consumer 처리 실패는 기본 1초 간격으로 최대 2회 재시도합니다. 최초 시도까지 합치면
   총 3회이며 `KAFKA_CONSUMER_MAX_RETRIES`, `KAFKA_CONSUMER_RETRY_BACKOFF`으로 조정합니다.
 - DLT는 `reservation.events.v1.dlt`이며 원본 Topic과 같은 3개 Partition을 선언합니다.
@@ -148,7 +178,8 @@ reservation.events.v1
   Event ID, Type, Reservation ID, 공개 예약번호만 남기는 비영속 Audit Log Stub입니다.
   회원 이메일·전화번호 같은 개인정보는 Logging하지 않습니다.
 - 동일 Reservation ID가 Message Key이므로 같은 예약의 Event는 같은 Partition에
-  배치되어 Kafka Partition 순서를 따릅니다.
+  배치되어 Kafka Partition 순서를 따릅니다. Retry는 원본 Partition에서 수행되므로 실패한
+  Event가 복구되거나 DLT로 이동할 때까지 같은 Partition의 뒤 Event는 처리되지 않습니다.
 
 Handler 또는 후처리 Service에서 예외가 발생하면 Consumer는 실패 식별 정보를 남기고
 예외를 Listener Container에 다시 전달합니다. 처리 이력 INSERT도 같은 Transaction에서

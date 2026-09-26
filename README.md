@@ -676,6 +676,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] 예약 상태와 Event 저장 원자성을 위한 Transactional Outbox·재발행 구성
 * [x] 영속 Event ID 처리 이력 기반 Consumer 중복 Skip·실패 Rollback 구성
 * [x] Consumer 고정 Backoff 제한 Retry·Dead Letter Topic 실패 격리 구성
+* [x] Reservation ID Key 기반 동일 예약 Event 순서 보장·다중 Partition 분산 검증
 
 ---
 
@@ -740,6 +741,7 @@ REDIS_COMMAND_TIMEOUT=1s
 KAFKA_PORT=9092
 KAFKA_BOOTSTRAP_SERVERS=localhost:9092
 KAFKA_CONSUMER_GROUP_ID=reservation-platform-reservation-post-processing-v1
+KAFKA_CONSUMER_CONCURRENCY=3
 KAFKA_RESERVATION_TOPIC=reservation.events.v1
 KAFKA_RESERVATION_TOPIC_PARTITIONS=3
 KAFKA_RESERVATION_TOPIC_REPLICATION_FACTOR=1
@@ -783,7 +785,9 @@ Kafka는 기본적으로 Host와 컨테이너의 `9092` 포트를 사용합니�
 Consumer Retry/DLT 기본값은 `KAFKA_CONSUMER_MAX_RETRIES=2`,
 `KAFKA_CONSUMER_RETRY_BACKOFF=1s`,
 `KAFKA_RESERVATION_DLT_TOPIC=reservation.events.v1.dlt`이며 DLT 발행 확인 제한은
-`KAFKA_DLT_PUBLISH_TIMEOUT=5s`입니다.
+`KAFKA_DLT_PUBLISH_TIMEOUT=5s`입니다. Reservation Event는 Reservation ID를 Kafka
+Message Key로 사용해 동일 예약의 Event를 같은 Partition에서 순서대로 처리합니다.
+기본 Listener concurrency는 3이며 `KAFKA_CONSUMER_CONCURRENCY`로 조정합니다.
 
 ```bash
 docker compose up -d
