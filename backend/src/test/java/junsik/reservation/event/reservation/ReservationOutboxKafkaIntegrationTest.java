@@ -1,20 +1,24 @@
 package junsik.reservation.event.reservation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -54,6 +58,12 @@ class ReservationOutboxKafkaIntegrationTest {
 	@MockitoBean
 	private ReservationEventAuditLogService auditLogService;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
+	@MockitoSpyBean
+	private KafkaReservationEventProducer producer;
+
 	@BeforeEach
 	void cleanUp() {
 		outboxEventRepository.deleteAll();
@@ -75,6 +85,33 @@ class ReservationOutboxKafkaIntegrationTest {
 		assertThat(published.getStatus()).isEqualTo(ReservationOutboxStatus.PUBLISHED);
 		assertThat(published.getPublishedAt()).isNotNull();
 		assertThat(published.getPublishAttempts()).isOne();
+		verify(auditLogService, timeout(10_000)).recordCreated(event);
+	}
+
+	@Test
+	void preservesTheOutboxEventDuringBrokerFailureAndPublishesItAfterRecovery() {
+		ReservationCreatedEvent event = createdEvent();
+		new TransactionTemplate(transactionManager).executeWithoutResult(status ->
+				eventPublisher.publish(event)
+		);
+		CompletableFuture<org.springframework.kafka.support.SendResult<Object, Object>> brokerFailure =
+				new CompletableFuture<>();
+		brokerFailure.completeExceptionally(new IllegalStateException("broker unavailable"));
+		doReturn(brokerFailure).doCallRealMethod().when(producer).send(event);
+
+		assertThat(outboxPublisher.publishPendingBatch()).isZero();
+		ReservationOutboxEvent pending = outboxEventRepository.findAll().getFirst();
+		assertThat(pending.getStatus()).isEqualTo(ReservationOutboxStatus.PENDING);
+		assertThat(pending.getPublishedAt()).isNull();
+		assertThat(pending.getPublishAttempts()).isOne();
+		assertThat(pending.getLastError()).contains("broker unavailable");
+
+		assertThat(outboxPublisher.publishPendingBatch()).isOne();
+		ReservationOutboxEvent published = outboxEventRepository.findAll().getFirst();
+		assertThat(published.getStatus()).isEqualTo(ReservationOutboxStatus.PUBLISHED);
+		assertThat(published.getPublishAttempts()).isEqualTo(2);
+		assertThat(published.getPublishedAt()).isNotNull();
+		assertThat(published.getLastError()).isNull();
 		verify(auditLogService, timeout(10_000)).recordCreated(event);
 	}
 

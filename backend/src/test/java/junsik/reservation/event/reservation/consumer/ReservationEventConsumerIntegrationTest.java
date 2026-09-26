@@ -1,5 +1,6 @@
 package junsik.reservation.event.reservation.consumer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -11,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -27,6 +29,9 @@ import junsik.reservation.event.reservation.ReservationCreatedPayload;
 import junsik.reservation.event.reservation.ReservationEvent;
 import junsik.reservation.repository.ProcessedReservationEventRepository;
 import junsik.reservation.service.reservation.ReservationEventAuditLogService;
+import junsik.reservation.service.reservation.ReservationEventIdempotencyService;
+import junsik.reservation.service.reservation.ReservationEventProcessingResult;
+import junsik.reservation.service.reservation.ReservationEventProcessingTransaction;
 
 @SpringBootTest(properties = {
 		"reservation.kafka.enabled=true",
@@ -52,8 +57,17 @@ class ReservationEventConsumerIntegrationTest {
 	@MockitoBean
 	private ReservationEventAuditLogService auditLogService;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
 	@Autowired
 	private ProcessedReservationEventRepository processedEventRepository;
+
+	@Autowired
+	private ReservationEventIdempotencyService idempotencyService;
+
+	@Autowired
+	private ReservationEventProcessingTransaction processingTransaction;
 
 	@BeforeEach
 	void cleanUp() {
@@ -84,6 +98,21 @@ class ReservationEventConsumerIntegrationTest {
 
 		send(event);
 		verify(auditLogService, after(2_000).times(1)).recordCreated(event);
+	}
+
+	@Test
+	void skipsTheSameEventAfterTheConsumerServiceIsRecreated() {
+		ReservationCreatedEvent event = createdEvent();
+
+		assertThat(idempotencyService.process(event))
+				.isEqualTo(ReservationEventProcessingResult.PROCESSED);
+
+		ReservationEventIdempotencyService restartedService =
+				new ReservationEventIdempotencyService(processingTransaction, processedEventRepository);
+
+		assertThat(restartedService.process(event))
+				.isEqualTo(ReservationEventProcessingResult.DUPLICATE);
+		verify(auditLogService).recordCreated(event);
 	}
 
 	private void send(ReservationEvent event) throws Exception {

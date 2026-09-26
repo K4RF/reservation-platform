@@ -20,6 +20,7 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.TransientDataAccessResourceException;
@@ -69,6 +70,9 @@ class ReservationEventRetryDltIntegrationTest {
 
 	@MockitoBean
 	private ReservationEventAuditLogService auditLogService;
+
+	@MockitoBean
+	private RedissonClient redissonClient;
 
 	@BeforeEach
 	void cleanUp() {

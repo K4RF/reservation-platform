@@ -412,4 +412,6 @@ Before completing a change:
   lifecycle ordering, and different-Reservation distribution across multiple partitions against
   an Embedded Kafka broker without requiring the local Compose broker. Outbox tests
   verify commit/rollback atomicity, mandatory transaction participation, failure retention,
-  later retry, and the complete Outbox-to-Kafka-to-Consumer path.
+  later retry after an injected broker failure, and the complete Outbox-to-Kafka-to-Consumer
+  path. `docs/testing/kafka-failure-scenarios.md` records coverage and clarifies that actual
+  Broker process shutdown/recovery is outside the Embedded Kafka test scope.

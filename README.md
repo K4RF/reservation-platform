@@ -608,7 +608,10 @@ docs: add concurrency test results
 **v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했고,
 **v0.4.0 — Event-Driven Processing**의 Kafka 기반, 예약 Event 계약, Transactional
 Outbox Publisher, Event ID 기반 Consumer 멱등 처리와 제한 Retry·DLT 실패 격리를
-구성했습니다. 다음 단계는 DLT 운영·Cleanup 정책 강화이며
+구성했습니다. Broker/Producer 장애에서 Outbox 보존과 재발행, Consumer Retry·DLT 및
+중복 처리 방지 검증 범위는
+[`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
+다음 단계는 DLT 운영·Cleanup 정책 강화이며
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -677,6 +680,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] 영속 Event ID 처리 이력 기반 Consumer 중복 Skip·실패 Rollback 구성
 * [x] Consumer 고정 Backoff 제한 Retry·Dead Letter Topic 실패 격리 구성
 * [x] Reservation ID Key 기반 동일 예약 Event 순서 보장·다중 Partition 분산 검증
+* [x] Kafka 발행 실패 시 Outbox 보존·재시도 및 Consumer Retry·DLT 시나리오 검증
 
 ---
 

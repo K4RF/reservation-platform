@@ -97,6 +97,19 @@ class ReservationOutboxPublisherTest {
 	}
 
 	@Test
+	void keepsAnEventPendingWhenProducerFailsBeforeReturningAFuture() {
+		given(producer.send(event)).willThrow(new IllegalStateException("metadata unavailable"));
+
+		int publishedCount = publisher.publishPendingBatch();
+
+		assertThat(publishedCount).isZero();
+		assertThat(outboxEvent.getStatus()).isEqualTo(ReservationOutboxStatus.PENDING);
+		assertThat(outboxEvent.getPublishedAt()).isNull();
+		assertThat(outboxEvent.getPublishAttempts()).isOne();
+		assertThat(outboxEvent.getLastError()).contains("metadata unavailable");
+	}
+
+	@Test
 	void publishesAPendingEventOnALaterAttemptAfterTheBrokerRecovers() {
 		CompletableFuture<SendResult<Object, Object>> failed = new CompletableFuture<>();
 		failed.completeExceptionally(new IllegalStateException("broker unavailable"));
