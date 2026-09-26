@@ -33,6 +33,7 @@ spring:
         spring.json.trusted.packages: junsik.reservation.event.reservation
     listener:
       ack-mode: record
+      concurrency: 3
   security:
     oauth2:
       client:

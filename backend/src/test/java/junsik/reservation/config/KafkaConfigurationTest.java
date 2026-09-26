@@ -6,12 +6,14 @@ import java.time.Duration;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 class KafkaConfigurationTest {
@@ -28,6 +30,9 @@ class KafkaConfigurationTest {
 	@Autowired
 	private Environment environment;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
 	@Test
 	void separatesProducerAndConsumerConfigurationThroughSpringBootAutoConfiguration() {
 		assertThat(kafkaTemplate).isNotNull();
@@ -38,6 +43,8 @@ class KafkaConfigurationTest {
 				.isEqualTo("false");
 		assertThat(environment.getProperty("spring.kafka.listener.ack-mode"))
 				.isEqualTo("record");
+		assertThat(environment.getProperty("spring.kafka.listener.concurrency"))
+				.isEqualTo("3");
 	}
 
 	@Test
