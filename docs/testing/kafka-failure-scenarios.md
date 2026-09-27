@@ -15,6 +15,7 @@
 | Consumer 오류가 제한 횟수 내 복구되지 않음 | `ReservationEventRetryDltIntegrationTest` | Event가 원래 Key와 Payload 및 실패 Header를 보존해 같은 번호의 DLT Partition으로 이동합니다. 실패 Event의 ledger는 생성되지 않고 이후 Record 처리가 계속됩니다. |
 | 재시작 후 같은 Event 재전달 | `ReservationEventConsumerIntegrationTest`, `ReservationEventIdempotencyIntegrationTest` | H2/Embedded Kafka 경로에서 Consumer 멱등 Service를 다시 구성해도 영속 Event ID가 중복 Handler 실행을 막습니다. MySQL Testcontainers 테스트는 재시작·동시성·Handler Rollback을 추가 검증합니다. Handler가 실패하면 ledger가 Rollback되어 재전달로 재시도할 수 있습니다. |
 | 동일 Reservation lifecycle 순서 | `ReservationEventPartitionOrderingIntegrationTest` | 같은 Reservation의 Created, Changed, Cancelled가 한 Partition에서 연속 offset으로 발행되고 Consumer Handler 순서도 유지됩니다. |
+| 실제 예약 생명주기에서 Kafka 후처리까지 | `ReservationLifecycleEventIntegrationTest` | 세 예약 Command가 각각 Commit한 Outbox Snapshot을 발행하고, 순서대로 Consumer Handler와 영속 Event ID 처리 이력에 도달합니다. 최종 예약 취소·재고 복구는 Consumer 실행 전부터 확정됩니다. |
 
 ## 범위와 한계
 
@@ -29,6 +30,15 @@ Outbox Event를 하나의 Database Transaction에 기록한 뒤 Publisher가 별
 Broker 오류는 이미 Commit된 예약 응답을 되돌리지 않습니다. Outbox Publisher 장애는 Event를
 `PENDING`으로 유지하고 다음 Poll에서 다시 시도합니다.
 
-테스트 profile의 Embedded Kafka 및 H2는 외부 Docker Compose Broker나 개발 DB를 사용하지
-않습니다. MySQL 기반 Event ID ledger 재시작/동시성 테스트는 Testcontainers를 사용하므로
-전체 backend 테스트에는 Docker 호환 Container Runtime이 필요합니다.
+Kafka 통합 테스트의 Embedded Kafka 및 H2는 외부 Docker Compose Broker나 개발 DB를
+사용하지 않습니다. MySQL 기반 Event ID ledger 재시작/동시성 테스트는 Testcontainers를
+사용하므로 전체 backend 테스트에는 Docker 호환 Container Runtime이 필요합니다.
+
+로컬에서 Kafka 통합 테스트가 실패하면 먼저 `@EmbeddedKafka`와 테스트별 고유 Consumer
+Group/인메모리 DB 설정을 확인합니다. 일반 테스트가 외부 `localhost:9092`에 연결을
+시도한다면 `backend/src/test/resources/application.yaml`의 Kafka 비활성화 설정이
+테스트 Classpath에 적용됐는지 확인해야 합니다. 발행은 성공했는데 Consumer 확인이
+실패한다면 Source/DLT Topic 이름, Reservation ID Key, JSON 역직렬화 설정과
+`processed_reservation_events` 처리 이력을
+순서대로 확인합니다. CI의 Redis는 별도 Service Container이고 MySQL/Redis 통합 테스트는
+격리된 Testcontainers를 사용합니다. Compose Volume을 정리해 문제를 우회하지 않습니다.
