@@ -6,9 +6,9 @@
 
 단순한 예약 CRUD 구현에 그치지 않고, 동시성 제어, 캐싱, 이벤트 기반 아키텍처, 성능 테스트, 모니터링 및 CI/CD 환경을 단계적으로 구축하는 것을 목표로 합니다.
 
-> **v0.1.0부터 v0.3.0 — Cache & Query Optimization까지** 기능 및 조회 구조 검증을
-> 완료했으며, **v0.4.0 — Event-Driven Processing**을 진행 중입니다. Spring Boot 프로젝트,
-> MySQL·Redis·Kafka용 Docker Compose, Backend CI, 회원가입·이메일 로그인·Google
+> **v0.1.0부터 v0.4.0 — Event-Driven Processing까지** 기능 및 구조 검증을
+> 완료했습니다. Spring Boot 프로젝트, MySQL·Redis·Kafka용 Docker Compose,
+> Backend CI, 회원가입·이메일 로그인·Google
 > OAuth2 로그인, JWT Access Token 기반 인증, 숙소·객실 등록 및 조회와 기본
 > 예약 생성·본인 예약 조건 조회·취소 API가 구성되어 있습니다. Redis 기반 Refresh
 > Token 재발급과 로그아웃, 날짜·인원 기반 예약 가능 객실 조회가 구현됐으며
@@ -399,7 +399,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Functional | v0.1.3 — Booking Policy & Catalog Completion | Completed | 숙소 정책·판매 상태·Snapshot·Catalog·현지 날짜 |
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
-| Backend Architecture | v0.4.0 — Event-Driven Processing | In Progress | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 구성, 운영 Cleanup·외부 연동 예정 |
+| Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
 | Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
@@ -605,13 +605,16 @@ docs: add concurrency test results
 
 ## 11. 현재 진행 상태
 
-**v0.3.0 — Cache & Query Optimization**까지 기능 개발과 조회 구조 검증을 완료했고,
-**v0.4.0 — Event-Driven Processing**의 Kafka 기반, 예약 Event 계약, Transactional
-Outbox Publisher, Event ID 기반 Consumer 멱등 처리와 제한 Retry·DLT 실패 격리를
-구성했습니다. Broker/Producer 장애에서 Outbox 보존과 재발행, Consumer Retry·DLT 및
-중복 처리 방지 검증 범위는
+**v0.4.0 — Event-Driven Processing**까지 기능 개발과 구조 검증을 완료했습니다.
+Kafka 기반 예약 Event 계약, Transactional Outbox Publisher, Event ID 기반
+Consumer 멱등 처리와 제한 Retry·DLT 실패 격리를
+구성했습니다. 실제 예약 생성·일정 변경·취소에서 Outbox·Kafka·Consumer까지의
+연속 흐름은 [`Reservation Event Contract`](docs/architecture/reservation-event-contract.md)의
+통합 검증 경계에 정리했습니다. Broker/Producer 장애에서 Outbox 보존과 재발행,
+Consumer Retry·DLT 및 중복 처리 방지 검증 범위는
 [`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
-다음 단계는 DLT 운영·Cleanup 정책 강화이며
+운영 Broker 중단·복구 실험, DLT 수동 Replay 도구, Outbox·처리 이력 Cleanup과 외부 후처리
+연동은 아직 구현되지 않았습니다. 다음 단계는
 Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
 
 * [x] Repository 생성
@@ -681,6 +684,7 @@ Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production �
 * [x] Consumer 고정 Backoff 제한 Retry·Dead Letter Topic 실패 격리 구성
 * [x] Reservation ID Key 기반 동일 예약 Event 순서 보장·다중 Partition 분산 검증
 * [x] Kafka 발행 실패 시 Outbox 보존·재시도 및 Consumer Retry·DLT 시나리오 검증
+* [x] 실제 예약 생성·일정 변경·취소부터 Outbox·Kafka·Consumer까지 통합 검증
 
 ---
 

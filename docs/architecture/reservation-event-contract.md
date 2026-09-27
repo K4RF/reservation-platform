@@ -242,3 +242,25 @@ Process가 종료되거나, Client Timeout 뒤 실제 전송이 완료되면 같
 있습니다. `PUBLISHED` 행은 현재 자동 삭제하지 않습니다. 운영 검증과 장애 추적에 필요한
 보존 기간, Batch Cleanup, Archive 기준은 실제 Event 양과 Consumer 멱등성 저장소 정책을
 함께 측정한 뒤 후속 작업에서 결정합니다.
+
+## 11. 통합 검증 경계 (Issue #137)
+
+`ReservationLifecycleEventIntegrationTest`는 실제 `ReservationService`의 생성·일정 변경·취소를
+각각 Commit한 뒤, 동일 예약의 세 `PENDING` Outbox Snapshot, Event ID·Type·Version·Payload,
+최종 예약/재고 상태를 확인합니다. 이어 수동 Publisher Poll 한 번으로 Embedded Kafka에
+발행하고, 같은 Key를 소비한 세 Handler 호출 순서와 영속 처리 이력 3건을 검증합니다.
+이 테스트에서는 예약 생성 분산 Lock 진입점 대신 Transaction Service를 직접 호출합니다.
+Lock/Retry의 동시성 정합성은 v0.2.0 테스트가 별도로 담당합니다.
+
+테스트 Classpath 설정은 기본 Kafka Listener와 Outbox Scheduler를 비활성화합니다. 이 테스트만
+Kafka를 명시적으로 활성화하고 Scheduler는 계속 꺼둬 발행 시점을 제어합니다. H2와
+Embedded Kafka를 사용하므로 로컬 Compose 데이터·Broker에는 접근하지 않습니다. 실제
+MySQL 제약·동시성, Redis Lock/Cache, Kafka 장애·DLT는 각 전용 테스트에서 검증합니다.
+Kafka Testcontainers 의존성을 추가하지 않은 이유는 이 테스트가 필요한 Wire Protocol,
+Partition, JSON 직렬화와 Listener 경로를 기존 Embedded Kafka로 검증하며, Broker
+프로세스 중단·복구는 별도 운영 환경 검증으로 남겨두기 때문입니다.
+
+현재 경계는 예약 핵심 Transaction → Outbox 저장 → 별도 Kafka 발행 → 영속 멱등 Consumer →
+Audit Log Stub입니다. 외부 후처리의 성공 보장, DLT 자동 Replay, 원시 역직렬화 오류 격리,
+Outbox/처리 이력 Cleanup, 운영 Broker 장애 시간 측정은 이 통합 테스트의 성공으로
+보장되지 않습니다.
