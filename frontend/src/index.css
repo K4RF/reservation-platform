@@ -1,0 +1,30 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #172033;
+  background: #f7f9fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+.app-shell {
+  box-sizing: border-box;
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+}
+
+p {
+  color: #4b5563;
+}
