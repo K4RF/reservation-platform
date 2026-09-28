@@ -360,6 +360,9 @@ reservation-platform/
 │   ├── settings.gradle
 │   └── gradlew, gradlew.bat
 ├── frontend/
+│   ├── src/                 # React 애플리케이션 진입점
+│   ├── package.json
+│   ├── pnpm-lock.yaml
 │   └── README.md
 ├── infra/
 │   ├── docker/
@@ -380,8 +383,8 @@ reservation-platform/
 └── README.md
 ```
 
-`frontend`, `infra`, `load-test`와 일부 `docs` 하위 디렉터리는 현재
-placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 추가됩니다.
+`frontend`에는 React·TypeScript·Vite 실행 환경과 최소 진입 화면이 있습니다.
+`infra`, `load-test`와 일부 `docs` 하위 디렉터리는 아직 placeholder 상태입니다.
 
 ---
 
@@ -389,7 +392,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 
 현재 Repository는 `backend/`와 `frontend/`를 함께 관리하는 Monorepo입니다.
 `v*`는 Backend / Platform, `f*`는 Frontend Milestone이며 같은 Repository에서
-아래 순서로 진행합니다. Frontend는 현재 placeholder이고 기술 스택은 미선정입니다.
+관리합니다. Frontend는 React·TypeScript·Vite 실행 환경을 구성했으며 기능 화면은 아직 없습니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
 | --- | --- | --- | --- |
@@ -400,7 +403,7 @@ placeholder 상태이며, 관련 구현이 시작될 때 구체적인 파일이 
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
-| Frontend | f0.1.0 — Frontend Foundation | Planned | 공통 화면·Routing·API Client 기반 |
+| Frontend | f0.1.0 — Frontend Foundation | In Progress | React·TypeScript·Vite 실행 환경 구성; Routing·API Client는 후속 작업 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
 | Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
@@ -832,6 +835,23 @@ Backend 기본 설정은 MySQL, Redis, Kafka를 사용하므로 애플리케이�
 컨테이너가 필요합니다. Backend는 프로젝트 루트의 `.env`를 로컬 설정으로
 읽습니다. 다른 데이터베이스를 사용할 때는 `DB_URL`, `MYSQL_USER`,
 `MYSQL_PASSWORD`를 실행 환경에서 재정의할 수 있습니다.
+
+### Frontend 실행
+
+Frontend는 Backend와 별도 pnpm 프로젝트입니다. Node.js 20.19 이상 또는 22.12 이상과
+pnpm 11.19.0을 설치한 뒤 다음 명령을 실행합니다.
+
+```bash
+cd frontend
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+기본 개발 주소는 `http://localhost:5173`입니다. 현재는 기본 진입 화면만 있으며
+Backend API에 연결되지 않아 Docker Compose 없이도 실행할 수 있습니다.
+Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 공개 API 주소의
+예시와 로컬 `.env` 생성 방법은 [`frontend/README.md`](frontend/README.md)에
+정리했습니다. `.env`에는 브라우저에 공개되어도 되는 값만 넣어야 합니다.
 
 ### Swagger UI 및 OpenAPI
 
