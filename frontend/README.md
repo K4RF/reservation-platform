@@ -29,6 +29,7 @@ Windows PowerShell에서는 `cp` 대신 `Copy-Item .env.example .env`를 사용�
 pnpm lint
 pnpm format:check
 pnpm typecheck
+pnpm test
 pnpm build
 pnpm preview
 ```
@@ -46,13 +47,37 @@ Fast Refresh 규칙을 검사합니다. `pnpm format:check`는 Prettier 서식�
 `pnpm typecheck`는 TypeScript Compiler를 독립적으로 실행합니다. `pnpm build`도
 타입 검사 후 Vite Production Build를 수행합니다. 향후 Frontend GitHub Actions
 Workflow는 `pnpm install --frozen-lockfile` 다음에 `lint`, `format:check`,
-`typecheck`, `build` 명령을 그대로 사용할 수 있습니다. 현재 저장소에는 Backend
+`typecheck`, `test`, `build` 명령을 그대로 사용할 수 있습니다. 현재 저장소에는 Backend
 CI만 있으며 Frontend Workflow는 아직 구성되지 않았습니다.
 
 `.editorconfig`는 Frontend 디렉터리의 UTF-8, LF, 2칸 들여쓰기를 IDE에 알리고,
 `.prettierrc.json`은 일관된 코드 서식을 정의합니다. Prettier를 IDE 기본 Formatter로
 선택하면 CLI와 같은 결과를 얻을 수 있습니다. `.prettierignore`는 설치/빌드 결과와
 잠금 파일을 서식 대상에서 제외합니다.
+`.gitattributes`는 Windows 체크아웃에서도 Frontend 텍스트 파일을 LF로 유지해
+Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
+
+## 라우팅과 공통 레이아웃
+
+`src/App.tsx`가 `BrowserRouter`를 설치하고, `src/app/routes.tsx`가 모든 Route를
+정의합니다. `src/layouts/RootLayout.tsx`는 모든 페이지에 공통인 Header·Navigation과
+`<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
+표시됩니다. 현재 Footer는 공통으로 표시할 내용이 없어 두지 않았습니다.
+
+| 경로             | 현재 동작                         |
+| ---------------- | --------------------------------- |
+| `/`              | Home 페이지                       |
+| 그 외 경로 (`*`) | 공통 Layout 안의 Not Found 페이지 |
+
+경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다. 향후 공개 화면은
+`/login`·`/accommodations`처럼 Root Layout 아래에 추가하고, 로그인 회원 화면은
+`/reservations`, 관리 화면은 `/admin/...` 영역으로 확장하는 **제안**입니다. 이 경로의
+화면·인증 검사·권한 검사는 아직 구현되지 않았습니다. 인증 기능을 추가할 때는 해당
+중첩 Route에 보호 Layout을 배치하고, 권한의 최종 검증은 Backend에서 수행해야 합니다.
+
+`pnpm test`는 홈·미등록 경로·기본 Navigation을 Memory Router로 검증합니다. Vite 개발
+서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
+호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
 
 ## 환경 변수와 범위
 
@@ -61,6 +86,6 @@ CI만 있으며 Frontend Workflow는 아직 구성되지 않았습니다.
 브라우저 번들에 포함될 수 있으므로 비밀번호·토큰·비밀키를 넣지 마세요.
 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
-현재 구현 범위는 `index.html` → `src/main.tsx` → `src/App.tsx`의 React 진입과
-기본 스타일뿐입니다. 라우팅, 인증, API Client, 숙소 검색, 예약, 관리자 화면은
-후속 Frontend 이슈 범위입니다.
+현재 구현 범위는 React 진입점, 기본 Home/Not Found Route, 공통 Header/Main Layout과
+기본 스타일입니다. 인증, API Client, 숙소 검색, 예약, 관리자 화면은 후속 Frontend
+이슈 범위입니다.
