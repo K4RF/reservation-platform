@@ -405,7 +405,7 @@ GitHub의 `f0.1.0`~`f0.6.0` Milestone은 모두 Open이며 Issue가 없습니다
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
-| Frontend | f0.1.0 — Frontend Foundation | In Progress | React·TypeScript·Vite 실행 환경 구성; Routing·API Client는 후속 작업 |
+| Frontend | f0.1.0 — Frontend Foundation | In Progress | React·TypeScript·Vite 환경과 기본 Routing/Layout 구성; API Client는 후속 작업 |
 | Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
 | Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
@@ -851,11 +851,13 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-기본 개발 주소는 `http://localhost:5173`입니다. 현재는 기본 진입 화면만 있으며
+기본 개발 주소는 `http://localhost:5173`입니다. 현재는 기본 Home/Not Found 화면만 있으며
 Backend API에 연결되지 않아 Docker Compose 없이도 실행할 수 있습니다.
 Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 공개 API 주소의
 예시와 로컬 `.env` 생성 방법은 [`frontend/README.md`](frontend/README.md)에
 정리했습니다. `.env`에는 브라우저에 공개되어도 되는 값만 넣어야 합니다.
+Home(`/`)와 미등록 경로의 Not Found 화면은 공통 Header/Main Layout 안에서 동작합니다.
+실제 정적 호스팅에는 깊은 URL 요청을 `index.html`로 보내는 SPA Fallback이 필요합니다.
 
 ### Swagger UI 및 OpenAPI
 
@@ -903,6 +905,7 @@ pnpm install --frozen-lockfile
 pnpm lint
 pnpm format:check
 pnpm typecheck
+pnpm test
 pnpm build
 ```
 
