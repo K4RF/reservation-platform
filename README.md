@@ -851,10 +851,11 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-기본 개발 주소는 `http://localhost:5173`입니다. 현재는 기본 Home/Not Found 화면만 있으며
-Backend API에 연결되지 않아 Docker Compose 없이도 실행할 수 있습니다.
-Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 공개 API 주소의
-예시와 로컬 `.env` 생성 방법은 [`frontend/README.md`](frontend/README.md)에
+기본 개발 주소는 `http://localhost:5173`입니다. 현재 화면은 기본 Home/Not Found만
+제공하고 Backend API를 호출하지 않아 Docker Compose 없이도 실행할 수 있습니다.
+공통 API Client와 개발용 `/api` Proxy는 준비되어 있으며 실제 API 화면은 후속 작업입니다.
+Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 환경별 API 주소와
+로컬 `.env` 설정 방법은 [`frontend/README.md`](frontend/README.md)에
 정리했습니다. `.env`에는 브라우저에 공개되어도 되는 값만 넣어야 합니다.
 Home(`/`)와 미등록 경로의 Not Found 화면은 공통 Header/Main Layout 안에서 동작합니다.
 실제 정적 호스팅에는 깊은 URL 요청을 `index.html`로 보내는 SPA Fallback이 필요합니다.

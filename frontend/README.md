@@ -79,13 +79,43 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
 호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
 
-## 환경 변수와 범위
+## Backend API 설정
 
-`.env.example`의 `VITE_API_BASE_URL`은 향후 API Client에서 사용할 공개 Backend
-주소의 예시입니다. 현재 코드에서는 읽지 않습니다. Vite의 `VITE_` 접두사 변수는
-브라우저 번들에 포함될 수 있으므로 비밀번호·토큰·비밀키를 넣지 마세요.
-실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
+`src/api/client.ts`의 `apiClient.request<T>('/members', { method: 'POST', body })`로
+Backend API를 호출합니다. 경로는 `src/config/api.ts`의 Base URL 뒤에 붙으며,
+Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은 자동으로
+직렬화하고 JSON 응답을 읽습니다. 공통 `Accept` Header, JSON 요청의 `Content-Type`,
+공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 HTTP 응답은 Status와 Backend
+응답 본문을 담은 `ApiHttpError`로 전달합니다. 인증 토큰 공급 위치는 준비했지만 실제
+로그인, Token 보관 및 401 시 Refresh/Retry 흐름은 아직 구현하지 않았습니다.
 
-현재 구현 범위는 React 진입점, 기본 Home/Not Found Route, 공통 Header/Main Layout과
-기본 스타일입니다. 인증, API Client, 숙소 검색, 예약, 관리자 화면은 후속 Frontend
-이슈 범위입니다.
+| 변수                | 로컬 기본값             | 용도                                       |
+| ------------------- | ----------------------- | ------------------------------------------ |
+| `VITE_API_BASE_URL` | `/api/v1`               | 브라우저에 포함되는 API 접두사             |
+| `API_PROXY_TARGET`  | `http://localhost:8080` | Vite 개발 서버에서만 사용하는 Backend 대상 |
+
+`frontend/.env.example`을 `.env`로 복사한 후 환경에 맞게 수정하세요. Vite는
+`.env`, `.env.[mode]`, 그리고 실행 시 제공한 환경 변수를 읽으므로 테스트·운영
+빌드에는 각각 해당 Mode의 `VITE_API_BASE_URL`을 지정할 수 있습니다. 이 값은
+빌드 시 정해지며 운영 배포 후 변경하려면 다시 빌드해야 합니다. 값을 지정하지 않으면
+`/api/v1`을 사용하므로 운영 환경에서는 같은 Origin의 Reverse Proxy가 필요합니다.
+별도 Origin의 절대 URL을 사용하려면 Backend에서 해당 Origin을 CORS로 허용해야
+합니다. 현재 Backend Security 설정에는 그 CORS 허용 규칙이 없습니다.
+
+로컬에서는 브라우저가 `http://localhost:5173/api/v1/...`을 요청하고 Vite가 이를
+`API_PROXY_TARGET`으로 전달합니다. Backend와 Docker Compose가 실행 중이라면
+다음으로 연결을 확인할 수 있습니다. 이 회원가입 요청은 실제 데이터를 생성하므로
+반복 테스트에서는 다른 이메일을 사용하세요.
+
+```bash
+curl -i -X POST http://localhost:5173/api/v1/members \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"frontend-check@example.com","password":"Password123!"}'
+```
+
+Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비밀번호·토큰·비밀키를
+넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
+
+현재 구현 범위는 React 진입점, 기본 Home/Not Found Route, 공통 Header/Main Layout,
+기본 스타일 및 공통 API Client입니다. 실제 API 호출 화면, 인증, 숙소 검색, 예약,
+관리자 화면은 후속 Frontend 이슈 범위입니다.
