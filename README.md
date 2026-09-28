@@ -391,8 +391,10 @@ reservation-platform/
 ## 6. 개발 로드맵
 
 현재 Repository는 `backend/`와 `frontend/`를 함께 관리하는 Monorepo입니다.
-`v*`는 Backend / Platform, `f*`는 Frontend Milestone이며 같은 Repository에서
-관리합니다. Frontend는 React·TypeScript·Vite 실행 환경을 구성했으며 기능 화면은 아직 없습니다.
+`v*`는 Backend / Platform, `f*`는 Frontend Milestone입니다. 두 Track은
+같은 Repository에서 별도로 관리하며 반드시 순차적으로 진행하는 것은 아닙니다.
+Frontend는 React·TypeScript·Vite 기반 초기 실행 환경을 구성했으며 기능 화면은 아직 없습니다.
+GitHub의 `f0.1.0`~`f0.6.0` Milestone은 모두 Open이며 Issue가 없습니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
 | --- | --- | --- | --- |
@@ -536,7 +538,8 @@ Schema의 관계·제약조건·인덱스는
 [`docs/erd/database-schema.md`](docs/erd/database-schema.md)에 정리되어 있습니다.
 API 오류 응답 계약과 전체 ErrorCode는
 [`docs/api/error-response.md`](docs/api/error-response.md)에 정리되어 있습니다.
-`performance`는 placeholder 상태입니다. 문제 원인과 해결 과정은
+`docs/performance`에는 동시성 전략 및 조회 Query/Cache 비교 문서가 있습니다.
+이는 전체 시스템 부하 테스트가 아닙니다. 문제 원인과 해결 과정은
 필요 시 `docs/troubleshooting`을 추가하여 관리할 예정입니다.
 
 장기적인 개발일지, 작업 계획 및 회고는 Notion에서 관리하고, 포트폴리오 평가에 필요한 핵심 문서는 GitHub에 정리합니다.
@@ -618,7 +621,8 @@ Consumer Retry·DLT 및 중복 처리 방지 검증 범위는
 [`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
 운영 Broker 중단·복구 실험, DLT 수동 Replay 도구, Outbox·처리 이력 Cleanup과 외부 후처리
 연동은 아직 구현되지 않았습니다. 다음 단계는
-Frontend(`f0.1.0`–`f0.6.0`) → Performance → Observability → Production 순서로 진행합니다.
+Frontend(`f0.1.0`–`f0.6.0`)는 별도 Open Track이며 Backend/Platform의
+Performance·Observability 계획과 반드시 순차 관계가 아닙니다. Production은 계획 상태입니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용
