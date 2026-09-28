@@ -895,6 +895,21 @@ cd backend
 GitHub Actions의 `Backend CI`는 `develop` 브랜치의 Backend 관련 push와
 Pull Request에서 동일한 테스트 및 빌드를 수행합니다.
 
+Frontend는 `frontend/`에서 다음 명령으로 코드 품질과 빌드를 각각 검증합니다.
+
+```bash
+cd frontend
+pnpm install --frozen-lockfile
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm build
+```
+
+Frontend GitHub Actions Workflow는 아직 없으며, 위 명령은 향후 CI에서도 동일하게
+재사용할 수 있습니다. 서식을 적용하는 `pnpm format`과 IDE 설정은
+[`frontend/README.md`](frontend/README.md)에 정리했습니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
