@@ -85,9 +85,24 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 Backend API를 호출합니다. 경로는 `src/config/api.ts`의 Base URL 뒤에 붙으며,
 Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은 자동으로
 직렬화하고 JSON 응답을 읽습니다. 공통 `Accept` Header, JSON 요청의 `Content-Type`,
-공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 HTTP 응답은 Status와 Backend
-응답 본문을 담은 `ApiHttpError`로 전달합니다. 인증 토큰 공급 위치는 준비했지만 실제
+공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 요청은 `src/api/errors.ts`의
+`ApiError`로 전달합니다. 인증 토큰 공급 위치는 준비했지만 실제
 로그인, Token 보관 및 401 시 Refresh/Retry 흐름은 아직 구현하지 않았습니다.
+
+`ApiError.kind`는 `http`, `network`, `timeout`, `cancelled`, `unexpected_response`를
+구분합니다. HTTP 오류의 `category`는 400/401/403/404/409 및 5xx를 각각
+`bad_request`/`unauthorized`/`forbidden`/`not_found`/`conflict`/`server_error`로
+분류하고 나머지는 `other`입니다. Backend `ErrorResponse`의 HTTP 상태가 실제
+응답 상태와 일치할 때만 `code`, `message`, `path`, 필드별 `errors`를 신뢰해
+`ApiError`로 옮깁니다. `code`는 Backend 도메인 코드를 그대로 보존하며 목록을
+Frontend에 중복 선언하지 않습니다. 비정형 응답은 상태만 남기고 일반 메시지로
+대체합니다. 성공 응답의 빈 본문(204/205 제외)이나 잘못된 JSON은
+`unexpected_response`입니다.
+
+현재 API Layer는 오류를 자동으로 기록하거나 사용자에게 표시하지 않습니다.
+요청 본문·토큰·서버의 비정형 오류 내용을 로그에 남기지 않기 위한 정책입니다.
+향후 Page는 `kind`/`category`/`code`/`fieldErrors`에 따라 사용자 안내를 구성할 수
+있지만, 401 Refresh 및 화면별 Feedback은 후속 작업입니다.
 
 | 변수                | 로컬 기본값             | 용도                                       |
 | ------------------- | ----------------------- | ------------------------------------------ |
