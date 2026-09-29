@@ -120,6 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | Home/Not Found·회원가입 화면, 공통 Layout·API/Error·인증 상태 기반; 로그인·예약 화면은 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -134,6 +135,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | API Documentation | Springdoc OpenAPI 3.0.3, Swagger UI | OpenAPI 명세 생성 및 브라우저 API 테스트 |
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
+| Frontend Test | Vitest 4.1.11, jsdom 26.1.0, React Testing Library 16.3.3 | Router·UI·API Client/Error·상태 테스트 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4, Kafka 4.3.1 | 컨테이너와 헬스 체크 정의 |
 | CI | GitHub Actions | `develop` 대상 Backend·Frontend 별도 테스트 및 빌드 |
 
@@ -384,7 +386,8 @@ reservation-platform/
 └── README.md
 ```
 
-`frontend`에는 React·TypeScript·Vite 실행 환경과 최소 진입 화면이 있습니다.
+`frontend`에는 React·TypeScript·Vite 실행 환경, Home/Not Found·회원가입 라우트,
+공통 Layout·API Client·오류/인증 상태 기반과 테스트가 있습니다.
 `infra`, `load-test`와 일부 `docs` 하위 디렉터리는 아직 placeholder 상태입니다.
 
 ---
@@ -394,8 +397,9 @@ reservation-platform/
 현재 Repository는 `backend/`와 `frontend/`를 함께 관리하는 Monorepo입니다.
 `v*`는 Backend / Platform, `f*`는 Frontend Milestone입니다. 두 Track은
 같은 Repository에서 별도로 관리하며 반드시 순차적으로 진행하는 것은 아닙니다.
-Frontend는 React·TypeScript·Vite 기반 초기 실행 환경을 구성했으며 기능 화면은 아직 없습니다.
-GitHub의 `f0.1.0`~`f0.6.0` Milestone은 모두 Open이며 Issue가 없습니다.
+Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
+`/signup` 회원가입 화면을 구현했습니다. 로그인·검색·예약 화면은 아직 없습니다.
+GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
 | --- | --- | --- | --- |
@@ -406,8 +410,8 @@ GitHub의 `f0.1.0`~`f0.6.0` Milestone은 모두 Open이며 Issue가 없습니다
 | Backend Architecture | v0.2.0 — Concurrency Control | Completed | Redis Room Lock + Optimistic Version·제한 Retry 전략 확정 |
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
-| Frontend | f0.1.0 — Frontend Foundation | In Progress | React·TypeScript·Vite 환경과 기본 Routing/Layout 구성; API Client는 후속 작업 |
-| Frontend | f0.2.0 — Authentication & User Flow | Planned | 인증 및 사용자 흐름 |
+| Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
+| Frontend | f0.2.0 — Authentication & User Flow | In Progress | 회원가입 화면 구현; 로그인·인증 및 나머지 사용자 흐름은 후속 과제 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
 | Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
@@ -621,9 +625,11 @@ Consumer 멱등 처리와 제한 Retry·DLT 실패 격리를
 Consumer Retry·DLT 및 중복 처리 방지 검증 범위는
 [`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
 운영 Broker 중단·복구 실험, DLT 수동 Replay 도구, Outbox·처리 이력 Cleanup과 외부 후처리
-연동은 아직 구현되지 않았습니다. 다음 단계는
-Frontend(`f0.1.0`–`f0.6.0`)는 별도 Open Track이며 Backend/Platform의
-Performance·Observability 계획과 반드시 순차 관계가 아닙니다. Production은 계획 상태입니다.
+연동은 아직 구현되지 않았습니다. Frontend `f0.1.0` Foundation도 완료했으며
+다음 Frontend Phase는 `f0.2.0 — Authentication & User Flow`입니다.
+Frontend와 Backend/Platform은 별도 Track입니다. 실제 사용자 Flow 기반
+Performance Test는 필요한 UI 흐름과 연결된 뒤 수행할 계획이며,
+Observability·Production도 계획 상태입니다.
 
 * [x] Repository 생성
 * [x] Issue Template 적용
