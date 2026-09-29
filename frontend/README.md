@@ -45,10 +45,20 @@ Fast Refresh 규칙을 검사합니다. `pnpm format:check`는 Prettier 서식�
 분리하기 위해 ESLint에 서식 규칙을 추가하지 않았습니다.
 
 `pnpm typecheck`는 TypeScript Compiler를 독립적으로 실행합니다. `pnpm build`도
-타입 검사 후 Vite Production Build를 수행합니다. 향후 Frontend GitHub Actions
-Workflow는 `pnpm install --frozen-lockfile` 다음에 `lint`, `format:check`,
-`typecheck`, `test`, `build` 명령을 그대로 사용할 수 있습니다. 현재 저장소에는 Backend
-CI만 있으며 Frontend Workflow는 아직 구성되지 않았습니다.
+타입 검사 후 Vite Production Build를 수행합니다. Vitest는 Vite 설정에서 `jsdom`
+환경과 `src/test/setup.ts`를 사용합니다. Setup은 각 테스트 후 React DOM,
+Mock Global, Fake Timer를 정리합니다. 기존 Route·공통 UI Component 테스트와
+API Client·Error·인증 상태 테스트를 재사용하며 중복 Test Suite를 만들지 않습니다.
+
+`.github/workflows/frontend-ci.yml`은 Node.js 24.19.0과 pnpm 11.19.0을 사용해
+`frontend/pnpm-lock.yaml` 기반 Store Cache를 준비하고 `--frozen-lockfile` 설치 후
+`lint`, `format:check`, `typecheck`, `test`, `build`를 실행합니다. `develop` 대상
+Pull Request는 경로와 무관하게 실행합니다. PR에 Path Filter를 두면 필수 Check가
+건너뛴 PR에서 Pending 상태로 남을 수 있기 때문입니다. `develop` Push는
+`frontend/**` 또는 Frontend Workflow가 변경될 때만 실행합니다. Backend CI는
+별도 Workflow이며 Frontend CI는 Backend Container나 Gradle을 사용하지 않습니다.
+GitHub 저장소에서 `Frontend Test and Build`를 필수 Status Check로 지정하는
+것은 별도 Branch Protection 설정이며, 실제 PR 실행 결과는 PR 생성 후 확인해야 합니다.
 
 `.editorconfig`는 Frontend 디렉터리의 UTF-8, LF, 2칸 들여쓰기를 IDE에 알리고,
 `.prettierrc.json`은 일관된 코드 서식을 정의합니다. Prettier를 IDE 기본 Formatter로
