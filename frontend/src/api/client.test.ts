@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiHttpError, ApiTimeoutError, createApiClient } from './client'
+import { createApiClient } from './client'
+import { ApiError } from './errors'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -55,8 +56,14 @@ describe('API client', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('https://api.example.com/api/v1/members')
   })
 
-  it('preserves the backend error body and HTTP status', async () => {
-    const errorBody = { code: 'COMMON_001', message: '입력값이 올바르지 않습니다.' }
+  it('converts the backend error contract to an API error', async () => {
+    const errorBody = {
+      status: 400,
+      code: 'COMMON_001',
+      message: '입력값이 올바르지 않습니다.',
+      path: '/api/v1/members',
+      errors: [{ field: 'email', message: '이메일 형식이 올바르지 않습니다.' }],
+    }
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response(JSON.stringify(errorBody), { status: 400 })),
@@ -64,20 +71,27 @@ describe('API client', () => {
 
     await expect(createApiClient({ baseUrl: '/api/v1' }).request('/members')).rejects.toMatchObject(
       {
+        kind: 'http',
         status: 400,
-        body: errorBody,
-      } satisfies Partial<ApiHttpError>,
+        category: 'bad_request',
+        code: 'COMMON_001',
+        path: '/api/v1/members',
+        fieldErrors: errorBody.errors,
+      } satisfies Partial<ApiError>,
     )
   })
 
-  it('preserves HTTP status even when an upstream error is not JSON', async () => {
+  it('preserves HTTP status without exposing a non-JSON upstream error body', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Bad Gateway', { status: 502 })))
 
     await expect(createApiClient({ baseUrl: '/api/v1' }).request('/members')).rejects.toMatchObject(
       {
+        kind: 'http',
         status: 502,
-        body: 'Bad Gateway',
-      } satisfies Partial<ApiHttpError>,
+        category: 'server_error',
+        code: undefined,
+        message: 'API request failed (HTTP 502)',
+      } satisfies Partial<ApiError>,
     )
   })
 
@@ -112,9 +126,32 @@ describe('API client', () => {
     )
 
     const request = createApiClient({ baseUrl: '/api/v1', timeoutMs: 50 }).request('/members')
-    const assertion = expect(request).rejects.toBeInstanceOf(ApiTimeoutError)
+    const assertion = expect(request).rejects.toMatchObject({ kind: 'timeout' })
     await vi.advanceTimersByTimeAsync(50)
     await assertion
+  })
+
+  it('distinguishes network failure from an HTTP response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')))
+
+    await expect(createApiClient({ baseUrl: '/api/v1' }).request('/members')).rejects.toMatchObject(
+      {
+        kind: 'network',
+        status: undefined,
+      } satisfies Partial<ApiError>,
+    )
+  })
+
+  it('reports malformed and empty success responses as unexpected', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('<html>'))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = createApiClient({ baseUrl: '/api/v1' })
+
+    await expect(client.request('/members')).rejects.toMatchObject({ kind: 'unexpected_response' })
+    await expect(client.request('/members')).rejects.toMatchObject({ kind: 'unexpected_response' })
   })
 
   it('rejects absolute or protocol-relative paths supplied by a component', async () => {
