@@ -853,7 +853,8 @@ pnpm dev
 
 기본 개발 주소는 `http://localhost:5173`입니다. 현재 화면은 기본 Home/Not Found만
 제공하고 Backend API를 호출하지 않아 Docker Compose 없이도 실행할 수 있습니다.
-공통 API Client와 개발용 `/api` Proxy는 준비되어 있으며 실제 API 화면은 후속 작업입니다.
+공통 API Client, 개발용 `/api` Proxy, 인증 상태 기반과 로딩·오류 UI는 준비되어
+있으며 실제 API 화면과 로그인 흐름은 후속 작업입니다.
 Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 환경별 API 주소와
 로컬 `.env` 설정 방법은 [`frontend/README.md`](frontend/README.md)에
 정리했습니다. `.env`에는 브라우저에 공개되어도 되는 값만 넣어야 합니다.

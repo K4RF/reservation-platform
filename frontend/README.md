@@ -79,6 +79,28 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
 호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
 
+## 상태 관리와 공통 UI
+
+`src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
+관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
+`anonymous`입니다. `useAuth()`로 상태와 Dispatch에 접근할 수 있고, 상태 모델은
+회원 ID·이메일·`USER/ADMIN` 역할을 담을 수 있습니다. 이 모델은 향후 인증 화면을
+위한 기반일 뿐이며 현재 로그인 요청, 사용자 복원, 토큰 저장, Refresh Token 처리,
+Protected Route는 없습니다. 새로고침 시에도 상태는 초기화됩니다. Backend 로그인
+응답은 토큰만 반환하므로 사용자 정보를 채우는 방법은 후속 인증 작업에서 정해야
+합니다. Context의 `authenticated` 상태만으로 Backend 권한을 증명할 수 없으며
+최종 접근 권한은 Backend가 검증합니다.
+
+폼 입력·모달 열림 여부처럼 한 화면에서만 필요한 상태는 해당 Component의 Local
+State에 둡니다. 숙소·객실·예약 조회 결과는 Server State이며 인증 Context에 복제하지
+않습니다. 현재 API Client는 요청·오류 변환까지만 담당하고, 조회 캐시·재요청·무효화
+방식이나 전용 Server State 라이브러리는 실제 데이터 화면을 만들 때 결정합니다.
+
+`src/components/ui/`의 `LoadingState`와 `ErrorState`는 접근성 상태 영역과 선택적
+재시도 버튼을 제공하는 표시 전용 Component입니다. API 요청 상태나 오류 메시지
+선택은 사용하는 화면이 책임집니다. 목록 화면이 아직 없으므로 `EmptyState` 공통
+Component는 필요해질 때 추가합니다.
+
 ## Backend API 설정
 
 `src/api/client.ts`의 `apiClient.request<T>('/members', { method: 'POST', body })`로
