@@ -19,6 +19,12 @@ export function RootLayout() {
           >
             홈
           </NavLink>
+          <NavLink
+            className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
+            to={routePaths.signup}
+          >
+            회원가입
+          </NavLink>
         </nav>
       </header>
       <main className="site-main" id="main-content">

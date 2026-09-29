@@ -21,9 +21,9 @@ pnpm dev
 ```
 
 Windows PowerShell에서는 `cp` 대신 `Copy-Item .env.example .env`를 사용할 수
-있습니다. 개발 서버의 기본 주소는 `http://localhost:5173`입니다. 이 단계의
-화면은 실행 환경을 확인하기 위한 최소 진입 화면이며 Backend API 요청은 아직 하지
-않습니다. 따라서 Backend나 Docker Compose를 켜지 않아도 화면을 확인할 수 있습니다.
+있습니다. 개발 서버의 기본 주소는 `http://localhost:5173`입니다. Home 화면은
+Backend 없이 열 수 있지만 `/signup`에서 실제 가입을 제출하려면 Backend와 개발
+인프라가 실행 중이어야 합니다.
 
 ```bash
 pnpm lint
@@ -77,6 +77,7 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 | 경로             | 현재 동작                         |
 | ---------------- | --------------------------------- |
 | `/`              | Home 페이지                       |
+| `/signup`        | 이메일·비밀번호 회원가입          |
 | 그 외 경로 (`*`) | 공통 Layout 안의 Not Found 페이지 |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다. 향후 공개 화면은
@@ -88,6 +89,21 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `pnpm test`는 홈·미등록 경로·기본 Navigation을 Memory Router로 검증합니다. Vite 개발
 서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
 호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
+
+## 회원가입
+
+`/signup`은 Backend `POST /api/v1/members`에 이메일·비밀번호만 전송합니다.
+응답에는 회원 ID·이메일·역할이 포함됩니다. 프런트엔드에서 필수 입력·기본 이메일
+형식·Backend 필드 길이(이메일 최대 255자, 비밀번호 8~72자)를 먼저 확인하지만,
+최종 검증은 Backend가 수행합니다. Backend `COMMON_001`의 필드 오류와 중복 이메일
+`MEMBER_001`은 해당 입력 아래 표시하고, 연결·타임아웃 오류는 일반 안내로 표시합니다.
+제출 중에는 재제출을 막고 진행 상태를 표시합니다.
+
+가입 성공 후에는 자동 로그인하지 않고 Home으로 이동해 완료 메시지를 보여줍니다.
+현재 로그인 화면·토큰 저장 기능이 없기 때문입니다. 화면 테스트는 API를 Mock으로
+대체하며, 실제 Backend를 확인하려면 루트 Docker Compose와 Backend를 실행하고
+`frontend/.env.example`을 `.env`로 복사한 뒤 `pnpm dev`에서 `/signup`을 사용하세요.
+실제 회원이 생성되므로 테스트마다 새로운 이메일을 사용하세요.
 
 ## 상태 관리와 공통 UI
 
@@ -163,6 +179,6 @@ curl -i -X POST http://localhost:5173/api/v1/members \
 Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비밀번호·토큰·비밀키를
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
-현재 구현 범위는 React 진입점, 기본 Home/Not Found Route, 공통 Header/Main Layout,
-기본 스타일 및 공통 API Client입니다. 실제 API 호출 화면, 인증, 숙소 검색, 예약,
-관리자 화면은 후속 Frontend 이슈 범위입니다.
+현재 구현 범위는 React 진입점, Home/Not Found/Signup Route, 공통 Header/Main
+Layout, 기본 스타일, 공통 API Client와 회원가입 화면입니다. 로그인·토큰 처리,
+숙소 검색, 예약, 관리자 화면은 후속 Frontend 이슈 범위입니다.
