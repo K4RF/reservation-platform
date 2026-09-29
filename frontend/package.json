@@ -14,7 +14,7 @@
     "lint": "eslint . --max-warnings 0",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
-    "test": "vitest run --environment jsdom",
+    "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {

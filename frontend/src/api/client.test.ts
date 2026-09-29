@@ -1,11 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createApiClient } from './client'
 import { ApiError } from './errors'
-
-afterEach(() => {
-  vi.unstubAllGlobals()
-  vi.useRealTimers()
-})
 
 describe('API client', () => {
   it('sends JSON with shared and per-request headers and parses a JSON response', async () => {

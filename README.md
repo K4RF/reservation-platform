@@ -1,6 +1,7 @@
 # Reservation Platform
 
 [![Backend CI](https://github.com/K4RF/reservation-platform/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/K4RF/reservation-platform/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/K4RF/reservation-platform/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/K4RF/reservation-platform/actions/workflows/frontend-ci.yml)
 
 대규모 트래픽 환경에서 발생할 수 있는 **예약 충돌 문제를 해결하기 위한 예약 플랫폼**입니다.
 
@@ -134,7 +135,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | Build | Gradle Wrapper 9.5.1 | 빌드 및 테스트 |
 | Test | JUnit Platform, H2, Testcontainers 2.0.5, MySQL 8.4, Redis 7.4 | 단위·API 통합 테스트, 실제 DB 제약·전체 예약 Baseline·Rollback·분산 락 검증 |
 | Local Infrastructure | Docker Compose, MySQL 8.4, Redis 7.4, Kafka 4.3.1 | 컨테이너와 헬스 체크 정의 |
-| CI | GitHub Actions | `develop` 대상 Backend 테스트 및 빌드 |
+| CI | GitHub Actions | `develop` 대상 Backend·Frontend 별도 테스트 및 빌드 |
 
 > Backend는 MySQL, Redis, Kafka에 연결되도록 구성됩니다. Redis는 Refresh Token 저장,
 > 예약 생성 분산 락, 숙소·객실 단건 조회 Cache에 사용합니다. Kafka는 예약 생성·일정
@@ -911,8 +912,8 @@ pnpm test
 pnpm build
 ```
 
-Frontend GitHub Actions Workflow는 아직 없으며, 위 명령은 향후 CI에서도 동일하게
-재사용할 수 있습니다. 서식을 적용하는 `pnpm format`과 IDE 설정은
+Frontend GitHub Actions Workflow는 위 명령을 동일하게 실행합니다. 서식을 적용하는
+`pnpm format`과 IDE 설정은
 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
