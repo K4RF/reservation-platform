@@ -1,23 +1,5 @@
 import { apiConfig } from '../config/api'
-
-export class ApiHttpError extends Error {
-  readonly status: number
-  readonly body: unknown
-
-  constructor(status: number, body: unknown) {
-    super(`API request failed with status ${status}`)
-    this.name = 'ApiHttpError'
-    this.status = status
-    this.body = body
-  }
-}
-
-export class ApiTimeoutError extends Error {
-  constructor() {
-    super('API request timed out')
-    this.name = 'ApiTimeoutError'
-  }
-}
+import { ApiError, toHttpApiError } from './errors'
 
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -71,6 +53,7 @@ export function createApiClient(options: ApiClientOptions) {
       request.signal?.addEventListener('abort', abort, { once: true })
       if (request.signal?.aborted) controller.abort()
 
+      let responseReceived = false
       try {
         const response = await fetch(`${baseUrl}${path}`, {
           method: request.method ?? 'GET',
@@ -78,20 +61,37 @@ export function createApiClient(options: ApiClientOptions) {
           body: request.body === undefined ? undefined : JSON.stringify(request.body),
           signal: controller.signal,
         })
+        responseReceived = true
         const rawBody = await response.text()
-        let body: unknown
-        try {
-          body = rawBody ? JSON.parse(rawBody) : undefined
-        } catch {
-          if (!response.ok) throw new ApiHttpError(response.status, rawBody)
-          throw new Error('API response is not valid JSON')
+        if (!response.ok) {
+          let body: unknown
+          try {
+            body = rawBody ? JSON.parse(rawBody) : undefined
+          } catch {
+            body = undefined
+          }
+          // A future token-refresh flow can handle 401 here before surfacing the error.
+          throw toHttpApiError(response.status, body)
         }
-        // A future token-refresh flow can handle 401 here before surfacing the error.
-        if (!response.ok) throw new ApiHttpError(response.status, body)
-        return body as T
+        if (!rawBody) {
+          if (response.status === 204 || response.status === 205) return undefined
+          throw new ApiError('API returned an empty response', { kind: 'unexpected_response' })
+        }
+        try {
+          return JSON.parse(rawBody) as T
+        } catch {
+          throw new ApiError('API response is not valid JSON', { kind: 'unexpected_response' })
+        }
       } catch (error) {
-        if (timedOut) throw new ApiTimeoutError()
-        throw error
+        if (error instanceof ApiError) throw error
+        if (timedOut) throw new ApiError('API request timed out', { kind: 'timeout', cause: error })
+        if (controller.signal.aborted) {
+          throw new ApiError('API request was cancelled', { kind: 'cancelled', cause: error })
+        }
+        throw new ApiError(
+          responseReceived ? 'API response could not be read' : 'Network request failed',
+          { kind: responseReceived ? 'unexpected_response' : 'network', cause: error },
+        )
       } finally {
         clearTimeout(timeout)
         request.signal?.removeEventListener('abort', abort)
