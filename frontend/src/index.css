@@ -60,6 +60,13 @@ body {
   font-weight: 700;
 }
 
+.nav-action {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .site-main {
   flex: 1;
   display: grid;

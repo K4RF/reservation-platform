@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createApiClient } from './client'
+import { apiClient, createApiClient } from './client'
 import { ApiError } from './errors'
+import { getAccessToken, setAccessToken } from '../state/accessToken'
+import { accessTokenWithExpiry } from '../test/jwt'
 
 describe('API client', () => {
   it('sends JSON with shared and per-request headers and parses a JSON response', async () => {
@@ -104,6 +106,42 @@ describe('API client', () => {
     expect(
       new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers).get('Authorization'),
     ).toBe('Bearer explicit-token')
+  })
+
+  it('omits Authorization for explicitly public requests', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}'))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = createApiClient({ baseUrl: '/api/v1', getAccessToken: () => 'test-token' })
+
+    await client.request('/auth/login', { method: 'POST', includeAuth: false })
+
+    expect(
+      new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers).has('Authorization'),
+    ).toBe(false)
+  })
+
+  it('uses the live access token and clears it after a protected 401', async () => {
+    const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    setAccessToken(token)
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({ status: 401, code: 'AUTH_001', message: '인증이 필요합니다.' }),
+        {
+          status: 401,
+        },
+      ),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient.request('/reservations')).rejects.toMatchObject({
+      kind: 'http',
+      status: 401,
+    })
+
+    expect(
+      new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers).get('Authorization'),
+    ).toBe(`Bearer ${token}`)
+    expect(getAccessToken()).toBeNull()
   })
 
   it('aborts a request after the configured timeout', async () => {

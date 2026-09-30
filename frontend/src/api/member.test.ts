@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { signUpMember } from './member'
+import { setAccessToken } from '../state/accessToken'
+import { accessTokenWithExpiry } from '../test/jwt'
 
 describe('signUpMember', () => {
   it('posts only the backend signup fields and returns the created member', async () => {
@@ -10,6 +12,7 @@ describe('signUpMember', () => {
       }),
     )
     vi.stubGlobal('fetch', fetchMock)
+    setAccessToken(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60))
 
     await expect(
       signUpMember({ email: 'member@example.com', password: 'Password123!' }),
@@ -18,6 +21,7 @@ describe('signUpMember', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toMatch(/\/api\/v1\/members$/)
     expect(init.method).toBe('POST')
+    expect(new Headers(init.headers).has('Authorization')).toBe(false)
     expect(init.body).toBe(
       JSON.stringify({ email: 'member@example.com', password: 'Password123!' }),
     )

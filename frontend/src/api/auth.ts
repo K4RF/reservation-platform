@@ -16,6 +16,7 @@ export async function loginWithEmail(request: LoginRequest): Promise<LoginRespon
   const response = await apiClient.request<LoginResponse>('/auth/login', {
     method: 'POST',
     body: request,
+    includeAuth: false,
   })
 
   if (

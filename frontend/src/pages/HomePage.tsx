@@ -13,11 +13,7 @@ export function HomePage() {
       {signupCompleted && (
         <p role="status">회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.</p>
       )}
-      {state.status === 'login_response_received' && (
-        <p role="status">
-          로그인 응답을 확인했습니다. 인증 정보 유지와 보호된 기능은 후속 작업에서 제공됩니다.
-        </p>
-      )}
+      {state.status === 'authenticated' && <p role="status">로그인 상태입니다.</p>}
     </section>
   )
 }

@@ -5,11 +5,13 @@ import { AppRoutes } from '../app/routes'
 import { loginWithEmail } from '../api/auth'
 import { ApiError } from '../api/errors'
 import { AuthProvider } from '../state/AuthProvider'
+import { getAccessToken } from '../state/accessToken'
+import { accessTokenWithExpiry } from '../test/jwt'
 
 vi.mock('../api/auth', () => ({ loginWithEmail: vi.fn() }))
 
 const tokens = {
-  accessToken: 'access-token',
+  accessToken: accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60),
   refreshToken: 'refresh-token',
   tokenType: 'Bearer',
 } as const
@@ -45,7 +47,7 @@ describe('login flow', () => {
     expect(loginWithEmail).not.toHaveBeenCalled()
   })
 
-  it('submits once, then redirects home without persisting tokens or granting authenticated state', async () => {
+  it('submits once, then redirects home with an in-memory authentication state', async () => {
     let complete!: (value: typeof tokens) => void
     vi.mocked(loginWithEmail).mockReturnValue(
       new Promise((resolve) => {
@@ -69,9 +71,15 @@ describe('login flow', () => {
 
     complete(tokens)
     expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toContain('인증 정보 유지와 보호된 기능')
+    expect(screen.getByRole('status').textContent).toContain('로그인 상태입니다')
+    expect(screen.getByRole('button', { name: '브라우저 인증 종료' })).toBeTruthy()
+    expect(getAccessToken()).toBe(tokens.accessToken)
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
+
+    fireEvent.click(screen.getByRole('button', { name: '브라우저 인증 종료' }))
+    expect(screen.getByRole('link', { name: '로그인' })).toBeTruthy()
+    expect(getAccessToken()).toBeNull()
   })
 
   it('shows invalid credentials without identifying which credential was wrong', async () => {

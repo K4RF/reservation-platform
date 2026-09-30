@@ -1,19 +1,21 @@
 import { apiConfig } from '../config/api'
 import { ApiError, toHttpApiError } from './errors'
+import { clearAccessTokenIfCurrent, getAccessToken } from '../state/accessToken'
 
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   headers?: HeadersInit
   signal?: AbortSignal
+  includeAuth?: boolean
 }
 
 export interface ApiClientOptions {
   baseUrl: string
   timeoutMs?: number
   headers?: HeadersInit
-  // Authentication can later be added here without changing callers.
   getAccessToken?: () => string | null
+  onUnauthorized?: (token: string) => void
 }
 
 export function createApiClient(options: ApiClientOptions) {
@@ -38,7 +40,7 @@ export function createApiClient(options: ApiClientOptions) {
       if (request.body !== undefined && !headers.has('Content-Type')) {
         headers.set('Content-Type', 'application/json')
       }
-      const accessToken = options.getAccessToken?.()
+      const accessToken = request.includeAuth === false ? null : options.getAccessToken?.()
       if (accessToken && !headers.has('Authorization')) {
         headers.set('Authorization', `Bearer ${accessToken}`)
       }
@@ -62,6 +64,13 @@ export function createApiClient(options: ApiClientOptions) {
           signal: controller.signal,
         })
         responseReceived = true
+        if (
+          response.status === 401 &&
+          accessToken &&
+          headers.get('Authorization') === `Bearer ${accessToken}`
+        ) {
+          options.onUnauthorized?.(accessToken)
+        }
         const rawBody = await response.text()
         if (!response.ok) {
           let body: unknown
@@ -100,4 +109,8 @@ export function createApiClient(options: ApiClientOptions) {
   }
 }
 
-export const apiClient = createApiClient(apiConfig)
+export const apiClient = createApiClient({
+  ...apiConfig,
+  getAccessToken,
+  onUnauthorized: clearAccessTokenIfCurrent,
+})
