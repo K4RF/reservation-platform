@@ -116,24 +116,34 @@ Home에서 로그인 화면으로 이동할 수 있습니다. 화면 테스트�
 연결·타임아웃 오류는 재시도 가능한 안내로 표시합니다.
 
 성공 응답의 `accessToken`, `refreshToken`, `tokenType: Bearer` 형식을 확인한 뒤
-인증 상태 Context에는 `login_response_received`만 기록하고 Home으로 이동합니다.
-토큰을 Context·브라우저 Storage·Cookie에 보관하지 않으며, 사용자 정보가 없는 이
-상태는 **인증된 세션이 아닙니다**. 새로고침하면 사라지고 보호된 API 호출에는 사용할
-수 없습니다. 토큰 보관·사용자 정보 복원·Refresh·Protected Route는 후속 JWT 인증
-상태 작업 범위입니다. 실제 Backend 로그인 응답에는 토큰이 포함되므로 개발자 도구나
-터미널에서 응답 내용을 공유하지 마세요.
+Access Token의 `ACCESS` 타입과 만료 시각을 확인하여 메모리에만 보관합니다.
+인증 Context에는 Token 문자열 대신 `authenticated` 상태와 만료 시각만 기록하고
+Home으로 이동합니다. Refresh Token은 응답에 들어 있지만 현재 Frontend에서
+저장하거나 재발급에 사용하지 않습니다. 실제 Backend 로그인 응답에는 토큰이
+포함되므로 개발자 도구나 터미널에서 응답 내용을 공유하지 마세요.
+
+Access Token은 `localStorage`·`sessionStorage`·Cookie에 기록하지 않습니다.
+이 Browser Tab에서 React Provider가 다시 마운트되면 메모리 Token을 확인하여
+상태를 복원하지만, 전체 페이지 새로고침·Tab 종료 후에는 Token이 사라져 익명
+상태로 시작하며 다시 로그인해야 합니다. Web Storage에 토큰을 두지 않는 것은
+[OWASP Session Management 지침](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)의
+JavaScript 접근·XSS 위험을 고려한 선택입니다. 메모리 보관도 실행 중인 악성
+스크립트로부터 Token을 보호하지는 못합니다.
 
 ## 상태 관리와 공통 UI
 
 `src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
 관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
-`anonymous`입니다. `useAuth()`로 상태와 Dispatch에 접근할 수 있고, 상태 모델은
-회원 ID·이메일·`USER/ADMIN` 역할을 담을 수 있습니다. 로그인 성공 시에는 사용자
-정보가 없는 `login_response_received` 상태만 기록합니다. 사용자 복원, 토큰 저장,
-Refresh Token 처리, Protected Route는 없습니다. 새로고침 시에도 상태는 초기화됩니다.
-Backend 로그인 응답은 토큰만 반환하므로 사용자 정보를 채우는 방법은 후속 인증
-작업에서 정해야 합니다. Context의 `authenticated` 상태만으로 Backend 권한을 증명할
-수 없으며 최종 접근 권한은 Backend가 검증합니다.
+`anonymous`입니다. `useAuth()`는 상태와 로그인·브라우저 인증 종료 함수를 제공합니다.
+Backend 로그인 응답에는 사용자 정보가 없고 현재 `/me` API도 없으므로 회원 ID·이메일·
+역할을 Token의 서명 미검증 Payload에서 사용자 정보로 채우지 않습니다. `authenticated`
+상태의 `user`는 현재 `null`이며 Access Token 만료 시각만 Client Hint로 갖습니다.
+만료되거나 보호 API에서 401을 받으면 Token을 삭제하고 익명 상태로 돌아갑니다.
+브라우저 인증 종료 버튼도 메모리 Token만 지웁니다. Backend의 Redis Refresh Token
+삭제 API는 호출하지 않으므로 서버 측 로그아웃이나 기존 Access Token 폐기를 의미하지
+않습니다. Refresh Token 관리·재발급·Protected Route는 후속 작업입니다. 최종 인증과
+권한은 Backend가 검증하며, Client의 `authenticated` 상태만으로 권한을 증명할 수
+없습니다.
 
 폼 입력·모달 열림 여부처럼 한 화면에서만 필요한 상태는 해당 Component의 Local
 State에 둡니다. 숙소·객실·예약 조회 결과는 Server State이며 인증 Context에 복제하지
@@ -152,9 +162,11 @@ Backend API를 호출합니다. 경로는 `src/config/api.ts`의 Base URL 뒤에
 Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은 자동으로
 직렬화하고 JSON 응답을 읽습니다. 공통 `Accept` Header, JSON 요청의 `Content-Type`,
 공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 요청은 `src/api/errors.ts`의
-`ApiError`로 전달합니다. 로그인 API 함수는 응답 형식까지 검증합니다. 인증 토큰
-공급 위치는 준비했지만 Token 보관 및 401 시 Refresh/Retry 흐름은 아직 구현하지
-않았습니다.
+`ApiError`로 전달합니다. 로그인 API 함수는 응답 형식까지 검증합니다. 공통 Client는
+기본적으로 메모리 Access Token이 있으면 `Authorization: Bearer <token>`을 붙이고,
+로그인·회원가입은 `includeAuth: false`로 제외합니다. 보호 API의 401은 해당 요청에
+사용한 Token이 여전히 현재 Token일 때만 삭제하여 오래된 응답이 새 로그인을 지우지
+않게 합니다. 자동 Refresh/Retry는 아직 구현하지 않았습니다.
 
 `ApiError.kind`는 `http`, `network`, `timeout`, `cancelled`, `unexpected_response`를
 구분합니다. HTTP 오류의 `category`는 400/401/403/404/409 및 5xx를 각각
@@ -199,5 +211,6 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login Route, 공통 Header/Main
-Layout, 기본 스타일, 공통 API Client와 회원가입·로그인 화면입니다. 토큰 기반 인증
-세션, 숙소 검색, 예약, 관리자 화면은 후속 Frontend 이슈 범위입니다.
+Layout, 기본 스타일, 회원가입·로그인 화면, 메모리 기반 Access Token 인증 및 공통
+Bearer Header 적용입니다. 새로고침 후 세션 복원, Refresh, 서버 로그아웃, 사용자 정보
+조회, 숙소 검색·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
