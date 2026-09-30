@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { loginWithEmail } from './auth'
+import { setAccessToken } from '../state/accessToken'
+import { accessTokenWithExpiry } from '../test/jwt'
 
 const tokens = {
   accessToken: 'access-token',
@@ -16,6 +18,7 @@ describe('loginWithEmail', () => {
       }),
     )
     vi.stubGlobal('fetch', fetchMock)
+    setAccessToken(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60))
 
     await expect(
       loginWithEmail({ email: 'member@example.com', password: 'Password123!' }),
@@ -24,6 +27,7 @@ describe('loginWithEmail', () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toMatch(/\/api\/v1\/auth\/login$/)
     expect(init.method).toBe('POST')
+    expect(new Headers(init.headers).has('Authorization')).toBe(false)
     expect(init.body).toBe(
       JSON.stringify({ email: 'member@example.com', password: 'Password123!' }),
     )

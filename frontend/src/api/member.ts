@@ -16,6 +16,7 @@ export async function signUpMember(request: SignUpRequest): Promise<SignUpRespon
   const response = await apiClient.request<SignUpResponse>('/members', {
     method: 'POST',
     body: request,
+    includeAuth: false,
   })
 
   if (
