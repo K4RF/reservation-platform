@@ -13,4 +13,11 @@ describe('auth state', () => {
     expect(authenticated).toEqual({ status: 'authenticated', user })
     expect(authReducer(authenticated, { type: 'signed_out' })).toEqual(initialAuthState)
   })
+
+  it('records a successful login response without treating the visitor as authenticated', () => {
+    const received = authReducer(initialAuthState, { type: 'login_response_received' })
+
+    expect(received).toEqual({ status: 'login_response_received', user: null })
+    expect(authReducer(received, { type: 'signed_out' })).toEqual(initialAuthState)
+  })
 })

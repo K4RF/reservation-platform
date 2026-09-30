@@ -22,8 +22,8 @@ pnpm dev
 
 Windows PowerShell에서는 `cp` 대신 `Copy-Item .env.example .env`를 사용할 수
 있습니다. 개발 서버의 기본 주소는 `http://localhost:5173`입니다. Home 화면은
-Backend 없이 열 수 있지만 `/signup`에서 실제 가입을 제출하려면 Backend와 개발
-인프라가 실행 중이어야 합니다.
+Backend 없이 열 수 있지만 `/signup`과 `/login`에서 실제 요청을 보내려면 Backend와
+개발 인프라가 실행 중이어야 합니다.
 
 ```bash
 pnpm lint
@@ -78,10 +78,11 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 | ---------------- | --------------------------------- |
 | `/`              | Home 페이지                       |
 | `/signup`        | 이메일·비밀번호 회원가입          |
+| `/login`         | 이메일·비밀번호 로그인            |
 | 그 외 경로 (`*`) | 공통 Layout 안의 Not Found 페이지 |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다. 향후 공개 화면은
-`/login`·`/accommodations`처럼 Root Layout 아래에 추가하고, 로그인 회원 화면은
+`/accommodations`처럼 Root Layout 아래에 추가하고, 로그인 회원 화면은
 `/reservations`, 관리 화면은 `/admin/...` 영역으로 확장하는 **제안**입니다. 이 경로의
 화면·인증 검사·권한 검사는 아직 구현되지 않았습니다. 인증 기능을 추가할 때는 해당
 중첩 Route에 보호 Layout을 배치하고, 권한의 최종 검증은 Backend에서 수행해야 합니다.
@@ -100,22 +101,39 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 제출 중에는 재제출을 막고 진행 상태를 표시합니다.
 
 가입 성공 후에는 자동 로그인하지 않고 Home으로 이동해 완료 메시지를 보여줍니다.
-현재 로그인 화면·토큰 저장 기능이 없기 때문입니다. 화면 테스트는 API를 Mock으로
+Home에서 로그인 화면으로 이동할 수 있습니다. 화면 테스트는 API를 Mock으로
 대체하며, 실제 Backend를 확인하려면 루트 Docker Compose와 Backend를 실행하고
 `frontend/.env.example`을 `.env`로 복사한 뒤 `pnpm dev`에서 `/signup`을 사용하세요.
 실제 회원이 생성되므로 테스트마다 새로운 이메일을 사용하세요.
+
+## 로그인
+
+`/login`은 Backend `POST /api/v1/auth/login`에 이메일·비밀번호를 전송합니다.
+이메일 필수·형식·최대 255자와 비밀번호 필수·최대 72자를 먼저 확인하며,
+회원가입에만 있는 비밀번호 최소 길이 제한은 로그인에 적용하지 않습니다.
+요청 중에는 중복 제출을 막고 진행 상태를 표시합니다. `AUTH_003`은 어느 입력이
+틀렸는지 밝히지 않는 공통 안내로, `COMMON_001`의 필드 오류는 해당 입력 아래에,
+연결·타임아웃 오류는 재시도 가능한 안내로 표시합니다.
+
+성공 응답의 `accessToken`, `refreshToken`, `tokenType: Bearer` 형식을 확인한 뒤
+인증 상태 Context에는 `login_response_received`만 기록하고 Home으로 이동합니다.
+토큰을 Context·브라우저 Storage·Cookie에 보관하지 않으며, 사용자 정보가 없는 이
+상태는 **인증된 세션이 아닙니다**. 새로고침하면 사라지고 보호된 API 호출에는 사용할
+수 없습니다. 토큰 보관·사용자 정보 복원·Refresh·Protected Route는 후속 JWT 인증
+상태 작업 범위입니다. 실제 Backend 로그인 응답에는 토큰이 포함되므로 개발자 도구나
+터미널에서 응답 내용을 공유하지 마세요.
 
 ## 상태 관리와 공통 UI
 
 `src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
 관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
 `anonymous`입니다. `useAuth()`로 상태와 Dispatch에 접근할 수 있고, 상태 모델은
-회원 ID·이메일·`USER/ADMIN` 역할을 담을 수 있습니다. 이 모델은 향후 인증 화면을
-위한 기반일 뿐이며 현재 로그인 요청, 사용자 복원, 토큰 저장, Refresh Token 처리,
-Protected Route는 없습니다. 새로고침 시에도 상태는 초기화됩니다. Backend 로그인
-응답은 토큰만 반환하므로 사용자 정보를 채우는 방법은 후속 인증 작업에서 정해야
-합니다. Context의 `authenticated` 상태만으로 Backend 권한을 증명할 수 없으며
-최종 접근 권한은 Backend가 검증합니다.
+회원 ID·이메일·`USER/ADMIN` 역할을 담을 수 있습니다. 로그인 성공 시에는 사용자
+정보가 없는 `login_response_received` 상태만 기록합니다. 사용자 복원, 토큰 저장,
+Refresh Token 처리, Protected Route는 없습니다. 새로고침 시에도 상태는 초기화됩니다.
+Backend 로그인 응답은 토큰만 반환하므로 사용자 정보를 채우는 방법은 후속 인증
+작업에서 정해야 합니다. Context의 `authenticated` 상태만으로 Backend 권한을 증명할
+수 없으며 최종 접근 권한은 Backend가 검증합니다.
 
 폼 입력·모달 열림 여부처럼 한 화면에서만 필요한 상태는 해당 Component의 Local
 State에 둡니다. 숙소·객실·예약 조회 결과는 Server State이며 인증 Context에 복제하지
@@ -134,8 +152,9 @@ Backend API를 호출합니다. 경로는 `src/config/api.ts`의 Base URL 뒤에
 Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은 자동으로
 직렬화하고 JSON 응답을 읽습니다. 공통 `Accept` Header, JSON 요청의 `Content-Type`,
 공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 요청은 `src/api/errors.ts`의
-`ApiError`로 전달합니다. 인증 토큰 공급 위치는 준비했지만 실제
-로그인, Token 보관 및 401 시 Refresh/Retry 흐름은 아직 구현하지 않았습니다.
+`ApiError`로 전달합니다. 로그인 API 함수는 응답 형식까지 검증합니다. 인증 토큰
+공급 위치는 준비했지만 Token 보관 및 401 시 Refresh/Retry 흐름은 아직 구현하지
+않았습니다.
 
 `ApiError.kind`는 `http`, `network`, `timeout`, `cancelled`, `unexpected_response`를
 구분합니다. HTTP 오류의 `category`는 400/401/403/404/409 및 5xx를 각각
@@ -149,8 +168,8 @@ Frontend에 중복 선언하지 않습니다. 비정형 응답은 상태만 남�
 
 현재 API Layer는 오류를 자동으로 기록하거나 사용자에게 표시하지 않습니다.
 요청 본문·토큰·서버의 비정형 오류 내용을 로그에 남기지 않기 위한 정책입니다.
-향후 Page는 `kind`/`category`/`code`/`fieldErrors`에 따라 사용자 안내를 구성할 수
-있지만, 401 Refresh 및 화면별 Feedback은 후속 작업입니다.
+회원가입과 로그인 Page는 `kind`/`category`/`code`/`fieldErrors`에 따라 안내를
+구성합니다. 401 Refresh는 후속 작업입니다.
 
 | 변수                | 로컬 기본값             | 용도                                       |
 | ------------------- | ----------------------- | ------------------------------------------ |
@@ -179,6 +198,6 @@ curl -i -X POST http://localhost:5173/api/v1/members \
 Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비밀번호·토큰·비밀키를
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
-현재 구현 범위는 React 진입점, Home/Not Found/Signup Route, 공통 Header/Main
-Layout, 기본 스타일, 공통 API Client와 회원가입 화면입니다. 로그인·토큰 처리,
-숙소 검색, 예약, 관리자 화면은 후속 Frontend 이슈 범위입니다.
+현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login Route, 공통 Header/Main
+Layout, 기본 스타일, 공통 API Client와 회원가입·로그인 화면입니다. 토큰 기반 인증
+세션, 숙소 검색, 예약, 관리자 화면은 후속 Frontend 이슈 범위입니다.

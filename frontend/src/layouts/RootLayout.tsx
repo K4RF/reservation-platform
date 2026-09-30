@@ -21,6 +21,12 @@ export function RootLayout() {
           </NavLink>
           <NavLink
             className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
+            to={routePaths.login}
+          >
+            로그인
+          </NavLink>
+          <NavLink
+            className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
             to={routePaths.signup}
           >
             회원가입

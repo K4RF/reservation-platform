@@ -2,12 +2,15 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from './routes'
+import { AuthProvider } from '../state/AuthProvider'
 
 function renderAt(path: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+      </MemoryRouter>
+    </AuthProvider>,
   )
 }
 
@@ -47,5 +50,13 @@ describe('AppRoutes', () => {
 
     expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '홈' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('opens the login route from the shared header', async () => {
+    renderAt('/')
+
+    fireEvent.click(screen.getByRole('link', { name: '로그인' }))
+
+    expect(await screen.findByRole('heading', { name: '로그인' })).toBeTruthy()
   })
 })
