@@ -1,6 +1,8 @@
-// Access tokens live only in this JavaScript module. A full page reload starts anonymous.
+// Both token types live only in this JavaScript module. A full page reload starts anonymous.
 let currentToken: string | null = null
 let expiresAt: number | null = null
+let currentRefreshToken: string | null = null
+let loginRequired = false
 const listeners = new Set<() => void>()
 
 function notify() {
@@ -36,15 +38,42 @@ export function setAccessToken(token: string): number {
   if (expiration === null) throw new Error('Invalid or expired access token')
   currentToken = token
   expiresAt = expiration
+  loginRequired = false
+  notify()
+  return expiration
+}
+
+export function setTokenPair(accessToken: string, refreshToken: string): number {
+  const expiration = readAccessTokenExpiry(accessToken)
+  if (expiration === null || !refreshToken || refreshToken.length > 4096) {
+    throw new Error('Invalid login token response')
+  }
+  currentToken = accessToken
+  expiresAt = expiration
+  currentRefreshToken = refreshToken
+  loginRequired = false
   notify()
   return expiration
 }
 
 export function getAccessToken(): string | null {
   if (currentToken !== null && expiresAt !== null && expiresAt <= Date.now()) {
-    clearAccessToken()
+    if (currentRefreshToken === null) clearAccessToken()
+    return null
   }
   return currentToken
+}
+
+export function getStoredAccessToken(): string | null {
+  return currentToken
+}
+
+export function getRefreshToken(): string | null {
+  return currentRefreshToken
+}
+
+export function isLoginRequired(): boolean {
+  return loginRequired
 }
 
 export function getAccessTokenExpiry(): number | null {
@@ -53,9 +82,19 @@ export function getAccessTokenExpiry(): number | null {
 }
 
 export function clearAccessToken() {
-  if (currentToken === null) return
+  if (currentToken === null && currentRefreshToken === null && !loginRequired) return
   currentToken = null
   expiresAt = null
+  currentRefreshToken = null
+  loginRequired = false
+  notify()
+}
+
+export function requireLogin() {
+  currentToken = null
+  expiresAt = null
+  currentRefreshToken = null
+  loginRequired = true
   notify()
 }
 
