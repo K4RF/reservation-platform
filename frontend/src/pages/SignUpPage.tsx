@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { SignUpForm } from '../components/signup/SignUpForm'
 
@@ -14,6 +14,9 @@ export function SignUpPage() {
           navigate(routePaths.home, { state: { signupCompleted: true }, replace: true })
         }
       />
+      <p>
+        이미 계정이 있나요? <Link to={routePaths.login}>로그인</Link>
+      </p>
     </section>
   )
 }

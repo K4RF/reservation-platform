@@ -84,11 +84,13 @@ p {
   margin-top: 0.75rem;
 }
 
-.signup-page {
+.signup-page,
+.login-page {
   width: min(100%, 28rem);
 }
 
-.signup-form {
+.signup-form,
+.login-form {
   display: grid;
   gap: 1rem;
   margin-top: 1.5rem;
@@ -117,7 +119,8 @@ p {
   color: #b42318;
 }
 
-.signup-form button {
+.signup-form button,
+.login-form button {
   padding: 0.7rem 1rem;
   border: 0;
   border-radius: 0.35rem;
@@ -127,7 +130,8 @@ p {
   cursor: pointer;
 }
 
-.signup-form button:disabled {
+.signup-form button:disabled,
+.login-form button:disabled {
   cursor: wait;
   opacity: 0.65;
 }

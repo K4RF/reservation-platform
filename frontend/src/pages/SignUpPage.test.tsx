@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '../app/routes'
 import { signUpMember } from '../api/member'
 import { ApiError } from '../api/errors'
+import { AuthProvider } from '../state/AuthProvider'
 
 vi.mock('../api/member', () => ({ signUpMember: vi.fn() }))
 
@@ -11,9 +12,11 @@ beforeEach(() => vi.resetAllMocks())
 
 function renderSignup() {
   return render(
-    <MemoryRouter initialEntries={['/signup']}>
-      <AppRoutes />
-    </MemoryRouter>,
+    <AuthProvider>
+      <MemoryRouter initialEntries={['/signup']}>
+        <AppRoutes />
+      </MemoryRouter>
+    </AuthProvider>,
   )
 }
 
