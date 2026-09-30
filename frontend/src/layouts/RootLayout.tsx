@@ -1,7 +1,9 @@
 import { Link, NavLink, Outlet } from 'react-router'
 import { routePaths } from '../app/routePaths'
+import { useAuth } from '../state/useAuth'
 
 export function RootLayout() {
+  const { state, clearAuthentication } = useAuth()
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -19,12 +21,18 @@ export function RootLayout() {
           >
             홈
           </NavLink>
-          <NavLink
-            className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
-            to={routePaths.login}
-          >
-            로그인
-          </NavLink>
+          {state.status === 'authenticated' ? (
+            <button className="nav-link nav-action" type="button" onClick={clearAuthentication}>
+              브라우저 인증 종료
+            </button>
+          ) : (
+            <NavLink
+              className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
+              to={routePaths.login}
+            >
+              로그인
+            </NavLink>
+          )}
           <NavLink
             className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
             to={routePaths.signup}

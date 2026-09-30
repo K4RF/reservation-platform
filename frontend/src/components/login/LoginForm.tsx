@@ -2,12 +2,14 @@ import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { loginWithEmail } from '../../api/auth'
 import { ApiError } from '../../api/errors'
+import { useAuth } from '../../state/useAuth'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import { validateLogin } from './loginValidation'
 import type { LoginFieldErrors } from './loginValidation'
 
 export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+  const { signIn } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<LoginFieldErrors>({})
@@ -29,7 +31,8 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     setSubmitting(true)
     let succeeded = false
     try {
-      await loginWithEmail(request)
+      const response = await loginWithEmail(request)
+      signIn(response.accessToken)
       succeeded = true
     } catch (error) {
       if (error instanceof ApiError) {

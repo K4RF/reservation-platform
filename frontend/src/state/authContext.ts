@@ -1,10 +1,10 @@
 import { createContext } from 'react'
-import type { Dispatch } from 'react'
-import type { AuthAction, AuthState } from './authState'
+import type { AuthState } from './authState'
 
 export interface AuthContextValue {
   state: AuthState
-  dispatch: Dispatch<AuthAction>
+  signIn: (accessToken: string) => void
+  clearAuthentication: () => void
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
