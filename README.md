@@ -936,6 +936,12 @@ Frontend GitHub Actions Workflow는 위 명령을 동일하게 실행합니다. 
 `pnpm format`과 IDE 설정은
 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 
+인증 User Flow는 실제 Form·API Client·AuthProvider·Router를 HTTP 경계 Mock으로 함께
+검증합니다. Token Utility·공유 타입과 f0.3.0 인증 확장 책임, 통합 테스트 범위 및 실제
+Backend/Google 확인 절차는
+[`Frontend Authentication User Flow`](docs/testing/frontend-authentication-flow.md)에 정리했습니다.
+Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
