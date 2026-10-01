@@ -6,6 +6,7 @@ import {
   getAccessToken,
   getAccessTokenExpiry,
   getRefreshToken,
+  getRoleHint,
   isLoginRequired,
   readAccessTokenExpiry,
   requireLogin,
@@ -16,6 +17,24 @@ import {
 afterEach(() => clearAccessToken())
 
 describe('memory-only access token', () => {
+  it.each(['USER', 'ADMIN'])('reads %s only as a client role hint', (role) => {
+    setTokenPair(
+      accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60, 'ACCESS', role),
+      'refresh',
+    )
+    expect(getRoleHint()).toBe(role)
+    clearAccessToken()
+    expect(getRoleHint()).toBeNull()
+  })
+  it('returns no role hint for absent or unknown claims', () => {
+    for (const claims of [
+      { exp: Math.floor(Date.now() / 1000) + 60, token_type: 'ACCESS' },
+      { exp: Math.floor(Date.now() / 1000) + 60, token_type: 'ACCESS', role: 'ROOT' },
+    ]) {
+      setAccessToken(`header.${btoa(JSON.stringify(claims))}.signature`)
+      expect(getRoleHint()).toBeNull()
+    }
+  })
   it('accepts an unexpired access token and never writes it to browser storage', () => {
     const expiry = Math.floor(Date.now() / 1000) + 60
     const token = accessTokenWithExpiry(expiry)

@@ -7,6 +7,7 @@ import {
   getStoredAccessToken,
   requireLoginIfCurrent,
   setAccessToken,
+  setAuthRefreshing,
 } from '../state/accessToken'
 import { reissueAccessToken } from './reissue'
 
@@ -147,6 +148,8 @@ async function refreshAccessToken(): Promise<string> {
   if (!refreshToken || !token) throw new ApiError('Login is required', { kind: 'cancelled' })
   if (refreshFlight?.version === version) return refreshFlight.promise
 
+  setAuthRefreshing(true, version)
+
   const promise = (async () => {
     try {
       const nextToken = await reissueAccessToken(refreshToken, (path, options) =>
@@ -166,6 +169,7 @@ async function refreshAccessToken(): Promise<string> {
   void promise
     .finally(() => {
       if (refreshFlight?.promise === promise) refreshFlight = null
+      setAuthRefreshing(false, version)
     })
     .catch(() => undefined)
   return promise
