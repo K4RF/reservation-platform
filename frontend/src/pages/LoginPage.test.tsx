@@ -2,14 +2,14 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '../app/routes'
-import { loginWithEmail } from '../api/auth'
+import { loginWithEmail, logoutFromBackend } from '../api/auth'
 import { apiClient } from '../api/client'
 import { ApiError } from '../api/errors'
 import { AuthProvider } from '../state/AuthProvider'
 import { getAccessToken, getRefreshToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
-vi.mock('../api/auth', () => ({ loginWithEmail: vi.fn() }))
+vi.mock('../api/auth', () => ({ loginWithEmail: vi.fn(), logoutFromBackend: vi.fn() }))
 
 const tokens = {
   accessToken: accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60),
@@ -17,7 +17,10 @@ const tokens = {
   tokenType: 'Bearer',
 } as const
 
-beforeEach(() => vi.resetAllMocks())
+beforeEach(() => {
+  vi.resetAllMocks()
+  vi.mocked(logoutFromBackend).mockResolvedValue(undefined)
+})
 
 function renderLogin() {
   return render(
@@ -73,15 +76,71 @@ describe('login flow', () => {
     complete(tokens)
     expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain('로그인 상태입니다')
-    expect(screen.getByRole('button', { name: '브라우저 인증 종료' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeTruthy()
     expect(getAccessToken()).toBe(tokens.accessToken)
     expect(getRefreshToken()).toBe(tokens.refreshToken)
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
 
-    fireEvent.click(screen.getByRole('button', { name: '브라우저 인증 종료' }))
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    expect(await screen.findByText('로그아웃되었습니다.')).toBeTruthy()
+    expect(logoutFromBackend).toHaveBeenCalledOnce()
     expect(screen.getByRole('link', { name: '로그인' })).toBeTruthy()
     expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+    const protectedFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 401 }))
+    vi.stubGlobal('fetch', protectedFetch)
+    await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
+    expect(
+      new Headers((protectedFetch.mock.calls[0][1] as RequestInit).headers).has('Authorization'),
+    ).toBe(false)
+  })
+
+  it('clears local credentials and warns when server logout cannot be confirmed', async () => {
+    setTokenPair(tokens.accessToken, tokens.refreshToken)
+    vi.mocked(logoutFromBackend).mockRejectedValue(new ApiError('offline', { kind: 'network' }))
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      '이 브라우저의 인증은 종료했지만 서버 로그아웃은 확인하지 못했습니다.',
+    )
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('blocks duplicate logout clicks while the server request is pending', async () => {
+    setTokenPair(tokens.accessToken, tokens.refreshToken)
+    let finish!: () => void
+    vi.mocked(logoutFromBackend).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
+    const pendingButton = screen.getByRole('button', { name: '로그아웃 중…' })
+    expect(pendingButton.hasAttribute('disabled')).toBe(true)
+    fireEvent.click(pendingButton)
+    expect(logoutFromBackend).toHaveBeenCalledOnce()
+
+    finish()
+    expect(await screen.findByText('로그아웃되었습니다.')).toBeTruthy()
   })
 
   it('returns to login with a message when token reissue fails', async () => {

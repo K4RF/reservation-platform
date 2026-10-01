@@ -98,4 +98,32 @@ describe('logoutFromBackend', () => {
     await expect(logoutFromBackend()).rejects.toMatchObject({ status: 401 })
     expect(fetchMock).toHaveBeenCalledOnce()
   })
+
+  it('reissues an expired access token before calling logout', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'))
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 1), 'refresh-token')
+    vi.advanceTimersByTime(2_000)
+    const nextToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith('/auth/reissue')
+            ? new Response(JSON.stringify({ accessToken: nextToken, tokenType: 'Bearer' }))
+            : new Response(null, { status: 204 }),
+        ),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(logoutFromBackend()).resolves.toBeUndefined()
+
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
+      '/api/v1/auth/reissue',
+      '/api/v1/auth/logout',
+    ])
+    expect(
+      new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers).get('Authorization'),
+    ).toBe(`Bearer ${nextToken}`)
+  })
 })

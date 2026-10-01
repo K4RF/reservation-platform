@@ -1,12 +1,15 @@
 import { useEffect, useReducer } from 'react'
 import type { ReactNode } from 'react'
 import { AuthContext } from './authContext'
+import { logoutFromBackend } from '../api/auth'
 import { ensureFreshAccessToken } from '../api/client'
 import { authReducer, initialAuthState } from './authState'
 import type { AuthState } from './authState'
 import {
   clearAccessToken,
   getAccessTokenExpiry,
+  getRefreshToken,
+  getSessionVersion,
   isLoginRequired,
   setTokenPair,
   subscribeAccessToken,
@@ -20,6 +23,20 @@ function restoreAuthState(): AuthState {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, undefined, restoreAuthState)
+
+  async function logout(): Promise<'success' | 'server_unconfirmed' | 'superseded'> {
+    const sessionVersion = getSessionVersion()
+    let result: 'success' | 'server_unconfirmed' = 'success'
+    try {
+      await logoutFromBackend()
+    } catch {
+      result = 'server_unconfirmed'
+    }
+    // A login completed while logout was in flight must not be discarded.
+    if (getSessionVersion() !== sessionVersion && getRefreshToken() !== null) return 'superseded'
+    clearAccessToken()
+    return result
+  }
 
   useEffect(
     () =>
@@ -56,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         state,
         signIn: setTokenPair,
-        clearAuthentication: clearAccessToken,
+        logout,
       }}
     >
       {children}

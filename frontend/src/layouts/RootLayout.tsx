@@ -1,12 +1,26 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { useAuth } from '../state/useAuth'
 
 export function RootLayout() {
-  const { state, clearAuthentication } = useAuth()
+  const { state, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const logoutPending = useRef(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    if (logoutPending.current) return
+    logoutPending.current = true
+    setLoggingOut(true)
+    const result = await logout()
+    if (result !== 'superseded') {
+      navigate(routePaths.login, { replace: true, state: { logoutResult: result } })
+    }
+    logoutPending.current = false
+    setLoggingOut(false)
+  }
   useEffect(() => {
     if (state.status === 'reauth_required' && location.pathname !== routePaths.login) {
       navigate(routePaths.login, { replace: true })
@@ -30,8 +44,13 @@ export function RootLayout() {
             홈
           </NavLink>
           {state.status === 'authenticated' ? (
-            <button className="nav-link nav-action" type="button" onClick={clearAuthentication}>
-              브라우저 인증 종료
+            <button
+              className="nav-link nav-action"
+              type="button"
+              disabled={loggingOut}
+              onClick={() => void handleLogout()}
+            >
+              {loggingOut ? '로그아웃 중…' : '로그아웃'}
             </button>
           ) : (
             <NavLink
