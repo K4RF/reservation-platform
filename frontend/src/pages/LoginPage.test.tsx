@@ -1,11 +1,12 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '../app/routes'
 import { loginWithEmail } from '../api/auth'
+import { apiClient } from '../api/client'
 import { ApiError } from '../api/errors'
 import { AuthProvider } from '../state/AuthProvider'
-import { getAccessToken } from '../state/accessToken'
+import { getAccessToken, getRefreshToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
 vi.mock('../api/auth', () => ({ loginWithEmail: vi.fn() }))
@@ -74,12 +75,33 @@ describe('login flow', () => {
     expect(screen.getByRole('status').textContent).toContain('로그인 상태입니다')
     expect(screen.getByRole('button', { name: '브라우저 인증 종료' })).toBeTruthy()
     expect(getAccessToken()).toBe(tokens.accessToken)
+    expect(getRefreshToken()).toBe(tokens.refreshToken)
     expect(localStorage.length).toBe(0)
     expect(sessionStorage.length).toBe(0)
 
     fireEvent.click(screen.getByRole('button', { name: '브라우저 인증 종료' }))
     expect(screen.getByRole('link', { name: '로그인' })).toBeTruthy()
     expect(getAccessToken()).toBeNull()
+  })
+
+  it('returns to login with a message when token reissue fails', async () => {
+    setTokenPair(tokens.accessToken, tokens.refreshToken)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
+    render(
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/']}>
+          <AppRoutes />
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    await act(async () => {
+      await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
+    })
+
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toContain('인증이 만료되었습니다')
+    expect(getRefreshToken()).toBeNull()
   })
 
   it('shows invalid credentials without identifying which credential was wrong', async () => {

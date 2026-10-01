@@ -3,6 +3,7 @@ let currentToken: string | null = null
 let expiresAt: number | null = null
 let currentRefreshToken: string | null = null
 let loginRequired = false
+let sessionVersion = 0
 const listeners = new Set<() => void>()
 
 function notify() {
@@ -52,6 +53,7 @@ export function setTokenPair(accessToken: string, refreshToken: string): number 
   expiresAt = expiration
   currentRefreshToken = refreshToken
   loginRequired = false
+  sessionVersion += 1
   notify()
   return expiration
 }
@@ -76,6 +78,10 @@ export function isLoginRequired(): boolean {
   return loginRequired
 }
 
+export function getSessionVersion(): number {
+  return sessionVersion
+}
+
 export function getAccessTokenExpiry(): number | null {
   getAccessToken()
   return expiresAt
@@ -87,6 +93,7 @@ export function clearAccessToken() {
   expiresAt = null
   currentRefreshToken = null
   loginRequired = false
+  sessionVersion += 1
   notify()
 }
 
@@ -95,7 +102,12 @@ export function requireLogin() {
   expiresAt = null
   currentRefreshToken = null
   loginRequired = true
+  sessionVersion += 1
   notify()
+}
+
+export function requireLoginIfCurrent(token: string, version: number) {
+  if (currentToken === token && sessionVersion === version) requireLogin()
 }
 
 export function clearAccessTokenIfCurrent(token: string) {

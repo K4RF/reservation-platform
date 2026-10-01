@@ -1,8 +1,12 @@
 export type AuthState =
   | { status: 'anonymous'; user: null; expiresAt: null }
+  | { status: 'reauth_required'; user: null; expiresAt: null }
   | { status: 'authenticated'; user: null; expiresAt: number }
 
-export type AuthAction = { type: 'authenticated'; expiresAt: number } | { type: 'signed_out' }
+export type AuthAction =
+  | { type: 'authenticated'; expiresAt: number }
+  | { type: 'signed_out' }
+  | { type: 'reauth_required' }
 
 export const initialAuthState: AuthState = { status: 'anonymous', user: null, expiresAt: null }
 
@@ -12,5 +16,7 @@ export function authReducer(_state: AuthState, action: AuthAction): AuthState {
       return { status: 'authenticated', user: null, expiresAt: action.expiresAt }
     case 'signed_out':
       return initialAuthState
+    case 'reauth_required':
+      return { status: 'reauth_required', user: null, expiresAt: null }
   }
 }

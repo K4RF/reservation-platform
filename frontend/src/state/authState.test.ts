@@ -18,5 +18,10 @@ describe('auth state', () => {
       expiresAt: 1_800_000_000_000,
     })
     expect(authReducer(authenticated, { type: 'signed_out' })).toEqual(initialAuthState)
+    expect(authReducer(authenticated, { type: 'reauth_required' })).toEqual({
+      status: 'reauth_required',
+      user: null,
+      expiresAt: null,
+    })
   })
 })

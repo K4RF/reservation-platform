@@ -1,9 +1,17 @@
-import { Link, NavLink, Outlet } from 'react-router'
+import { useEffect } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { useAuth } from '../state/useAuth'
 
 export function RootLayout() {
   const { state, clearAuthentication } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  useEffect(() => {
+    if (state.status === 'reauth_required' && location.pathname !== routePaths.login) {
+      navigate(routePaths.login, { replace: true })
+    }
+  }, [state.status, location.pathname, navigate])
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">

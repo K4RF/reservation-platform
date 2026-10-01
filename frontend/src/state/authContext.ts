@@ -3,7 +3,7 @@ import type { AuthState } from './authState'
 
 export interface AuthContextValue {
   state: AuthState
-  signIn: (accessToken: string) => void
+  signIn: (accessToken: string, refreshToken: string) => void
   clearAuthentication: () => void
 }
 
