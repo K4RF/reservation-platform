@@ -4,10 +4,38 @@ let expiresAt: number | null = null
 let currentRefreshToken: string | null = null
 let loginRequired = false
 let sessionVersion = 0
+let refreshing = false
 const listeners = new Set<() => void>()
 
 function notify() {
   for (const listener of listeners) listener()
+}
+
+export type UserRole = 'USER' | 'ADMIN'
+
+// Unverified client hint only. The backend verifies signatures and permissions.
+export function getRoleHint(): UserRole | null {
+  if (currentToken === null) return null
+  try {
+    const claims: unknown = JSON.parse(
+      atob(currentToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
+    )
+    if (typeof claims !== 'object' || claims === null || Array.isArray(claims)) return null
+    const payload = claims as Record<string, unknown>
+    return payload.role === 'USER' || payload.role === 'ADMIN' ? payload.role : null
+  } catch {
+    return null
+  }
+}
+
+export function isAuthRefreshing(): boolean {
+  return refreshing
+}
+
+export function setAuthRefreshing(value: boolean, version: number) {
+  if (sessionVersion !== version || refreshing === value) return
+  refreshing = value
+  notify()
 }
 
 export function readAccessTokenExpiry(token: string, now = Date.now()): number | null {
@@ -52,6 +80,7 @@ export function setTokenPair(accessToken: string, refreshToken: string): number 
   currentToken = accessToken
   expiresAt = expiration
   currentRefreshToken = refreshToken
+  refreshing = false
   loginRequired = false
   sessionVersion += 1
   notify()
@@ -92,6 +121,7 @@ export function clearAccessToken() {
   currentToken = null
   expiresAt = null
   currentRefreshToken = null
+  refreshing = false
   loginRequired = false
   sessionVersion += 1
   notify()
@@ -101,6 +131,7 @@ export function requireLogin() {
   currentToken = null
   expiresAt = null
   currentRefreshToken = null
+  refreshing = false
   loginRequired = true
   sessionVersion += 1
   notify()

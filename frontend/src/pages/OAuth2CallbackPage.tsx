@@ -5,6 +5,7 @@ import { consumeGoogleCallback } from '../api/googleOAuth2'
 import { routePaths } from '../app/routePaths'
 import { LoadingState } from '../components/ui/LoadingState'
 import { useAuth } from '../state/useAuth'
+import { consumeGoogleReturn } from '../app/loginReturn'
 
 type CallbackStatus = 'working' | 'cancelled' | 'failed' | 'invalid' | 'exchange_failed'
 
@@ -14,6 +15,7 @@ export function OAuth2CallbackPage() {
   const { signIn } = useAuth()
   const started = useRef(false)
   const active = useRef(false)
+  const [returnTarget, setReturnTarget] = useState<string>(routePaths.home)
   const [status, setStatus] = useState<CallbackStatus>('working')
 
   useEffect(() => {
@@ -21,6 +23,10 @@ export function OAuth2CallbackPage() {
     if (!started.current) {
       started.current = true
       const callback = consumeGoogleCallback(location.hash)
+      const returnPath = consumeGoogleReturn()
+      queueMicrotask(() => {
+        if (active.current) setReturnTarget(returnPath)
+      })
       window.history.replaceState(window.history.state, '', location.pathname + location.search)
       if (callback.type !== 'code') {
         queueMicrotask(() => {
@@ -31,7 +37,7 @@ export function OAuth2CallbackPage() {
           .then((tokens) => {
             if (!active.current) return
             signIn(tokens.accessToken, tokens.refreshToken)
-            navigate(routePaths.home, { replace: true })
+            navigate(returnPath, { replace: true })
           })
           .catch(() => {
             if (active.current) setStatus('exchange_failed')
@@ -58,7 +64,9 @@ export function OAuth2CallbackPage() {
       ) : (
         <>
           <p role="alert">{message[status]}</p>
-          <Link to={routePaths.login}>로그인으로 돌아가기</Link>
+          <Link to={routePaths.login} state={{ from: returnTarget }}>
+            로그인으로 돌아가기
+          </Link>
         </>
       )}
     </section>

@@ -8,6 +8,7 @@ import { createGoogleLoginStartUrl } from '../api/googleOAuth2'
 import { AuthProvider } from '../state/AuthProvider'
 import { getAccessToken, getRefreshToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
+import { saveGoogleReturn } from '../app/loginReturn'
 
 vi.mock('../api/auth', () => ({
   exchangeGoogleLoginCode: vi.fn(),
@@ -40,6 +41,17 @@ function renderCallback(entry: string) {
 }
 
 describe('Google callback page', () => {
+  it('returns to the protected destination after the full-page Google flow', async () => {
+    saveGoogleReturn('/reservations?status=CONFIRMED')
+    vi.mocked(exchangeGoogleLoginCode).mockResolvedValue({
+      accessToken: accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60),
+      refreshToken: 'google-refresh',
+      tokenType: 'Bearer',
+    })
+    renderCallback(callbackEntry(`code=${'a'.repeat(43)}`))
+    expect(await screen.findByRole('heading', { name: '내 예약' })).toBeTruthy()
+    expect(sessionStorage.length).toBe(0)
+  })
   it('exchanges the one-time code and establishes the same auth state as email login', async () => {
     const code = 'a'.repeat(43)
     const accessToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)

@@ -10,6 +10,8 @@ import {
   getAccessTokenExpiry,
   getRefreshToken,
   getSessionVersion,
+  getRoleHint,
+  isAuthRefreshing,
   isLoginRequired,
   setTokenPair,
   subscribeAccessToken,
@@ -18,7 +20,12 @@ import {
 function restoreAuthState(): AuthState {
   const expiresAt = getAccessTokenExpiry()
   if (isLoginRequired()) return { status: 'reauth_required', user: null, expiresAt: null }
-  return expiresAt === null ? initialAuthState : { status: 'authenticated', user: null, expiresAt }
+  if (isAuthRefreshing() || (expiresAt !== null && expiresAt <= Date.now() && getRefreshToken())) {
+    return { status: 'loading', user: null, expiresAt: null }
+  }
+  return expiresAt === null
+    ? initialAuthState
+    : { status: 'authenticated', user: null, expiresAt, role: getRoleHint() }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -41,19 +48,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(
     () =>
       subscribeAccessToken(() => {
-        const expiresAt = getAccessTokenExpiry()
+        const next = restoreAuthState()
         dispatch(
-          isLoginRequired()
-            ? { type: 'reauth_required' }
-            : expiresAt === null
-              ? { type: 'signed_out' }
-              : { type: 'authenticated', expiresAt },
+          next.status === 'authenticated'
+            ? { type: 'authenticated', expiresAt: next.expiresAt, role: next.role }
+            : { type: next.status === 'anonymous' ? 'signed_out' : next.status },
         )
       }),
     [],
   )
 
   useEffect(() => {
+    if (state.status === 'loading') {
+      void ensureFreshAccessToken().catch(() => undefined)
+      return
+    }
     if (state.status !== 'authenticated') return
     let timeout: ReturnType<typeof setTimeout>
     const checkExpiry = () => {

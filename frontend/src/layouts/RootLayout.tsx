@@ -23,9 +23,12 @@ export function RootLayout() {
   }
   useEffect(() => {
     if (state.status === 'reauth_required' && location.pathname !== routePaths.login) {
-      navigate(routePaths.login, { replace: true })
+      navigate(routePaths.login, {
+        replace: true,
+        state: { from: location.pathname + location.search + location.hash },
+      })
     }
-  }, [state.status, location.pathname, navigate])
+  }, [state.status, location.pathname, location.search, location.hash, navigate])
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -43,6 +46,17 @@ export function RootLayout() {
           >
             홈
           </NavLink>
+          {state.status === 'authenticated' &&
+            (state.role === 'USER' || state.role === 'ADMIN') && (
+              <NavLink className="nav-link" to={routePaths.reservations}>
+                내 예약
+              </NavLink>
+            )}
+          {state.status === 'authenticated' && state.role === 'ADMIN' && (
+            <NavLink className="nav-link" to={routePaths.admin}>
+              관리자
+            </NavLink>
+          )}
           {state.status === 'authenticated' ? (
             <button
               className="nav-link nav-action"
@@ -52,14 +66,14 @@ export function RootLayout() {
             >
               {loggingOut ? '로그아웃 중…' : '로그아웃'}
             </button>
-          ) : (
+          ) : state.status !== 'loading' ? (
             <NavLink
               className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
               to={routePaths.login}
             >
               로그인
             </NavLink>
-          )}
+          ) : null}
           <NavLink
             className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
             to={routePaths.signup}
