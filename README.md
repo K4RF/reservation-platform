@@ -120,7 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
-| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·로그인, 메모리 Access Token 및 API Bearer Header; Refresh·예약 화면은 후속 범위 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·로그인, 메모리 Access/Refresh Token, 자동 재발급 및 API Bearer Header; 예약 화면은 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -399,7 +399,7 @@ reservation-platform/
 같은 Repository에서 별도로 관리하며 반드시 순차적으로 진행하는 것은 아닙니다.
 Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 `/signup` 회원가입과 `/login` 로그인 화면, 메모리 Access Token 기반 API 인증을
-구현했습니다. 새로고침 후 인증 복원·Refresh 및 검색·예약 화면은 아직 없습니다.
+구현했습니다. Access Token 자동 재발급도 구현했으며 새로고침 후 인증 복원 및 검색·예약 화면은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
@@ -412,7 +412,7 @@ GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
 | Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
-| Frontend | f0.2.0 — Authentication & User Flow | In Progress | 회원가입·로그인, 메모리 Access Token·Bearer 적용; Refresh·사용자 정보 및 나머지 흐름은 후속 과제 |
+| Frontend | f0.2.0 — Authentication & User Flow | In Progress | 회원가입·로그인, 메모리 Token·Bearer·재발급 적용; 사용자 정보 및 나머지 흐름은 후속 과제 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
 | Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
@@ -862,9 +862,9 @@ pnpm dev
 기본 개발 주소는 `http://localhost:5173`입니다. Home/Not Found 화면은 Backend 없이
 열 수 있지만 회원가입(`/signup`)과 로그인(`/login`)을 실제 제출하려면 Backend 및
 개발 인프라가 필요합니다. 개발용 `/api` Proxy를 통해 Backend API를 호출합니다.
-로그인 후 Access Token은 브라우저 메모리에만 보관해 인증 API 요청에 Bearer Header로
-보냅니다. 새로고침하면 익명 상태로 돌아가며 Refresh Token은 보관·사용하지 않습니다.
-브라우저 인증 종료는 로컬 Token만 지우고 Backend Redis Refresh Token 삭제나 기존
+로그인 후 Access/Refresh Token은 브라우저 메모리에만 보관합니다. 보호 API 요청에
+Bearer Header를 보내고 Access Token 만료·401 시 재발급 후 한 번 재시도합니다.
+새로고침하면 익명 상태로 돌아갑니다. 브라우저 인증 종료는 로컬 Token만 지우고 Backend Redis Refresh Token 삭제나 기존
 Access Token 폐기는 수행하지 않습니다. 자세한 범위는
 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 Production 파일은 `pnpm build`로 `frontend/dist/`에 생성합니다. 환경별 API 주소와

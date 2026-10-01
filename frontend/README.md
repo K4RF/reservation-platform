@@ -118,11 +118,11 @@ Home에서 로그인 화면으로 이동할 수 있습니다. 화면 테스트�
 성공 응답의 `accessToken`, `refreshToken`, `tokenType: Bearer` 형식을 확인한 뒤
 Access Token의 `ACCESS` 타입과 만료 시각을 확인하여 메모리에만 보관합니다.
 인증 Context에는 Token 문자열 대신 `authenticated` 상태와 만료 시각만 기록하고
-Home으로 이동합니다. Refresh Token은 응답에 들어 있지만 현재 Frontend에서
-저장하거나 재발급에 사용하지 않습니다. 실제 Backend 로그인 응답에는 토큰이
+Home으로 이동합니다. Refresh Token도 같은 JavaScript 모듈 메모리에만 보관하며
+Access Token 재발급에 사용합니다. 실제 Backend 로그인 응답에는 토큰이
 포함되므로 개발자 도구나 터미널에서 응답 내용을 공유하지 마세요.
 
-Access Token은 `localStorage`·`sessionStorage`·Cookie에 기록하지 않습니다.
+두 Token은 `localStorage`·`sessionStorage`·Cookie에 기록하지 않습니다.
 이 Browser Tab에서 React Provider가 다시 마운트되면 메모리 Token을 확인하여
 상태를 복원하지만, 전체 페이지 새로고침·Tab 종료 후에는 Token이 사라져 익명
 상태로 시작하며 다시 로그인해야 합니다. Web Storage에 토큰을 두지 않는 것은
@@ -138,10 +138,13 @@ JavaScript 접근·XSS 위험을 고려한 선택입니다. 메모리 보관도 
 Backend 로그인 응답에는 사용자 정보가 없고 현재 `/me` API도 없으므로 회원 ID·이메일·
 역할을 Token의 서명 미검증 Payload에서 사용자 정보로 채우지 않습니다. `authenticated`
 상태의 `user`는 현재 `null`이며 Access Token 만료 시각만 Client Hint로 갖습니다.
-만료되거나 보호 API에서 401을 받으면 Token을 삭제하고 익명 상태로 돌아갑니다.
+Access Token 만료 또는 보호 API의 401에 대해 Refresh Token으로 한 번 재발급하고
+실패한 요청을 한 번 재시도합니다. 재발급 실패나 재시도 후 401이면 두 Token을
+삭제하고 `reauth_required` 상태로 로그인 화면에 안내합니다. 네트워크 오류도
+재발급 실패로 처리하므로 다시 로그인해야 합니다.
 브라우저 인증 종료 버튼도 메모리 Token만 지웁니다. Backend의 Redis Refresh Token
 삭제 API는 호출하지 않으므로 서버 측 로그아웃이나 기존 Access Token 폐기를 의미하지
-않습니다. Refresh Token 관리·재발급·Protected Route는 후속 작업입니다. 최종 인증과
+않습니다. Protected Route와 새로고침 후 인증 복원은 후속 작업입니다. 최종 인증과
 권한은 Backend가 검증하며, Client의 `authenticated` 상태만으로 권한을 증명할 수
 없습니다.
 
@@ -164,9 +167,10 @@ Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은
 공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 요청은 `src/api/errors.ts`의
 `ApiError`로 전달합니다. 로그인 API 함수는 응답 형식까지 검증합니다. 공통 Client는
 기본적으로 메모리 Access Token이 있으면 `Authorization: Bearer <token>`을 붙이고,
-로그인·회원가입은 `includeAuth: false`로 제외합니다. 보호 API의 401은 해당 요청에
-사용한 Token이 여전히 현재 Token일 때만 삭제하여 오래된 응답이 새 로그인을 지우지
-않게 합니다. 자동 Refresh/Retry는 아직 구현하지 않았습니다.
+로그인·회원가입·재발급은 `includeAuth: false`로 제외합니다. 만료된 Access Token은
+요청 전에 재발급하며, 동시 401은 하나의 재발급 요청을 공유합니다. 재발급 중 시작된
+보호 요청도 새 Token을 기다립니다. 원래 요청은 최대 한 번 재시도하며 재발급 요청
+자체는 재시도하지 않습니다. 이전 세션의 늦은 응답은 새 로그인을 삭제하지 않습니다.
 
 `ApiError.kind`는 `http`, `network`, `timeout`, `cancelled`, `unexpected_response`를
 구분합니다. HTTP 오류의 `category`는 400/401/403/404/409 및 5xx를 각각
@@ -181,7 +185,7 @@ Frontend에 중복 선언하지 않습니다. 비정형 응답은 상태만 남�
 현재 API Layer는 오류를 자동으로 기록하거나 사용자에게 표시하지 않습니다.
 요청 본문·토큰·서버의 비정형 오류 내용을 로그에 남기지 않기 위한 정책입니다.
 회원가입과 로그인 Page는 `kind`/`category`/`code`/`fieldErrors`에 따라 안내를
-구성합니다. 401 Refresh는 후속 작업입니다.
+구성합니다.
 
 | 변수                | 로컬 기본값             | 용도                                       |
 | ------------------- | ----------------------- | ------------------------------------------ |
