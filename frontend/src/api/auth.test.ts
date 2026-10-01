@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loginWithEmail } from './auth'
-import { setAccessToken } from '../state/accessToken'
+import { loginWithEmail, logoutFromBackend } from './auth'
+import { getAccessToken, setAccessToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
 const tokens = {
@@ -69,5 +69,33 @@ describe('loginWithEmail', () => {
     await expect(
       loginWithEmail({ email: 'member@example.com', password: 'wrong-password' }),
     ).rejects.toMatchObject({ kind: 'http', category: 'unauthorized', code: 'AUTH_003' })
+  })
+})
+
+describe('logoutFromBackend', () => {
+  it('posts with the current bearer token and accepts the backend 204 response', async () => {
+    const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    setTokenPair(token, 'refresh-token')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(logoutFromBackend()).resolves.toBeUndefined()
+
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toMatch(/\/api\/v1\/auth\/logout$/)
+    expect(init.method).toBe('POST')
+    expect(new Headers(init.headers).get('Authorization')).toBe(`Bearer ${token}`)
+    expect(init.body).toBeUndefined()
+    expect(getAccessToken()).toBe(token)
+  })
+
+  it('does not attempt reissue when logout returns 401', async () => {
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh-token')
+    const fetchMock = vi.fn().mockResolvedValue(new Response('{}', { status: 401 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(logoutFromBackend()).rejects.toMatchObject({ status: 401 })
+    expect(fetchMock).toHaveBeenCalledOnce()
   })
 })
