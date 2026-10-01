@@ -134,7 +134,7 @@ JavaScript 접근·XSS 위험을 고려한 선택입니다. 메모리 보관도 
 
 `src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
 관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
-`anonymous`입니다. `useAuth()`는 상태와 로그인·브라우저 인증 종료 함수를 제공합니다.
+`anonymous`입니다. `useAuth()`는 상태와 로그인·로그아웃 함수를 제공합니다.
 Backend 로그인 응답에는 사용자 정보가 없고 현재 `/me` API도 없으므로 회원 ID·이메일·
 역할을 Token의 서명 미검증 Payload에서 사용자 정보로 채우지 않습니다. `authenticated`
 상태의 `user`는 현재 `null`이며 Access Token 만료 시각만 Client Hint로 갖습니다.
@@ -142,9 +142,13 @@ Access Token 만료 또는 보호 API의 401에 대해 Refresh Token으로 한 �
 실패한 요청을 한 번 재시도합니다. 재발급 실패나 재시도 후 401이면 두 Token을
 삭제하고 `reauth_required` 상태로 로그인 화면에 안내합니다. 네트워크 오류도
 재발급 실패로 처리하므로 다시 로그인해야 합니다.
-브라우저 인증 종료 버튼도 메모리 Token만 지웁니다. Backend의 Redis Refresh Token
-삭제 API는 호출하지 않으므로 서버 측 로그아웃이나 기존 Access Token 폐기를 의미하지
-않습니다. Protected Route와 새로고침 후 인증 복원은 후속 작업입니다. 최종 인증과
+Header의 로그아웃은 Bearer Token으로 Backend `POST /api/v1/auth/logout`을 호출합니다.
+Access Token이 만료됐다면 먼저 재발급을 시도합니다. 성공(`204`)하면 Redis Refresh
+Token이 삭제되며, 요청 실패·연결 오류 때도 현재 Tab의 Token과 인증 상태를 지우고
+로그인 화면으로 이동합니다. 후자의 경우 서버 무효화가 확인되지 않았음을 알립니다.
+Logout 응답의 401은 다시 재발급하지 않습니다. Backend는 Access Token Blacklist를
+사용하지 않으므로 이미 발급된 Access Token은 만료 전까지 서버에서 유효할 수 있습니다.
+Protected Route와 새로고침 후 인증 복원은 후속 작업입니다. 최종 인증과
 권한은 Backend가 검증하며, Client의 `authenticated` 상태만으로 권한을 증명할 수
 없습니다.
 
@@ -215,6 +219,6 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login Route, 공통 Header/Main
-Layout, 기본 스타일, 회원가입·로그인 화면, 메모리 기반 Access Token 인증 및 공통
-Bearer Header 적용입니다. 새로고침 후 세션 복원, Refresh, 서버 로그아웃, 사용자 정보
+Layout, 기본 스타일, 회원가입·로그인 화면과 Header 로그아웃, 메모리 기반 Token 인증,
+자동 재발급 및 공통 Bearer Header 적용입니다. 새로고침 후 세션 복원, 사용자 정보
 조회, 숙소 검색·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.

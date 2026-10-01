@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { accessTokenWithExpiry } from '../test/jwt'
 import { apiClient } from '../api/client'
@@ -7,7 +7,7 @@ import { AuthProvider } from './AuthProvider'
 import { useAuth } from './useAuth'
 
 function AuthProbe() {
-  const { state, signIn, clearAuthentication } = useAuth()
+  const { state, signIn, logout } = useAuth()
   return (
     <>
       <output>{state.status}</output>
@@ -17,15 +17,16 @@ function AuthProbe() {
       >
         Sign in
       </button>
-      <button type="button" onClick={clearAuthentication}>
-        Clear authentication
+      <button type="button" onClick={() => void logout()}>
+        Log out
       </button>
     </>
   )
 }
 
 describe('AuthProvider', () => {
-  it('shares auth state, restores it across provider remounts, and clears it', () => {
+  it('shares auth state, restores it across provider remounts, and clears it after logout', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
     const first = render(
       <AuthProvider>
         <AuthProbe />
@@ -43,8 +44,33 @@ describe('AuthProvider', () => {
       </AuthProvider>,
     )
     expect(screen.getByText('authenticated')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Clear authentication' }))
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Log out' })))
     expect(screen.getByText('anonymous')).toBeTruthy()
+  })
+
+  it('does not discard a newer sign-in when an older logout completes late', async () => {
+    let complete!: (response: Response) => void
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          complete = resolve
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Log out' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    await act(async () => complete(new Response(null, { status: 204 })))
+
+    expect(screen.getByText('authenticated')).toBeTruthy()
+    expect(getAccessToken()).not.toBeNull()
   })
 
   it('requires login when an expired token cannot be reissued', async () => {

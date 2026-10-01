@@ -32,3 +32,10 @@ export async function loginWithEmail(request: LoginRequest): Promise<LoginRespon
 
   return response
 }
+
+export async function logoutFromBackend(): Promise<void> {
+  await apiClient.request('/auth/logout', {
+    method: 'POST',
+    retryOnUnauthorized: false,
+  })
+}

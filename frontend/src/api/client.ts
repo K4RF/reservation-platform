@@ -16,6 +16,7 @@ export interface ApiRequestOptions {
   headers?: HeadersInit
   signal?: AbortSignal
   includeAuth?: boolean
+  retryOnUnauthorized?: boolean
 }
 
 export interface ApiClientOptions {
@@ -86,7 +87,12 @@ export function createApiClient(options: ApiClientOptions) {
             response.status === 401 &&
             accessToken &&
             headers.get('Authorization') === `Bearer ${accessToken}`
-          if (unauthorized && !retried && options.recoverAccessToken) {
+          if (
+            unauthorized &&
+            !retried &&
+            request.retryOnUnauthorized !== false &&
+            options.recoverAccessToken
+          ) {
             const recovered = await options.recoverAccessToken(accessToken, sessionVersion)
             if (recovered) return execute(true)
           } else if (unauthorized) {
