@@ -4,16 +4,20 @@ import { createGoogleLoginStartUrl, googleOAuth2BackendUrl } from '../api/google
 import { routePaths } from '../app/routePaths'
 import { LoginForm } from '../components/login/LoginForm'
 import { useAuth } from '../state/useAuth'
+import { safeLoginReturn, saveGoogleReturn } from '../app/loginReturn'
 
 export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { state } = useAuth()
   const [googleError, setGoogleError] = useState('')
+  const returnPath = safeLoginReturn(location.state?.from)
 
   function startGoogleLogin() {
     try {
-      window.location.assign(createGoogleLoginStartUrl(googleOAuth2BackendUrl))
+      const url = createGoogleLoginStartUrl(googleOAuth2BackendUrl)
+      saveGoogleReturn(returnPath)
+      window.location.assign(url)
     } catch {
       setGoogleError('Google 로그인을 시작하지 못했습니다. 설정을 확인하고 다시 시도해 주세요.')
     }
@@ -32,7 +36,7 @@ export function LoginPage() {
       )}
       <LoginForm
         onSuccess={() => {
-          navigate(routePaths.home, { replace: true })
+          navigate(returnPath, { replace: true })
         }}
       />
       <button type="button" onClick={startGoogleLogin}>

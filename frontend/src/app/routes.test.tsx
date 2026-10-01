@@ -26,7 +26,7 @@ describe('AppRoutes', () => {
   })
 
   it('renders the not found page inside the shared layout for an unknown direct path', () => {
-    renderAt('/admin/reports')
+    renderAt('/missing/reports')
 
     expect(screen.getByRole('banner')).toBeTruthy()
     expect(screen.getByRole('main')).toBeTruthy()
