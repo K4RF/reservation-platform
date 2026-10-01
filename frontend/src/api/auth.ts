@@ -12,13 +12,7 @@ export interface LoginResponse {
   tokenType: 'Bearer'
 }
 
-export async function loginWithEmail(request: LoginRequest): Promise<LoginResponse> {
-  const response = await apiClient.request<LoginResponse>('/auth/login', {
-    method: 'POST',
-    body: request,
-    includeAuth: false,
-  })
-
+function requireLoginResponse(response: LoginResponse | undefined): LoginResponse {
   if (
     !response ||
     typeof response.accessToken !== 'string' ||
@@ -29,8 +23,26 @@ export async function loginWithEmail(request: LoginRequest): Promise<LoginRespon
   ) {
     throw new ApiError('로그인 응답이 올바르지 않습니다.', { kind: 'unexpected_response' })
   }
-
   return response
+}
+
+export async function loginWithEmail(request: LoginRequest): Promise<LoginResponse> {
+  const response = await apiClient.request<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body: request,
+    includeAuth: false,
+  })
+
+  return requireLoginResponse(response)
+}
+
+export async function exchangeGoogleLoginCode(code: string): Promise<LoginResponse> {
+  const response = await apiClient.request<LoginResponse>('/auth/oauth2/exchange', {
+    method: 'POST',
+    body: { code },
+    includeAuth: false,
+  })
+  return requireLoginResponse(response)
 }
 
 export async function logoutFromBackend(): Promise<void> {
