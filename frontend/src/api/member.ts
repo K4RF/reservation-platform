@@ -1,5 +1,6 @@
 import { apiClient } from './client'
 import { ApiError } from './errors'
+import type { UserRole } from '../state/authTypes'
 
 export interface SignUpRequest {
   email: string
@@ -9,7 +10,7 @@ export interface SignUpRequest {
 export interface SignUpResponse {
   memberId: number
   email: string
-  role: 'USER' | 'ADMIN'
+  role: UserRole
 }
 
 export async function signUpMember(request: SignUpRequest): Promise<SignUpResponse> {

@@ -1,3 +1,7 @@
+import type { UserRole } from './authTypes'
+import { readAccessTokenHints, readAccessTokenExpiry } from './tokenHints'
+export { readAccessTokenExpiry } from './tokenHints'
+
 // Both token types live only in this JavaScript module. A full page reload starts anonymous.
 let currentToken: string | null = null
 let expiresAt: number | null = null
@@ -11,21 +15,9 @@ function notify() {
   for (const listener of listeners) listener()
 }
 
-export type UserRole = 'USER' | 'ADMIN'
-
 // Unverified client hint only. The backend verifies signatures and permissions.
 export function getRoleHint(): UserRole | null {
-  if (currentToken === null) return null
-  try {
-    const claims: unknown = JSON.parse(
-      atob(currentToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
-    )
-    if (typeof claims !== 'object' || claims === null || Array.isArray(claims)) return null
-    const payload = claims as Record<string, unknown>
-    return payload.role === 'USER' || payload.role === 'ADMIN' ? payload.role : null
-  } catch {
-    return null
-  }
+  return currentToken === null ? null : (readAccessTokenHints(currentToken)?.role ?? null)
 }
 
 export function isAuthRefreshing(): boolean {
@@ -36,30 +28,6 @@ export function setAuthRefreshing(value: boolean, version: number) {
   if (sessionVersion !== version || refreshing === value) return
   refreshing = value
   notify()
-}
-
-export function readAccessTokenExpiry(token: string, now = Date.now()): number | null {
-  const parts = token.split('.')
-  if (parts.length !== 3 || parts.some((part) => !part)) return null
-
-  try {
-    const encoded = parts[1].replace(/-/g, '+').replace(/_/g, '/')
-    const claims: unknown = JSON.parse(atob(encoded))
-    if (typeof claims !== 'object' || claims === null || Array.isArray(claims)) return null
-    const payload = claims as Record<string, unknown>
-    if (
-      payload.token_type !== 'ACCESS' ||
-      typeof payload.exp !== 'number' ||
-      !Number.isSafeInteger(payload.exp) ||
-      !Number.isSafeInteger(payload.exp * 1000) ||
-      payload.exp * 1000 <= now
-    ) {
-      return null
-    }
-    return payload.exp * 1000
-  } catch {
-    return null
-  }
 }
 
 export function setAccessToken(token: string): number {

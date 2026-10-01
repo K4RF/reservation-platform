@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { LoadingState } from '../components/ui/LoadingState'
 import { useAuth } from '../state/useAuth'
-import type { UserRole } from '../state/accessToken'
+import type { UserRole } from '../state/authTypes'
 import { ForbiddenPage } from '../pages/ForbiddenPage'
 
 export function ProtectedRoute({ roles }: { roles?: readonly UserRole[] }) {
