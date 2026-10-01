@@ -32,7 +32,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     let succeeded = false
     try {
       const response = await loginWithEmail(request)
-      signIn(response.accessToken)
+      signIn(response.accessToken, response.refreshToken)
       succeeded = true
     } catch (error) {
       if (error instanceof ApiError) {

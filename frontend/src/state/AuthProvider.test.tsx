@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { accessTokenWithExpiry } from '../test/jwt'
 import { apiClient } from '../api/client'
-import { setAccessToken } from './accessToken'
+import { getAccessToken, setAccessToken, setTokenPair } from './accessToken'
 import { AuthProvider } from './AuthProvider'
 import { useAuth } from './useAuth'
 
@@ -13,7 +13,7 @@ function AuthProbe() {
       <output>{state.status}</output>
       <button
         type="button"
-        onClick={() => signIn(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60))}
+        onClick={() => signIn(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')}
       >
         Sign in
       </button>
@@ -47,9 +47,10 @@ describe('AuthProvider', () => {
     expect(screen.getByText('anonymous')).toBeTruthy()
   })
 
-  it('returns to anonymous when the in-memory access token expires', () => {
+  it('requires login when an expired token cannot be reissued', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-01T00:00:00Z'))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
     render(
       <AuthProvider>
         <AuthProbe />
@@ -58,8 +59,32 @@ describe('AuthProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
     expect(screen.getByText('authenticated')).toBeTruthy()
 
-    act(() => vi.advanceTimersByTime(61_000))
-    expect(screen.getByText('anonymous')).toBeTruthy()
+    await act(async () => vi.advanceTimersByTimeAsync(61_000))
+    expect(screen.getByText('reauth_required')).toBeTruthy()
+  })
+
+  it('keeps the session authenticated when the expiry timer reissues successfully', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'))
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 1), 'refresh')
+    const nextToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 120)
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ accessToken: nextToken, tokenType: 'Bearer' })),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>,
+    )
+
+    await act(async () => vi.advanceTimersByTimeAsync(2_000))
+
+    expect(screen.getByText('authenticated')).toBeTruthy()
+    expect(getAccessToken()).toBe(nextToken)
+    expect(fetchMock).toHaveBeenCalledOnce()
   })
 
   it('clears the visible auth state when a protected API returns 401', async () => {
@@ -76,6 +101,6 @@ describe('AuthProvider', () => {
       await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
     })
 
-    expect(screen.getByText('anonymous')).toBeTruthy()
+    expect(screen.getByText('reauth_required')).toBeTruthy()
   })
 })

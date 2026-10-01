@@ -5,8 +5,12 @@ import {
   clearAccessTokenIfCurrent,
   getAccessToken,
   getAccessTokenExpiry,
+  getRefreshToken,
+  isLoginRequired,
   readAccessTokenExpiry,
+  requireLogin,
   setAccessToken,
+  setTokenPair,
 } from './accessToken'
 
 afterEach(() => clearAccessToken())
@@ -50,5 +54,28 @@ describe('memory-only access token', () => {
     setAccessToken(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60))
     clearAccessToken()
     expect(getAccessToken()).toBeNull()
+  })
+
+  it('keeps the refresh token in memory while the access token expires or is replaced', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'))
+    const first = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 10)
+    const next = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+
+    setTokenPair(first, 'refresh-token')
+    vi.advanceTimersByTime(11_000)
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBe('refresh-token')
+    setAccessToken(next)
+    expect(getAccessToken()).toBe(next)
+    expect(getRefreshToken()).toBe('refresh-token')
+    expect(sessionStorage.length).toBe(0)
+
+    requireLogin()
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+    expect(isLoginRequired()).toBe(true)
+    clearAccessToken()
+    expect(isLoginRequired()).toBe(false)
   })
 })

@@ -1,6 +1,14 @@
 import { apiConfig } from '../config/api'
 import { ApiError, toHttpApiError } from './errors'
-import { clearAccessTokenIfCurrent, getAccessToken } from '../state/accessToken'
+import {
+  getAccessToken,
+  getRefreshToken,
+  getSessionVersion,
+  getStoredAccessToken,
+  requireLoginIfCurrent,
+  setAccessToken,
+} from '../state/accessToken'
+import { reissueAccessToken } from './reissue'
 
 export interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -15,7 +23,10 @@ export interface ApiClientOptions {
   timeoutMs?: number
   headers?: HeadersInit
   getAccessToken?: () => string | null
-  onUnauthorized?: (token: string) => void
+  onUnauthorized?: (token: string, version: number) => void
+  prepareAccessToken?: () => Promise<string | null>
+  recoverAccessToken?: (token: string, version: number) => Promise<string | null>
+  getSessionVersion?: () => number
 }
 
 export function createApiClient(options: ApiClientOptions) {
@@ -30,87 +41,154 @@ export function createApiClient(options: ApiClientOptions) {
 
   return {
     async request<T>(path: string, request: ApiRequestOptions = {}): Promise<T | undefined> {
-      if (!path.startsWith('/') || path.startsWith('//')) {
-        throw new Error('API path must be a relative path starting with one slash')
-      }
-
-      const headers = new Headers(options.headers)
-      new Headers(request.headers).forEach((value, name) => headers.set(name, value))
-      if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-      if (request.body !== undefined && !headers.has('Content-Type')) {
-        headers.set('Content-Type', 'application/json')
-      }
-      const accessToken = request.includeAuth === false ? null : options.getAccessToken?.()
-      if (accessToken && !headers.has('Authorization')) {
-        headers.set('Authorization', `Bearer ${accessToken}`)
-      }
-
-      const controller = new AbortController()
-      let timedOut = false
-      const timeout = setTimeout(() => {
-        timedOut = true
-        controller.abort()
-      }, options.timeoutMs ?? 10_000)
-      const abort = () => controller.abort()
-      request.signal?.addEventListener('abort', abort, { once: true })
-      if (request.signal?.aborted) controller.abort()
-
-      let responseReceived = false
-      try {
-        const response = await fetch(`${baseUrl}${path}`, {
-          method: request.method ?? 'GET',
-          headers,
-          body: request.body === undefined ? undefined : JSON.stringify(request.body),
-          signal: controller.signal,
-        })
-        responseReceived = true
-        if (
-          response.status === 401 &&
-          accessToken &&
-          headers.get('Authorization') === `Bearer ${accessToken}`
-        ) {
-          options.onUnauthorized?.(accessToken)
+      const execute = async (retried: boolean): Promise<T | undefined> => {
+        if (!path.startsWith('/') || path.startsWith('//')) {
+          throw new Error('API path must be a relative path starting with one slash')
         }
-        const rawBody = await response.text()
-        if (!response.ok) {
-          let body: unknown
-          try {
-            body = rawBody ? JSON.parse(rawBody) : undefined
-          } catch {
-            body = undefined
-          }
-          // A future token-refresh flow can handle 401 here before surfacing the error.
-          throw toHttpApiError(response.status, body)
+
+        const headers = new Headers(options.headers)
+        new Headers(request.headers).forEach((value, name) => headers.set(name, value))
+        if (!headers.has('Accept')) headers.set('Accept', 'application/json')
+        if (request.body !== undefined && !headers.has('Content-Type')) {
+          headers.set('Content-Type', 'application/json')
         }
-        if (!rawBody) {
-          if (response.status === 204 || response.status === 205) return undefined
-          throw new ApiError('API returned an empty response', { kind: 'unexpected_response' })
+        const accessToken =
+          request.includeAuth === false
+            ? null
+            : options.prepareAccessToken
+              ? await options.prepareAccessToken()
+              : options.getAccessToken?.()
+        const sessionVersion = options.getSessionVersion?.() ?? 0
+        if (accessToken && !headers.has('Authorization')) {
+          headers.set('Authorization', `Bearer ${accessToken}`)
         }
+
+        const controller = new AbortController()
+        let timedOut = false
+        const timeout = setTimeout(() => {
+          timedOut = true
+          controller.abort()
+        }, options.timeoutMs ?? 10_000)
+        const abort = () => controller.abort()
+        request.signal?.addEventListener('abort', abort, { once: true })
+        if (request.signal?.aborted) controller.abort()
+
+        let responseReceived = false
         try {
-          return JSON.parse(rawBody) as T
-        } catch {
-          throw new ApiError('API response is not valid JSON', { kind: 'unexpected_response' })
+          const response = await fetch(`${baseUrl}${path}`, {
+            method: request.method ?? 'GET',
+            headers,
+            body: request.body === undefined ? undefined : JSON.stringify(request.body),
+            signal: controller.signal,
+          })
+          responseReceived = true
+          const unauthorized =
+            response.status === 401 &&
+            accessToken &&
+            headers.get('Authorization') === `Bearer ${accessToken}`
+          if (unauthorized && !retried && options.recoverAccessToken) {
+            const recovered = await options.recoverAccessToken(accessToken, sessionVersion)
+            if (recovered) return execute(true)
+          } else if (unauthorized) {
+            options.onUnauthorized?.(accessToken, sessionVersion)
+          }
+          const rawBody = await response.text()
+          if (!response.ok) {
+            let body: unknown
+            try {
+              body = rawBody ? JSON.parse(rawBody) : undefined
+            } catch {
+              body = undefined
+            }
+            throw toHttpApiError(response.status, body)
+          }
+          if (!rawBody) {
+            if (response.status === 204 || response.status === 205) return undefined
+            throw new ApiError('API returned an empty response', { kind: 'unexpected_response' })
+          }
+          try {
+            return JSON.parse(rawBody) as T
+          } catch {
+            throw new ApiError('API response is not valid JSON', { kind: 'unexpected_response' })
+          }
+        } catch (error) {
+          if (error instanceof ApiError) throw error
+          if (timedOut)
+            throw new ApiError('API request timed out', { kind: 'timeout', cause: error })
+          if (controller.signal.aborted) {
+            throw new ApiError('API request was cancelled', { kind: 'cancelled', cause: error })
+          }
+          throw new ApiError(
+            responseReceived ? 'API response could not be read' : 'Network request failed',
+            { kind: responseReceived ? 'unexpected_response' : 'network', cause: error },
+          )
+        } finally {
+          clearTimeout(timeout)
+          request.signal?.removeEventListener('abort', abort)
         }
-      } catch (error) {
-        if (error instanceof ApiError) throw error
-        if (timedOut) throw new ApiError('API request timed out', { kind: 'timeout', cause: error })
-        if (controller.signal.aborted) {
-          throw new ApiError('API request was cancelled', { kind: 'cancelled', cause: error })
-        }
-        throw new ApiError(
-          responseReceived ? 'API response could not be read' : 'Network request failed',
-          { kind: responseReceived ? 'unexpected_response' : 'network', cause: error },
-        )
-      } finally {
-        clearTimeout(timeout)
-        request.signal?.removeEventListener('abort', abort)
       }
+      return execute(false)
     },
   }
+}
+
+let refreshFlight: { version: number; promise: Promise<string> } | null = null
+
+async function refreshAccessToken(): Promise<string> {
+  const version = getSessionVersion()
+  const refreshToken = getRefreshToken()
+  const token = getStoredAccessToken()
+  if (!refreshToken || !token) throw new ApiError('Login is required', { kind: 'cancelled' })
+  if (refreshFlight?.version === version) return refreshFlight.promise
+
+  const promise = (async () => {
+    try {
+      const nextToken = await reissueAccessToken(refreshToken, (path, options) =>
+        apiClient.request(path, options),
+      )
+      if (getSessionVersion() !== version || getRefreshToken() !== refreshToken) {
+        throw new ApiError('Authentication changed during token refresh', { kind: 'cancelled' })
+      }
+      setAccessToken(nextToken)
+      return nextToken
+    } catch (error) {
+      requireLoginIfCurrent(token, version)
+      throw error
+    }
+  })()
+  refreshFlight = { version, promise }
+  void promise
+    .finally(() => {
+      if (refreshFlight?.promise === promise) refreshFlight = null
+    })
+    .catch(() => undefined)
+  return promise
+}
+
+export async function ensureFreshAccessToken(): Promise<string | null> {
+  if (refreshFlight?.version === getSessionVersion()) return refreshFlight.promise
+  const token = getAccessToken()
+  if (token) return token
+  if (getRefreshToken()) return refreshAccessToken()
+  return null
+}
+
+async function recoverAccessToken(token: string, version: number): Promise<string | null> {
+  if (getSessionVersion() !== version) return null
+  const current = getAccessToken()
+  if (current && current !== token) return current
+  if (!getRefreshToken()) {
+    requireLoginIfCurrent(token, version)
+    return null
+  }
+  return refreshAccessToken()
 }
 
 export const apiClient = createApiClient({
   ...apiConfig,
   getAccessToken,
-  onUnauthorized: clearAccessTokenIfCurrent,
+  getSessionVersion,
+  prepareAccessToken: ensureFreshAccessToken,
+  recoverAccessToken,
+  onUnauthorized: requireLoginIfCurrent,
 })

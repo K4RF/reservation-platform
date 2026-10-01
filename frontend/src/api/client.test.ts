@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
+import { waitFor } from '@testing-library/react'
 import { apiClient, createApiClient } from './client'
 import { ApiError } from './errors'
-import { getAccessToken, setAccessToken } from '../state/accessToken'
+import {
+  clearAccessToken,
+  getAccessToken,
+  getRefreshToken,
+  isLoginRequired,
+  setAccessToken,
+  setTokenPair,
+} from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
 describe('API client', () => {
@@ -142,6 +150,192 @@ describe('API client', () => {
       new Headers((fetchMock.mock.calls[0][1] as RequestInit).headers).get('Authorization'),
     ).toBe(`Bearer ${token}`)
     expect(getAccessToken()).toBeNull()
+  })
+
+  it('reissues once for simultaneous 401 responses and pauses new requests during refresh', async () => {
+    const oldToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const newToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 120)
+    setTokenPair(oldToken, 'refresh-token')
+    let completeReissue!: (response: Response) => void
+    const reissueResponse = new Promise<Response>((resolve) => {
+      completeReissue = resolve
+    })
+    const fetchMock = vi.fn().mockImplementation((url: string, init: RequestInit) => {
+      if (url.endsWith('/auth/reissue')) return reissueResponse
+      const authorization = new Headers(init.headers).get('Authorization')
+      if (authorization === `Bearer ${oldToken}`)
+        return Promise.resolve(new Response('{}', { status: 401 }))
+      return Promise.resolve(new Response(JSON.stringify({ ok: true })))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const first = apiClient.request('/first')
+    const second = apiClient.request('/second')
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/auth/reissue')),
+      ).toHaveLength(1),
+    )
+    const third = apiClient.request('/third')
+    await Promise.resolve()
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/third'))).toHaveLength(0)
+
+    completeReissue(new Response(JSON.stringify({ accessToken: newToken, tokenType: 'Bearer' })))
+    await expect(Promise.all([first, second, third])).resolves.toEqual([
+      { ok: true },
+      { ok: true },
+      { ok: true },
+    ])
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/auth/reissue')),
+    ).toHaveLength(1)
+    expect(getAccessToken()).toBe(newToken)
+    expect(getRefreshToken()).toBe('refresh-token')
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/first'))).toHaveLength(2)
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/second'))).toHaveLength(2)
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/third'))).toHaveLength(1)
+  })
+
+  it('refreshes an expired access token before sending the protected request', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-01T00:00:00Z'))
+    const oldToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 1)
+    setTokenPair(oldToken, 'refresh')
+    vi.advanceTimersByTime(2_000)
+    const newToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string, init: RequestInit) =>
+        Promise.resolve(
+          url.endsWith('/auth/reissue')
+            ? new Response(JSON.stringify({ accessToken: newToken, tokenType: 'Bearer' }))
+            : new Response(
+                JSON.stringify({ authorization: new Headers(init.headers).get('Authorization') }),
+              ),
+        ),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient.request('/reservations')).resolves.toEqual({
+      authorization: `Bearer ${newToken}`,
+    })
+    expect(fetchMock.mock.calls.map(([url]) => String(url))).toEqual([
+      '/api/v1/auth/reissue',
+      '/api/v1/reservations',
+    ])
+  })
+
+  it('does not clear a newer login when an older protected request returns 401', async () => {
+    const oldToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const newToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 120)
+    setTokenPair(oldToken, 'old-refresh')
+    let complete!: (response: Response) => void
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          complete = resolve
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const pending = apiClient.request('/reservations')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledOnce())
+    setTokenPair(newToken, 'new-refresh')
+    complete(new Response('{}', { status: 401 }))
+
+    await expect(pending).rejects.toMatchObject({ status: 401 })
+    expect(getAccessToken()).toBe(newToken)
+    expect(getRefreshToken()).toBe('new-refresh')
+    expect(isLoginRequired()).toBe(false)
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('does not restore a cleared session from a late reissue response', async () => {
+    const oldToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const newToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 120)
+    setTokenPair(oldToken, 'refresh')
+    let complete!: (response: Response) => void
+    const reissueResponse = new Promise<Response>((resolve) => {
+      complete = resolve
+    })
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        url.endsWith('/auth/reissue')
+          ? reissueResponse
+          : Promise.resolve(new Response('{}', { status: 401 })),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const pending = apiClient.request('/reservations')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    clearAccessToken()
+    complete(new Response(JSON.stringify({ accessToken: newToken, tokenType: 'Bearer' })))
+
+    await expect(pending).rejects.toMatchObject({ kind: 'cancelled' })
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('clears authentication on refresh rejection without recursively reissuing', async () => {
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'invalid-refresh')
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ status: 401, code: 'AUTH_005', message: 'Invalid refresh token' }),
+            { status: 401 },
+          ),
+        ),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient.request('/reservations')).rejects.toMatchObject({
+      status: 401,
+      code: 'AUTH_005',
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(isLoginRequired()).toBe(true)
+    expect(getAccessToken()).toBeNull()
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('clears authentication on reissue network failure', async () => {
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((url: string) =>
+          url.endsWith('/auth/reissue')
+            ? Promise.reject(new TypeError('offline'))
+            : Promise.resolve(new Response('{}', { status: 401 })),
+        ),
+    )
+
+    await expect(apiClient.request('/reservations')).rejects.toMatchObject({ kind: 'network' })
+    expect(isLoginRequired()).toBe(true)
+  })
+
+  it('does not start a second reissue when the replay also returns 401', async () => {
+    const oldToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
+    const newToken = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 120)
+    setTokenPair(oldToken, 'refresh')
+    const fetchMock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          url.endsWith('/auth/reissue')
+            ? new Response(JSON.stringify({ accessToken: newToken, tokenType: 'Bearer' }))
+            : new Response('{}', { status: 401 }),
+        ),
+      )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(isLoginRequired()).toBe(true)
   })
 
   it('aborts a request after the configured timeout', async () => {

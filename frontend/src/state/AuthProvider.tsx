@@ -1,18 +1,20 @@
 import { useEffect, useReducer } from 'react'
 import type { ReactNode } from 'react'
 import { AuthContext } from './authContext'
+import { ensureFreshAccessToken } from '../api/client'
 import { authReducer, initialAuthState } from './authState'
 import type { AuthState } from './authState'
 import {
   clearAccessToken,
-  getAccessToken,
   getAccessTokenExpiry,
-  setAccessToken,
+  isLoginRequired,
+  setTokenPair,
   subscribeAccessToken,
 } from './accessToken'
 
 function restoreAuthState(): AuthState {
   const expiresAt = getAccessTokenExpiry()
+  if (isLoginRequired()) return { status: 'reauth_required', user: null, expiresAt: null }
   return expiresAt === null ? initialAuthState : { status: 'authenticated', user: null, expiresAt }
 }
 
@@ -23,7 +25,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () =>
       subscribeAccessToken(() => {
         const expiresAt = getAccessTokenExpiry()
-        dispatch(expiresAt === null ? { type: 'signed_out' } : { type: 'authenticated', expiresAt })
+        dispatch(
+          isLoginRequired()
+            ? { type: 'reauth_required' }
+            : expiresAt === null
+              ? { type: 'signed_out' }
+              : { type: 'authenticated', expiresAt },
+        )
       }),
     [],
   )
@@ -34,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkExpiry = () => {
       const remainingMs = state.expiresAt - Date.now()
       if (remainingMs <= 0) {
-        getAccessToken()
+        void ensureFreshAccessToken().catch(() => undefined)
       } else {
         timeout = setTimeout(checkExpiry, Math.min(remainingMs, 2_147_483_647))
       }
@@ -47,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         state,
-        signIn: setAccessToken,
+        signIn: setTokenPair,
         clearAuthentication: clearAccessToken,
       }}
     >
