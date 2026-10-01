@@ -52,6 +52,8 @@ jwt:
   refresh-token-expiration: 14d
 
 reservation:
+  oauth2:
+    frontend-base-url: http://localhost:5173
   kafka:
     enabled: false
     reservation-topic: reservation.events.v1

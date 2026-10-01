@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loginWithEmail, logoutFromBackend } from './auth'
+import { exchangeGoogleLoginCode, loginWithEmail, logoutFromBackend } from './auth'
 import { getAccessToken, setAccessToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
@@ -125,5 +125,21 @@ describe('logoutFromBackend', () => {
     expect(
       new Headers((fetchMock.mock.calls[1][1] as RequestInit).headers).get('Authorization'),
     ).toBe(`Bearer ${nextToken}`)
+  })
+})
+
+describe('exchangeGoogleLoginCode', () => {
+  it('posts the one-time code without an old bearer and returns the shared login response', async () => {
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'old-refresh')
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(tokens)))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(exchangeGoogleLoginCode('a'.repeat(43))).resolves.toEqual(tokens)
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/v1/auth/oauth2/exchange')
+    expect(init.method).toBe('POST')
+    expect(init.body).toBe(JSON.stringify({ code: 'a'.repeat(43) }))
+    expect(new Headers(init.headers).has('Authorization')).toBe(false)
   })
 })

@@ -120,7 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
-| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·로그인·로그아웃, 메모리 Access/Refresh Token, 자동 재발급 및 API Bearer Header; 예약 화면은 후속 범위 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Access/Refresh Token, 자동 재발급 및 API Bearer Header; 예약 화면은 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -196,6 +196,8 @@ Spring Boot API
 | Method | Endpoint | 권한 | 기능 |
 | --- | --- | --- | --- |
 | `POST` | `/api/v1/auth/login` | 공개 | Access/Refresh Token 발급 |
+| `GET` | `/api/v1/auth/oauth2/google/start` | 공개 | Frontend state를 보관하고 Google 인증 시작 |
+| `POST` | `/api/v1/auth/oauth2/exchange` | 공개 | 일회용 코드로 Access/Refresh Token 교환 |
 | `POST` | `/api/v1/auth/reissue` | 공개 | Refresh Token으로 Access Token 재발급 |
 | `POST` | `/api/v1/auth/logout` | 인증 사용자 | Redis Refresh Token 삭제 |
 
@@ -398,7 +400,7 @@ reservation-platform/
 `v*`는 Backend / Platform, `f*`는 Frontend Milestone입니다. 두 Track은
 같은 Repository에서 별도로 관리하며 반드시 순차적으로 진행하는 것은 아닙니다.
 Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
-`/signup` 회원가입과 `/login` 로그인 화면, Header 로그아웃, 메모리 Access Token 기반 API 인증을
+`/signup` 회원가입과 `/login` 이메일/Google 로그인 화면, Header 로그아웃, 메모리 Access Token 기반 API 인증을
 구현했습니다. Access Token 자동 재발급도 구현했으며 새로고침 후 인증 복원 및 검색·예약 화면은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니다.
 
@@ -782,12 +784,15 @@ RESERVATION_LOCK_WAIT_TIME=3s
 RESERVATION_LOCK_LEASE_TIME=30s
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
+OAUTH2_FRONTEND_BASE_URL=http://localhost:5173
 ```
 
 Google Cloud Console의 OAuth Client에는 로컬 Redirect URI로
 `http://localhost:8080/login/oauth2/code/google`을 등록합니다. Backend 실행 후
-`http://localhost:8080/oauth2/authorization/google`로 접속하면 Google 로그인을
-시작하며, 성공한 Callback 응답으로 서비스 JWT Access Token과 Refresh Token을 반환합니다.
+Frontend `http://localhost:5173/login`의 Google 버튼에서 시작합니다. Backend는
+Google Callback을 처리한 뒤 토큰 대신 60초짜리 일회용 코드를 Frontend
+`/oauth2/callback`의 Fragment로 보내고, Frontend는 코드를 한 번 교환해 서비스 JWT
+Access/Refresh Token을 받습니다. Google Client ID/Secret은 Backend에만 둡니다.
 
 Google이 검증한 이메일과 동일한 기존 회원이 있으면 해당 회원에 Google 계정을
 연결하며 기존 비밀번호 로그인은 유지합니다. 동일 이메일 회원이 없으면 `USER`

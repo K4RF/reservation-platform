@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
+import { createGoogleLoginStartUrl, googleOAuth2BackendUrl } from '../api/googleOAuth2'
 import { routePaths } from '../app/routePaths'
 import { LoginForm } from '../components/login/LoginForm'
 import { useAuth } from '../state/useAuth'
@@ -7,6 +9,15 @@ export function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { state } = useAuth()
+  const [googleError, setGoogleError] = useState('')
+
+  function startGoogleLogin() {
+    try {
+      window.location.assign(createGoogleLoginStartUrl(googleOAuth2BackendUrl))
+    } catch {
+      setGoogleError('Google 로그인을 시작하지 못했습니다. 설정을 확인하고 다시 시도해 주세요.')
+    }
+  }
 
   return (
     <section className="page-content login-page">
@@ -24,6 +35,10 @@ export function LoginPage() {
           navigate(routePaths.home, { replace: true })
         }}
       />
+      <button type="button" onClick={startGoogleLogin}>
+        Google로 로그인
+      </button>
+      {googleError && <p role="alert">{googleError}</p>}
       <p>
         계정이 없나요? <Link to={routePaths.signup}>회원가입</Link>
       </p>

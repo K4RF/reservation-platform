@@ -74,12 +74,13 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
 표시됩니다. 현재 Footer는 공통으로 표시할 내용이 없어 두지 않았습니다.
 
-| 경로             | 현재 동작                         |
-| ---------------- | --------------------------------- |
-| `/`              | Home 페이지                       |
-| `/signup`        | 이메일·비밀번호 회원가입          |
-| `/login`         | 이메일·비밀번호 로그인            |
-| 그 외 경로 (`*`) | 공통 Layout 안의 Not Found 페이지 |
+| 경로               | 현재 동작                         |
+| ------------------ | --------------------------------- |
+| `/`                | Home 페이지                       |
+| `/signup`          | 이메일·비밀번호 회원가입          |
+| `/login`           | 이메일·비밀번호 및 Google 로그인  |
+| `/oauth2/callback` | Google 인증 결과 처리             |
+| 그 외 경로 (`*`)   | 공통 Layout 안의 Not Found 페이지 |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다. 향후 공개 화면은
 `/accommodations`처럼 Root Layout 아래에 추가하고, 로그인 회원 화면은
@@ -130,6 +131,27 @@ Access Token 재발급에 사용합니다. 실제 Backend 로그인 응답에는
 JavaScript 접근·XSS 위험을 고려한 선택입니다. 메모리 보관도 실행 중인 악성
 스크립트로부터 Token을 보호하지는 못합니다.
 
+### Google 로그인
+
+`/login`의 Google 버튼은 브라우저를 Backend
+`/api/v1/auth/oauth2/google/start`로 이동시킵니다. Backend가 Google 인증을 시작하고
+Google Callback은 Backend의 `/login/oauth2/code/google`에서 처리합니다. 성공 시
+Backend는 60초짜리 일회용 코드를 Redis에 저장하고 Frontend
+`/oauth2/callback`의 URL Fragment로 전달합니다. 토큰은 URL에 넣지 않습니다.
+Frontend는 Fragment를 즉시 주소창에서 지우고 `POST /api/v1/auth/oauth2/exchange`로
+코드를 한 번 교환하여 이메일 로그인과 동일한 Access/Refresh Token 상태를 만듭니다.
+요청·응답 검증용 무작위 `state`만 `sessionStorage`에 일시적으로 보관하며 콜백에서
+제거합니다. Google 동의 취소·인증 실패·상태 불일치·코드 만료는 실패 안내로 표시하고
+토큰을 저장하지 않습니다. Google 계정의 기존 회원 연결 또는 신규 회원 생성은
+Backend가 처리합니다.
+
+로컬 Google OAuth Client의 승인된 Redirect URI는 Frontend가 아닌
+`http://localhost:8080/login/oauth2/code/google`입니다. Backend의
+`OAUTH2_FRONTEND_BASE_URL`은 `http://localhost:5173`, Frontend의
+`VITE_OAUTH2_BACKEND_URL`은 `http://localhost:8080`으로 맞춰야 합니다.
+Google Client Secret은 루트의 무시된 `.env` 또는 Backend 환경변수에만 두고
+`VITE_` 변수에는 넣지 마세요.
+
 ## 상태 관리와 공통 UI
 
 `src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
@@ -171,7 +193,7 @@ Component에서 Backend Host를 직접 사용하지 않습니다. JSON 요청은
 공통·요청별 Header, 10초 Timeout을 지원합니다. 실패한 요청은 `src/api/errors.ts`의
 `ApiError`로 전달합니다. 로그인 API 함수는 응답 형식까지 검증합니다. 공통 Client는
 기본적으로 메모리 Access Token이 있으면 `Authorization: Bearer <token>`을 붙이고,
-로그인·회원가입·재발급은 `includeAuth: false`로 제외합니다. 만료된 Access Token은
+로그인·회원가입·재발급·Google 코드 교환은 `includeAuth: false`로 제외합니다. 만료된 Access Token은
 요청 전에 재발급하며, 동시 401은 하나의 재발급 요청을 공유합니다. 재발급 중 시작된
 보호 요청도 새 Token을 기다립니다. 원래 요청은 최대 한 번 재시도하며 재발급 요청
 자체는 재시도하지 않습니다. 이전 세션의 늦은 응답은 새 로그인을 삭제하지 않습니다.
@@ -191,10 +213,11 @@ Frontend에 중복 선언하지 않습니다. 비정형 응답은 상태만 남�
 회원가입과 로그인 Page는 `kind`/`category`/`code`/`fieldErrors`에 따라 안내를
 구성합니다.
 
-| 변수                | 로컬 기본값             | 용도                                       |
-| ------------------- | ----------------------- | ------------------------------------------ |
-| `VITE_API_BASE_URL` | `/api/v1`               | 브라우저에 포함되는 API 접두사             |
-| `API_PROXY_TARGET`  | `http://localhost:8080` | Vite 개발 서버에서만 사용하는 Backend 대상 |
+| 변수                      | 로컬 기본값             | 용도                                       |
+| ------------------------- | ----------------------- | ------------------------------------------ |
+| `VITE_API_BASE_URL`       | `/api/v1`               | 브라우저에 포함되는 API 접두사             |
+| `API_PROXY_TARGET`        | `http://localhost:8080` | Vite 개발 서버에서만 사용하는 Backend 대상 |
+| `VITE_OAUTH2_BACKEND_URL` | `http://localhost:8080` | Google 인증을 시작할 공개 Backend 주소     |
 
 `frontend/.env.example`을 `.env`로 복사한 후 환경에 맞게 수정하세요. Vite는
 `.env`, `.env.[mode]`, 그리고 실행 시 제공한 환경 변수를 읽으므로 테스트·운영
@@ -218,7 +241,7 @@ curl -i -X POST http://localhost:5173/api/v1/members \
 Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비밀번호·토큰·비밀키를
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
-현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login Route, 공통 Header/Main
-Layout, 기본 스타일, 회원가입·로그인 화면과 Header 로그아웃, 메모리 기반 Token 인증,
+현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
+공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급 및 공통 Bearer Header 적용입니다. 새로고침 후 세션 복원, 사용자 정보
 조회, 숙소 검색·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.

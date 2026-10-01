@@ -11,7 +11,8 @@ public enum SecurityErrorCode implements ErrorCode {
 	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "AUTH_003", "이메일 또는 비밀번호가 올바르지 않습니다."),
 	OAUTH2_AUTHENTICATION_FAILED(HttpStatus.UNAUTHORIZED, "AUTH_004", "소셜 로그인에 실패했습니다."),
 	INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_005", "유효하지 않거나 만료된 Refresh Token입니다."),
-	REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "AUTH_006", "저장된 Refresh Token이 없거나 일치하지 않습니다.");
+	REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "AUTH_006", "저장된 Refresh Token이 없거나 일치하지 않습니다."),
+	INVALID_OAUTH2_LOGIN_CODE(HttpStatus.UNAUTHORIZED, "AUTH_007", "유효하지 않거나 만료된 소셜 로그인 코드입니다.");
 
 	private final HttpStatus status;
 	private final String code;
