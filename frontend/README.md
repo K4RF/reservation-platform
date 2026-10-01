@@ -74,21 +74,50 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
 표시됩니다. 현재 Footer는 공통으로 표시할 내용이 없어 두지 않았습니다.
 
-| 경로               | 현재 동작                         |
-| ------------------ | --------------------------------- |
-| `/`                | Home 페이지                       |
-| `/signup`          | 이메일·비밀번호 회원가입          |
-| `/login`           | 이메일·비밀번호 및 Google 로그인  |
-| `/oauth2/callback` | Google 인증 결과 처리             |
-| 그 외 경로 (`*`)   | 공통 Layout 안의 Not Found 페이지 |
+| 경로               | 현재 동작                          |
+| ------------------ | ---------------------------------- |
+| `/`                | Home 페이지                        |
+| `/signup`          | 이메일·비밀번호 회원가입           |
+| `/login`           | 이메일·비밀번호 및 Google 로그인   |
+| `/oauth2/callback` | Google 인증 결과 처리              |
+| `/reservations`    | `USER`/`ADMIN` 보호 영역 진입 안내 |
+| `/admin`           | `ADMIN` 보호 영역 진입 안내        |
+| 그 외 경로 (`*`)   | 공통 Layout 안의 Not Found 페이지  |
 
-경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다. 향후 공개 화면은
-`/accommodations`처럼 Root Layout 아래에 추가하고, 로그인 회원 화면은
-`/reservations`, 관리 화면은 `/admin/...` 영역으로 확장하는 **제안**입니다. 이 경로의
-화면·인증 검사·권한 검사는 아직 구현되지 않았습니다. 인증 기능을 추가할 때는 해당
-중첩 Route에 보호 Layout을 배치하고, 권한의 최종 검증은 Backend에서 수행해야 합니다.
+경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다.
+`ProtectedRoute`의 중첩 Route가 `/reservations`와 `/admin` 및 각 하위 경로를 보호합니다.
+두 진입 화면은 접근 확인 안내만 제공하며 실제 예약 조회·관리 API는 아직 연결하지 않습니다.
+등록되지 않은 하위 경로도 먼저 인증·역할 검사 후 Not Found를 표시합니다.
+숙소 검색 화면(`/accommodations`)은 후속 작업입니다.
 
-`pnpm test`는 홈·미등록 경로·기본 Navigation을 Memory Router로 검증합니다. Vite 개발
+### Protected Route와 역할
+
+익명 사용자가 보호 경로를 직접 열면 `/login`으로 이동하며 원래 pathname·query·fragment를
+Router State의 `from`으로 전달합니다. 이메일 로그인 후 원래 경로로 복귀하고 역할을 다시
+검사합니다. `USER`와 `ADMIN`은 `/reservations`에, `ADMIN`만 `/admin`에 접근할 수 있습니다.
+로그인 상태지만 역할이 없거나 알 수 없으면 역할 보호 화면 접근을 거부합니다.
+권한 부족은 로그인으로 반복 이동하지 않고 현재 URL에서 접근 불가 안내와 홈 링크를 표시합니다.
+Header의 내 예약·관리자 메뉴도 동일한 역할에 따라 표시합니다.
+
+Google 로그인은 전체 페이지 이동을 하므로 복귀 경로만 `sessionStorage`에 일시 보관합니다.
+콜백에서 성공·실패와 관계없이 한 번 읽고 제거하며, 취소·실패 안내의 로그인 링크에도 경로를
+전달합니다. 토큰은 Storage에 넣지 않습니다. 복귀 값은 내부 `/reservations`·`/admin` 영역만
+허용하며 외부 주소·인증 경로·역슬래시·공백 입력은 홈으로 대체해 Open Redirect와 루프를 막습니다.
+
+만료된 메모리 세션의 Provider 재마운트 또는 Token 재발급 중에는 `loading` 상태에서 인증
+확인 안내를 표시하고 보호 화면·역할 메뉴를 숨기며 URL을 유지합니다. 성공하면 새 JWT의
+Role Hint를 적용하고, 실패하면 원래 경로를 보존해 재로그인을 안내합니다.
+전체 새로고침은 메모리 토큰을 잃으므로 익명으로 시작해 로그인으로 이동합니다.
+새로고침 후 지속 세션 복원은 구현하지 않았습니다.
+
+백엔드 `MemberRole`은 `USER`/`ADMIN`이며 JWT의 `role` Claim으로 전달됩니다.
+현재 `/me` API가 없어 프런트엔드는 이 Claim을 **서명 미검증 UX Hint**로만 읽습니다.
+사용자 Profile을 만들어 채우거나 클라이언트 검사를 보안 경계로 사용하지 않습니다.
+Token 변조로 화면 표시를 바꿔도 Backend의 JWT 서명·만료 검사, Spring Security의 ADMIN
+검사와 예약 소유권 검사를 통과할 수 없습니다. API의 401/403 처리는 별도로 유지합니다.
+
+`pnpm test`는 홈·미등록 경로·기본 Navigation과 익명/USER/ADMIN 직접 접근, 원래 경로 복귀,
+재발급 Loading·역할 변경·실패, Google 복귀, 메모리 세션 초기화 동작을 검증합니다. Vite 개발
 서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
 호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
 
@@ -118,8 +147,8 @@ Home에서 로그인 화면으로 이동할 수 있습니다. 화면 테스트�
 
 성공 응답의 `accessToken`, `refreshToken`, `tokenType: Bearer` 형식을 확인한 뒤
 Access Token의 `ACCESS` 타입과 만료 시각을 확인하여 메모리에만 보관합니다.
-인증 Context에는 Token 문자열 대신 `authenticated` 상태와 만료 시각만 기록하고
-Home으로 이동합니다. Refresh Token도 같은 JavaScript 모듈 메모리에만 보관하며
+인증 Context에는 Token 문자열 대신 `authenticated` 상태, 만료 시각, Role Hint만 기록하고
+보호 경로에서 왔다면 해당 경로로, 그렇지 않으면 Home으로 이동합니다. Refresh Token도 같은 JavaScript 모듈 메모리에만 보관하며
 Access Token 재발급에 사용합니다. 실제 Backend 로그인 응답에는 토큰이
 포함되므로 개발자 도구나 터미널에서 응답 내용을 공유하지 마세요.
 
@@ -140,7 +169,7 @@ Backend는 60초짜리 일회용 코드를 Redis에 저장하고 Frontend
 `/oauth2/callback`의 URL Fragment로 전달합니다. 토큰은 URL에 넣지 않습니다.
 Frontend는 Fragment를 즉시 주소창에서 지우고 `POST /api/v1/auth/oauth2/exchange`로
 코드를 한 번 교환하여 이메일 로그인과 동일한 Access/Refresh Token 상태를 만듭니다.
-요청·응답 검증용 무작위 `state`만 `sessionStorage`에 일시적으로 보관하며 콜백에서
+요청·응답 검증용 무작위 `state`와 내부 복귀 경로만 `sessionStorage`에 일시적으로 보관하며 콜백에서
 제거합니다. Google 동의 취소·인증 실패·상태 불일치·코드 만료는 실패 안내로 표시하고
 토큰을 저장하지 않습니다. Google 계정의 기존 회원 연결 또는 신규 회원 생성은
 Backend가 처리합니다.
@@ -158,8 +187,8 @@ Google Client Secret은 루트의 무시된 `.env` 또는 Backend 환경변수�
 관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
 `anonymous`입니다. `useAuth()`는 상태와 로그인·로그아웃 함수를 제공합니다.
 Backend 로그인 응답에는 사용자 정보가 없고 현재 `/me` API도 없으므로 회원 ID·이메일·
-역할을 Token의 서명 미검증 Payload에서 사용자 정보로 채우지 않습니다. `authenticated`
-상태의 `user`는 현재 `null`이며 Access Token 만료 시각만 Client Hint로 갖습니다.
+역할을 Token의 서명 미검증 Payload에서 사용자 Profile로 채우지 않습니다. `authenticated`
+상태의 `user`는 현재 `null`이며 Access Token 만료 시각과 별도 `role`을 Client Hint로 갖습니다.
 Access Token 만료 또는 보호 API의 401에 대해 Refresh Token으로 한 번 재발급하고
 실패한 요청을 한 번 재시도합니다. 재발급 실패나 재시도 후 401이면 두 Token을
 삭제하고 `reauth_required` 상태로 로그인 화면에 안내합니다. 네트워크 오류도
@@ -170,7 +199,7 @@ Token이 삭제되며, 요청 실패·연결 오류 때도 현재 Tab의 Token�
 로그인 화면으로 이동합니다. 후자의 경우 서버 무효화가 확인되지 않았음을 알립니다.
 Logout 응답의 401은 다시 재발급하지 않습니다. Backend는 Access Token Blacklist를
 사용하지 않으므로 이미 발급된 Access Token은 만료 전까지 서버에서 유효할 수 있습니다.
-Protected Route와 새로고침 후 인증 복원은 후속 작업입니다. 최종 인증과
+Protected Route는 구현됐으며 새로고침 후 지속 인증 복원은 후속 작업입니다. 최종 인증과
 권한은 Backend가 검증하며, Client의 `authenticated` 상태만으로 권한을 증명할 수
 없습니다.
 
@@ -243,5 +272,5 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
-자동 재발급 및 공통 Bearer Header 적용입니다. 새로고침 후 세션 복원, 사용자 정보
+자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
 조회, 숙소 검색·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.

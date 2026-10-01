@@ -401,7 +401,9 @@ reservation-platform/
 같은 Repository에서 별도로 관리하며 반드시 순차적으로 진행하는 것은 아닙니다.
 Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 `/signup` 회원가입과 `/login` 이메일/Google 로그인 화면, Header 로그아웃, 메모리 Access Token 기반 API 인증을
-구현했습니다. Access Token 자동 재발급도 구현했으며 새로고침 후 인증 복원 및 검색·예약 화면은 아직 없습니다.
+구현했습니다. Access Token 자동 재발급, Protected/Role Route와 로그인 후 원래 경로 복귀도
+구현했습니다. `/reservations`는 USER/ADMIN, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
+실제 검색·예약·관리 화면과 새로고침 후 지속 인증 복원은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
