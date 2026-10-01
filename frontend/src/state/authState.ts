@@ -1,4 +1,4 @@
-import type { UserRole } from './accessToken'
+import type { UserRole } from './authTypes'
 
 export type AuthState =
   | { status: 'anonymous'; user: null; expiresAt: null }

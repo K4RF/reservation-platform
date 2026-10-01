@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { startTransition, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { useAuth } from '../state/useAuth'
+import { LoadingState } from '../components/ui/LoadingState'
 
 export function RootLayout() {
   const { state, logout } = useAuth()
@@ -15,20 +16,27 @@ export function RootLayout() {
     logoutPending.current = true
     setLoggingOut(true)
     const result = await logout()
-    if (result !== 'superseded') {
-      navigate(routePaths.login, { replace: true, state: { logoutResult: result } })
-    }
     logoutPending.current = false
-    setLoggingOut(false)
+    // Keep the protected Outlet unmounted until the Router's transition completes.
+    startTransition(() => {
+      if (result !== 'superseded') {
+        navigate(routePaths.login, { replace: true, state: { logoutResult: result } })
+      }
+      setLoggingOut(false)
+    })
   }
   useEffect(() => {
-    if (state.status === 'reauth_required' && location.pathname !== routePaths.login) {
+    if (
+      !loggingOut &&
+      state.status === 'reauth_required' &&
+      location.pathname !== routePaths.login
+    ) {
       navigate(routePaths.login, {
         replace: true,
         state: { from: location.pathname + location.search + location.hash },
       })
     }
-  }, [state.status, location.pathname, location.search, location.hash, navigate])
+  }, [loggingOut, state.status, location.pathname, location.search, location.hash, navigate])
   return (
     <div className="app-shell">
       <a className="skip-link" href="#main-content">
@@ -83,7 +91,7 @@ export function RootLayout() {
         </nav>
       </header>
       <main className="site-main" id="main-content">
-        <Outlet />
+        {loggingOut ? <LoadingState message="로그아웃을 처리하고 있습니다." /> : <Outlet />}
       </main>
     </div>
   )

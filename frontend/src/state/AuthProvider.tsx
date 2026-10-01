@@ -5,6 +5,7 @@ import { logoutFromBackend } from '../api/auth'
 import { ensureFreshAccessToken } from '../api/client'
 import { authReducer, initialAuthState } from './authState'
 import type { AuthState } from './authState'
+import type { LogoutResult } from './authTypes'
 import {
   clearAccessToken,
   getAccessTokenExpiry,
@@ -31,7 +32,7 @@ function restoreAuthState(): AuthState {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, undefined, restoreAuthState)
 
-  async function logout(): Promise<'success' | 'server_unconfirmed' | 'superseded'> {
+  async function logout(): Promise<LogoutResult> {
     const sessionVersion = getSessionVersion()
     let result: 'success' | 'server_unconfirmed' = 'success'
     try {

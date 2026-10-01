@@ -183,6 +183,11 @@ Google Client Secret은 루트의 무시된 `.env` 또는 Backend 환경변수�
 
 ## 상태 관리와 공통 UI
 
+인증 Utility는 `state/tokenHints.ts`, 공유 역할·로그아웃 결과 타입은 `state/authTypes.ts`에 있습니다.
+API Layer·Auth State·Router의 책임, f0.3.0 확장 지점 및 통합 검증 Matrix는
+[Authentication User Flow](../docs/testing/frontend-authentication-flow.md)에 정리했습니다.
+통합 테스트는 `fetch`만 Mock으로 대체하며 실제 Backend/Google 연동 검증과 구분합니다.
+
 `src/state/`는 React Context와 Reducer로 인증 관련 Client Global State만
 관리합니다. `App`이 `AuthProvider`를 설치하며, 초기 상태는 사용자 정보가 없는
 `anonymous`입니다. `useAuth()`는 상태와 로그인·로그아웃 함수를 제공합니다.
