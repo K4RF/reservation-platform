@@ -4,6 +4,17 @@ Reservation Platform의 브라우저 애플리케이션입니다. `frontend/`는
 TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `backend/` Gradle
 프로젝트와 의존성·빌드 결과를 공유하지 않습니다.
 
+## 현재 Milestone
+
+`f0.1.0 — Frontend Foundation`과 `f0.2.0 — Authentication & User Flow`는
+완료했습니다. f0.2.0은 Issue #161–#168 / PR #169–#176을 통해 Signup,
+이메일/Google 로그인, 메모리 Token Pair, single-flight 재발급, Logout,
+Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
+다음은 `f0.3.0 — Accommodation Search & Booking`입니다.
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 실제 숙소·예약·관리
+화면은 아직 없습니다. 실제 Backend·Redis·Google 브라우저 E2E는 미검증이며
+자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
