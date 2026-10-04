@@ -952,6 +952,11 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 현재 Frontend HTTP Mock 검증과 실제 Backend 연동 검증은 구분합니다.
 검색 계약·현재 Form 범위·수동 연결 절차는 [`frontend/README.md`](frontend/README.md)에 있습니다.
 
+#179는 검색 조건·페이지·크기를 URL Query와 동기화합니다. 편의시설·운영 상태·예약 가능 여부·
+정렬 방향을 추가로 선택할 수 있으며 검색 제출 시 Page를 초기화하고 History Navigation에서
+조건을 복원합니다. 잘못된 URL 조건은 요청하지 않습니다. 새로고침 시 URL은 유지되지만
+메모리 인증 방식상 재로그인이 필요하며 실제 Backend 연결 검증과 HTTP Mock 검증은 구분합니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
