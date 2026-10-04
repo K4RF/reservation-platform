@@ -318,12 +318,11 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 로그인 후 Header의 숙소 검색 또는 `/accommodations`에서 운영 중인 숙소를 조회합니다.
 `GET /api/v1/accommodations`의 `AccommodationSearchRequest`, `AccommodationResponse`,
 `PageResponse`를 기준으로 `src/api/accommodation.ts`의 타입·Query 직렬화·응답 검증을 구성했습니다.
-화면은 숙소명 부분 검색, 도시/지역 정확한 이름, 체크인/체크아웃, 인원, 기본 1박 가격 범위와
-등록순/이름순 정렬을 제공합니다. `status=ACTIVE`, `size=20`, 오름차순을 사용하고 새 검색은
+화면은 숙소명 부분 검색, 도시 정확한 이름, 지역, 체크인/체크아웃, 인원, 기본 1박 가격 범위와
+등록순/이름순 정렬을 제공합니다. 기본은 `status=ACTIVE`, `size=20`, 오름차순이고 새 검색은
 0페이지부터 시작합니다. 날짜는 한 쌍으로 입력해야 하며 날짜 입력 시 Backend가 `available=true`를
 기본 적용합니다. 가격은 날짜별 Override나 숙박 총액이 아닌 활성 객실 기본 가격입니다.
-API 함수는 Backend의 편의시설 배열, 상태, 예약 가능 여부, 페이지·방향 파라미터도 지원하지만
-현재 Form에는 편의시설/운영 중지/예약 불가 필터를 노출하지 않습니다.
+이후 #179에서 편의시설/운영 상태/예약 가능 여부/정렬 방향/페이지 크기 UI와 URL 동기화를 추가했습니다.
 
 카드는 숙소명·위치·설명·숙소 편의시설·운영 상태만 표시합니다. 응답에 이미지와 가격이 없으므로
 임의 이미지/최저가를 만들지 않습니다. 과거 데이터의 null 구조화 위치는 기존 주소만 표시합니다.
@@ -343,3 +342,33 @@ Loading/Error/Empty 상태, 오류 재시도, 이전/다음 페이지, 교체 �
 Docker MySQL·Redis·Kafka의 Healthy 상태는 확인했지만 8080 Backend Listener가 없어
 실제 로그인 후 검색과 브라우저 렌더링 검수는 실행하지 못했습니다. 원격 GitHub Actions 결과도
 Push/PR 후 별도로 확인해야 합니다.
+
+## 검색 URL 상태·Pagination (#179)
+
+`searchQuery.ts`는 Backend Request를 기준으로 URL 파싱·검증·직렬화를 담당합니다.
+`AccommodationSearchPage`는 React Router `useSearchParams`의 URL을 제출된 검색 상태의 기준으로
+사용합니다. Form의 미제출 입력은 URL/API에 반영하지 않으며 검색 제출 시 `page=0`으로 갱신합니다.
+페이지 이동은 제출된 조건·Size를 유지합니다. URL 변경 시 폼을 복원하고 이전 요청을 취소하여
+뒤로가기/앞으로가기에서도 폼·API 조건·페이지가 함께 바뀝니다. 같은 조건 재검색과 오류 재시도도 지원합니다.
+
+Form은 Backend가 지원하는 `ID`/`NAME`, `ASC`/`DESC`, `ACTIVE`/`INACTIVE`,
+페이지 크기 1~100, 숙소/객실 편의시설 AND 조건을 제공합니다. 날짜를 입력하면 기본 예약 가능 검색이며,
+명시적 예약 가능/불가 선택은 날짜 쌍이 필요합니다. 도시 검색은 정확한 구조화 값입니다.
+지역은 구조화된 지역명과 정확히 비교하지만, Backend는 지역이 null인 과거 데이터에 한해
+기존 주소 부분 검색을 사용합니다. 가격은 기본 1박 가격이고 투숙 총액/날짜별 Override는 아닙니다.
+
+예: `/accommodations?name=호텔&city=서울특별시&page=1&size=10&sortBy=NAME&direction=ASC`
+URL의 Page는 0부터 시작하며 표시 Page는 1부터 시작합니다. 날짜는 실제 달력 날짜인지 검증하고,
+중복 단일 조건·알 수 없는 조건/Enum·음수 Page·잘못된 Size/인원·기간·가격은 API로 보내지 않습니다.
+잘못된 URL은 오류 안내와 기본 조건 폼을 표시하며 정상 검색 제출로 복구할 수 있습니다.
+편의시설 반복 값은 중복 제거하며 텍스트는 Trim합니다. 가격은 부동소수점 반올림 없이 비교하고,
+Frontend 입력 보호를 위해 가격 문자열은 최대 100자까지 허용합니다.
+
+전체 새로고침은 URL을 유지하지만 인증 Token은 메모리에만 있으므로 재로그인이 필요합니다.
+로그인 복귀 후 URL에서 조건을 복원합니다. Storage에 토큰이나 검색 결과를 추가하지 않았습니다.
+자동 검증은 Query 파싱/변환·잘못된 조건 차단·URL 재마운트 복원·History Navigation·Pagination이며,
+실제 브라우저 새로고침/Backend 연동을 대체하지 않습니다.
+로컬에서 Backend와 `pnpm dev`를 실행하고 로그인한 후 조건 검색 → 다음 페이지 → 뒤로/앞으로 →
+새로고침 후 재로그인을 수행하여 Form과 URL, Network Query가 일치하는지 확인하세요.
+이번 환경에서는 8080 Backend가 실행되지 않아 실제 Backend 연동은 미검증입니다.
+의존성·환경변수·CI 설정은 변경하지 않았으며 Frontend CI의 기존 검증 명령을 그대로 사용합니다.
