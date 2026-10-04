@@ -42,6 +42,9 @@ describe('login flow', () => {
     renderLogin()
     expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Google로 로그인' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Google로 로그인' }).className).toBe(
+      'google-login-button',
+    )
     expect(
       within(screen.getByRole('main')).getByRole('link', { name: '회원가입' }).getAttribute('href'),
     ).toBe('/signup')

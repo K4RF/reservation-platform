@@ -4,6 +4,17 @@ Reservation Platform의 브라우저 애플리케이션입니다. `frontend/`는
 TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `backend/` Gradle
 프로젝트와 의존성·빌드 결과를 공유하지 않습니다.
 
+## 현재 Milestone
+
+`f0.1.0 — Frontend Foundation`과 `f0.2.0 — Authentication & User Flow`는
+완료했습니다. f0.2.0은 Issue #161–#168 / PR #169–#176을 통해 Signup,
+이메일/Google 로그인, 메모리 Token Pair, single-flight 재발급, Logout,
+Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
+다음은 `f0.3.0 — Accommodation Search & Booking`입니다.
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 실제 숙소·예약·관리
+화면은 아직 없습니다. 실제 Backend·Redis·Google 브라우저 E2E는 미검증이며
+자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
@@ -120,6 +131,26 @@ Token 변조로 화면 표시를 바꿔도 Backend의 JWT 서명·만료 검사,
 재발급 Loading·역할 변경·실패, Google 복귀, 메모리 세션 초기화 동작을 검증합니다. Vite 개발
 서버와 Preview에서는 깊은 URL을 직접 열어도 SPA 진입 파일을 제공합니다. 실제 정적
 호스팅에서는 깊은 경로 요청을 `index.html`로 보내는 Fallback 설정이 별도로 필요합니다.
+
+## 공통 UI 기본 스타일 (#177)
+
+`src/index.css`의 기존 색상과 Layout을 유지하면서 Header와 인증 화면의 최소 기준을 정리했습니다.
+Header Navigation은 Flex·수직 중앙 정렬·줄바꿈과 `0.5rem` Gap을 사용합니다.
+40rem 이하에서는 Navigation을 별도 전체 폭 행으로 배치합니다.
+Link·Logout Button은 같은 Padding과 최소 `2.75rem` 높이를 사용하며 Hover와
+키보드 `:focus-visible` Outline을 제공합니다.
+
+Login/Signup은 기존 최대 `28rem` 폭과 Form Gap을 공유하며 Label/Input 간격은
+`0.5rem`, Input/Submit Button 최소 높이는 `2.75rem`입니다. Google 버튼은
+폼과 동일한 전체 폭·Typography·Radius를 사용하고 Border·Hover·Focus를 정의합니다.
+외부 Icon 라이브러리나 새 의존성은 추가하지 않았고, 로그인·OAuth2 동작은 변경하지 않았습니다.
+
+검증은 기존 Signup·Login·Google Callback·Navigation·인증 통합 테스트를 재사용합니다.
+브라우저에서는 데스크톱 Login/Signup, 320px Login의 가로 넘침 없음,
+Google 버튼의 키보드 Focus Outline을 확인했습니다. jsdom 테스트는 CSS 렌더링 검증을
+대체하지 않으며 원격 CI 결과는 Push/PR 후 따로 확인해야 합니다.
+Home 개발용 Placeholder와 전체 Color Palette는 변경하지 않았습니다.
+최종 디자인·세부 UX·전체 시각적 일관성 검수는 f0.6.0의 수동 검수 범위입니다.
 
 ## 회원가입
 

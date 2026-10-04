@@ -20,6 +20,7 @@ describe('AppRoutes', () => {
 
     expect(screen.getByRole('banner')).toBeTruthy()
     expect(screen.getByRole('navigation', { name: '주요 탐색' })).toBeTruthy()
+    expect(screen.getByRole('navigation', { name: '주요 탐색' }).className).toBe('site-nav')
     expect(screen.getByRole('main')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '홈' }).getAttribute('aria-current')).toBe('page')

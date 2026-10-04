@@ -404,7 +404,10 @@ Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 구현했습니다. Access Token 자동 재발급, Protected/Role Route와 로그인 후 원래 경로 복귀도
 구현했습니다. `/reservations`는 USER/ADMIN, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
 실제 검색·예약·관리 화면과 새로고침 후 지속 인증 복원은 아직 없습니다.
-GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니다.
+GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue 및
+8개 PR 완료)입니다. 다음 Frontend Phase는 `f0.3.0`이며 `f0.3.0`~`f0.6.0`은 Open/Planned입니다.
+인증 통합 테스트는 HTTP 경계를 Mock으로 대체합니다. 실제 Backend·Redis·Google을
+연결한 브라우저 E2E는 별도 미검증이며 Milestone 완료와 구분합니다.
 
 | 영역 | Milestone | 상태 | 이전 단계에서 이어지는 과제 |
 | --- | --- | --- | --- |
@@ -416,8 +419,8 @@ GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`~`f0.6.0`은 Open입니
 | Backend Architecture | v0.3.0 — Cache & Query Optimization | Completed | SQL·실행 계획·Index·Pagination·단건 Cache 최적화 |
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
 | Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
-| Frontend | f0.2.0 — Authentication & User Flow | In Progress | 회원가입·로그인·로그아웃, 메모리 Token·Bearer·재발급 적용; 사용자 정보 및 나머지 흐름은 후속 과제 |
-| Frontend | f0.3.0 — Accommodation Search & Booking | Planned | 검색부터 예약 생성까지 연결 |
+| Frontend | f0.2.0 — Authentication & User Flow | Completed | Signup·이메일/Google 로그인·메모리 Token Pair·single-flight 재발급·Logout·Protected/Role Route·통합 테스트; 지속 복원/Profile/E2E는 별도 과제 |
+| Frontend | f0.3.0 — Accommodation Search & Booking | Next / Planned | 인증 기반 위에 검색부터 예약 생성까지 연결 |
 | Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
 | Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 검증 |
@@ -630,8 +633,9 @@ Consumer 멱등 처리와 제한 Retry·DLT 실패 격리를
 Consumer Retry·DLT 및 중복 처리 방지 검증 범위는
 [`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
 운영 Broker 중단·복구 실험, DLT 수동 Replay 도구, Outbox·처리 이력 Cleanup과 외부 후처리
-연동은 아직 구현되지 않았습니다. Frontend `f0.1.0` Foundation도 완료했으며
-다음 Frontend Phase는 `f0.2.0 — Authentication & User Flow`입니다.
+연동은 아직 구현되지 않았습니다. Frontend `f0.1.0` Foundation과
+`f0.2.0 — Authentication & User Flow`도 완료했으며 다음 Frontend Phase는
+`f0.3.0 — Accommodation Search & Booking`입니다.
 Frontend와 Backend/Platform은 별도 Track입니다. 실제 사용자 Flow 기반
 Performance Test는 필요한 UI 흐름과 연결된 뒤 수행할 계획이며,
 Observability·Production도 계획 상태입니다.

@@ -46,7 +46,7 @@ export function RootLayout() {
         <Link className="site-brand" to={routePaths.home}>
           Reservation Platform
         </Link>
-        <nav aria-label="주요 탐색">
+        <nav className="site-nav" aria-label="주요 탐색">
           <NavLink
             className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
             end
