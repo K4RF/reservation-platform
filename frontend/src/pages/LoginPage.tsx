@@ -39,7 +39,7 @@ export function LoginPage() {
           navigate(returnPath, { replace: true })
         }}
       />
-      <button type="button" onClick={startGoogleLogin}>
+      <button className="google-login-button" type="button" onClick={startGoogleLogin}>
         Google로 로그인
       </button>
       {googleError && <p role="alert">{googleError}</p>}
