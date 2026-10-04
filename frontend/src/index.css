@@ -230,3 +230,71 @@ p {
     justify-content: flex-start;
   }
 }
+
+.accommodation-search-page {
+  width: min(100%, 70rem);
+  min-width: 0;
+  align-self: start;
+}
+
+.accommodation-search-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+  align-items: end;
+}
+
+.accommodation-search-page button,
+.accommodation-search-page select {
+  min-height: 2.75rem;
+  padding: 0.65rem;
+  border: 1px solid #9ba8b9;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.accommodation-search-page button:not(:disabled) {
+  cursor: pointer;
+}
+.accommodation-search-page button:disabled {
+  opacity: 0.5;
+}
+.accommodation-search-page button:hover:not(:disabled) {
+  background: #dbe2ec;
+}
+.accommodation-search-page :is(a, button, select):focus-visible {
+  outline: 2px solid #172033;
+  outline-offset: 3px;
+}
+
+.accommodation-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+}
+
+.accommodation-card {
+  height: 100%;
+  padding: 1.5rem;
+  border: 1px solid #dbe2ec;
+  border-radius: 0.5rem;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.accommodation-card h2 {
+  margin-top: 0;
+}
+.accommodation-card a {
+  color: inherit;
+}
+.accommodation-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}

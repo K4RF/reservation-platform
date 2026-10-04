@@ -8,6 +8,8 @@ import { SignUpPage } from '../pages/SignUpPage'
 import { routePaths } from './routePaths'
 import { ProtectedRoute } from '../layouts/ProtectedRoute'
 import { ProtectedAreaPage } from '../pages/ProtectedAreaPage'
+import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
+import { AccommodationDetailPendingPage } from '../pages/AccommodationDetailPendingPage'
 
 export function AppRoutes() {
   return (
@@ -18,6 +20,11 @@ export function AppRoutes() {
         <Route path={routePaths.oauth2Callback} element={<OAuth2CallbackPage />} />
         <Route path={routePaths.signup} element={<SignUpPage />} />
         <Route element={<ProtectedRoute roles={['USER', 'ADMIN']} />}>
+          <Route path={routePaths.accommodations}>
+            <Route index element={<AccommodationSearchPage />} />
+            <Route path=":accommodationId" element={<AccommodationDetailPendingPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
           <Route path={routePaths.reservations}>
             <Route index element={<ProtectedAreaPage />} />
             <Route path="*" element={<NotFoundPage />} />
