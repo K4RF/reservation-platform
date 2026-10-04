@@ -10,8 +10,8 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 완료했습니다. f0.2.0은 Issue #161–#168 / PR #169–#176을 통해 Signup,
 이메일/Google 로그인, 메모리 Token Pair, single-flight 재발급, Logout,
 Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
-다음은 `f0.3.0 — Accommodation Search & Booking`입니다.
-전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 실제 숙소·예약·관리
+`f0.3.0 — Accommodation Search & Booking`은 #178 숙소 검색·목록부터 진행 중입니다.
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 숙소 상세·예약·관리
 화면은 아직 없습니다. 실제 Backend·Redis·Google 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
@@ -85,21 +85,23 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
 표시됩니다. 현재 Footer는 공통으로 표시할 내용이 없어 두지 않았습니다.
 
-| 경로               | 현재 동작                          |
-| ------------------ | ---------------------------------- |
-| `/`                | Home 페이지                        |
-| `/signup`          | 이메일·비밀번호 회원가입           |
-| `/login`           | 이메일·비밀번호 및 Google 로그인   |
-| `/oauth2/callback` | Google 인증 결과 처리              |
-| `/reservations`    | `USER`/`ADMIN` 보호 영역 진입 안내 |
-| `/admin`           | `ADMIN` 보호 영역 진입 안내        |
-| 그 외 경로 (`*`)   | 공통 Layout 안의 Not Found 페이지  |
+| 경로                               | 현재 동작                          |
+| ---------------------------------- | ---------------------------------- |
+| `/`                                | Home 페이지                        |
+| `/signup`                          | 이메일·비밀번호 회원가입           |
+| `/login`                           | 이메일·비밀번호 및 Google 로그인   |
+| `/oauth2/callback`                 | Google 인증 결과 처리              |
+| `/accommodations`                  | 인증 사용자 숙소 검색·목록         |
+| `/accommodations/:accommodationId` | 상세 화면 후속 구현 안내           |
+| `/reservations`                    | `USER`/`ADMIN` 보호 영역 진입 안내 |
+| `/admin`                           | `ADMIN` 보호 영역 진입 안내        |
+| 그 외 경로 (`*`)                   | 공통 Layout 안의 Not Found 페이지  |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다.
 `ProtectedRoute`의 중첩 Route가 `/reservations`와 `/admin` 및 각 하위 경로를 보호합니다.
 두 진입 화면은 접근 확인 안내만 제공하며 실제 예약 조회·관리 API는 아직 연결하지 않습니다.
 등록되지 않은 하위 경로도 먼저 인증·역할 검사 후 Not Found를 표시합니다.
-숙소 검색 화면(`/accommodations`)은 후속 작업입니다.
+숙소 검색 화면(`/accommodations`)과 상세 진입 경로도 `USER`/`ADMIN` 보호 영역입니다.
 
 ### Protected Route와 역할
 
@@ -112,7 +114,7 @@ Header의 내 예약·관리자 메뉴도 동일한 역할에 따라 표시합�
 
 Google 로그인은 전체 페이지 이동을 하므로 복귀 경로만 `sessionStorage`에 일시 보관합니다.
 콜백에서 성공·실패와 관계없이 한 번 읽고 제거하며, 취소·실패 안내의 로그인 링크에도 경로를
-전달합니다. 토큰은 Storage에 넣지 않습니다. 복귀 값은 내부 `/reservations`·`/admin` 영역만
+전달합니다. 토큰은 Storage에 넣지 않습니다. 복귀 값은 내부 `/accommodations`·`/reservations`·`/admin` 영역만
 허용하며 외부 주소·인증 경로·역슬래시·공백 입력은 홈으로 대체해 Open Redirect와 루프를 막습니다.
 
 만료된 메모리 세션의 Provider 재마운트 또는 Token 재발급 중에는 `loading` 상태에서 인증
@@ -309,4 +311,35 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
-조회, 숙소 검색·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
+조회, 숙소 상세·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
+
+## 숙소 검색·목록 (#178)
+
+로그인 후 Header의 숙소 검색 또는 `/accommodations`에서 운영 중인 숙소를 조회합니다.
+`GET /api/v1/accommodations`의 `AccommodationSearchRequest`, `AccommodationResponse`,
+`PageResponse`를 기준으로 `src/api/accommodation.ts`의 타입·Query 직렬화·응답 검증을 구성했습니다.
+화면은 숙소명 부분 검색, 도시/지역 정확한 이름, 체크인/체크아웃, 인원, 기본 1박 가격 범위와
+등록순/이름순 정렬을 제공합니다. `status=ACTIVE`, `size=20`, 오름차순을 사용하고 새 검색은
+0페이지부터 시작합니다. 날짜는 한 쌍으로 입력해야 하며 날짜 입력 시 Backend가 `available=true`를
+기본 적용합니다. 가격은 날짜별 Override나 숙박 총액이 아닌 활성 객실 기본 가격입니다.
+API 함수는 Backend의 편의시설 배열, 상태, 예약 가능 여부, 페이지·방향 파라미터도 지원하지만
+현재 Form에는 편의시설/운영 중지/예약 불가 필터를 노출하지 않습니다.
+
+카드는 숙소명·위치·설명·숙소 편의시설·운영 상태만 표시합니다. 응답에 이미지와 가격이 없으므로
+임의 이미지/최저가를 만들지 않습니다. 과거 데이터의 null 구조화 위치는 기존 주소만 표시합니다.
+DTO에서 UI Model로의 변환은 `components/accommodation/accommodationView.ts`로 분리했습니다.
+Loading/Error/Empty 상태, 오류 재시도, 이전/다음 페이지, 교체 요청 취소와 늦은 응답 무시를 제공합니다.
+카드의 숙소명 Link는 상세 URL로 이동하지만 현재는 준비 중 안내이며 상세 API/예약은 호출하지 않습니다.
+
+`pnpm test`는 API Query/Bearer/응답 검증, 목록 Mapping·Link·Empty,
+실제 Client와 연결된 검색 화면의 Loading·Pagination·검증·Retry·경합,
+인증 전 요청 차단과 상세 경로 이동을 HTTP Mock으로 검증합니다.
+실제 Backend 연결은 별도 확인해야 합니다. Docker Compose와 Backend를 실행한 뒤 `pnpm dev`에서
+로그인하고 검색을 제출하여 개발자 도구 Network의 `/api/v1/accommodations`가 200인지,
+실제 목록·빈 결과·페이지 이동·날짜 검색이 정상인지 확인하세요. 토큰을 공유하거나 기록하지 마세요.
+자동 테스트는 개발 DB를 사용하거나 변경하지 않으며 추가 의존성/환경변수/CI Service는 없습니다.
+
+이번 로컬 검증은 관련 19개/전체 165개 테스트, Lint·Format Check·Type Check·Build 통과입니다.
+Docker MySQL·Redis·Kafka의 Healthy 상태는 확인했지만 8080 Backend Listener가 없어
+실제 로그인 후 검색과 브라우저 렌더링 검수는 실행하지 못했습니다. 원격 GitHub Actions 결과도
+Push/PR 후 별도로 확인해야 합니다.

@@ -10,7 +10,7 @@ export function safeLoginReturn(value: unknown): string {
     if (url.origin !== 'https://reservation.invalid' || !value.startsWith('/'))
       return routePaths.home
     if (
-      ![routePaths.reservations, routePaths.admin].some(
+      ![routePaths.accommodations, routePaths.reservations, routePaths.admin].some(
         (path) => url.pathname === path || url.pathname.startsWith(path + '/'),
       )
     ) {

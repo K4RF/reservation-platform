@@ -56,6 +56,12 @@ export function RootLayout() {
           </NavLink>
           {state.status === 'authenticated' &&
             (state.role === 'USER' || state.role === 'ADMIN') && (
+              <NavLink className="nav-link" to={routePaths.accommodations}>
+                숙소 검색
+              </NavLink>
+            )}
+          {state.status === 'authenticated' &&
+            (state.role === 'USER' || state.role === 'ADMIN') && (
               <NavLink className="nav-link" to={routePaths.reservations}>
                 내 예약
               </NavLink>
