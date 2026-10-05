@@ -330,3 +330,13 @@ p {
 .accommodation-description {
   white-space: pre-wrap;
 }
+
+.availability-room-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.availability-room-item .accommodation-card {
+  height: auto;
+  flex: 1;
+}
