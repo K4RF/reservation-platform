@@ -9,7 +9,21 @@ function dates() {
   fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-03' } })
 }
 function mockApi() {
-  const mock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(roomPage())))
+  const mock = vi.fn().mockImplementation((url: string) =>
+    Promise.resolve(
+      Response.json(
+        url.includes('/prices/')
+          ? {
+              roomDailyPriceId: null,
+              roomId: 3,
+              stayDate: url.slice(-10),
+              nightlyPrice: room.nightlyPrice,
+              source: 'DEFAULT',
+            }
+          : roomPage(),
+      ),
+    ),
+  )
   vi.stubGlobal('fetch', mock)
   return mock
 }
@@ -28,6 +42,7 @@ describe('availability and selection lifecycle with real API client', () => {
     expect(screen.getByRole('button', { name: '스탠다드 선택' }).getAttribute('aria-pressed')).toBe(
       'true',
     )
+    await screen.findByText('총 예상 금액: 246,913.56')
     fireEvent.click(screen.getByRole('button', { name: '객실 선택 해제' }))
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
   })
@@ -67,8 +82,24 @@ describe('availability and selection lifecycle with real API client', () => {
   })
   it('clears selection on re-query and room pagination', async () => {
     const mock = mockApi()
-    mock.mockImplementation(() =>
-      Promise.resolve(Response.json(roomPage({ totalPages: 2, last: false }))),
+    mock.mockImplementation((url: string) =>
+      Promise.resolve(
+        Response.json(
+          url.includes('/prices/')
+            ? {
+                roomDailyPriceId: null,
+                roomId: 3,
+                stayDate: url.slice(-10),
+                nightlyPrice: room.nightlyPrice,
+                source: 'DEFAULT',
+              }
+            : roomPage({
+                page: Number(new URL(url, 'http://localhost').searchParams.get('page')),
+                totalPages: 2,
+                last: false,
+              }),
+        ),
+      ),
     )
     render(<RoomAvailabilitySection accommodationId={7} />)
     dates()
@@ -77,9 +108,6 @@ describe('availability and selection lifecycle with real API client', () => {
     submit()
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
-    mock.mockImplementationOnce(() =>
-      Promise.resolve(Response.json(roomPage({ page: 1, first: false }))),
-    )
     fireEvent.click(screen.getByRole('button', { name: '다음 가용 객실' }))
     await screen.findByRole('button', { name: '스탠다드 선택' })
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
