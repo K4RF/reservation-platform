@@ -36,6 +36,21 @@ function mockApi() {
 }
 
 describe('AccommodationDetailPage with the real API client', () => {
+  it('connects the availability query and room selection to the detail page', async () => {
+    const mock = mockApi()
+    mock.mockImplementation((url: string) =>
+      Promise.resolve(Response.json(url.includes('/rooms') ? roomPage() : accommodation)),
+    )
+    renderAt()
+    await screen.findByRole('heading', { name: '서울 호텔' })
+    await screen.findByRole('heading', { name: '스탠다드' })
+    fireEvent.change(screen.getByLabelText('숙박 체크인'), { target: { value: '2030-01-01' } })
+    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-02' } })
+    fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
+    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    expect(mock.mock.calls.some(([url]) => url.includes('/rooms/available?'))).toBe(true)
+  })
   it('loads real-contract fields and rooms without requesting non-existent policy GET APIs', async () => {
     const fetchMock = mockApi()
     renderAt()
