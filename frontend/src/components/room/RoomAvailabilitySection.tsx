@@ -5,6 +5,7 @@ import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import { RoomCard } from './RoomCard'
+import { BookingSummary } from '../booking/BookingSummary'
 
 export function RoomAvailabilitySection({ accommodationId }: { accommodationId: number }) {
   // A keyed inner component also resets state if this component is reused for another accommodation.
@@ -139,7 +140,8 @@ function AvailabilityResults({
           <p>
             {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
           </p>
-          <p>날짜별 가격·숙박 총액은 아직 조회하지 않았습니다. 예약 생성은 후속 작업입니다.</p>
+          <BookingSummary key={selected.roomId} room={selected} request={request} />
+          <p>예약 생성은 후속 작업입니다.</p>
           <button type="button" onClick={() => setSelected(null)}>
             객실 선택 해제
           </button>

@@ -340,3 +340,16 @@ p {
   height: auto;
   flex: 1;
 }
+
+.booking-price-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.booking-price-table th,
+.booking-price-table td {
+  padding: 0.5rem;
+  border: 1px solid #dbe2ec;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
