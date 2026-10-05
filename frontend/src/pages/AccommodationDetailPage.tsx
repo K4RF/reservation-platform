@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { getAccommodation } from '../api/accommodation'
 import { AccommodationInfo } from '../components/accommodation/AccommodationInfo'
 import { RoomListSection } from '../components/room/RoomListSection'
+import { RoomAvailabilitySection } from '../components/room/RoomAvailabilitySection'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { routePaths } from '../app/routePaths'
@@ -38,6 +39,7 @@ function AccommodationDetail({ id }: { id: number }) {
       {state.status === 'success' && (
         <>
           <AccommodationInfo accommodation={state.data} />
+          <RoomAvailabilitySection key={`availability-${id}`} accommodationId={id} />
           <RoomListSection key={id} accommodationId={id} />
         </>
       )}

@@ -1,6 +1,7 @@
 import { apiClient } from './client'
 import { ApiError } from './errors'
 import { roomAmenities, type RoomAmenity } from './accommodation'
+import { validateAvailability, type AvailabilityRequest } from './availabilityValidation'
 
 export interface RoomResponse {
   roomId: number
@@ -30,6 +31,14 @@ export async function getAccommodationRooms(
     `/accommodations/${accommodationId}/rooms?page=${page}&size=20&sortBy=ID&direction=ASC`,
     { signal },
   )
+  return readRoomPage(response, accommodationId, page)
+}
+
+function readRoomPage(
+  response: RoomPageResponse | undefined,
+  accommodationId: number,
+  page: number,
+): RoomPageResponse {
   if (
     !response ||
     !Array.isArray(response.content) ||
@@ -62,4 +71,29 @@ export async function getAccommodationRooms(
     throw new ApiError('객실 목록 응답이 올바르지 않습니다.', { kind: 'unexpected_response' })
   }
   return response
+}
+
+export async function getAvailableRooms(
+  accommodationId: number,
+  request: AvailabilityRequest,
+  page = 0,
+  signal?: AbortSignal,
+): Promise<RoomPageResponse> {
+  const error = validateAvailability(request)
+  if (error) throw new RangeError(error)
+  const query = new URLSearchParams({
+    checkInDate: request.checkInDate,
+    checkOutDate: request.checkOutDate,
+    guestCount: String(request.guestCount),
+    page: String(page),
+    size: '20',
+  })
+  const response = await apiClient.request<RoomPageResponse>(
+    `/accommodations/${accommodationId}/rooms/available?${query}`,
+    { signal },
+  )
+  const result = readRoomPage(response, accommodationId, page)
+  if (result.content.some((room) => room.status !== 'ACTIVE' || room.capacity < request.guestCount))
+    throw new ApiError('객실 가용성 응답이 올바르지 않습니다.', { kind: 'unexpected_response' })
+  return result
 }

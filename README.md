@@ -962,6 +962,10 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 숙소 정책은 현재 조회 API가 없어 조회 제한만 안내합니다. 실제 Backend 연동 확인 절차와 자동 검증
 경계는 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 
+#181은 상세 화면에 날짜·인원 기반 가용 객실 조회 및 선택을 연결합니다. Backend 가용성 API를
+기준으로 표시하며 날짜/인원/숙소 변경 시 결과와 선택을 초기화합니다. 재고 수량 계산·날짜별
+가격/총액 조회·예약 생성은 수행하지 않습니다. HTTP Mock 검증과 실제 Backend 확인은 구분합니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
