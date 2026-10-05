@@ -314,3 +314,19 @@ p {
   min-width: 1.25rem;
   min-height: 1.25rem;
 }
+
+.accommodation-detail-page section {
+  margin: 2rem 0;
+  overflow-wrap: anywhere;
+}
+.accommodation-detail-page dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+}
+.accommodation-detail-page dd {
+  margin: 0;
+}
+.accommodation-description {
+  white-space: pre-wrap;
+}
