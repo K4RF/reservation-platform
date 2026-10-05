@@ -11,7 +11,7 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 이메일/Google 로그인, 메모리 Token Pair, single-flight 재발급, Logout,
 Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
 `f0.3.0 — Accommodation Search & Booking`은 #178 숙소 검색·목록부터 진행 중입니다.
-전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 숙소 상세·예약·관리
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 예약·관리
 화면은 아직 없습니다. 실제 Backend·Redis·Google 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
@@ -92,7 +92,7 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 | `/login`                           | 이메일·비밀번호 및 Google 로그인   |
 | `/oauth2/callback`                 | Google 인증 결과 처리              |
 | `/accommodations`                  | 인증 사용자 숙소 검색·목록         |
-| `/accommodations/:accommodationId` | 상세 화면 후속 구현 안내           |
+| `/accommodations/:accommodationId` | 숙소 상세·객실 목록 조회           |
 | `/reservations`                    | `USER`/`ADMIN` 보호 영역 진입 안내 |
 | `/admin`                           | `ADMIN` 보호 영역 진입 안내        |
 | 그 외 경로 (`*`)                   | 공통 Layout 안의 Not Found 페이지  |
@@ -311,7 +311,7 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
-조회, 숙소 상세·예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
+조회, 예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
 
 ## 숙소 검색·목록 (#178)
 
@@ -328,7 +328,7 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 임의 이미지/최저가를 만들지 않습니다. 과거 데이터의 null 구조화 위치는 기존 주소만 표시합니다.
 DTO에서 UI Model로의 변환은 `components/accommodation/accommodationView.ts`로 분리했습니다.
 Loading/Error/Empty 상태, 오류 재시도, 이전/다음 페이지, 교체 요청 취소와 늦은 응답 무시를 제공합니다.
-카드의 숙소명 Link는 상세 URL로 이동하지만 현재는 준비 중 안내이며 상세 API/예약은 호출하지 않습니다.
+카드의 숙소명 Link는 #180 상세 화면으로 이동하여 숙소 상세·객실 목록을 조회합니다. 예약은 후속 범위입니다.
 
 `pnpm test`는 API Query/Bearer/응답 검증, 목록 Mapping·Link·Empty,
 실제 Client와 연결된 검색 화면의 Loading·Pagination·검증·Retry·경합,
@@ -372,3 +372,36 @@ Frontend 입력 보호를 위해 가격 문자열은 최대 100자까지 허용�
 새로고침 후 재로그인을 수행하여 Form과 URL, Network Query가 일치하는지 확인하세요.
 이번 환경에서는 8080 Backend가 실행되지 않아 실제 Backend 연동은 미검증입니다.
 의존성·환경변수·CI 설정은 변경하지 않았으며 Frontend CI의 기존 검증 명령을 그대로 사용합니다.
+
+## 숙소 상세·객실 정보 (#180)
+
+`/accommodations/:accommodationId`는 기존 `USER`/`ADMIN` 보호 경로에서
+`GET /api/v1/accommodations/{id}`를 호출합니다. `AccommodationResponse`의 기존 타입·검증을
+재사용하고 이름·설명·위치·숙소 편의시설·운영 상태·체크인/체크아웃·시간대를 표시합니다.
+과거 데이터의 null 위치/시간은 주소와 미등록 안내로 표시하며 값을 추측하지 않습니다.
+숫자가 아니거나 안전한 양의 정수가 아닌 ID는 요청 전에 차단하고, 404는 숙소 없음으로 표시합니다.
+
+숙소 조회 성공 후 `GET /api/v1/accommodations/{id}/rooms`로 20개씩 ID 오름차순 객실을 조회합니다.
+별도 `RoomResponse`/`RoomPageResponse` 타입과 응답 검증은 `src/api/room.ts`에 있습니다.
+`AccommodationInfo`, `RoomListSection`, `RoomList`, `RoomCard`로 표시와 조회 책임을 분리했습니다.
+객실 ID·숙소 ID·이름·Capacity·기본 1박 가격·WIFI/AIR_CONDITIONER·상태를 실제 DTO에 맞춰 다룹니다.
+가격은 JSON Number로 제공되는 기본 가격만 표시하며 통화는 응답에 없어 임의로 원화 기호를 붙이지 않습니다.
+날짜별 가격·총액·재고·예약 가능 여부가 아니며 금액 계산이나 예약 가능 표시를 하지 않습니다.
+일반 목록은 운영 중지 객실도 포함할 수 있어 상태를 함께 표시합니다.
+
+현재 예약/취소 정책 Controller에는 POST/PUT만 있고 GET이 없으며 숙소 상세 DTO에도 정책이 없습니다.
+따라서 정책 값을 표시하거나 기본 정책을 임의로 안내하지 않고 조회 제한 문구를 표시합니다.
+이를 위해 Backend 계약을 확대하지 않았습니다. 정책 조회 API가 제공되면 별도 연결이 필요합니다.
+Availability 조회·예약 버튼/생성·날짜 선택·이미지 추가는 후속 이슈 범위입니다.
+
+숙소/객실 각각 Loading/Error·Retry를 제공하며 객실 실패 시 숙소 정보는 유지하고 객실만 재시도합니다.
+객실 목록은 Empty와 이전/다음 페이지를 지원합니다. `useDetailQuery`는 요청 취소 및
+Load Callback/Retry 식별을 통해 다른 숙소로 이동한 후 과거 응답이 화면을 덮어쓰는 것을 막습니다.
+테스트는 실제 API Client에 HTTP 응답만 Mock하여 상세/객실 계약·Route 연결·404·ID 검증·
+null·Empty·Retry·Pagination·늦은 응답 무시를 검증합니다. 자동 테스트는 개발 DB를 변경하지 않습니다.
+
+실제 연동 확인: Docker Compose/Backend 실행 → `pnpm dev` → 로그인 → 검색 카드 선택 →
+Network에서 상세 및 `/rooms?page=0&size=20&sortBy=ID&direction=ASC` 200 확인 → 객실 페이지 이동.
+등록된 숙소와 없는 ID를 각각 확인하고 Token 응답을 기록하거나 공유하지 마세요.
+이번 환경에서는 8080 Backend Listener가 없어 실제 Backend 연동과 브라우저 렌더링 검수는 미검증입니다.
+새 의존성·환경변수·CI 서비스는 없으며 기존 Frontend CI 명령을 그대로 실행합니다.
