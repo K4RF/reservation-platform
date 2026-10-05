@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { searchAccommodations } from './accommodation'
+import { getAccommodation, searchAccommodations } from './accommodation'
 import { setAccessToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 import { accommodationPage } from '../test/accommodation'
@@ -83,5 +83,18 @@ describe('searchAccommodations', () => {
       category: 'bad_request',
       code: 'COMMON_001',
     })
+  })
+})
+
+describe('getAccommodation', () => {
+  it('uses the real detail path and validates the returned identity', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(accommodationPage().content[0]))
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(getAccommodation(7)).resolves.toEqual(accommodationPage().content[0])
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/accommodations\/7$/)
+  })
+  it('rejects a mismatched detail response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(accommodationPage().content[0])))
+    await expect(getAccommodation(8)).rejects.toMatchObject({ kind: 'unexpected_response' })
   })
 })

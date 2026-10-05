@@ -948,7 +948,7 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 
 #178 Frontend 숙소 검색·목록은 `/accommodations`에서 인증 후 사용합니다. 숙소명·도시·지역·
 기간·인원·기본 1박 가격 조건과 페이지 이동, Loading/Error/Empty 상태를 제공합니다.
-목록 응답에 없는 이미지/가격은 표시하지 않으며 카드의 상세 경로는 후속 구현 안내입니다.
+목록 응답에 없는 이미지/가격은 표시하지 않으며 카드에서 #180 숙소 상세 화면으로 이동합니다.
 현재 Frontend HTTP Mock 검증과 실제 Backend 연동 검증은 구분합니다.
 검색 계약·현재 Form 범위·수동 연결 절차는 [`frontend/README.md`](frontend/README.md)에 있습니다.
 
@@ -956,6 +956,11 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 정렬 방향을 추가로 선택할 수 있으며 검색 제출 시 Page를 초기화하고 History Navigation에서
 조건을 복원합니다. 잘못된 URL 조건은 요청하지 않습니다. 새로고침 시 URL은 유지되지만
 메모리 인증 방식상 재로그인이 필요하며 실제 Backend 연결 검증과 HTTP Mock 검증은 구분합니다.
+
+#180은 숙소 상세와 객실 목록을 실제 DTO 기준으로 표시합니다. 객실 Capacity·기본 1박 가격·
+편의시설·상태와 객실 페이지 이동을 제공하며 날짜별 가격·예약 가능 여부·예약 생성은 후속 범위입니다.
+숙소 정책은 현재 조회 API가 없어 조회 제한만 안내합니다. 실제 Backend 연동 확인 절차와 자동 검증
+경계는 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한

@@ -9,7 +9,7 @@ import { routePaths } from './routePaths'
 import { ProtectedRoute } from '../layouts/ProtectedRoute'
 import { ProtectedAreaPage } from '../pages/ProtectedAreaPage'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
-import { AccommodationDetailPendingPage } from '../pages/AccommodationDetailPendingPage'
+import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
 
 export function AppRoutes() {
   return (
@@ -22,7 +22,7 @@ export function AppRoutes() {
         <Route element={<ProtectedRoute roles={['USER', 'ADMIN']} />}>
           <Route path={routePaths.accommodations}>
             <Route index element={<AccommodationSearchPage />} />
-            <Route path=":accommodationId" element={<AccommodationDetailPendingPage />} />
+            <Route path=":accommodationId" element={<AccommodationDetailPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
           <Route path={routePaths.reservations}>
