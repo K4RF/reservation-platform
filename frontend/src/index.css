@@ -1,7 +1,10 @@
 :root {
   font-family: system-ui, sans-serif;
-  color: #172033;
-  background: #f7f9fc;
+  color: #173a39;
+  background: #f7f8f4;
+  --accent: #17675f;
+  --ink: #173a39;
+  --line: #dce5df;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -108,8 +111,9 @@ body {
 .site-main {
   flex: 1;
   display: grid;
-  place-items: center;
-  padding: 2rem 1.5rem;
+  justify-items: center;
+  align-content: start;
+  padding: 3rem 1.5rem;
 }
 
 .page-content {
@@ -155,6 +159,7 @@ p {
 
 .form-field input {
   width: 100%;
+  min-width: 0;
   padding: 0.65rem;
   border: 1px solid #9ba8b9;
   border-radius: 0.35rem;
@@ -243,6 +248,10 @@ p {
   gap: 1rem;
   margin: 1.5rem 0;
   align-items: end;
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
 }
 
 .accommodation-search-page button,
@@ -282,7 +291,7 @@ p {
   height: 100%;
   padding: 1.5rem;
   border: 1px solid #dbe2ec;
-  border-radius: 0.5rem;
+  border-radius: 1rem;
   background: #fff;
   overflow-wrap: anywhere;
 }
@@ -352,4 +361,264 @@ p {
   border: 1px solid #dbe2ec;
   text-align: left;
   overflow-wrap: anywhere;
+}
+
+a {
+  color: var(--accent);
+}
+.search-filters {
+  grid-column: 1 / -1;
+  order: 2;
+}
+form[aria-label='숙소 검색 조건'] {
+  grid-template-columns: 1.4fr 1fr 1fr 0.65fr auto;
+}
+form[aria-label='숙소 검색 조건'] > button {
+  order: 1;
+}
+.search-filters summary {
+  cursor: pointer;
+  padding: 0.5rem 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+.search-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+:is(a, button, input, select, summary):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  min-height: 2.75rem;
+  border-radius: 0.6rem;
+  padding: 0.75rem 1.1rem;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+.site-brand {
+  color: var(--accent);
+  letter-spacing: -0.035em;
+  font-size: 1.1rem;
+}
+.site-footer {
+  padding: 2rem 1.5rem;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: #536760;
+  font-size: 0.85rem;
+}
+.accommodation-search-page .primary-action {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.accommodation-search-page .primary-action:hover:not(:disabled) {
+  background: #124e48;
+}
+.booking-complete-page {
+  width: min(100%, 45rem);
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.booking-complete-page h2 {
+  color: var(--accent);
+}
+form[aria-label='대표 투숙객 정보'] {
+  display: grid;
+  gap: 1rem;
+  max-width: 32rem;
+}
+.booking-price-table th {
+  background: #edf2eb;
+}
+@media (min-width: 60rem) {
+  .accommodation-detail-page {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .accommodation-detail-page > a,
+  .accommodation-detail-page > section[aria-labelledby='room-list-title'] {
+    grid-column: 1 / -1;
+  }
+  .accommodation-detail-page > section {
+    margin: 0;
+  }
+}
+.home-page {
+  width: min(100%, 70rem);
+}
+.home-hero {
+  padding: clamp(1.5rem, 5vw, 4rem);
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse at top right, #d3e6dc 0, transparent 65%), #edf2eb;
+}
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+.home-hero h1 {
+  font-size: 1rem;
+  color: #52675f;
+}
+.hero-heading {
+  font-size: clamp(1.7rem, 4vw, 3rem);
+  color: var(--ink);
+  font-weight: 750;
+  line-height: 1.35;
+  letter-spacing: -0.05em;
+  margin: 1rem 0;
+  word-break: keep-all;
+}
+.home-search {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 0.6fr auto;
+  align-items: end;
+  gap: 0.75rem;
+  background: #fff;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  margin-top: 2rem;
+  box-shadow: 0 12px 35px #173a3910;
+}
+.home-search .form-field {
+  min-width: 0;
+}
+.home-search [role='alert'] {
+  grid-column: 1 / -1;
+  color: #b42318;
+}
+.home-search button,
+.accommodation-search-page button[type='submit'],
+.signup-form button,
+.login-form button {
+  background: var(--accent);
+  color: #fff;
+  border: 1px solid var(--accent);
+}
+.home-search button:hover,
+.accommodation-search-page button[type='submit']:hover,
+.signup-form button:hover:not(:disabled),
+.login-form button:hover:not(:disabled) {
+  background: #124e48;
+}
+.home-guide {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin: 3rem 0 1rem;
+}
+.home-guide h2 {
+  font-size: 1.2rem;
+  letter-spacing: -0.035em;
+}
+.home-guide p {
+  line-height: 1.8;
+}
+.home-link {
+  font-weight: 650;
+  margin-bottom: 2rem;
+}
+.catalog-card-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 8rem;
+  padding: 1rem;
+  margin: -1.5rem -1.5rem 1.25rem;
+  border-radius: 1rem 1rem 0 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent,
+      transparent 18px,
+      #17675f08 18px,
+      #17675f08 19px
+    ),
+    #edf2eb;
+  color: #52675f;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+.catalog-card-visual small {
+  align-self: end;
+  letter-spacing: 0;
+}
+.accommodation-card h2 {
+  font-size: 1.2rem;
+}
+.accommodation-card a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25rem;
+}
+.accommodation-card p {
+  line-height: 1.6;
+}
+.accommodation-detail-page > section,
+.accommodation-detail-page [aria-label='선택한 객실'],
+.empty-state {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: 1rem;
+}
+.accommodation-detail-page [aria-label='선택한 객실'] > button {
+  margin: 0.5rem 0.5rem 0.5rem 0;
+}
+.signup-page,
+.login-page {
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+@media (max-width: 60rem) {
+  form[aria-label='숙소 검색 조건'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-search {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-search .form-field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 40rem) {
+  form[aria-label='숙소 검색 조건'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .site-main {
+    padding: 1.5rem 1rem;
+  }
+  .site-header {
+    padding: 1rem;
+  }
+  .home-guide {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  .home-search {
+    padding: 1rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .home-search button {
+    grid-column: 1 / -1;
+  }
+  .signup-page,
+  .login-page {
+    padding: 1.25rem;
+  }
 }
