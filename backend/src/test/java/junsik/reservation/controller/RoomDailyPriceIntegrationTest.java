@@ -150,7 +150,7 @@ class RoomDailyPriceIntegrationTest {
 	}
 
 	@Test
-	void restrictsPriceManagementToAdminAndRequiresAuthenticationForQuery() throws Exception {
+	void restrictsPriceManagementToAdminAndAllowsPublicQuery() throws Exception {
 		Room room = saveRoom();
 
 		mockMvc.perform(post(pricesUrl(room.getId()))
@@ -161,8 +161,8 @@ class RoomDailyPriceIntegrationTest {
 				.andExpect(jsonPath("$.code").value("AUTH_002"));
 
 		mockMvc.perform(get(priceUrl(room.getId())))
-				.andExpect(status().isUnauthorized())
-				.andExpect(jsonPath("$.code").value("AUTH_001"));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.source").value("DEFAULT"));
 	}
 
 	@Test

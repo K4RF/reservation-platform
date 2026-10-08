@@ -63,6 +63,10 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/reissue").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/auth/oauth2/google/start").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/oauth2/exchange").permitAll()
+						.requestMatchers(HttpMethod.GET,
+								"/api/v1/accommodations", "/api/v1/accommodations/*",
+								"/api/v1/accommodations/*/rooms", "/api/v1/accommodations/*/rooms/available",
+								"/api/v1/rooms/*", "/api/v1/rooms/*/prices/*").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations/*/rooms").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations/*/booking-policy")

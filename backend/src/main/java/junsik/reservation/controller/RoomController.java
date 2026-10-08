@@ -41,7 +41,6 @@ import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.room.RoomService;
 
 @Tag(name = "Rooms", description = "객실 API")
-@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 @ApiResponses({
 		@ApiResponse(
 				responseCode = "400",
@@ -82,6 +81,7 @@ public class RoomController {
 			)
 	)
 	@PostMapping("/accommodations/{accommodationId}/rooms")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "403",
@@ -166,6 +166,7 @@ public class RoomController {
 			)
 	})
 	@PutMapping("/rooms/{roomId}")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<RoomResponse> update(
 			@PathVariable @Positive(message = "객실 ID는 양수여야 합니다.") Long roomId,
 			@Valid @RequestBody UpdateRoomRequest request
@@ -187,6 +188,7 @@ public class RoomController {
 			)
 	})
 	@PatchMapping("/rooms/{roomId}/status")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<RoomResponse> updateStatus(
 			@PathVariable @Positive(message = "객실 ID는 양수여야 합니다.") Long roomId,
 			@Valid @RequestBody UpdateRoomStatusRequest request

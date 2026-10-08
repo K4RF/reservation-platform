@@ -33,7 +33,6 @@ import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.room.RoomDailyPriceService;
 
 @Tag(name = "Room Daily Prices", description = "날짜별 객실 가격 API")
-@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 @ApiResponses({
 		@ApiResponse(
 				responseCode = "400",
@@ -89,6 +88,7 @@ public class RoomDailyPriceController {
 			)
 	})
 	@PostMapping
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<RoomDailyPriceResponse> create(
 			@PathVariable @Positive(message = "객실 ID는 양수여야 합니다.") Long roomId,
 			@Valid @RequestBody CreateRoomDailyPriceRequest request
@@ -116,6 +116,7 @@ public class RoomDailyPriceController {
 			)
 	})
 	@PutMapping("/{stayDate}")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<RoomDailyPriceResponse> update(
 			@PathVariable @Positive(message = "객실 ID는 양수여야 합니다.") Long roomId,
 			@PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate stayDate,
