@@ -3,6 +3,8 @@ package junsik.reservation.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static junsik.reservation.support.AuthenticationTestSupport.bearer;
@@ -119,6 +121,33 @@ class SecurityIntegrationTest {
 				.andExpect(jsonPath("$.message").value("접근 권한이 없습니다."))
 				.andExpect(jsonPath("$.path").value(ADMIN_URL))
 				.andExpect(jsonPath("$.errors").isEmpty());
+	}
+
+	@Test
+	void publicReadsDoNotExposeReservationOrAdminEndpoints() throws Exception {
+		for (String path : new String[] {
+				"/api/v1/reservations", "/api/v1/reservations/1",
+				"/api/v1/rooms/1/inventories", "/api/v1/admin/test",
+				"/api/v1/accommodations/1/booking-policy",
+				"/api/v1/accommodations/1/cancellation-policy"
+		}) {
+			mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+		}
+		for (String path : new String[] {
+				"/api/v1/reservations", "/api/v1/accommodations",
+				"/api/v1/accommodations/1/rooms", "/api/v1/rooms/1/prices",
+				"/api/v1/rooms/1/inventories"
+		}) {
+			mockMvc.perform(post(path).contentType(MediaType.APPLICATION_JSON).content("{}"))
+					.andExpect(status().isUnauthorized());
+		}
+		mockMvc.perform(put("/api/v1/accommodations/1").contentType(MediaType.APPLICATION_JSON).content("{}"))
+				.andExpect(status().isUnauthorized());
+		mockMvc.perform(patch("/api/v1/rooms/1/status").contentType(MediaType.APPLICATION_JSON).content("{}"))
+				.andExpect(status().isUnauthorized());
+		mockMvc.perform(get("/api/v1/rooms/1/inventories")
+				.header("Authorization", bearer(jwtTokenProvider.createAccessToken(15L, MemberRole.USER))))
+				.andExpect(status().isForbidden());
 	}
 
 	private String createExpiredToken(Long memberId, MemberRole role) {

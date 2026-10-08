@@ -1,5 +1,7 @@
 import { useCallback } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { useAuth } from '../state/useAuth'
+import { bookingContextPath, readBookingContext } from '../app/bookingContext'
 import { getAccommodation } from '../api/accommodation'
 import { AccommodationInfo } from '../components/accommodation/AccommodationInfo'
 import { RoomListSection } from '../components/room/RoomListSection'
@@ -25,6 +27,9 @@ export function AccommodationDetailPage() {
 
 function AccommodationDetail({ id }: { id: number }) {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { state: auth } = useAuth()
+  const canBook = auth.status === 'authenticated' && (auth.role === 'USER' || auth.role === 'ADMIN')
   const load = useCallback((signal: AbortSignal) => getAccommodation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
   return (
@@ -41,7 +46,16 @@ function AccommodationDetail({ id }: { id: number }) {
         <>
           <AccommodationInfo accommodation={state.data} />
           <RoomAvailabilitySection
-            key={`availability-${id}`}
+            key={`availability-${id}-${location.search}`}
+            initialContext={readBookingContext(location.search)}
+            onLoginRequired={
+              !canBook
+                ? (context) =>
+                    navigate(routePaths.login, {
+                      state: { from: bookingContextPath(id, context) },
+                    })
+                : undefined
+            }
             accommodationId={id}
             accommodationName={state.data.name}
             onComplete={(reservationId) =>

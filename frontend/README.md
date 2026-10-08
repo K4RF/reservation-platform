@@ -12,7 +12,7 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
 `f0.3.0 — Accommodation Search & Booking`은 #178 숙소 검색·목록부터 진행 중입니다.
 전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 예약·관리
-화면은 아직 없습니다. 실제 Backend·Redis·Google 브라우저 E2E는 미검증이며
+전체 기능 화면은 아직 없습니다(예약 생성/완료 화면은 #184까지 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
 ## 요구 환경
@@ -83,7 +83,7 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `src/App.tsx`가 `BrowserRouter`를 설치하고, `src/app/routes.tsx`가 모든 Route를
 정의합니다. `src/layouts/RootLayout.tsx`는 모든 페이지에 공통인 Header·Navigation과
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
-표시됩니다. 현재 Footer는 공통으로 표시할 내용이 없어 두지 않았습니다.
+표시됩니다. Footer는 공통 서비스 안내를 표시합니다.
 
 | 경로                               | 현재 동작                          |
 | ---------------------------------- | ---------------------------------- |
@@ -91,7 +91,7 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 | `/signup`                          | 이메일·비밀번호 회원가입           |
 | `/login`                           | 이메일·비밀번호 및 Google 로그인   |
 | `/oauth2/callback`                 | Google 인증 결과 처리              |
-| `/accommodations`                  | 인증 사용자 숙소 검색·목록         |
+| `/accommodations`                  | 비로그인 숙소 검색·목록            |
 | `/accommodations/:accommodationId` | 숙소 상세·객실 목록 조회           |
 | `/reservations`                    | `USER`/`ADMIN` 보호 영역 진입 안내 |
 | `/admin`                           | `ADMIN` 보호 영역 진입 안내        |
@@ -101,7 +101,10 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `ProtectedRoute`의 중첩 Route가 `/reservations`와 `/admin` 및 각 하위 경로를 보호합니다.
 두 진입 화면은 접근 확인 안내만 제공하며 실제 예약 조회·관리 API는 아직 연결하지 않습니다.
 등록되지 않은 하위 경로도 먼저 인증·역할 검사 후 Not Found를 표시합니다.
-숙소 검색 화면(`/accommodations`)과 상세 진입 경로도 `USER`/`ADMIN` 보호 영역입니다.
+숙소 검색·상세·객실 가용성·요금은 공개 탐색입니다. 익명은 선택 후 로그인해야 투숙객 입력/예약을
+진행할 수 있습니다. 공개 GET은 토큰을 보내지 않으며 예약 POST/본인 GET의 Bearer는 유지합니다.
+로그인 전후 문맥 복원·재조회 정책과 데모 준비는
+[공개 탐색 및 예약 안내](../docs/testing/public-exploration-booking-flow.md)를 따릅니다.
 
 ### Protected Route와 역할
 
@@ -311,11 +314,11 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
-조회, 예약·관리자 화면은 후속 Frontend 이슈 범위입니다.
+조회, 내 예약 관리·관리자 전체 기능은 후속 Frontend 이슈 범위입니다.
 
 ## 숙소 검색·목록 (#178)
 
-로그인 후 Header의 숙소 검색 또는 `/accommodations`에서 운영 중인 숙소를 조회합니다.
+#195부터 로그인 없이 Header의 숙소 검색 또는 `/accommodations`에서 숙소를 조회합니다.
 `GET /api/v1/accommodations`의 `AccommodationSearchRequest`, `AccommodationResponse`,
 `PageResponse`를 기준으로 `src/api/accommodation.ts`의 타입·Query 직렬화·응답 검증을 구성했습니다.
 화면은 숙소명 부분 검색, 도시 정확한 이름, 지역, 체크인/체크아웃, 인원, 기본 1박 가격 범위와
@@ -330,11 +333,11 @@ DTO에서 UI Model로의 변환은 `components/accommodation/accommodationView.t
 Loading/Error/Empty 상태, 오류 재시도, 이전/다음 페이지, 교체 요청 취소와 늦은 응답 무시를 제공합니다.
 카드의 숙소명 Link는 #180 상세 화면으로 이동하여 숙소 상세·객실 목록을 조회합니다. 예약은 후속 범위입니다.
 
-`pnpm test`는 API Query/Bearer/응답 검증, 목록 Mapping·Link·Empty,
+`pnpm test`는 공개 API Query/무 Bearer/응답 검증, 목록 Mapping·Link·Empty,
 실제 Client와 연결된 검색 화면의 Loading·Pagination·검증·Retry·경합,
-인증 전 요청 차단과 상세 경로 이동을 HTTP Mock으로 검증합니다.
+비로그인 조회와 상세 경로 이동을 HTTP Mock으로 검증합니다.
 실제 Backend 연결은 별도 확인해야 합니다. Docker Compose와 Backend를 실행한 뒤 `pnpm dev`에서
-로그인하고 검색을 제출하여 개발자 도구 Network의 `/api/v1/accommodations`가 200인지,
+로그인 없이 검색을 제출하여 개발자 도구 Network의 `/api/v1/accommodations`가 200인지,
 실제 목록·빈 결과·페이지 이동·날짜 검색이 정상인지 확인하세요. 토큰을 공유하거나 기록하지 마세요.
 자동 테스트는 개발 DB를 사용하거나 변경하지 않으며 추가 의존성/환경변수/CI Service는 없습니다.
 
@@ -375,7 +378,7 @@ Frontend 입력 보호를 위해 가격 문자열은 최대 100자까지 허용�
 
 ## 숙소 상세·객실 정보 (#180)
 
-`/accommodations/:accommodationId`는 기존 `USER`/`ADMIN` 보호 경로에서
+`/accommodations/:accommodationId`는 #195부터 공개 경로에서
 `GET /api/v1/accommodations/{id}`를 호출합니다. `AccommodationResponse`의 기존 타입·검증을
 재사용하고 이름·설명·위치·숙소 편의시설·운영 상태·체크인/체크아웃·시간대를 표시합니다.
 과거 데이터의 null 위치/시간은 주소와 미등록 안내로 표시하며 값을 추측하지 않습니다.

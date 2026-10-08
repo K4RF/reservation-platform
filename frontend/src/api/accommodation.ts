@@ -86,7 +86,7 @@ export async function searchAccommodations(
   }
   const response = await apiClient.request<AccommodationPageResponse>(
     '/accommodations' + (query.size ? `?${query}` : ''),
-    { signal },
+    { signal, includeAuth: false },
   )
   if (
     !response ||
@@ -112,6 +112,7 @@ export async function getAccommodation(
 ): Promise<AccommodationResponse> {
   const response = await apiClient.request<AccommodationResponse>(`/accommodations/${id}`, {
     signal,
+    includeAuth: false,
   })
   if (!isAccommodation(response) || response.accommodationId !== id) {
     throw new ApiError('숙소 상세 응답이 올바르지 않습니다.', { kind: 'unexpected_response' })

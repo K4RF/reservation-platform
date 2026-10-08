@@ -2,7 +2,7 @@ import { routePaths } from './routePaths'
 
 const GOOGLE_RETURN_KEY = 'reservation:google-return-path'
 
-// Only known protected areas are return targets; never redirect to external/auth URLs.
+// Only known catalog/member/admin areas are return targets; never external/auth URLs.
 export function safeLoginReturn(value: unknown): string {
   if (typeof value !== 'string' || /[\\\s]/.test(value)) return routePaths.home
   try {

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { AccommodationDetailPage } from './AccommodationDetailPage'
 import { accommodation } from '../test/accommodation'
 import { roomPage } from '../test/room'
+import { AuthProvider } from '../state/AuthProvider'
 
 function NavigateDetail() {
   const navigate = useNavigate()
@@ -11,12 +12,14 @@ function NavigateDetail() {
 }
 function renderAt(path = '/accommodations/7') {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <NavigateDetail />
-      <Routes>
-        <Route path="/accommodations/:accommodationId" element={<AccommodationDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <AuthProvider>
+      <MemoryRouter initialEntries={[path]}>
+        <NavigateDetail />
+        <Routes>
+          <Route path="/accommodations/:accommodationId" element={<AccommodationDetailPage />} />
+        </Routes>
+      </MemoryRouter>
+    </AuthProvider>,
   )
 }
 function mockApi() {

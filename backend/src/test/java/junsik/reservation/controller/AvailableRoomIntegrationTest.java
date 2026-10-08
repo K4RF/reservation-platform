@@ -153,15 +153,28 @@ class AvailableRoomIntegrationTest {
 	}
 
 	@Test
-	void rejectsAvailableRoomQueryWithoutAuthentication() throws Exception {
+	void allowsAvailableRoomQueryWithoutAuthentication() throws Exception {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
+		Room room = saveRoom(accommodation, "Public Twin", 2);
+		saveInventory(room, CHECK_IN, CHECK_OUT, 1, 0);
+		mockMvc.perform(get("/api/v1/accommodations"))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/v1/accommodations/" + accommodation.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.accommodationId").value(accommodation.getId()));
+		mockMvc.perform(get("/api/v1/accommodations/" + accommodation.getId() + "/rooms"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].roomId").value(room.getId()));
+		mockMvc.perform(get("/api/v1/rooms/" + room.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.roomId").value(room.getId()));
 
 		mockMvc.perform(get(availableRoomsUrl(accommodation.getId()))
 					.param("checkInDate", CHECK_IN.toString())
 					.param("checkOutDate", CHECK_OUT.toString())
 					.param("guestCount", "2"))
-				.andExpect(status().isUnauthorized())
-				.andExpect(jsonPath("$.code").value("AUTH_001"));
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].roomId").value(room.getId()));
 	}
 
 	private ResultActions performAvailable(

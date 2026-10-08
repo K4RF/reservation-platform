@@ -5,7 +5,7 @@ import { setAccessToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 
 describe('getAccommodationRooms', () => {
-  it('uses the accommodation-scoped paginated endpoint and Bearer client', async () => {
+  it('uses the public accommodation-scoped endpoint without Bearer auth', async () => {
     const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
     setAccessToken(token)
     const fetchMock = vi.fn().mockResolvedValue(Response.json(roomPage({ page: 1 })))
@@ -13,7 +13,7 @@ describe('getAccommodationRooms', () => {
     await expect(getAccommodationRooms(7, 1)).resolves.toMatchObject({ page: 1 })
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toMatch(/\/accommodations\/7\/rooms\?page=1&size=20&sortBy=ID&direction=ASC$/)
-    expect(new Headers(init.headers).get('Authorization')).toBe(`Bearer ${token}`)
+    expect(new Headers(init.headers).get('Authorization')).toBeNull()
   })
   it.each([
     {},
@@ -31,7 +31,7 @@ describe('getAccommodationRooms', () => {
 
 describe('getAvailableRooms', () => {
   const request = { checkInDate: '2030-01-01', checkOutDate: '2030-01-03', guestCount: 2 }
-  it('sends ISO dates, guests and pagination with Bearer auth to the dedicated endpoint', async () => {
+  it('sends ISO dates, guests and pagination without Bearer auth to the public endpoint', async () => {
     const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
     setAccessToken(token)
     const mock = vi.fn().mockResolvedValue(Response.json(roomPage()))
@@ -46,7 +46,7 @@ describe('getAvailableRooms', () => {
       page: '0',
       size: '20',
     })
-    expect(new Headers(init.headers).get('Authorization')).toBe(`Bearer ${token}`)
+    expect(new Headers(init.headers).get('Authorization')).toBeNull()
   })
   it('rejects invalid dates before making a request', async () => {
     const mock = vi.fn()

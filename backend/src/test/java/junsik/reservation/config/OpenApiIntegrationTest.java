@@ -45,6 +45,13 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
 				.andExpect(jsonPath("$.components.securitySchemes.bearerAuth.bearerFormat").value("JWT"))
 				.andExpect(jsonPath("$.paths['/api/v1/members'].post.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/{accommodationId}'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/{accommodationId}/rooms'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/rooms/{roomId}'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations'].post.security[0].bearerAuth").isArray())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/{accommodationId}'].put.security[0].bearerAuth").isArray())
+				.andExpect(jsonPath("$.paths['/api/v1/rooms/{roomId}/status'].patch.security[0].bearerAuth").isArray())
 				.andExpect(jsonPath("$.paths['/api/v1/reservations'].post.security[0].bearerAuth").isArray())
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/reservations'].get.parameters[*].name",
@@ -97,8 +104,8 @@ class OpenApiIntegrationTest {
 						)
 				))
 				.andExpect(jsonPath(
-						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security[0].bearerAuth"
-				).isArray())
+						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security"
+				).doesNotExist())
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].post.security[0].bearerAuth"
 				).isArray())
@@ -132,8 +139,8 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/rooms/{roomId}/prices'].post.security[0].bearerAuth"
 				).isArray())
 				.andExpect(jsonPath(
-						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].get.security[0].bearerAuth"
-				).isArray())
+						"$.paths['/api/v1/rooms/{roomId}/prices/{stayDate}'].get.security"
+				).doesNotExist())
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/rooms/{roomId}/prices'].post.requestBody.content['application/json'].schema['$ref']"
 				).value(endsWith("/CreateRoomDailyPriceRequest")))

@@ -37,7 +37,6 @@ import junsik.reservation.global.exception.ErrorResponse;
 import junsik.reservation.service.accommodation.AccommodationService;
 
 @Tag(name = "Accommodations", description = "숙소 API")
-@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 @ApiResponses({
 		@ApiResponse(
 				responseCode = "400",
@@ -78,6 +77,7 @@ public class AccommodationController {
 			)
 	)
 	@PostMapping
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	@ApiResponse(
 			responseCode = "403",
 			description = "관리자 권한 필요",
@@ -130,6 +130,7 @@ public class AccommodationController {
 			)
 	})
 	@PutMapping("/{accommodationId}")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<AccommodationResponse> update(
 			@PathVariable @Positive(message = "숙소 ID는 양수여야 합니다.") Long accommodationId,
 			@Valid @RequestBody UpdateAccommodationRequest request
@@ -151,6 +152,7 @@ public class AccommodationController {
 			)
 	})
 	@PatchMapping("/{accommodationId}/status")
+	@SecurityRequirement(name = OpenApiConfig.BEARER_AUTH)
 	public ResponseEntity<AccommodationResponse> updateStatus(
 			@PathVariable @Positive(message = "숙소 ID는 양수여야 합니다.") Long accommodationId,
 			@Valid @RequestBody UpdateAccommodationStatusRequest request

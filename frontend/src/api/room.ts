@@ -29,7 +29,7 @@ export async function getAccommodationRooms(
 ): Promise<RoomPageResponse> {
   const response = await apiClient.request<RoomPageResponse>(
     `/accommodations/${accommodationId}/rooms?page=${page}&size=20&sortBy=ID&direction=ASC`,
-    { signal },
+    { signal, includeAuth: false },
   )
   return readRoomPage(response, accommodationId, page)
 }
@@ -90,7 +90,7 @@ export async function getAvailableRooms(
   })
   const response = await apiClient.request<RoomPageResponse>(
     `/accommodations/${accommodationId}/rooms/available?${query}`,
-    { signal },
+    { signal, includeAuth: false },
   )
   const result = readRoomPage(response, accommodationId, page)
   if (result.content.some((room) => room.status !== 'ACTIVE' || room.capacity < request.guestCount))

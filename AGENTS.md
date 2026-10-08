@@ -29,7 +29,7 @@ verification.
 ```text
 reservation-platform/
 ├── backend/       # Spring Boot application and Gradle project root
-├── frontend/      # Placeholder; frontend stack is not selected
+├── frontend/      # React/TypeScript/Vite browser application; pnpm project root
 ├── infra/         # Placeholder directories for Docker and monitoring
 ├── load-test/     # Placeholder directory for k6 tests
 ├── docs/          # Architecture, ADR, API, ERD, and performance documents
@@ -78,8 +78,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 External Kafka post-processing, automatic DLT replay, raw deserialization-error recovery,
 Outbox/processed-event Cleanup,
 additional OAuth2
-providers, Access Token blacklisting, Prometheus, Grafana, k6, CD, and a frontend
-framework are planned but are not currently configured unless the repository is
+providers, Access Token blacklisting, Prometheus, Grafana, k6, and CD
+are planned but are not currently configured unless the repository is
 updated to include them.
 
 ## Build and Test Commands
@@ -181,7 +181,7 @@ Before completing a change:
   `address` field as the detail address. Pre-upgrade rows may retain null
   structured fields without guessing values from their address. Accommodation
   amenities are `PARKING`, `BREAKFAST`, `POOL`, `GYM`, and `PET_FRIENDLY`.
-  Authenticated users can read details and search paginated lists by optional
+  Anonymous and authenticated users can read details and search paginated lists by optional
   name, exact city/region, required accommodation/room amenities, status,
   active-room capacity/base-nightly-price, and stay-period inventory availability
   conditions. Multiple amenities use AND semantics. Dates default to available
@@ -195,12 +195,12 @@ Before completing a change:
   retain the previous behavior.
 - Room creation, information updates, and `ACTIVE/INACTIVE` status changes are
   restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
-  nightly price. Authenticated users can read room details and filter
+  nightly price. Anonymous and authenticated users can read room details and filter
   accommodation-scoped paginated lists by minimum capacity, nightly-price
   range, status, and required `WIFI`/`AIR_CONDITIONER` amenities. Allowed sort
   fields are `ID`, `NAME`, `CAPACITY`, and `NIGHTLY_PRICE`.
 - Administrators can create and update a positive daily price for one room and
-  stay date, including preparing prices for inactive rooms. Authenticated users
+  stay date, including preparing prices for inactive rooms. Anonymous and authenticated users
   can query the effective price: a stored override reports `DAILY`, while a
   missing override falls back to the room's base nightly price and reports
   `DEFAULT`. A room/date UNIQUE constraint prevents duplicate overrides.
@@ -274,7 +274,7 @@ Before completing a change:
   `409 INVENTORY_012`; Redis communication failure fails fast as
   `503 INVENTORY_013` without a database-lock fallback. Schedule changes load the sorted union of
   old and new stay dates in one query and are not locked or retried.
-- Authenticated users can query ID-ordered paginated available rooms for an
+- Anonymous and authenticated users can query ID-ordered paginated available rooms for an
   accommodation by check-in, check-out, and guest count. The query includes only
   rooms whose room and accommodation are both `ACTIVE`, have sufficient
   capacity, and have available inventory on every `[check-in, check-out)` stay
@@ -353,7 +353,13 @@ Before completing a change:
   for duplicate/state conflicts, and 500 for unexpected failures. Bean,
   binding, method-parameter, and constraint validation share `COMMON_001` and
   field details; malformed or unbindable requests use `COMMON_002`.
-- The frontend is a placeholder with no selected technology stack.
+- Frontend uses React, TypeScript, Vite, and pnpm. Public accommodation exploration
+  requires no token; booking creation/result and admin areas remain authenticated.
+  Login return URLs carry only stay conditions and catalog IDs, never guest data or
+  tokens. Always reload availability before restoring a selected room after login.
+  See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
+  non-destructive local demo preparation. Reservation-management/admin UI is still
+  roadmap work.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.

@@ -5,7 +5,7 @@ import { accessTokenWithExpiry } from '../test/jwt'
 import { accommodationPage } from '../test/accommodation'
 
 describe('searchAccommodations', () => {
-  it('serializes the real query contract, repeated amenities and false/zero with Bearer auth', async () => {
+  it('serializes the public query without Bearer auth even when signed in', async () => {
     const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
     setAccessToken(token)
     const fetchMock = vi.fn().mockResolvedValue(Response.json(accommodationPage()))
@@ -36,7 +36,7 @@ describe('searchAccommodations', () => {
     expect(query.get('page')).toBe('0')
     expect(query.get('minPrice')).toBe('0')
     expect(query.has('region')).toBe(false)
-    expect(new Headers(init.headers).get('Authorization')).toBe(`Bearer ${token}`)
+    expect(new Headers(init.headers).get('Authorization')).toBeNull()
   })
 
   it('accepts legacy null locations and times without guessing values', async () => {

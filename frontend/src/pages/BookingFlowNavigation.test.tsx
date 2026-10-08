@@ -4,6 +4,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { AccommodationDetailPage } from './AccommodationDetailPage'
 import { accommodation } from '../test/accommodation'
 import { roomPage } from '../test/room'
+import { AuthProvider } from '../state/AuthProvider'
+import { setTokenPair } from '../state/accessToken'
+import { accessTokenWithExpiry } from '../test/jwt'
 
 function Navigation() {
   const navigate = useNavigate()
@@ -35,14 +38,17 @@ describe('booking flow page lifecycle', () => {
       ),
     )
     vi.stubGlobal('fetch', mock)
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
     render(
-      <MemoryRouter initialEntries={['/accommodations/7']}>
-        <Navigation />
-        <Routes>
-          <Route path="/accommodations/:accommodationId" element={<AccommodationDetailPage />} />
-          <Route path="/other" element={<p>다른 화면</p>} />
-        </Routes>
-      </MemoryRouter>,
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/accommodations/7']}>
+          <Navigation />
+          <Routes>
+            <Route path="/accommodations/:accommodationId" element={<AccommodationDetailPage />} />
+            <Route path="/other" element={<p>다른 화면</p>} />
+          </Routes>
+        </MemoryRouter>
+      </AuthProvider>,
     )
     await screen.findByLabelText('숙박 체크인')
     fireEvent.change(screen.getByLabelText('숙박 체크인'), { target: { value: '2030-01-01' } })

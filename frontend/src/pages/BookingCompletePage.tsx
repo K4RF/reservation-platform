@@ -18,7 +18,7 @@ function BookingComplete({ id }: { id: number }) {
   const load = useCallback((signal: AbortSignal) => getReservation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
   return (
-    <section className="page-content">
+    <section className="page-content booking-complete-page">
       <h1>예약 결과 확인</h1>
       {state.status === 'loading' && (
         <LoadingState message="서버의 예약 결과를 확인하고 있습니다." />
