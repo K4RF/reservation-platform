@@ -10,8 +10,15 @@ import {
   type GuestErrors,
 } from './bookingState'
 import { ErrorState } from '../ui/ErrorState'
+import { BookingSubmit } from './BookingSubmit'
 
-export function BookingFlow({ selection }: { selection: BookingSelection | null }) {
+export function BookingFlow({
+  selection,
+  onComplete,
+}: {
+  selection: BookingSelection | null
+  onComplete?: (id: number) => void
+}) {
   const error = validateSelection(selection)
   if (error || !selection) return <ErrorState message={error ?? '예약 조건을 다시 선택하세요.'} />
   const { accommodation, room, stay } = selection
@@ -19,11 +26,18 @@ export function BookingFlow({ selection }: { selection: BookingSelection | null 
     <BookingInput
       key={`${accommodation.accommodationId}:${room.roomId}:${stay.checkInDate}:${stay.checkOutDate}:${stay.guestCount}`}
       selection={selection}
+      onComplete={onComplete}
     />
   )
 }
 
-function BookingInput({ selection }: { selection: BookingSelection }) {
+function BookingInput({
+  selection,
+  onComplete,
+}: {
+  selection: BookingSelection
+  onComplete?: (id: number) => void
+}) {
   const [state, dispatch] = useReducer(bookingReducer, initialBookingState)
   const [errors, setErrors] = useState<GuestErrors>({})
   function review(event: FormEvent<HTMLFormElement>) {
@@ -76,12 +90,11 @@ function BookingInput({ selection }: { selection: BookingSelection }) {
           <p>안내 이메일: {state.request.representativeGuest.email}</p>
           <p>연락처: {state.request.representativeGuest.phone}</p>
           <p>위 숙소·객실·날짜·인원과 예상 금액을 확인하세요. 예약은 아직 생성되지 않았습니다.</p>
-          <button type="button" onClick={() => dispatch({ type: 'edit' })}>
-            투숙객 정보 수정
-          </button>
-          <button type="button" disabled>
-            예약 생성 (후속 작업)
-          </button>
+          <BookingSubmit
+            request={state.request}
+            onComplete={onComplete}
+            onEdit={() => dispatch({ type: 'edit' })}
+          />
         </section>
       )}
       <p>

@@ -10,6 +10,7 @@ import { ProtectedRoute } from '../layouts/ProtectedRoute'
 import { ProtectedAreaPage } from '../pages/ProtectedAreaPage'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
+import { BookingCompletePage } from '../pages/BookingCompletePage'
 
 export function AppRoutes() {
   return (
@@ -27,6 +28,7 @@ export function AppRoutes() {
           </Route>
           <Route path={routePaths.reservations}>
             <Route index element={<ProtectedAreaPage />} />
+            <Route path=":reservationId/complete" element={<BookingCompletePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Route>
