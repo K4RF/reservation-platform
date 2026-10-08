@@ -554,3 +554,15 @@ POST는 서버에서 완료될 수 있으며 클라이언트 취소가 롤백을
 변경하므로 별도의 테스트 계정/객실을 사용하세요. 재고 부족/정책 거절도 별도로 확인합니다.
 이번 환경은 8080 Backend가 실행되지 않아 실제 Backend 생성 및 브라우저 검수는 미검증입니다.
 의존성·환경변수·CI 설정 변경은 없으며 기존 Frontend CI 검증 명령을 그대로 실행합니다.
+
+## Search → Booking 최종 통합 검증 (#185)
+
+기존 `BookingCreationFlow.integration.test.tsx`를 확장해 검색 URL/Pagination→상세→가용 객실→
+혼합 날짜별 요금→투숙객→생성→서버 완료 조회를 실제 AuthProvider/Router/API Client와 함께 검증합니다.
+재고 부족·동시성 충돌·예약 정책 거절·Network 실패·Empty·대기 중 중복 클릭도 통합 검증합니다.
+HTTP 경계만 Mock하며 실제 Backend/브라우저/원격 CI 검증과는 구분합니다.
+공통 달력 검증과 완료 URL 생성은 각각 `utils/calendarDate.ts`, `app/routePaths.ts`로 단일화했습니다.
+기존 개별 테스트는 유지하고 중복 테스트 파일/새 API·상태 라이브러리는 추가하지 않습니다.
+
+커버리지 Matrix, Search/Booking/Auth 책임, f0.4.0 서버 ID·공개 번호 계약과 실제 연동 절차는
+[`Frontend Search & Booking Flow`](../docs/testing/frontend-search-booking-flow.md)에 정리했습니다.

@@ -6,7 +6,7 @@ import { RoomListSection } from '../components/room/RoomListSection'
 import { RoomAvailabilitySection } from '../components/room/RoomAvailabilitySection'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
-import { routePaths } from '../app/routePaths'
+import { bookingCompletePath, routePaths } from '../app/routePaths'
 import { useDetailQuery } from './useDetailQuery'
 
 export function AccommodationDetailPage() {
@@ -45,7 +45,7 @@ function AccommodationDetail({ id }: { id: number }) {
             accommodationId={id}
             accommodationName={state.data.name}
             onComplete={(reservationId) =>
-              navigate(`/reservations/${reservationId}/complete`, { replace: true })
+              navigate(bookingCompletePath(reservationId), { replace: true })
             }
           />
           <RoomListSection key={id} accommodationId={id} />
