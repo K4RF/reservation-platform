@@ -147,7 +147,7 @@ describe('login flow', () => {
     expect(await screen.findByText('로그아웃되었습니다.')).toBeTruthy()
   })
 
-  it('returns to login with a message when token reissue fails', async () => {
+  it('keeps public home available after reissue failure and offers login with expiry guidance', async () => {
     setTokenPair(tokens.accessToken, tokens.refreshToken)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
     render(
@@ -162,6 +162,14 @@ describe('login flow', () => {
       await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
     })
 
+    expect(screen.getByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
+    expect(
+      screen.getByText(
+        '로그인이 만료되었습니다. 숙소는 계속 둘러볼 수 있으며 예약 시 다시 로그인해 주세요.',
+      ),
+    ).toBeTruthy()
+    expect(screen.queryByRole('link', { name: '내 예약' })).toBeNull()
+    fireEvent.click(screen.getByRole('link', { name: '로그인' }))
     expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
     expect(screen.getByRole('alert').textContent).toContain('인증이 만료되었습니다')
     expect(getRefreshToken()).toBeNull()

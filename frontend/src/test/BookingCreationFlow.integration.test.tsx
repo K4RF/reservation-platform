@@ -42,6 +42,14 @@ function mockApi(
   const mock = vi.fn((url: string, init: RequestInit) => {
     const parsed = new URL(url, 'http://localhost')
     const path = parsed.pathname
+    if (init.method === 'POST' && path === '/api/v1/auth/login')
+      return Promise.resolve(
+        Response.json({
+          accessToken: accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60),
+          refreshToken: 'refresh',
+          tokenType: 'Bearer',
+        }),
+      )
     if (init.method === 'POST' && path === '/api/v1/reservations') {
       attempts++
       if (options.create) return options.create()
@@ -131,6 +139,70 @@ async function searchToDetail() {
   await screen.findByLabelText('숙박 체크인')
 }
 describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
+  it('lets an anonymous visitor explore and restores a fresh selection after login before creating a reservation', async () => {
+    const mock = mockApi()
+    renderAt('/accommodations')
+    await searchToDetail()
+    await selectRoom()
+    await screen.findByText('총 예상 금액: 200.00')
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+    expect(
+      mock.mock.calls.every(([, init]) => !new Headers(init.headers).has('Authorization')),
+    ).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '예약하려면 로그인' }))
+    await screen.findByRole('heading', { name: '로그인' })
+    fireEvent.change(screen.getByLabelText('이메일'), { target: { value: 'member@example.com' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123!' } })
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+    await screen.findByRole('form', { name: '대표 투숙객 정보' })
+    expect(screen.getByTestId('location').textContent).toBe(
+      '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3',
+    )
+    expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(2)
+    expect(screen.queryByRole('link', { name: '로그인' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '회원가입' })).toBeNull()
+    expect(screen.getByRole('link', { name: '내 예약' })).toBeTruthy()
+    for (const [label, value] of [
+      ['대표 투숙객 이름', bookingRequest.representativeGuest.name],
+      ['대표 투숙객 이메일', bookingRequest.representativeGuest.email],
+      ['대표 투숙객 연락처', bookingRequest.representativeGuest.phone],
+    ])
+      fireEvent.change(screen.getByLabelText(label), { target: { value } })
+    fireEvent.submit(screen.getByRole('form', { name: '대표 투숙객 정보' }))
+    await screen.findByText('총 예상 금액: 200.00')
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    await screen.findByText('예약이 확정되었습니다.')
+    const creates = mock.mock.calls.filter(
+      ([url, init]) => url.endsWith('/reservations') && init.method === 'POST',
+    )
+    expect(creates).toHaveLength(1)
+    expect(new Headers(creates[0][1].headers).get('Authorization')).toMatch(/^Bearer /)
+    expect(JSON.parse(creates[0][1].body as string)).toEqual(bookingRequest)
+  })
+  it('keeps booking input closed for an unknown role while allowing public exploration', async () => {
+    const mock = mockApi()
+    setTokenPair(
+      accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60, 'ACCESS', 'SUPERUSER'),
+      'refresh',
+    )
+    renderAt()
+    await selectRoom()
+    expect(screen.getByRole('button', { name: '예약하려면 로그인' })).toBeTruthy()
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+  })
+  it('does not restore a room that became unavailable during login', async () => {
+    mockApi(false, { emptyAvailability: true })
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
+    renderAt(
+      '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3',
+    )
+    await screen.findByText(
+      '이전에 선택한 객실은 현재 조건에서 이용할 수 없습니다. 다른 객실을 선택하세요.',
+    )
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+  })
   it('shows loading and disables repeated POST submission throughout the authenticated search flow', async () => {
     setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
     let resolve!: (response: Response) => void
@@ -300,7 +372,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     await screen.findByText('예약이 확정되었습니다.')
     expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(2)
   })
-  it.each(['/accommodations/7', '/reservations/42/complete'])(
+  it.each(['/reservations/42/complete'])(
     'requires login on direct %s access and sends no reservation requests',
     (path) => {
       const mock = mockApi()

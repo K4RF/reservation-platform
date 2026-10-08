@@ -34,7 +34,7 @@ export async function getEffectiveRoomPrice(
 ): Promise<RoomDailyPriceResponse> {
   const response = await apiClient.request<RoomDailyPriceResponse>(
     `/rooms/${roomId}/prices/${stayDate}`,
-    { signal },
+    { signal, includeAuth: false },
   )
   if (
     !response ||

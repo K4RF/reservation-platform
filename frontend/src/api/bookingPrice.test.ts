@@ -54,7 +54,7 @@ describe('booking price API', () => {
     expect(result.totalMinorUnits).toBe(30n)
     expect(result.nights.map((night) => night.source)).toEqual(['DEFAULT', 'DAILY'])
     expect(mock).toHaveBeenCalledTimes(2)
-    expect(new Headers(mock.mock.calls[0][1].headers).get('Authorization')).toBe(`Bearer ${token}`)
+    expect(new Headers(mock.mock.calls[0][1].headers).get('Authorization')).toBeNull()
     expect(mock.mock.calls.some(([url]) => url.endsWith('2030-01-03'))).toBe(false)
   })
   it('handles leap day and year boundaries in UTC, not local DST offsets', () => {

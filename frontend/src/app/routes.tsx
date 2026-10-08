@@ -20,12 +20,12 @@ export function AppRoutes() {
         <Route path={routePaths.login} element={<LoginPage />} />
         <Route path={routePaths.oauth2Callback} element={<OAuth2CallbackPage />} />
         <Route path={routePaths.signup} element={<SignUpPage />} />
+        <Route path={routePaths.accommodations}>
+          <Route index element={<AccommodationSearchPage />} />
+          <Route path=":accommodationId" element={<AccommodationDetailPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
         <Route element={<ProtectedRoute roles={['USER', 'ADMIN']} />}>
-          <Route path={routePaths.accommodations}>
-            <Route index element={<AccommodationSearchPage />} />
-            <Route path=":accommodationId" element={<AccommodationDetailPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Route>
           <Route path={routePaths.reservations}>
             <Route index element={<ProtectedAreaPage />} />
             <Route path=":reservationId/complete" element={<BookingCompletePage />} />
