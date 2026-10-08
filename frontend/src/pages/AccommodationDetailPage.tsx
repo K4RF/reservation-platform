@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { getAccommodation } from '../api/accommodation'
 import { AccommodationInfo } from '../components/accommodation/AccommodationInfo'
 import { RoomListSection } from '../components/room/RoomListSection'
@@ -24,6 +24,7 @@ export function AccommodationDetailPage() {
 }
 
 function AccommodationDetail({ id }: { id: number }) {
+  const navigate = useNavigate()
   const load = useCallback((signal: AbortSignal) => getAccommodation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
   return (
@@ -43,6 +44,9 @@ function AccommodationDetail({ id }: { id: number }) {
             key={`availability-${id}`}
             accommodationId={id}
             accommodationName={state.data.name}
+            onComplete={(reservationId) =>
+              navigate(`/reservations/${reservationId}/complete`, { replace: true })
+            }
           />
           <RoomListSection key={id} accommodationId={id} />
         </>

@@ -10,9 +10,11 @@ import { BookingFlow } from '../booking/BookingFlow'
 export function RoomAvailabilitySection({
   accommodationId,
   accommodationName,
+  onComplete,
 }: {
   accommodationId: number
   accommodationName?: string
+  onComplete?: (id: number) => void
 }) {
   // A keyed inner component also resets state if this component is reused for another accommodation.
   return (
@@ -20,6 +22,7 @@ export function RoomAvailabilitySection({
       key={accommodationId}
       accommodationId={accommodationId}
       accommodationName={accommodationName}
+      onComplete={onComplete}
     />
   )
 }
@@ -27,9 +30,11 @@ export function RoomAvailabilitySection({
 function AvailabilityForm({
   accommodationId,
   accommodationName,
+  onComplete,
 }: {
   accommodationId: number
   accommodationName?: string
+  onComplete?: (id: number) => void
 }) {
   const [draft, setDraft] = useState({ checkInDate: '', checkOutDate: '', guestCount: '1' })
   const [request, setRequest] = useState<AvailabilityRequest | null>(null)
@@ -89,6 +94,7 @@ function AvailabilityForm({
           key={revision}
           accommodationId={accommodationId}
           accommodationName={accommodationName}
+          onComplete={onComplete}
           request={request}
         />
       )}
@@ -99,10 +105,12 @@ function AvailabilityForm({
 function AvailabilityResults({
   accommodationId,
   accommodationName,
+  onComplete,
   request,
 }: {
   accommodationId: number
   accommodationName?: string
+  onComplete?: (id: number) => void
   request: AvailabilityRequest
 }) {
   const [page, setPage] = useState(0)
@@ -166,13 +174,13 @@ function AvailabilityResults({
             {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
           </p>
           <BookingFlow
+            onComplete={onComplete}
             selection={{
               accommodation: { accommodationId, name: accommodationName },
               room: selected,
               stay: request,
             }}
           />
-          <p>예약 생성은 후속 작업입니다.</p>
           <button type="button" onClick={() => setSelected(null)}>
             객실 선택 해제
           </button>

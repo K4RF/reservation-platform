@@ -47,9 +47,9 @@ describe('BookingFlow', () => {
     expect(screen.getByText('대표 투숙객: 홍길동')).toBeTruthy()
     expect(screen.getByText('안내 이메일: guest@example.com')).toBeTruthy()
     expect(screen.getByText(/요청 2명/)).toBeTruthy()
-    expect(
-      (screen.getByRole('button', { name: '예약 생성 (후속 작업)' }) as HTMLButtonElement).disabled,
-    ).toBe(true)
+    expect((screen.getByRole('button', { name: '예약 생성' }) as HTMLButtonElement).disabled).toBe(
+      false,
+    )
     fireEvent.click(screen.getByRole('button', { name: '투숙객 정보 수정' }))
     expect((screen.getByLabelText('대표 투숙객 이름') as HTMLInputElement).value).toBe('홍길동')
     fireEvent.change(screen.getByLabelText('대표 투숙객 이름'), { target: { value: '김민수' } })

@@ -974,6 +974,10 @@ Backend가 다시 계산합니다. 일별 조회 합계는 가격 보장이나 �
 Booking State는 Auth와 분리된 화면 메모리에만 유지하며 조건 변경·이탈·새로고침 시 폐기합니다.
 실제 Backend DTO 필드만 다루고 예약 생성 API 호출은 후속 작업입니다.
 
+#184는 예약 생성 POST와 인증된 `/reservations/{id}/complete` 결과 조회를 연결합니다.
+서버 확정 금액·예약 번호를 표시하고 중복 클릭 및 불명 실패의 자동 재전송을 차단합니다.
+HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 현재 내 예약 목록은 후속 범위입니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
