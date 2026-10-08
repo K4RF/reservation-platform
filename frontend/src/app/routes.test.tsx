@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from './routes'
 import { AuthProvider } from '../state/AuthProvider'
+import { bookingCompletePath } from './routePaths'
+
+describe('reservation route identity', () => {
+  it('builds completion routes only from the server numeric ID', () => {
+    expect(bookingCompletePath(42)).toBe('/reservations/42/complete')
+  })
+  it.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, NaN])('rejects invalid ID %s', (id) => {
+    expect(() => bookingCompletePath(id)).toThrow(RangeError)
+  })
+})
 
 function renderAt(path: string) {
   return render(
