@@ -970,6 +970,10 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 예약 요약으로 표시합니다. 자체 fallback·세금·Add-on 정책은 없으며 최종 금액은 예약 생성 시
 Backend가 다시 계산합니다. 일별 조회 합계는 가격 보장이나 원자적 기간 견적이 아닙니다.
 
+#183은 가용 객실 선택에 대표 투숙객의 이름·이메일·연락처 입력과 제출 전 확인을 연결합니다.
+Booking State는 Auth와 분리된 화면 메모리에만 유지하며 조건 변경·이탈·새로고침 시 폐기합니다.
+실제 Backend DTO 필드만 다루고 예약 생성 API 호출은 후속 작업입니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
