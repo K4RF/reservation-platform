@@ -3,6 +3,7 @@ import {
   roomAmenities,
   type AccommodationSearchRequest,
 } from '../../api/accommodation'
+import { isCalendarDate } from '../../utils/calendarDate'
 
 export type AccommodationSearchQuery = AccommodationSearchRequest & {
   page: number
@@ -19,12 +20,6 @@ export const defaultSearchQuery: AccommodationSearchQuery = {
   size: 20,
   sortBy: 'ID',
   direction: 'ASC',
-}
-
-function validDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value.startsWith('0000')) return false
-  const date = new Date(`${value}T00:00:00Z`)
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
 // Compare decimal strings without rounding BigDecimal filter boundaries through Number.
@@ -89,7 +84,13 @@ export function parseSearchQuery(params: URLSearchParams): SearchQueryResult {
   const checkIn = params.get('checkInDate')
   const checkOut = params.get('checkOutDate')
   if (params.has('checkInDate') || params.has('checkOutDate')) {
-    if (!checkIn || !checkOut || !validDate(checkIn) || !validDate(checkOut) || checkIn >= checkOut)
+    if (
+      !checkIn ||
+      !checkOut ||
+      !isCalendarDate(checkIn) ||
+      !isCalendarDate(checkOut) ||
+      checkIn >= checkOut
+    )
       return invalid('체크인과 체크아웃을 함께 입력하고 체크아웃을 더 늦은 날짜로 선택하세요.')
     query.checkInDate = checkIn
     query.checkOutDate = checkOut
