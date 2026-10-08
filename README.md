@@ -978,6 +978,11 @@ Booking State는 Auth와 분리된 화면 메모리에만 유지하며 조건 �
 서버 확정 금액·예약 번호를 표시하고 중복 클릭 및 불명 실패의 자동 재전송을 차단합니다.
 HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 현재 내 예약 목록은 후속 범위입니다.
 
+#185는 검색부터 예약 완료 GET까지의 Frontend 통합 검증과 작은 공통 구조 정리를 마무리합니다.
+기존 개별 테스트를 재사용한 Coverage Matrix, 상태 책임과 f0.4.0 Reservation 식별 계약은
+[`Frontend Search & Booking Flow`](docs/testing/frontend-search-booking-flow.md)에 있습니다.
+HTTP Mock 검증은 실제 Backend/브라우저 및 원격 CI 검증을 대체하지 않습니다.
+
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
 MySQL 8.4 Testcontainer를 사용합니다. 분산 락과 Cache 통합 테스트는 Redis 7.4
