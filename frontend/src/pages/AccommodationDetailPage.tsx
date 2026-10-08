@@ -39,7 +39,11 @@ function AccommodationDetail({ id }: { id: number }) {
       {state.status === 'success' && (
         <>
           <AccommodationInfo accommodation={state.data} />
-          <RoomAvailabilitySection key={`availability-${id}`} accommodationId={id} />
+          <RoomAvailabilitySection
+            key={`availability-${id}`}
+            accommodationId={id}
+            accommodationName={state.data.name}
+          />
           <RoomListSection key={id} accommodationId={id} />
         </>
       )}

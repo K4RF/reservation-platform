@@ -5,14 +5,32 @@ import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import { RoomCard } from './RoomCard'
-import { BookingSummary } from '../booking/BookingSummary'
+import { BookingFlow } from '../booking/BookingFlow'
 
-export function RoomAvailabilitySection({ accommodationId }: { accommodationId: number }) {
+export function RoomAvailabilitySection({
+  accommodationId,
+  accommodationName,
+}: {
+  accommodationId: number
+  accommodationName?: string
+}) {
   // A keyed inner component also resets state if this component is reused for another accommodation.
-  return <AvailabilityForm key={accommodationId} accommodationId={accommodationId} />
+  return (
+    <AvailabilityForm
+      key={accommodationId}
+      accommodationId={accommodationId}
+      accommodationName={accommodationName}
+    />
+  )
 }
 
-function AvailabilityForm({ accommodationId }: { accommodationId: number }) {
+function AvailabilityForm({
+  accommodationId,
+  accommodationName,
+}: {
+  accommodationId: number
+  accommodationName?: string
+}) {
   const [draft, setDraft] = useState({ checkInDate: '', checkOutDate: '', guestCount: '1' })
   const [request, setRequest] = useState<AvailabilityRequest | null>(null)
   const [error, setError] = useState('')
@@ -67,7 +85,12 @@ function AvailabilityForm({ accommodationId }: { accommodationId: number }) {
       {error && <ErrorState message={error} />}
       {!request && !error && <p>날짜와 인원을 입력한 후 조회하세요.</p>}
       {request && (
-        <AvailabilityResults key={revision} accommodationId={accommodationId} request={request} />
+        <AvailabilityResults
+          key={revision}
+          accommodationId={accommodationId}
+          accommodationName={accommodationName}
+          request={request}
+        />
       )}
     </section>
   )
@@ -75,9 +98,11 @@ function AvailabilityForm({ accommodationId }: { accommodationId: number }) {
 
 function AvailabilityResults({
   accommodationId,
+  accommodationName,
   request,
 }: {
   accommodationId: number
+  accommodationName?: string
   request: AvailabilityRequest
 }) {
   const [page, setPage] = useState(0)
@@ -140,7 +165,13 @@ function AvailabilityResults({
           <p>
             {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
           </p>
-          <BookingSummary key={selected.roomId} room={selected} request={request} />
+          <BookingFlow
+            selection={{
+              accommodation: { accommodationId, name: accommodationName },
+              room: selected,
+              stay: request,
+            }}
+          />
           <p>예약 생성은 후속 작업입니다.</p>
           <button type="button" onClick={() => setSelected(null)}>
             객실 선택 해제
