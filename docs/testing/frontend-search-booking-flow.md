@@ -2,8 +2,8 @@
 
 ## 검증 경계
 
-현재 Source 기준 흐름은 인증된 `/accommodations` 검색 → 숙소 상세 → 날짜/전체 인원 조회 →
-가용 객실 선택 → 날짜별 적용 요금 조회 → 대표 투숙객 입력/확인 → 예약 생성 POST →
+현재 Source 기준 흐름은 공개 `/accommodations` 검색 → 숙소 상세 → 날짜/전체 인원 조회 →
+가용 객실 선택 → 날짜별 적용 요금 조회 → 필요 시 로그인/선택 재검증 → 대표 투숙객 입력/확인 → 예약 생성 POST →
 `/reservations/{id}/complete`의 본인 예약 GET입니다.
 
 `frontend/src/test/BookingCreationFlow.integration.test.tsx`는 실제 AuthProvider, Router,
@@ -77,7 +77,8 @@ pnpm build
 
 이번 작업은 의존성·환경변수·실행 설정·Workflow를 변경하지 않습니다. 로컬 동일 명령 통과와
 원격 GitHub Actions Run 통과는 별개이며 새 브랜치 원격 CI는 push/PR 후 확인해야 합니다.
-현재 8080 Backend Listener가 없어 실제 Backend/브라우저 전체 Flow는 미검증입니다.
+#195의 공개 정책·Empty 조사·추가 브라우저 검수·비파괴 데모 준비 절차는
+[공개 탐색 문서](public-exploration-booking-flow.md)를 따릅니다. 전체 실제 로그인/예약 E2E와 HTTP Mock은 별개입니다.
 
 수동 절차:
 

@@ -29,8 +29,9 @@ JWT 만료와 역할 해석을 하나의 Utility로 합쳤고 API DTO와 Router�
 사용자 Profile은 `/me` API가 없으므로 계속 `null`입니다. 저장소에 존재하는 타입과 계약만 사용합니다.
 재발급 응답과 이전 요청은 Session Version을 확인하므로 늦은 응답이 새 세션을 덮지 않습니다.
 
-숙소 검색·예약 화면은 보호 Route 아래에 추가하고 `apiClient.request()`로 API를 호출합니다.
-로그인·회원가입·Token 교환처럼 공개 Endpoint만 `includeAuth: false`를 사용합니다.
+숙소 검색·상세·가용성·적용 가격은 #195부터 공개 Route/GET이며 `includeAuth: false`를 사용합니다.
+예약 결과·내 예약·관리자는 보호 Route를 유지합니다. 예약 생성에는 Bearer를 보냅니다.
+공개 탐색에서 로그인 복귀 문맥과 재검증은 [공개 탐색 문서](public-exploration-booking-flow.md)를 따릅니다.
 도메인별 Request/Response는 해당 API 모듈에서 정의하고 인증 Context에 조회 결과를 복제하지 않습니다.
 401은 공통 인증 Lifecycle이 처리하며, 403은 해당 화면이 안내해야 합니다. 403이나 일반
 API Network Error만으로 Token을 삭제하거나 재발급하지 않습니다. 재발급 자체의 실패는 재로그인이 필요합니다.

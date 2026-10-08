@@ -24,7 +24,7 @@
 > 테스트와 MySQL 8.4 Testcontainers 기반 DB 제약 테스트 환경도 구성했습니다.
 > 날짜별 객실 전체·예약 재고 모델을 예약 생성·취소·일정 변경 및 예약 가능 객실
 > 조회에 연결해 순차 요청의 Transaction 정합성을 보장합니다. 관리자는 날짜별
-> 객실 가격을 등록·수정할 수 있고, 인증 사용자는 특정 날짜의 적용 가격과 기본
+> 객실 가격을 등록·수정할 수 있고, 비로그인 사용자도 특정 날짜의 적용 가격과 기본
 > 가격 fallback 여부를 조회할 수 있습니다. 동일 객실·숙박일의 예약 생성·일정 변경·
 > 취소에는 RoomInventory Version 기반 Optimistic Lock을 적용했고, 예약 생성 진입점은
 > Room 단위 Redis Distributed Lock으로 직렬화합니다. 관리자는 숙소별 예약 가능 조건과 취소 정책을
@@ -120,7 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
-| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Access/Refresh Token, 자동 재발급 및 API Bearer Header; 예약 화면은 후속 범위 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Token/재발급, 공개 숙소 탐색·예약 생성/완료 조회; 내 예약 관리·관리자 UI는 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -208,20 +208,20 @@ Spring Boot API
 | `PATCH` | `/api/v1/accommodations/{accommodationId}/status` | `ADMIN` | 숙소 운영 상태 변경 |
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/booking-policy` | `ADMIN` | 숙소별 예약 가능 정책 등록·수정 |
 | `POST`, `PUT` | `/api/v1/accommodations/{accommodationId}/cancellation-policy` | `ADMIN` | 숙소별 취소 정책 등록·수정 |
-| `GET` | `/api/v1/accommodations/{accommodationId}` | 인증 사용자 | 숙소 단건 조회 |
-| `GET` | `/api/v1/accommodations?city=서울특별시&region=강남구&accommodationAmenities=PARKING&roomAmenities=WIFI&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20` | 인증 사용자 | 위치·편의시설·객실 조건·재고 기반 통합 검색 |
+| `GET` | `/api/v1/accommodations/{accommodationId}` | 공개 | 숙소 단건 조회 |
+| `GET` | `/api/v1/accommodations?city=서울특별시&region=강남구&accommodationAmenities=PARKING&roomAmenities=WIFI&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&minPrice=100000&maxPrice=200000&status=ACTIVE&available=true&sortBy=NAME&direction=ASC&page=0&size=20` | 공개 | 위치·편의시설·객실 조건·재고 기반 통합 검색 |
 | `POST` | `/api/v1/accommodations/{accommodationId}/rooms` | `ADMIN` | 숙소 객실 등록 |
 | `PUT` | `/api/v1/rooms/{roomId}` | `ADMIN` | 객실 정보 수정 |
 | `PATCH` | `/api/v1/rooms/{roomId}/status` | `ADMIN` | 객실 운영 상태 변경 |
-| `GET` | `/api/v1/rooms/{roomId}` | 인증 사용자 | 객실 단건 조회 |
-| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&amenities=WIFI&amenities=AIR_CONDITIONER&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 인증 사용자 | 숙소별 객실 조건·편의시설·정렬·페이지 조회 |
-| `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 인증 사용자 | 기간·인원 기준 예약 가능 객실 조회 |
+| `GET` | `/api/v1/rooms/{roomId}` | 공개 | 객실 단건 조회 |
+| `GET` | `/api/v1/accommodations/{accommodationId}/rooms?minCapacity=2&minPrice=100000&maxPrice=200000&status=ACTIVE&amenities=WIFI&amenities=AIR_CONDITIONER&sortBy=NIGHTLY_PRICE&direction=ASC&page=0&size=20` | 공개 | 숙소별 객실 조건·편의시설·정렬·페이지 조회 |
+| `GET` | `/api/v1/accommodations/{accommodationId}/rooms/available?checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2&page=0&size=20` | 공개 | 기간·인원 기준 예약 가능 객실 조회 |
 | `POST` | `/api/v1/rooms/{roomId}/inventories` | `ADMIN` | 날짜별 객실 재고 등록(기본 `OPEN`) |
 | `PUT` | `/api/v1/rooms/{roomId}/inventories/{inventoryDate}` | `ADMIN` | 전체 재고 수량·판매 상태 수정 |
 | `GET` | `/api/v1/rooms/{roomId}/inventories?startDate=2030-07-01&endDate=2030-07-31` | `ADMIN` | 양끝 날짜를 포함하는 재고 Calendar 조회 |
 | `POST` | `/api/v1/rooms/{roomId}/prices` | `ADMIN` | 날짜별 객실 가격 등록 |
 | `PUT` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | `ADMIN` | 날짜별 객실 가격 수정 |
-| `GET` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | 인증 사용자 | 날짜별 적용 가격과 기본 가격 fallback 조회 |
+| `GET` | `/api/v1/rooms/{roomId}/prices/{stayDate}` | 공개 | 날짜별 적용 가격과 기본 가격 fallback 조회 |
 | `POST` | `/api/v1/reservations` | 인증 사용자 | 인증 회원의 객실 예약 생성 |
 | `GET` | `/api/v1/reservations/{reservationId}` | 예약 소유자 | 본인 예약 단건 조회 |
 | `GET` | `/api/v1/reservations?status=CONFIRMED&checkInFrom=2030-01-01&checkInTo=2030-12-31&checkOutFrom=2030-01-02&checkOutTo=2031-01-01&sortBy=CHECK_IN_DATE&direction=ASC&page=0&size=20` | 인증 사용자 | 본인 예약 조건·정렬·페이지 조회 |
@@ -896,7 +896,8 @@ Backend 실행 후 다음 주소에서 API 명세를 확인할 수 있습니다.
 | OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
 
 Swagger UI의 `Authorize` 버튼에서 로그인 API로 발급받은 JWT Access Token을
-입력하면 Bearer 인증이 필요한 숙소·객실·예약 API를 직접 호출할 수 있습니다.
+입력하면 Bearer 인증이 필요한 관리 쓰기·본인 예약 API를 직접 호출할 수 있습니다.
+숙소 검색·상세·객실 목록/가용성·적용 가격 GET은 #195부터 공개입니다.
 `Bearer ` 접두사는 Swagger UI가 자동으로 추가하므로 토큰 값만 입력합니다.
 
 Swagger UI와 OpenAPI Endpoint는 현재 인증 없이 접근할 수 있습니다. 개발 및
@@ -946,7 +947,7 @@ Backend/Google 확인 절차는
 [`Frontend Authentication User Flow`](docs/testing/frontend-authentication-flow.md)에 정리했습니다.
 Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 
-#178 Frontend 숙소 검색·목록은 `/accommodations`에서 인증 후 사용합니다. 숙소명·도시·지역·
+#178 Frontend 숙소 검색·목록은 #195부터 `/accommodations`에서 비로그인으로 사용합니다. 숙소명·도시·지역·
 기간·인원·기본 1박 가격 조건과 페이지 이동, Loading/Error/Empty 상태를 제공합니다.
 목록 응답에 없는 이미지/가격은 표시하지 않으며 카드에서 #180 숙소 상세 화면으로 이동합니다.
 현재 Frontend HTTP Mock 검증과 실제 Backend 연동 검증은 구분합니다.
@@ -955,7 +956,8 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 #179는 검색 조건·페이지·크기를 URL Query와 동기화합니다. 편의시설·운영 상태·예약 가능 여부·
 정렬 방향을 추가로 선택할 수 있으며 검색 제출 시 Page를 초기화하고 History Navigation에서
 조건을 복원합니다. 잘못된 URL 조건은 요청하지 않습니다. 새로고침 시 URL은 유지되지만
-메모리 인증 방식상 재로그인이 필요하며 실제 Backend 연결 검증과 HTTP Mock 검증은 구분합니다.
+공개 탐색은 계속 가능하고 예약 단계에서 메모리 인증 방식상 재로그인이 필요합니다.
+실제 Backend 연결 검증과 HTTP Mock 검증은 구분합니다.
 
 #180은 숙소 상세와 객실 목록을 실제 DTO 기준으로 표시합니다. 객실 Capacity·기본 1박 가격·
 편의시설·상태와 객실 페이지 이동을 제공하며 날짜별 가격·예약 가능 여부·예약 생성은 후속 범위입니다.
@@ -982,6 +984,11 @@ HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 현재 �
 기존 개별 테스트를 재사용한 Coverage Matrix, 상태 책임과 f0.4.0 Reservation 식별 계약은
 [`Frontend Search & Booking Flow`](docs/testing/frontend-search-booking-flow.md)에 있습니다.
 HTTP Mock 검증은 실제 Backend/브라우저 및 원격 CI 검증을 대체하지 않습니다.
+
+#195는 공개 탐색 GET과 예약/관리 인증 경계를 분리하고, 인증 상태별 헤더·검색 중심 홈·반응형
+카드/필터/예약 화면을 개선했습니다. 로그인 복귀 URL에는 기간·인원·객실 ID만 보관하고 가용성을
+새로 확인합니다. 숙소 3의 객실 없음 조사와 기존 데이터를 건드리지 않는 데모 준비 절차는
+[`공개 숙소 탐색 및 예약`](docs/testing/public-exploration-booking-flow.md)에 있습니다.
 
 일반 API 통합 테스트는 격리된 H2 In-Memory DB를 사용하고, Database Constraint
 테스트와 전체 예약 Baseline·Transaction Rollback 테스트는 개발 DB와 동일한
