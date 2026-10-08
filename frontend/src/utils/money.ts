@@ -1,12 +1,13 @@
 // Backend monetary columns use scale=2. Convert the JSON number's decimal representation,
 // not floating-point arithmetic, and reject unsupported precision instead of silently rounding.
-export function toMinorUnits(amount: number): bigint {
+export function toMinorUnits(amount: number, precision = 12): bigint {
   const value = String(amount)
   if (!/^\d+(\.\d{1,2})?$/.test(value) || !Number.isFinite(amount))
     throw new RangeError('Invalid amount')
   const [integer, fraction = ''] = value.split('.')
   const minor = BigInt(integer + fraction.padEnd(2, '0'))
-  if (minor > 999999999999n) throw new RangeError('Amount exceeds Backend precision')
+  if (minor >= 10n ** BigInt(precision) || minor > BigInt(Number.MAX_SAFE_INTEGER))
+    throw new RangeError('Amount exceeds supported precision')
   return minor
 }
 
