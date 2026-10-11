@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
 import { Link, useParams } from 'react-router'
-import { getReservation } from '../api/reservation'
+import { getReservationDetail } from '../api/reservationDetail'
 import { toReservationSummary } from '../api/reservationList'
 import { getReservationCatalog } from '../api/reservationCatalog'
 import { ReservationCard } from '../components/reservation/ReservationCard'
+import { ReservationSnapshots } from '../components/reservation/ReservationSnapshots'
 import { reservationReadError, toReservationCard } from '../components/reservation/reservationView'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
@@ -12,7 +13,6 @@ import { routePaths } from '../app/routePaths'
 import { getSessionVersion } from '../state/accessToken'
 import { useAuth } from '../state/useAuth'
 
-// Read-only landing for #197 selection. Full detail/change/cancel UI is a later issue.
 export function ReservationDetailPage() {
   useAuth()
   const { reservationId } = useParams()
@@ -25,9 +25,10 @@ export function ReservationDetailPage() {
 function ReservationDetail({ id }: { id: number }) {
   const load = useCallback(
     async (signal: AbortSignal) => {
-      const result = toReservationSummary(await getReservation(id, signal))
+      const detail = await getReservationDetail(id, signal)
+      const result = toReservationSummary(detail)
       const catalog = await getReservationCatalog([result], signal)
-      return toReservationCard(result, catalog.get(result.roomId))
+      return { detail, card: toReservationCard(result, catalog.get(result.roomId)) }
     },
     [id],
   )
@@ -41,12 +42,13 @@ function ReservationDetail({ id }: { id: number }) {
       )}
       {state.status === 'success' && (
         <>
-          <ReservationCard reservation={state.data} linkToDetail={false} />
+          <ReservationCard reservation={state.data.card} linkToDetail={false} />
           <p>
             숙소·객실 이름은 현재 정보입니다. 금액은 예약 Snapshot이며 결제 완료를 의미하지
             않습니다.
           </p>
-          {state.data.catalogUnavailable && (
+          <ReservationSnapshots reservation={state.data.detail} />
+          {state.data.card.catalogUnavailable && (
             <button onClick={retry}>현재 숙소·객실 정보 다시 조회</button>
           )}
         </>
