@@ -364,9 +364,14 @@ Before completing a change:
   cancellation results. Reservation names come from current public Room/Accommodation
   lookups, not historical snapshots. Do not infer cancellation eligibility or a
   fee quote from browser time; the response has no such fields. Change/cancel
-  execution and admin UI remain roadmap work. See
-  `docs/testing/frontend-my-reservations.md` and
-  `docs/testing/frontend-reservation-detail.md` for contracts and verification.
+  execution and admin UI remain roadmap work. CONFIRMED reservations support
+  a read-only schedule-change preparation form with fixed room/guest count.
+  General availability does not exclude the owner's existing occupancy: do not
+  treat a missing room as change denial or a listed room as guaranteed success.
+  The change API is the final authority; do not correct inventory in the browser.
+  See `docs/testing/frontend-my-reservations.md`,
+  `docs/testing/frontend-reservation-detail.md`, and
+  `docs/testing/frontend-reservation-change-availability.md` for contracts and verification.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
