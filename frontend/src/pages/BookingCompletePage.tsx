@@ -59,6 +59,7 @@ function BookingComplete({ id }: { id: number }) {
         </>
       )}
       <Link to={routePaths.accommodations}>숙소 검색으로 돌아가기</Link>
+      <Link to={routePaths.reservations}>내 예약 목록 확인</Link>
     </section>
   )
 }

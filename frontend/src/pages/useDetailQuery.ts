@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { ApiError } from '../api/errors'
 
 type QueryState<T> =
-  { status: 'loading' } | { status: 'success'; data: T } | { status: 'error'; notFound: boolean }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; notFound: boolean; error: unknown }
 
 // Caller supplies a stable callback. Responses belong only to that callback/retry.
 export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>) {
@@ -27,6 +29,7 @@ export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>) {
             state: {
               status: 'error',
               notFound: error instanceof ApiError && error.category === 'not_found',
+              error,
             },
           })
       },

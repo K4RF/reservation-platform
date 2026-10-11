@@ -14,3 +14,9 @@ export function bookingCompletePath(reservationId: number): string {
     throw new RangeError('Invalid reservation ID')
   return `${routePaths.reservations}/${reservationId}/complete`
 }
+
+export function reservationDetailPath(reservationId: number): string {
+  if (!Number.isSafeInteger(reservationId) || reservationId < 1)
+    throw new RangeError('Invalid reservation ID')
+  return `${routePaths.reservations}/${reservationId}`
+}
