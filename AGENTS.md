@@ -360,10 +360,13 @@ Before completing a change:
   See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
   non-destructive local demo preparation. `/reservations` now loads the owner's
   offset-paginated history; `/reservations/:reservationId` provides a read-only
-  summary landing. Reservation names come from current public Room/Accommodation
-  lookups, not historical snapshots. Full detail/change/cancel and admin UI remain
-  roadmap work. See `docs/testing/frontend-my-reservations.md` for the #197 contract,
-  verification, and follow-up scope.
+  detail with saved guest, per-night price, cancellation-policy snapshots, and
+  cancellation results. Reservation names come from current public Room/Accommodation
+  lookups, not historical snapshots. Do not infer cancellation eligibility or a
+  fee quote from browser time; the response has no such fields. Change/cancel
+  execution and admin UI remain roadmap work. See
+  `docs/testing/frontend-my-reservations.md` and
+  `docs/testing/frontend-reservation-detail.md` for contracts and verification.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
