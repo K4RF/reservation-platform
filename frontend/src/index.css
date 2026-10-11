@@ -595,6 +595,58 @@ form[aria-label='대표 투숙객 정보'] {
     grid-column: 1 / -1;
   }
 }
+
+.reservation-list {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+.my-reservations-page,
+.reservation-detail-page {
+  width: min(100%, 60rem);
+  min-width: 0;
+  text-align: left;
+}
+.reservation-card {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.reservation-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.reservation-card-header h2 {
+  margin: 0;
+}
+.reservation-status {
+  padding: 0.4rem 0.75rem;
+  border-radius: 1rem;
+  background: #e2f3ed;
+  color: #205c4d;
+}
+.reservation-status-cancelled {
+  background: #f2ece7;
+  color: #655044;
+}
+.reservation-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  gap: 1rem;
+}
+.reservation-facts dt {
+  color: #536760;
+}
+.reservation-facts dd {
+  margin: 0.4rem 0 0;
+}
 @media (max-width: 40rem) {
   form[aria-label='숙소 검색 조건'] {
     grid-template-columns: minmax(0, 1fr);

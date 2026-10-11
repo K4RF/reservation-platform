@@ -10,9 +10,15 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 완료했습니다. f0.2.0은 Issue #161–#168 / PR #169–#176을 통해 Signup,
 이메일/Google 로그인, 메모리 Token Pair, single-flight 재발급, Logout,
 Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
-`f0.3.0 — Accommodation Search & Booking`은 #178 숙소 검색·목록부터 진행 중입니다.
+`f0.3.0 — Accommodation Search & Booking`도 완료했습니다. GitHub Milestone #14의
+Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니다.
+공개 검색·URL Pagination·상세/객실·날짜/인원 가용성·예상 요금·로그인 문맥 재검증·
+대표 투숙객 입력/확인·예약 POST·서버 ID 완료 GET을 연결했습니다.
+다음은 `f0.4.0 — Reservation Management`(Next), `f0.5.0` Admin과 `f0.6.0` 통합/UX는 Planned입니다.
+f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
+두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
 전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 예약·관리
-전체 기능 화면은 아직 없습니다(예약 생성/완료 화면은 #184까지 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
+전체 기능 화면은 아직 없습니다(예약 생성/완료 화면은 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
 ## 요구 환경
@@ -312,9 +318,28 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
+공개 Accommodation Search/Detail, 인증된 Reservation Complete Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
 조회, 내 예약 관리·관리자 전체 기능은 후속 Frontend 이슈 범위입니다.
+
+### f0.3.0 검증 상태 (2026-10-09 문서 동기화)
+
+`pnpm lint`, `format:check`, `typecheck`, `test`(43 files / 361 tests), `build`를
+이번 작업에서 직접 실행해 성공했습니다. Backend Security/OpenAPI/Availability/DailyPrice 관련
+4개 Suite 실행은 Redis `localhost:6380` 연결 실패로 Context 초기화가 실패하여 24건 실패했습니다.
+Docker 엔진도 접근 불가이며 Backend 전체 test/build·실제 Google/로그인→예약 생성 Browser E2E는
+이번에 실행하지 않았습니다. 병합 HEAD `0417d68`의
+[Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/37736029014)·
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/37736029016)는 success입니다.
+10/08 Repository의 공개 API·브라우저/모바일 기록과 신규 실행·HTTP Mock 검증은 구분합니다.
+
+정책 GET, 결제/환불 완료, 서버 생성 Idempotency, 지속 인증 복원, 최종 디자인 검수는 완료 범위가
+아닙니다. 예상 요금은 Backend 확정 Snapshot과 다르며 제출 UI 잠금은 Backend 동시성 제어가 아닙니다.
+
+현재 `bookingFailure`는 `503 INVENTORY_013`의 직접 재시도를 허용합니다. Backend Redis
+Wrapper의 예외 범위는 해제까지 포함하므로 Commit 이후 unlock 실패도 503이 될 수 있습니다.
+이 코드만으로 미생성을 보장하지 않으며 오류 시점 구분·서버 Idempotency는 후속 검토입니다.
 
 ## 숙소 검색·목록 (#178)
 

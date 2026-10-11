@@ -403,9 +403,11 @@ Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 `/signup` 회원가입과 `/login` 이메일/Google 로그인 화면, Header 로그아웃, 메모리 Access Token 기반 API 인증을
 구현했습니다. Access Token 자동 재발급, Protected/Role Route와 로그인 후 원래 경로 복귀도
 구현했습니다. `/reservations`는 USER/ADMIN, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
-실제 검색·예약·관리 화면과 새로고침 후 지속 인증 복원은 아직 없습니다.
+숙소 검색·상세·가용성·예상 요금·대표 투숙객 입력·예약 생성/완료 화면은 구현됐습니다.
+내 예약 목록·변경·취소 및 관리자 전체 UI와 새로고침 후 지속 인증 복원은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue 및
-8개 PR 완료)입니다. 다음 Frontend Phase는 `f0.3.0`이며 `f0.3.0`~`f0.6.0`은 Open/Planned입니다.
+8개 PR 완료), `f0.3.0`은 Closed(10개 Issue 및 10개 PR 완료)입니다.
+다음 Frontend Phase는 `f0.4.0 — Reservation Management`이며 `f0.5.0`·`f0.6.0`은 Planned입니다.
 인증 통합 테스트는 HTTP 경계를 Mock으로 대체합니다. 실제 Backend·Redis·Google을
 연결한 브라우저 E2E는 별도 미검증이며 Milestone 완료와 구분합니다.
 
@@ -420,10 +422,10 @@ GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue �
 | Backend Architecture | v0.4.0 — Event-Driven Processing | Completed | Kafka·Outbox·Consumer 멱등성·제한 Retry·DLT 및 예약 생명주기 통합 검증; 운영 Cleanup·외부 연동은 후속 과제 |
 | Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
 | Frontend | f0.2.0 — Authentication & User Flow | Completed | Signup·이메일/Google 로그인·메모리 Token Pair·single-flight 재발급·Logout·Protected/Role Route·통합 테스트; 지속 복원/Profile/E2E는 별도 과제 |
-| Frontend | f0.3.0 — Accommodation Search & Booking | Next / Planned | 인증 기반 위에 검색부터 예약 생성까지 연결 |
-| Frontend | f0.4.0 — Reservation Management | Planned | 예약 조회·변경·취소 UI |
+| Frontend | f0.3.0 — Accommodation Search & Booking | Completed | 공개 검색·URL Pagination·상세·가용성·예상 요금·로그인 문맥 재검증·예약 생성/완료 |
+| Frontend | f0.4.0 — Reservation Management | Next / Planned | 본인 예약 목록·상세·변경·취소 UI |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
-| Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 검증 |
+| Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 및 최종 사용자 직접 수동 색상·시각·반응형 검수 Issue 계획 |
 | Platform | v0.5.0 — Performance & Load Testing | Planned | 실제 사용자 Flow 기반 부하·병목 측정 |
 | Platform | v0.6.0 — Observability & Reliability | Planned | 시스템 상태와 장애 징후의 지속 관측 |
 | Production | v1.0.0 — Production Deployment | Planned | 검증된 Full-Stack 시스템 배포 |
@@ -634,8 +636,10 @@ Consumer Retry·DLT 및 중복 처리 방지 검증 범위는
 [`Kafka Failure Scenarios`](docs/testing/kafka-failure-scenarios.md)에 정리했습니다.
 운영 Broker 중단·복구 실험, DLT 수동 Replay 도구, Outbox·처리 이력 Cleanup과 외부 후처리
 연동은 아직 구현되지 않았습니다. Frontend `f0.1.0` Foundation과
-`f0.2.0 — Authentication & User Flow`도 완료했으며 다음 Frontend Phase는
-`f0.3.0 — Accommodation Search & Booking`입니다.
+`f0.2.0 — Authentication & User Flow`와 `f0.3.0 — Accommodation Search & Booking`도
+완료했습니다. f0.3.0은 기존 인증 기반 위에 공개 검색 → 상세/가용성 → 예상 요금 →
+로그인 후 가용성 재검증 → 대표 투숙객 입력/확인 → 예약 생성 → 서버 ID 완료 조회를
+연결했습니다. 다음 Frontend Phase는 `f0.4.0 — Reservation Management`입니다.
 Frontend와 Backend/Platform은 별도 Track입니다. 실제 사용자 Flow 기반
 Performance Test는 필요한 UI 흐름과 연결된 뒤 수행할 계획이며,
 Observability·Production도 계획 상태입니다.
@@ -960,13 +964,15 @@ Mock 검증과 실제 Backend/Google·원격 CI 확인은 별도입니다.
 실제 Backend 연결 검증과 HTTP Mock 검증은 구분합니다.
 
 #180은 숙소 상세와 객실 목록을 실제 DTO 기준으로 표시합니다. 객실 Capacity·기본 1박 가격·
-편의시설·상태와 객실 페이지 이동을 제공하며 날짜별 가격·예약 가능 여부·예약 생성은 후속 범위입니다.
+편의시설·상태와 객실 페이지 이동을 제공합니다. #180 당시 후속이었던 날짜별 가격·
+예약 가능 여부·예약 생성은 이후 #181–#184에서 연결했습니다.
 숙소 정책은 현재 조회 API가 없어 조회 제한만 안내합니다. 실제 Backend 연동 확인 절차와 자동 검증
 경계는 [`frontend/README.md`](frontend/README.md)에 정리했습니다.
 
 #181은 상세 화면에 날짜·인원 기반 가용 객실 조회 및 선택을 연결합니다. Backend 가용성 API를
 기준으로 표시하며 날짜/인원/숙소 변경 시 결과와 선택을 초기화합니다. 재고 수량 계산·날짜별
-가격/총액 조회·예약 생성은 수행하지 않습니다. HTTP Mock 검증과 실제 Backend 확인은 구분합니다.
+가격/총액 조회·예약 생성은 이 가용성 Component의 책임이 아닙니다.
+후속 요금/Booking Component가 연결하며 HTTP Mock 검증과 실제 Backend 확인은 구분합니다.
 
 #182는 선택 객실의 각 숙박일에 Backend 적용 요금을 조회하고 날짜별 출처와 단순 예상 합계를
 예약 요약으로 표시합니다. 자체 fallback·세금·Add-on 정책은 없으며 최종 금액은 예약 생성 시
@@ -974,7 +980,7 @@ Backend가 다시 계산합니다. 일별 조회 합계는 가격 보장이나 �
 
 #183은 가용 객실 선택에 대표 투숙객의 이름·이메일·연락처 입력과 제출 전 확인을 연결합니다.
 Booking State는 Auth와 분리된 화면 메모리에만 유지하며 조건 변경·이탈·새로고침 시 폐기합니다.
-실제 Backend DTO 필드만 다루고 예약 생성 API 호출은 후속 작업입니다.
+실제 Backend DTO 필드만 다루며 예약 생성 API 호출은 #184에서 별도 제출 Component로 연결했습니다.
 
 #184는 예약 생성 POST와 인증된 `/reservations/{id}/complete` 결과 조회를 연결합니다.
 서버 확정 금액·예약 번호를 표시하고 중복 클릭 및 불명 실패의 자동 재전송을 차단합니다.
@@ -983,6 +989,35 @@ HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 현재 �
 #185는 검색부터 예약 완료 GET까지의 Frontend 통합 검증과 작은 공통 구조 정리를 마무리합니다.
 기존 개별 테스트를 재사용한 Coverage Matrix, 상태 책임과 f0.4.0 Reservation 식별 계약은
 [`Frontend Search & Booking Flow`](docs/testing/frontend-search-booking-flow.md)에 있습니다.
+
+### f0.3.0 완료 검증과 남은 범위
+
+GitHub Milestone #14는 Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이
+완료됐습니다. `closed_issues=20`은 PR을 포함한 수치입니다. #195에서 6개 카탈로그
+GET을 공개로 전환하고 Swagger 인증 선언을 맞췄으며 Entity/Schema/예약 DTO·Domain은
+변경하지 않았습니다. Frontend는 Redis/Kafka에 직접 접근하지 않고 기존 Backend의
+Room Lock·Optimistic Retry·Snapshot·Outbox 경로를 사용합니다. 상세 Response Cache와
+실시간 가용성/가격 조회를 구분합니다.
+
+예상 합계는 가격 보장이 아니며 확정 금액은 Backend의 `totalAmount`/`nights`입니다.
+예약 POST는 자동 401 Replay나 불명확 결과 재전송을 하지 않습니다. 화면 중복 클릭
+방지는 다중 Tab·재진입 또는 서버 Idempotency를 보장하지 않습니다. 정책 GET, 결제·
+환불 완료, 세금·Add-on, 이미지/평점/리뷰는 구현된 UI 계약이 아닙니다.
+
+현재 Frontend는 `503 INVENTORY_013`을 직접 재시도 가능으로 분류합니다. 그러나 Backend
+Redis Lock Wrapper는 획득뿐 아니라 `finally`의 해제 오류도 감싸므로 Commit 뒤 unlock
+실패도 이 코드로 반환될 수 있습니다. 503만으로 예약 미생성을 보장할 수 없으며,
+오류 시점 구분·Idempotency는 후속 안전성 검토 대상입니다(이번에 실패 재현은 하지 않음).
+
+2026-10-09 문서 동기화에서 Frontend `lint`, `format:check`, `typecheck`, `test`
+(43 files / 361 tests), production `build`를 직접 실행해 성공했습니다. Backend 관련
+4개 Suite는 Redis `localhost:6380` 연결 실패로 Context 초기화가 실패하여 24건 실패했습니다.
+Docker 엔진도 접근 불가여서 Backend 전체 test/build는 이번에 재실행하지 않았습니다.
+병합 HEAD `0417d68`의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/37736029014)와
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/37736029016)는 성공입니다.
+Mock/jsdom 성공·CI·10/08의 공개 탐색 Browser 기록을 실제 Google/로그인→예약 생성 전체
+Browser E2E 성공으로 확대하지 않습니다. 상세 기록과 비파괴 Demo 준비는
+[`Public Exploration & Booking Flow`](docs/testing/public-exploration-booking-flow.md)를 따릅니다.
 HTTP Mock 검증은 실제 Backend/브라우저 및 원격 CI 검증을 대체하지 않습니다.
 
 #195는 공개 탐색 GET과 예약/관리 인증 경계를 분리하고, 인증 상태별 헤더·검색 중심 홈·반응형

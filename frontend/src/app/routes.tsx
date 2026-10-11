@@ -11,6 +11,8 @@ import { ProtectedAreaPage } from '../pages/ProtectedAreaPage'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
 import { BookingCompletePage } from '../pages/BookingCompletePage'
+import { MyReservationsPage } from '../pages/MyReservationsPage'
+import { ReservationDetailPage } from '../pages/ReservationDetailPage'
 
 export function AppRoutes() {
   return (
@@ -27,7 +29,8 @@ export function AppRoutes() {
         </Route>
         <Route element={<ProtectedRoute roles={['USER', 'ADMIN']} />}>
           <Route path={routePaths.reservations}>
-            <Route index element={<ProtectedAreaPage />} />
+            <Route index element={<MyReservationsPage />} />
+            <Route path=":reservationId" element={<ReservationDetailPage />} />
             <Route path=":reservationId/complete" element={<BookingCompletePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

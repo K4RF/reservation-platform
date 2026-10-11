@@ -358,8 +358,12 @@ Before completing a change:
   Login return URLs carry only stay conditions and catalog IDs, never guest data or
   tokens. Always reload availability before restoring a selected room after login.
   See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
-  non-destructive local demo preparation. Reservation-management/admin UI is still
-  roadmap work.
+  non-destructive local demo preparation. `/reservations` now loads the owner's
+  offset-paginated history; `/reservations/:reservationId` provides a read-only
+  summary landing. Reservation names come from current public Room/Accommodation
+  lookups, not historical snapshots. Full detail/change/cancel and admin UI remain
+  roadmap work. See `docs/testing/frontend-my-reservations.md` for the #197 contract,
+  verification, and follow-up scope.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.

@@ -1,5 +1,6 @@
 import type { ReservationResult } from '../api/reservation'
 import type { BookingRequest } from '../api/booking'
+import type { ReservationPageResponse } from '../api/reservationList'
 
 export const bookingRequest: BookingRequest = {
   roomId: 3,
@@ -15,4 +16,22 @@ export const reservationResult: ReservationResult = {
   stayNights: 2,
   totalAmount: 350.25,
   status: 'CONFIRMED',
+}
+
+// Real list endpoint returns the same ReservationResponse as owner detail.
+export function reservationPage(
+  overrides: Partial<Omit<ReservationPageResponse, 'content'>> & {
+    content?: ReservationResult[]
+  } = {},
+) {
+  return {
+    content: [reservationResult],
+    page: 0,
+    size: 20,
+    totalElements: 1,
+    totalPages: 1,
+    first: true,
+    last: true,
+    ...overrides,
+  }
 }
