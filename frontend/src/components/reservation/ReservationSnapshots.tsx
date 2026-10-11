@@ -1,10 +1,17 @@
 import type { ReservationDetail } from '../../api/reservationDetail'
 import { formatMinorUnits, toMinorUnits } from '../../utils/money'
+import { ReservationChangeAvailabilitySection } from './ReservationChangeAvailabilitySection'
 
 const amountLabel = (amount: number | null) =>
   amount === null ? '저장된 정보 없음' : formatMinorUnits(toMinorUnits(amount, 19))
 
-export function ReservationSnapshots({ reservation }: { reservation: ReservationDetail }) {
+export function ReservationSnapshots({
+  reservation,
+  accommodationId,
+}: {
+  reservation: ReservationDetail
+  accommodationId: number | null
+}) {
   const { representativeGuest: guest, cancellationPolicySnapshot: policy } = reservation
   return (
     <>
@@ -114,9 +121,10 @@ export function ReservationSnapshots({ reservation }: { reservation: Reservation
       ) : (
         <section className="reservation-card" aria-labelledby="reservation-actions-heading">
           <h2 id="reservation-actions-heading">예약 관리</h2>
-          <button type="button" disabled>
-            예약 일정 변경 (준비 중)
-          </button>{' '}
+          <ReservationChangeAvailabilitySection
+            reservation={reservation}
+            accommodationId={accommodationId}
+          />{' '}
           <button type="button" disabled>
             예약 취소 (준비 중)
           </button>

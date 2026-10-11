@@ -7,7 +7,7 @@ import { clearAccessToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
 import { reservationDetail } from '../test/reservation'
 import { accommodation } from '../test/accommodation'
-import { room } from '../test/room'
+import { room, roomPage } from '../test/room'
 
 function signIn() {
   setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
@@ -56,9 +56,9 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect(screen.getByText('체크인 7일 전 이상: 무료 취소')).toBeTruthy()
     expect(screen.getByText('체크인 3–6일 전: 예약 총액의 30% 수수료')).toBeTruthy()
     expect(screen.getByText('체크인 1–2일 전: 예약 총액의 50% 수수료')).toBeTruthy()
-    expect(screen.getByRole('button', { name: '예약 일정 변경 (준비 중)' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: '예약 일정 변경 준비' })).toHaveProperty(
       'disabled',
-      true,
+      false,
     )
     expect(screen.getByRole('button', { name: '예약 취소 (준비 중)' })).toHaveProperty(
       'disabled',
@@ -216,6 +216,32 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     act(() => clearAccessToken())
     expect(screen.queryByText('guest@example.com')).toBeNull()
     expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+  })
+  it('opens date preparation from owner detail and keeps snapshots after advisory unavailability', async () => {
+    signIn()
+    const mock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        url.includes('/rooms/available?')
+          ? Response.json(roomPage({ content: [], totalElements: 0, totalPages: 0 }))
+          : respond(url),
+      )
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
+    fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
+    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+    fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
+    await screen.findByText('현재 객실이 일반 신규 예약 가능 목록에 없습니다.')
+    expect(screen.getByText('guest@example.com')).toBeTruthy()
+    expect(screen.getByText('350.25')).toBeTruthy()
+    expect(screen.getByText('현재 예약 일정: 2030-01-01 ~ 2030-01-03')).toBeTruthy()
+    expect(screen.getByText(/이 결과만으로 변경을 차단하지/)).toBeTruthy()
+    const ownerGet = mock.mock.calls.find(([url]) => url.endsWith('/reservations/42'))!
+    const availabilityGet = mock.mock.calls.find(([url]) => url.includes('/rooms/available?'))!
+    expect(new Headers(ownerGet[1].headers).has('Authorization')).toBe(true)
+    expect(new Headers(availabilityGet[1].headers).has('Authorization')).toBe(false)
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
   })
   it('remounts and reloads private detail after a new authenticated session', async () => {
     signIn()

@@ -997,6 +997,12 @@ HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 내 예�
 계약·테스트·실제 HTTP 확인 및 브라우저 수동 절차는
 [`예약 상세 검증`](docs/testing/frontend-reservation-detail.md)에 있습니다.
 
+#199는 확정 예약 상세에서 객실·인원을 유지한 새 일정 입력과 일반 가용성 재조회를 제공합니다.
+일반 조회는 기존 예약 점유를 제외하지 않으므로 현재 객실이 목록에 없어도 변경 불가로
+단정하지 않습니다. 날짜 수정 시 이전 결과를 폐기하고 변경 실행은 아직 요청하지 않습니다.
+최종 판단은 Backend PATCH 변경 API가 수행하며 계약과 실제 HTTP 확인은
+[`일정 변경 준비 검증`](docs/testing/frontend-reservation-change-availability.md)에 있습니다.
+
 ### f0.3.0 완료 검증과 남은 범위
 
 GitHub Milestone #14는 Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이

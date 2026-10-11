@@ -28,7 +28,12 @@ function ReservationDetail({ id }: { id: number }) {
       const detail = await getReservationDetail(id, signal)
       const result = toReservationSummary(detail)
       const catalog = await getReservationCatalog([result], signal)
-      return { detail, card: toReservationCard(result, catalog.get(result.roomId)) }
+      const roomCatalog = catalog.get(result.roomId)
+      return {
+        detail,
+        card: toReservationCard(result, roomCatalog),
+        accommodationId: roomCatalog?.accommodationId ?? null,
+      }
     },
     [id],
   )
@@ -47,7 +52,10 @@ function ReservationDetail({ id }: { id: number }) {
             숙소·객실 이름은 현재 정보입니다. 금액은 예약 Snapshot이며 결제 완료를 의미하지
             않습니다.
           </p>
-          <ReservationSnapshots reservation={state.data.detail} />
+          <ReservationSnapshots
+            reservation={state.data.detail}
+            accommodationId={state.data.accommodationId}
+          />
           {state.data.card.catalogUnavailable && (
             <button onClick={retry}>현재 숙소·객실 정보 다시 조회</button>
           )}
