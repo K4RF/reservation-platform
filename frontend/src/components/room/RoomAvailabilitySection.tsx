@@ -1,6 +1,8 @@
-import { useCallback, useState, type FormEvent } from 'react'
+import { useCallback, useState } from 'react'
 import { getAvailableRooms } from '../../api/room'
-import { validateAvailability, type AvailabilityRequest } from '../../api/availabilityValidation'
+import type { AvailabilityRequest } from '../../api/availabilityValidation'
+import { useAvailabilityForm } from './useAvailabilityForm'
+import { StayDateFields } from './StayDateFields'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
@@ -44,46 +46,15 @@ function AvailabilityForm({
   initialContext,
   onLoginRequired,
 }: AvailabilityProps) {
-  const [draft, setDraft] = useState({
-    checkInDate: initialContext?.stay.checkInDate ?? '',
-    checkOutDate: initialContext?.stay.checkOutDate ?? '',
-    guestCount: String(initialContext?.stay.guestCount ?? 1),
-  })
-  const [request, setRequest] = useState<AvailabilityRequest | null>(initialContext?.stay ?? null)
-  const [error, setError] = useState('')
-  const [revision, setRevision] = useState(0)
-  function change(field: keyof typeof draft, value: string) {
-    setDraft((current) => ({ ...current, [field]: value }))
-    setRequest(null)
-    setError('')
-  }
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const next = { ...draft, guestCount: Number(draft.guestCount) }
-    const message = validateAvailability(next)
-    setError(message ?? '')
-    setRequest(message ? null : next)
-    setRevision((value) => value + 1)
-  }
+  const { draft, request, error, revision, change, submit } = useAvailabilityForm(
+    initialContext?.stay ?? null,
+  )
   return (
     <section aria-labelledby="availability-title">
       <h2 id="availability-title">예약 가능한 객실 조회</h2>
       <p>조회 시점의 가용성입니다. 최종 예약 시 Backend가 재고와 가격을 다시 검증합니다.</p>
       <form className="accommodation-search-form" onSubmit={submit} aria-label="객실 가용성 조건">
-        {(['checkInDate', 'checkOutDate'] as const).map((field, index) => (
-          <div className="form-field" key={field}>
-            <label htmlFor={`availability-${field}`}>
-              {['숙박 체크인', '숙박 체크아웃'][index]}
-            </label>
-            <input
-              id={`availability-${field}`}
-              type="date"
-              required
-              value={draft[field]}
-              onChange={(event) => change(field, event.target.value)}
-            />
-          </div>
-        ))}
+        <StayDateFields prefix="availability" draft={draft} onChange={change} />
         <div className="form-field">
           <label htmlFor="availability-guests">숙박 인원</label>
           <input
