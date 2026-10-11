@@ -120,7 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
-| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Token/재발급, 공개 숙소 탐색·예약 생성/완료 조회; 내 예약 관리·관리자 UI는 후속 범위 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Token/재발급, 공개 숙소 탐색·예약 생성/완료·본인 목록/상세 Snapshot 조회; 변경·취소 실행·관리자 UI는 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -402,12 +402,12 @@ reservation-platform/
 Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 `/signup` 회원가입과 `/login` 이메일/Google 로그인 화면, Header 로그아웃, 메모리 Access Token 기반 API 인증을
 구현했습니다. Access Token 자동 재발급, Protected/Role Route와 로그인 후 원래 경로 복귀도
-구현했습니다. `/reservations`는 USER/ADMIN, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
+구현했습니다. `/reservations`는 USER/ADMIN의 본인 예약 목록·상세를 제공하고, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
 숙소 검색·상세·가용성·예상 요금·대표 투숙객 입력·예약 생성/완료 화면은 구현됐습니다.
-내 예약 목록·변경·취소 및 관리자 전체 UI와 새로고침 후 지속 인증 복원은 아직 없습니다.
+예약 변경·취소 실행 및 관리자 전체 UI와 새로고침 후 지속 인증 복원은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue 및
 8개 PR 완료), `f0.3.0`은 Closed(10개 Issue 및 10개 PR 완료)입니다.
-다음 Frontend Phase는 `f0.4.0 — Reservation Management`이며 `f0.5.0`·`f0.6.0`은 Planned입니다.
+현재 Frontend Phase는 `f0.4.0 — Reservation Management`이며 `f0.5.0`·`f0.6.0`은 Planned입니다.
 인증 통합 테스트는 HTTP 경계를 Mock으로 대체합니다. 실제 Backend·Redis·Google을
 연결한 브라우저 E2E는 별도 미검증이며 Milestone 완료와 구분합니다.
 
@@ -423,7 +423,7 @@ GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue �
 | Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
 | Frontend | f0.2.0 — Authentication & User Flow | Completed | Signup·이메일/Google 로그인·메모리 Token Pair·single-flight 재발급·Logout·Protected/Role Route·통합 테스트; 지속 복원/Profile/E2E는 별도 과제 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Completed | 공개 검색·URL Pagination·상세·가용성·예상 요금·로그인 문맥 재검증·예약 생성/완료 |
-| Frontend | f0.4.0 — Reservation Management | Next / Planned | 본인 예약 목록·상세·변경·취소 UI |
+| Frontend | f0.4.0 — Reservation Management | In Progress | 본인 예약 목록·상세 Snapshot 조회 구현; 변경·취소 실행 UI는 후속 |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
 | Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 및 최종 사용자 직접 수동 색상·시각·반응형 검수 Issue 계획 |
 | Platform | v0.5.0 — Performance & Load Testing | Planned | 실제 사용자 Flow 기반 부하·병목 측정 |
@@ -984,11 +984,18 @@ Booking State는 Auth와 분리된 화면 메모리에만 유지하며 조건 �
 
 #184는 예약 생성 POST와 인증된 `/reservations/{id}/complete` 결과 조회를 연결합니다.
 서버 확정 금액·예약 번호를 표시하고 중복 클릭 및 불명 실패의 자동 재전송을 차단합니다.
-HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 현재 내 예약 목록은 후속 범위입니다.
+HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 내 예약 목록/상세는 이후 #197–#198에서 연결했습니다.
 
 #185는 검색부터 예약 완료 GET까지의 Frontend 통합 검증과 작은 공통 구조 정리를 마무리합니다.
 기존 개별 테스트를 재사용한 Coverage Matrix, 상태 책임과 f0.4.0 Reservation 식별 계약은
 [`Frontend Search & Booking Flow`](docs/testing/frontend-search-booking-flow.md)에 있습니다.
+
+#197–#198은 `/reservations` 본인 목록과 `/reservations/:reservationId` 상세를 연결합니다.
+상세는 대표 투숙객·첫 숙박일/일별 확정 가격·저장된 취소 정책·현재 예약 상태와 취소 결과를
+표시합니다. 숙소·객실 이름은 현재 카탈로그이며 과거 null 정보는 추정하지 않습니다.
+사전 취소 견적/가능 여부는 응답에 없고 변경·취소 실행은 후속 범위입니다.
+계약·테스트·실제 HTTP 확인 및 브라우저 수동 절차는
+[`예약 상세 검증`](docs/testing/frontend-reservation-detail.md)에 있습니다.
 
 ### f0.3.0 완료 검증과 남은 범위
 

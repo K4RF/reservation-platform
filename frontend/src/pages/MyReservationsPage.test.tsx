@@ -5,7 +5,7 @@ import { AppRoutes } from '../app/routes'
 import { AuthProvider } from '../state/AuthProvider'
 import { setTokenPair, clearAccessToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
-import { reservationPage, reservationResult } from '../test/reservation'
+import { reservationDetail, reservationPage, reservationResult } from '../test/reservation'
 import { accommodation } from '../test/accommodation'
 import { room } from '../test/room'
 
@@ -46,7 +46,7 @@ describe('My Reservation flow with real router/auth/API client', () => {
           url.includes('/reservations?')
             ? Response.json(reservationPage())
             : url.endsWith('/reservations/42')
-              ? Response.json(reservationResult)
+              ? Response.json(reservationDetail)
               : catalogResponse(url),
         )
       vi.stubGlobal('fetch', mock)

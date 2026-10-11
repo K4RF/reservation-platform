@@ -616,6 +616,9 @@ form[aria-label='대표 투숙객 정보'] {
   background: #fff;
   overflow-wrap: anywhere;
 }
+.reservation-detail-page > .reservation-card {
+  margin-block: 1rem;
+}
 .reservation-card-header {
   display: flex;
   align-items: center;

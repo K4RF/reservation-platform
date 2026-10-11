@@ -14,11 +14,12 @@ Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
 Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니다.
 공개 검색·URL Pagination·상세/객실·날짜/인원 가용성·예상 요금·로그인 문맥 재검증·
 대표 투숙객 입력/확인·예약 POST·서버 ID 완료 GET을 연결했습니다.
-다음은 `f0.4.0 — Reservation Management`(Next), `f0.5.0` Admin과 `f0.6.0` 통합/UX는 Planned입니다.
+`f0.4.0 — Reservation Management`는 진행 중이며 #197 본인 목록과 #198 상세 Snapshot 조회를 구현했습니다.
+`f0.5.0` Admin과 `f0.6.0` 통합/UX는 Planned입니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
 전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 예약·관리
-전체 기능 화면은 아직 없습니다(예약 생성/완료 화면은 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
+전체 기능 화면은 아직 없습니다(예약 생성/완료·본인 목록/상세 조회는 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
 ## 요구 환경
@@ -91,21 +92,23 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
 표시됩니다. Footer는 공통 서비스 안내를 표시합니다.
 
-| 경로                               | 현재 동작                          |
-| ---------------------------------- | ---------------------------------- |
-| `/`                                | Home 페이지                        |
-| `/signup`                          | 이메일·비밀번호 회원가입           |
-| `/login`                           | 이메일·비밀번호 및 Google 로그인   |
-| `/oauth2/callback`                 | Google 인증 결과 처리              |
-| `/accommodations`                  | 비로그인 숙소 검색·목록            |
-| `/accommodations/:accommodationId` | 숙소 상세·객실 목록 조회           |
-| `/reservations`                    | `USER`/`ADMIN` 보호 영역 진입 안내 |
-| `/admin`                           | `ADMIN` 보호 영역 진입 안내        |
-| 그 외 경로 (`*`)                   | 공통 Layout 안의 Not Found 페이지  |
+| 경로                                    | 현재 동작                           |
+| --------------------------------------- | ----------------------------------- |
+| `/`                                     | Home 페이지                         |
+| `/signup`                               | 이메일·비밀번호 회원가입            |
+| `/login`                                | 이메일·비밀번호 및 Google 로그인    |
+| `/oauth2/callback`                      | Google 인증 결과 처리               |
+| `/accommodations`                       | 비로그인 숙소 검색·목록             |
+| `/accommodations/:accommodationId`      | 숙소 상세·객실 목록 조회            |
+| `/reservations`                         | `USER`/`ADMIN` 본인 예약 목록       |
+| `/reservations/:reservationId`          | 본인 예약 상세·저장된 Snapshot 조회 |
+| `/reservations/:reservationId/complete` | 예약 생성 결과 본인 조회            |
+| `/admin`                                | `ADMIN` 보호 영역 진입 안내         |
+| 그 외 경로 (`*`)                        | 공통 Layout 안의 Not Found 페이지   |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다.
 `ProtectedRoute`의 중첩 Route가 `/reservations`와 `/admin` 및 각 하위 경로를 보호합니다.
-두 진입 화면은 접근 확인 안내만 제공하며 실제 예약 조회·관리 API는 아직 연결하지 않습니다.
+본인 예약 조회는 연결되어 있으며 `/admin`만 접근 확인 안내를 제공합니다. 예약 변경·취소 실행 및 관리자 관리 API 화면은 후속 범위입니다.
 등록되지 않은 하위 경로도 먼저 인증·역할 검사 후 Not Found를 표시합니다.
 숙소 검색·상세·객실 가용성·요금은 공개 탐색입니다. 익명은 선택 후 로그인해야 투숙객 입력/예약을
 진행할 수 있습니다. 공개 GET은 토큰을 보내지 않으며 예약 POST/본인 GET의 Bearer는 유지합니다.
@@ -570,8 +573,8 @@ HTTP 응답만 Mock하며 실제 Backend 생성이나 개발 DB 변경은 수행
 Backend에는 생성 Idempotency Key/클라이언트 요청 ID 조회가 없습니다. UI 잠금은 현재 화면에서의
 중복 클릭 방지일 뿐 새 탭/화면 재진입의 중복 생성을 보장하지 않습니다. 화면 이탈 후에도 전송된
 POST는 서버에서 완료될 수 있으며 클라이언트 취소가 롤백을 의미하지 않습니다. 이탈/로그아웃 후
-늦은 응답은 기존 화면으로 이동시키지 않습니다. 현재 내 예약 목록 Frontend는 후속 작업이므로
-불명 결과 확인은 Backend 본인 예약 조회/Swagger 또는 운영 확인이 필요합니다.
+늦은 응답은 기존 화면으로 이동시키지 않습니다. #197의 내 예약 목록에서 서버 기록을 확인할 수 있으나
+생성 요청 ID 조회 계약이 없으므로 목록만으로 불명 요청의 결과를 확정할 수 없습니다. 필요하면 운영 확인이 필요합니다.
 
 자동 검증은 실제 Client의 Body/Bearer/401 무재전송·응답 계약·도메인 오류·중복 클릭·수동 재시도·
 불명 결과 잠금·늦은 응답 무시·완료 GET/잘못된 ID/권한/404/취소 상태 및
@@ -594,3 +597,21 @@ HTTP 경계만 Mock하며 실제 Backend/브라우저/원격 CI 검증과는 구
 
 커버리지 Matrix, Search/Booking/Auth 책임, f0.4.0 서버 ID·공개 번호 계약과 실제 연동 절차는
 [`Frontend Search & Booking Flow`](../docs/testing/frontend-search-booking-flow.md)에 정리했습니다.
+
+## 본인 예약 목록·상세 (#197–#198)
+
+`/reservations`에서 본인 예약을 페이지별로 조회하고 숫자 ID로 상세에 진입합니다.
+상세는 `GET /api/v1/reservations/{id}`의 실제 ReservationResponse 중 화면에 필요한
+필드를 `api/reservationDetail.ts`로 검증합니다. 완료/목록의 기존 Projection은 유지합니다.
+대표 투숙객, 첫 숙박일 및 일별 확정 가격, 취소 정책 Snapshot, CONFIRMED/CANCELLED와
+취소 시각(UTC)·적용 수수료·예상 환불 금액을 표시합니다. 취소 결과는 환불 완료가 아닙니다.
+현재 카탈로그 이름과 예약 Snapshot을 구분하고 과거 null/빈 일별 기록을 재계산하지 않습니다.
+createdAt/Add-on, 실시간 취소 가능 여부/견적은 서버 응답에 없어 표시하지 않습니다.
+CONFIRMED에는 변경·취소 준비 중 안내와 비활성 버튼만 제공하고 CANCELLED에는 숨깁니다.
+실제 변경·취소 요청은 후속 이슈에서 구현합니다.
+
+기존 인증/소유권 경계, Loading/Error/Retry, 세션 변경·늦은 응답 차단을 유지합니다.
+의존성·환경변수·Workflow 변경은 없으며 기존 CI 명령을 그대로 사용합니다.
+계약, 자동 검증 및 비파괴 수동 확인은
+[`예약 목록`](../docs/testing/frontend-my-reservations.md)과
+[`예약 상세`](../docs/testing/frontend-reservation-detail.md)를 참고하세요.

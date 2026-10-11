@@ -1,6 +1,7 @@
 import type { ReservationResult } from '../api/reservation'
 import type { BookingRequest } from '../api/booking'
 import type { ReservationPageResponse } from '../api/reservationList'
+import type { ReservationDetail } from '../api/reservationDetail'
 
 export const bookingRequest: BookingRequest = {
   roomId: 3,
@@ -16,6 +17,26 @@ export const reservationResult: ReservationResult = {
   stayNights: 2,
   totalAmount: 350.25,
   status: 'CONFIRMED',
+}
+
+export const reservationDetail: ReservationDetail = {
+  ...reservationResult,
+  nightlyPriceSnapshot: 100.1,
+  nights: [
+    { stayDate: '2030-01-01', priceSnapshot: 100.1 },
+    { stayDate: '2030-01-02', priceSnapshot: 250.15 },
+  ],
+  cancellationPolicySnapshot: {
+    freeCancellationDaysBeforeCheckIn: 7,
+    cancellationDeadlineDaysBeforeCheckIn: 1,
+    feeRules: [
+      { minDaysBeforeCheckIn: 3, feeRatePercent: 30 },
+      { minDaysBeforeCheckIn: 1, feeRatePercent: 50 },
+    ],
+  },
+  cancelledAt: null,
+  cancellationFeeAmount: null,
+  refundAmount: null,
 }
 
 // Real list endpoint returns the same ReservationResponse as owner detail.
