@@ -22,6 +22,36 @@ export interface RoomPageResponse {
   last: boolean
 }
 
+function isRoomResponse(room: RoomResponse | undefined): room is RoomResponse {
+  return (
+    !!room &&
+    Number.isSafeInteger(room.roomId) &&
+    room.roomId > 0 &&
+    Number.isSafeInteger(room.accommodationId) &&
+    room.accommodationId > 0 &&
+    typeof room.name === 'string' &&
+    Number.isSafeInteger(room.capacity) &&
+    room.capacity > 0 &&
+    typeof room.nightlyPrice === 'number' &&
+    Number.isFinite(room.nightlyPrice) &&
+    room.nightlyPrice >= 0 &&
+    (room.status === 'ACTIVE' || room.status === 'INACTIVE') &&
+    Array.isArray(room.amenities) &&
+    room.amenities.every((item) => roomAmenities.includes(item))
+  )
+}
+
+export async function getRoom(id: number, signal?: AbortSignal): Promise<RoomResponse> {
+  if (!Number.isSafeInteger(id) || id < 1) throw new RangeError('Invalid room ID')
+  const response = await apiClient.request<RoomResponse>(`/rooms/${id}`, {
+    signal,
+    includeAuth: false,
+  })
+  if (!isRoomResponse(response) || response.roomId !== id)
+    throw new ApiError('객실 상세 응답이 올바르지 않습니다.', { kind: 'unexpected_response' })
+  return response
+}
+
 export async function getAccommodationRooms(
   accommodationId: number,
   page = 0,
@@ -43,20 +73,7 @@ function readRoomPage(
     !response ||
     !Array.isArray(response.content) ||
     !response.content.every(
-      (room) =>
-        room &&
-        Number.isSafeInteger(room.roomId) &&
-        room.roomId > 0 &&
-        room.accommodationId === accommodationId &&
-        typeof room.name === 'string' &&
-        Number.isSafeInteger(room.capacity) &&
-        room.capacity > 0 &&
-        typeof room.nightlyPrice === 'number' &&
-        Number.isFinite(room.nightlyPrice) &&
-        room.nightlyPrice >= 0 &&
-        (room.status === 'ACTIVE' || room.status === 'INACTIVE') &&
-        Array.isArray(room.amenities) &&
-        room.amenities.every((item) => roomAmenities.includes(item)),
+      (room) => isRoomResponse(room) && room.accommodationId === accommodationId,
     ) ||
     !['page', 'size', 'totalElements', 'totalPages'].every((key) => {
       const value = response[key as 'page' | 'size' | 'totalElements' | 'totalPages']

@@ -4,7 +4,7 @@ import type { BookingRequest, RepresentativeGuestRequest } from './booking'
 import { validateAvailability } from './availabilityValidation'
 import { toMinorUnits } from '../utils/money'
 
-// Projection of ReservationResponse fields used by the completion screen (not a new API DTO).
+// Projection of ReservationResponse fields used by reservation reads (not a new API DTO).
 export interface ReservationResult {
   reservationId: number
   reservationNumber: string | null
@@ -18,7 +18,7 @@ export interface ReservationResult {
   status: 'CONFIRMED' | 'CANCELLED'
 }
 
-function readResult(value: ReservationResult | undefined): ReservationResult {
+export function readReservationResult(value: ReservationResult | undefined): ReservationResult {
   if (
     !value ||
     !Number.isSafeInteger(value.reservationId) ||
@@ -30,6 +30,8 @@ function readResult(value: ReservationResult | undefined): ReservationResult {
       (typeof value.reservationNumber === 'string' &&
         /^RSV-\d{8}-[A-F0-9]{16}$/.test(value.reservationNumber))
     ) ||
+    typeof value.checkInDate !== 'string' ||
+    typeof value.checkOutDate !== 'string' ||
     validateAvailability(value) ||
     !Number.isSafeInteger(value.stayNights) ||
     value.stayNights < 1 ||
@@ -55,7 +57,7 @@ function readResult(value: ReservationResult | undefined): ReservationResult {
 
 export async function createReservation(request: BookingRequest): Promise<ReservationResult> {
   // Never replay a non-idempotent POST, including automatic 401 recovery replay.
-  const result = readResult(
+  const result = readReservationResult(
     await apiClient.request<ReservationResult>('/reservations', {
       method: 'POST',
       body: request,
@@ -77,7 +79,7 @@ export async function createReservation(request: BookingRequest): Promise<Reserv
 
 export async function getReservation(id: number, signal?: AbortSignal): Promise<ReservationResult> {
   if (!Number.isSafeInteger(id) || id < 1) throw new RangeError('Invalid reservation ID')
-  const result = readResult(
+  const result = readReservationResult(
     await apiClient.request<ReservationResult>(`/reservations/${id}`, { signal }),
   )
   if (result.reservationId !== id)
