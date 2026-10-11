@@ -10,6 +10,7 @@ import { AuthProvider } from '../state/AuthProvider'
 import { useAuth } from '../state/useAuth'
 import { getAccessToken, getRefreshToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from './jwt'
+import { reservationPage } from './reservation'
 
 // Mock only the HTTP boundary: real forms, API functions/client, token store, Provider and Router.
 function Probe() {
@@ -56,9 +57,16 @@ function submit(name: string) {
   fireEvent.click(screen.getByRole('button', { name }))
 }
 function http(handler: (path: string, init: RequestInit) => Response | Promise<Response>) {
-  const mock = vi.fn(async (url: string, init: RequestInit) =>
-    handler(url.replace('/api/v1', ''), init),
-  )
+  const mock = vi.fn(async (url: string, init: RequestInit) => {
+    const path = url.replace('/api/v1', '')
+    // #197 now loads a real list on entry; keep auth failure injection scoped to
+    // the explicit requests below, rather than racing this background query.
+    if (path.startsWith('/reservations?')) {
+      expect(authorization(init)).toMatch(/^Bearer /)
+      return json(reservationPage({ content: [], totalElements: 0, totalPages: 0 }))
+    }
+    return handler(path, init)
+  })
   vi.stubGlobal('fetch', mock)
   return mock
 }
@@ -279,7 +287,8 @@ describe('authentication user lifecycle (HTTP boundary integration)', () => {
     })
     renderFlow(`/oauth2/callback#code=${'a'.repeat(43)}&state=${start.searchParams.get('state')}`)
     await screen.findByRole('heading', { name: '내 예약' })
-    expect(mock).toHaveBeenCalledOnce()
+    expect(calls(mock, '/auth/oauth2/exchange')).toHaveLength(1)
+    await screen.findByText('표시할 예약이 없습니다.')
     expect(screen.getByTestId('auth').textContent).toBe('authenticated:USER')
     expect(screen.getByTestId('location').textContent).toBe('/reservations?status=CONFIRMED')
     expect(sessionStorage.length).toBe(0)
