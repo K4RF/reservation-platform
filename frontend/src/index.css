@@ -324,6 +324,16 @@ p {
   min-height: 1.25rem;
 }
 
+.accommodation-search-form fieldset.reservation-change-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: inherit;
+  gap: inherit;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
 .accommodation-detail-page section {
   margin: 2rem 0;
   overflow-wrap: anywhere;

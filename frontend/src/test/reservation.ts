@@ -39,6 +39,18 @@ export const reservationDetail: ReservationDetail = {
   refundAmount: null,
 }
 
+export const changedReservationDetail: ReservationDetail = {
+  ...reservationDetail,
+  checkInDate: '2030-01-02',
+  checkOutDate: '2030-01-04',
+  nightlyPriceSnapshot: 250.15,
+  totalAmount: 550.15,
+  nights: [
+    { stayDate: '2030-01-02', priceSnapshot: 250.15 },
+    { stayDate: '2030-01-03', priceSnapshot: 300 },
+  ],
+}
+
 // Real list endpoint returns the same ReservationResponse as owner detail.
 export function reservationPage(
   overrides: Partial<Omit<ReservationPageResponse, 'content'>> & {

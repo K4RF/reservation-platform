@@ -8,18 +8,18 @@ import { useAvailabilityForm } from '../room/useAvailabilityForm'
 import { StayDateFields } from '../room/StayDateFields'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
+import { ReservationChangeConfirmation } from './ReservationChangeConfirmation'
 
-type ChangeReservation = Pick<
-  ReservationDetail,
-  'reservationId' | 'roomId' | 'guestCount' | 'checkInDate' | 'checkOutDate' | 'status'
->
+type ChangeReservation = ReservationDetail
 
 export function ReservationChangeAvailabilitySection({
   reservation,
   accommodationId,
+  onRefresh,
 }: {
   reservation: ChangeReservation
   accommodationId: number | null
+  onRefresh?: (changed?: ReservationDetail) => void
 }) {
   if (reservation.status !== 'CONFIRMED') return null
   return (
@@ -27,6 +27,7 @@ export function ReservationChangeAvailabilitySection({
       key={`${reservation.reservationId}:${accommodationId}:${reservation.roomId}:${reservation.guestCount}:${reservation.checkInDate}:${reservation.checkOutDate}`}
       reservation={reservation}
       accommodationId={accommodationId}
+      onRefresh={onRefresh}
     />
   )
 }
@@ -34,16 +35,19 @@ export function ReservationChangeAvailabilitySection({
 function ChangePreparation({
   reservation,
   accommodationId,
+  onRefresh,
 }: {
   reservation: ChangeReservation
   accommodationId: number | null
+  onRefresh?: (changed?: ReservationDetail) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [locked, setLocked] = useState(false)
   return (
     <>
       <button
         type="button"
-        disabled={accommodationId === null}
+        disabled={accommodationId === null || locked}
         aria-expanded={open}
         aria-controls="reservation-change-preparation"
         onClick={() => setOpen((value) => !value)}
@@ -57,7 +61,13 @@ function ChangePreparation({
         </p>
       )}
       {open && accommodationId !== null && (
-        <ChangeDates reservation={reservation} accommodationId={accommodationId} />
+        <ChangeDates
+          reservation={reservation}
+          accommodationId={accommodationId}
+          locked={locked}
+          onLock={setLocked}
+          onRefresh={onRefresh}
+        />
       )}
     </>
   )
@@ -66,9 +76,15 @@ function ChangePreparation({
 function ChangeDates({
   reservation,
   accommodationId,
+  locked,
+  onLock,
+  onRefresh,
 }: {
   reservation: ChangeReservation
   accommodationId: number
+  locked: boolean
+  onLock: (locked: boolean) => void
+  onRefresh?: (changed?: ReservationDetail) => void
 }) {
   const { draft, request, error, revision, change, submit } = useAvailabilityForm(
     {
@@ -94,33 +110,68 @@ function ChangeDates({
       <form
         className="accommodation-search-form"
         aria-label="예약 변경 날짜 조건"
-        onSubmit={submit}
+        onSubmit={(event) => {
+          if (locked) event.preventDefault()
+          else submit(event)
+        }}
       >
-        <StayDateFields
-          prefix="reservation-change"
-          labelPrefix="새"
-          draft={draft}
-          onChange={change}
-        />
-        <button type="submit">변경 날짜 가용성 조회</button>
+        <fieldset className="reservation-change-fields" disabled={locked}>
+          <StayDateFields
+            prefix="reservation-change"
+            labelPrefix="새"
+            draft={draft}
+            onChange={change}
+          />
+          <button type="submit">변경 날짜 가용성 조회</button>
+        </fieldset>
       </form>
       {error && <ErrorState message={error} />}
       {!request && !error && (
         <p>새 날짜를 확인한 후 가용성을 조회하세요. 아직 예약은 변경되지 않았습니다.</p>
       )}
       {request && (
-        <ChangeAvailabilityResults
-          key={revision}
-          accommodationId={accommodationId}
-          roomId={reservation.roomId}
-          request={request}
-        />
+        <div key={revision}>
+          <ChangeAvailabilityResults
+            accommodationId={accommodationId}
+            roomId={reservation.roomId}
+            request={request}
+          />
+          <ChangeConfirmationEntry
+            reservation={reservation}
+            request={request}
+            onLock={onLock}
+            onRefresh={onRefresh}
+          />
+        </div>
       )}
-      <p>
-        일정 변경 실행은 후속 작업입니다. 최종 변경 가능 여부·재고·예약 정책·변경 금액은 서버의 예약
-        일정 변경 API가 검증합니다.
-      </p>
+      <p>최종 변경 가능 여부·재고·예약 정책·변경 금액은 서버의 예약 일정 변경 API가 검증합니다.</p>
     </section>
+  )
+}
+
+function ChangeConfirmationEntry({
+  reservation,
+  request,
+  onLock,
+  onRefresh,
+}: {
+  reservation: ReservationDetail
+  request: AvailabilityRequest
+  onLock: (locked: boolean) => void
+  onRefresh?: (changed?: ReservationDetail) => void
+}) {
+  const [confirm, setConfirm] = useState(false)
+  return confirm ? (
+    <ReservationChangeConfirmation
+      reservation={reservation}
+      request={request}
+      onLock={onLock}
+      onRefresh={onRefresh}
+    />
+  ) : (
+    <button type="button" onClick={() => setConfirm(true)}>
+      일정 변경 내용 확인
+    </button>
   )
 }
 

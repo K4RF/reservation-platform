@@ -120,7 +120,7 @@ Kafka 발행 성공 후 `PUBLISHED`로 갱신합니다. 하나의 Consumer Group
 | 구분 | 기술 및 버전 | 현재 범위 |
 | --- | --- | --- |
 | Backend | Java 21, Spring Boot 4.0.7 | 애플리케이션 기본 실행 환경 |
-| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Token/재발급, 공개 숙소 탐색·예약 생성/완료·본인 목록/상세 Snapshot 조회; 변경·취소 실행·관리자 UI는 후속 범위 |
+| Frontend | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0 | 회원가입·이메일/Google 로그인·로그아웃, 메모리 Token/재발급, 공개 숙소 탐색·예약 생성/완료·본인 목록/상세 Snapshot 조회·일정 변경; 취소 실행·관리자 UI는 후속 범위 |
 | Web | Spring MVC | REST API 구현 기반 |
 | Validation | Bean Validation | 요청 데이터 검증 기반 |
 | Persistence | Spring Data JPA Specifications, MySQL 8.4 | 회원·소셜 계정·숙소·객실·날짜별 재고·가격·예약 저장, 동적 조회 및 DB 제약조건 기반 정합성 보호 |
@@ -404,7 +404,7 @@ Frontend는 React·TypeScript·Vite 기반 f0.1.0 Foundation을 완료했으며
 구현했습니다. Access Token 자동 재발급, Protected/Role Route와 로그인 후 원래 경로 복귀도
 구현했습니다. `/reservations`는 USER/ADMIN의 본인 예약 목록·상세를 제공하고, `/admin`은 ADMIN의 접근 확인 안내만 제공하며
 숙소 검색·상세·가용성·예상 요금·대표 투숙객 입력·예약 생성/완료 화면은 구현됐습니다.
-예약 변경·취소 실행 및 관리자 전체 UI와 새로고침 후 지속 인증 복원은 아직 없습니다.
+본인 예약 일정 변경도 연결됐으며 취소 실행 및 관리자 전체 UI와 새로고침 후 지속 인증 복원은 아직 없습니다.
 GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue 및
 8개 PR 완료), `f0.3.0`은 Closed(10개 Issue 및 10개 PR 완료)입니다.
 현재 Frontend Phase는 `f0.4.0 — Reservation Management`이며 `f0.5.0`·`f0.6.0`은 Planned입니다.
@@ -423,7 +423,7 @@ GitHub의 `f0.1.0`은 Closed(7개 Issue 완료), `f0.2.0`은 Closed(8개 Issue �
 | Frontend | f0.1.0 — Frontend Foundation | Completed | React·TypeScript·Vite, Routing/Layout, API Client·오류/인증 상태 기반, 테스트·Frontend CI |
 | Frontend | f0.2.0 — Authentication & User Flow | Completed | Signup·이메일/Google 로그인·메모리 Token Pair·single-flight 재발급·Logout·Protected/Role Route·통합 테스트; 지속 복원/Profile/E2E는 별도 과제 |
 | Frontend | f0.3.0 — Accommodation Search & Booking | Completed | 공개 검색·URL Pagination·상세·가용성·예상 요금·로그인 문맥 재검증·예약 생성/완료 |
-| Frontend | f0.4.0 — Reservation Management | In Progress | 본인 예약 목록·상세 Snapshot 조회 구현; 변경·취소 실행 UI는 후속 |
+| Frontend | f0.4.0 — Reservation Management | In Progress | 본인 예약 목록·상세 Snapshot 조회·일정 변경 구현; 취소 실행 UI는 후속 |
 | Frontend | f0.5.0 — Admin Management | Planned | 숙소·객실·정책·재고 관리 UI |
 | Frontend | f0.6.0 — Frontend Integration & UX Completion | Planned | 사용자·관리자 End-to-End 및 최종 사용자 직접 수동 색상·시각·반응형 검수 Issue 계획 |
 | Platform | v0.5.0 — Performance & Load Testing | Planned | 실제 사용자 Flow 기반 부하·병목 측정 |
@@ -993,15 +993,21 @@ HTTP Mock 흐름 검증과 실제 Backend 생성 확인은 별도이며 내 예�
 #197–#198은 `/reservations` 본인 목록과 `/reservations/:reservationId` 상세를 연결합니다.
 상세는 대표 투숙객·첫 숙박일/일별 확정 가격·저장된 취소 정책·현재 예약 상태와 취소 결과를
 표시합니다. 숙소·객실 이름은 현재 카탈로그이며 과거 null 정보는 추정하지 않습니다.
-사전 취소 견적/가능 여부는 응답에 없고 변경·취소 실행은 후속 범위입니다.
+사전 취소 견적/가능 여부는 응답에 없고 취소 실행은 후속 범위입니다. 일정 변경은 #200에서 연결했습니다.
 계약·테스트·실제 HTTP 확인 및 브라우저 수동 절차는
 [`예약 상세 검증`](docs/testing/frontend-reservation-detail.md)에 있습니다.
 
 #199는 확정 예약 상세에서 객실·인원을 유지한 새 일정 입력과 일반 가용성 재조회를 제공합니다.
 일반 조회는 기존 예약 점유를 제외하지 않으므로 현재 객실이 목록에 없어도 변경 불가로
-단정하지 않습니다. 날짜 수정 시 이전 결과를 폐기하고 변경 실행은 아직 요청하지 않습니다.
+단정하지 않습니다. 날짜 수정 시 이전 결과를 폐기하며 #199 자체는 조회만 구현했고 변경 실행은 #200에서 연결했습니다.
 최종 판단은 Backend PATCH 변경 API가 수행하며 계약과 실제 HTTP 확인은
 [`일정 변경 준비 검증`](docs/testing/frontend-reservation-change-availability.md)에 있습니다.
+
+#200은 날짜 전용 PATCH 변경 요청, 기존 확정/새 일정 참고 요금 비교와 제출 전 확인을 연결합니다.
+서버가 전체 기간의 현재 요금·재고·예약 정책·상태를 최종 검증하며 성공 후 상세 GET으로
+새 Snapshot을 다시 표시합니다. 중복 제출과 자동 401 재전송을 차단하고 Network/5xx 등
+결과 불명은 상세 재조회로 확인합니다. 개발 DB를 사용하지 않은 실제 API 검증과 수동 절차는
+[`일정 변경 Flow 검증`](docs/testing/frontend-reservation-change-flow.md)에 있습니다.
 
 ### f0.3.0 완료 검증과 남은 범위
 

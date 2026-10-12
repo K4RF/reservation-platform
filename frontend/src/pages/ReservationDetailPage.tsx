@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { getReservationDetail } from '../api/reservationDetail'
 import { toReservationSummary } from '../api/reservationList'
@@ -12,6 +12,7 @@ import { useDetailQuery } from './useDetailQuery'
 import { routePaths } from '../app/routePaths'
 import { getSessionVersion } from '../state/accessToken'
 import { useAuth } from '../state/useAuth'
+import { formatMinorUnits, toMinorUnits } from '../utils/money'
 
 export function ReservationDetailPage() {
   useAuth()
@@ -23,6 +24,7 @@ export function ReservationDetailPage() {
 }
 
 function ReservationDetail({ id }: { id: number }) {
+  const [notice, setNotice] = useState<string>()
   const load = useCallback(
     async (signal: AbortSignal) => {
       const detail = await getReservationDetail(id, signal)
@@ -41,6 +43,7 @@ function ReservationDetail({ id }: { id: number }) {
   return (
     <section className="page-content reservation-detail-page">
       <h1>예약 상세</h1>
+      {notice && <p role="status">{notice}</p>}
       {state.status === 'loading' && <LoadingState message="예약을 불러오고 있습니다." />}
       {state.status === 'error' && (
         <ErrorState message={reservationReadError(state.error)} onRetry={retry} />
@@ -55,6 +58,14 @@ function ReservationDetail({ id }: { id: number }) {
           <ReservationSnapshots
             reservation={state.data.detail}
             accommodationId={state.data.accommodationId}
+            onRefresh={(changed) => {
+              setNotice(
+                changed
+                  ? `일정 변경 완료: ${changed.checkInDate} ~ ${changed.checkOutDate}. 서버 확정 총액: ${formatMinorUnits(toMinorUnits(changed.totalAmount, 19))}. 최신 예약 상세를 다시 조회합니다.`
+                  : '변경 요청은 다시 보내지 않습니다. 서버에 저장된 예약 상태를 다시 조회합니다.',
+              )
+              retry()
+            }}
           />
           {state.data.card.catalogUnavailable && (
             <button onClick={retry}>현재 숙소·객실 정보 다시 조회</button>
