@@ -86,9 +86,9 @@ describe('reservation detail snapshots through router/auth/API client', () => {
       'disabled',
       false,
     )
-    expect(screen.getByRole('button', { name: '예약 취소 (준비 중)' })).toHaveProperty(
+    expect(screen.getByRole('button', { name: '취소 정책 및 수수료 확인' })).toHaveProperty(
       'disabled',
-      true,
+      false,
     )
     expect(screen.queryByRole('heading', { name: '저장된 취소 결과' })).toBeNull()
     expect(screen.getByText(/숙소·객실 이름은 현재 정보/)).toBeTruthy()
@@ -98,7 +98,6 @@ describe('reservation detail snapshots through router/auth/API client', () => {
           init.method === 'GET' && !url.includes('/prices/') && !url.includes('/policies'),
       ),
     ).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: '예약 취소 (준비 중)' }))
     expect(mock).toHaveBeenCalledTimes(3)
   })
   it('shows stored cancellation results in UTC, not payment completion or recalculated estimates', async () => {
@@ -429,5 +428,78 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
     expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('rechecks stored cancellation policy through owner GET and never quotes or cancels', async () => {
+    signIn()
+    const mock = vi.fn().mockImplementation((url: string) => respond(url))
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
+    const panel = screen.getByRole('region', { name: '취소 전 확인' })
+    expect(within(panel).getByText('체크인 7일 전 이상: 무료 취소')).toBeTruthy()
+    expect(within(panel).getByText('취소 전 예상 환불 금액: 제공되지 않음')).toBeTruthy()
+    fireEvent.click(within(panel).getByRole('checkbox'))
+    expect(within(panel).getByRole('button', { name: '예약 취소 실행 (준비 중)' })).toHaveProperty(
+      'disabled',
+      true,
+    )
+    expect(screen.getByText('guest@example.com')).toBeTruthy()
+    expect(screen.getByText('350.25')).toBeTruthy()
+    const reads = mock.mock.calls.filter(([url]) => url.endsWith('/reservations/42'))
+    expect(reads).toHaveLength(2)
+    expect(reads.every(([, init]) => new Headers(init.headers).has('Authorization'))).toBe(true)
+    expect(
+      mock.mock.calls.every(
+        ([url, init]) => init.method === 'GET' && !/cancel|preview|quote|polic/.test(url),
+      ),
+    ).toBe(true)
+  })
+  it('refreshes full detail if confirmation read discovers a cancellation on the server', async () => {
+    signIn()
+    let detail = reservationDetail
+    const mock = vi.fn().mockImplementation((url: string) => respond(url, detail))
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    await screen.findByText('guest@example.com')
+    detail = {
+      ...reservationDetail,
+      status: 'CANCELLED',
+      cancelledAt: '2029-12-30T00:00:00Z',
+      cancellationFeeAmount: 175.13,
+      refundAmount: 175.12,
+    }
+    fireEvent.click(screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await screen.findByRole('heading', { name: '이미 취소된 예약의 저장 결과' })
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
+    await screen.findByRole('heading', { name: '저장된 취소 결과' })
+    expect(screen.queryByRole('button', { name: '취소 정책 및 수수료 확인' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '예약 일정 변경 준비' })).toBeNull()
+    expect(screen.getByText('175.13')).toBeTruthy()
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+  })
+  it('discards confirmation snapshots and late responses on logout', async () => {
+    signIn()
+    let reads = 0
+    let finish!: (value: Response) => void
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.endsWith('/reservations/42') && ++reads === 2)
+          return new Promise<Response>((resolve) => {
+            finish = resolve
+          })
+        return respond(url)
+      }),
+    )
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await waitFor(() => expect(finish).toBeTypeOf('function'))
+    act(() => clearAccessToken())
+    await act(async () => finish(Response.json(reservationDetail)))
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '취소 전 확인' })).toBeNull()
+    expect(screen.queryByText('guest@example.com')).toBeNull()
   })
 })
