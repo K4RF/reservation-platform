@@ -363,8 +363,12 @@ Before completing a change:
   detail with saved guest, per-night price, cancellation-policy snapshots, and
   cancellation results. Reservation names come from current public Room/Accommodation
   lookups, not historical snapshots. Do not infer cancellation eligibility or a
-  fee quote from browser time; the response has no such fields. Cancellation
-  execution and admin UI remain roadmap work. CONFIRMED reservations support
+  fee quote from browser time; the response has no such fields. A read-only
+  cancellation confirmation rechecks owner detail on opening, shows the saved
+  policy's relative boundaries and rates, and explicitly marks pre-cancel fee
+  and refund amounts as unavailable. Never invoke cancel to obtain a preview.
+  A rechecked CANCELLED status shows stored results, not another cancel action.
+  Cancellation execution and admin UI remain roadmap work. CONFIRMED reservations support
   date-only schedule changes with fixed room/guest count. Reference estimates
   reuse public daily-price reads; the PATCH response is the authoritative amount.
   Never automatically replay a change PATCH, including after 401. Ambiguous
@@ -376,8 +380,9 @@ Before completing a change:
   The change API is the final authority; do not correct inventory in the browser.
   See `docs/testing/frontend-my-reservations.md`,
   `docs/testing/frontend-reservation-detail.md`,
-  `docs/testing/frontend-reservation-change-availability.md`, and
-  `docs/testing/frontend-reservation-change-flow.md` for contracts and verification.
+  `docs/testing/frontend-reservation-change-availability.md`,
+  `docs/testing/frontend-reservation-change-flow.md`, and
+  `docs/testing/frontend-cancellation-summary.md` for contracts and verification.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
