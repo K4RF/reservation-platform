@@ -58,6 +58,7 @@ function ReservationDetail({ id }: { id: number }) {
           <ReservationSnapshots
             reservation={state.data.detail}
             accommodationId={state.data.accommodationId}
+            onRefreshDetail={retry}
             onRefresh={(changed) => {
               setNotice(
                 changed
