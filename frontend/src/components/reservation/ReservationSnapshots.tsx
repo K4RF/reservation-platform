@@ -8,9 +8,11 @@ const amountLabel = (amount: number | null) =>
 export function ReservationSnapshots({
   reservation,
   accommodationId,
+  onRefresh,
 }: {
   reservation: ReservationDetail
   accommodationId: number | null
+  onRefresh?: (changed?: ReservationDetail) => void
 }) {
   const { representativeGuest: guest, cancellationPolicySnapshot: policy } = reservation
   return (
@@ -124,13 +126,14 @@ export function ReservationSnapshots({
           <ReservationChangeAvailabilitySection
             reservation={reservation}
             accommodationId={accommodationId}
+            onRefresh={onRefresh}
           />{' '}
           <button type="button" disabled>
             예약 취소 (준비 중)
           </button>
           <p>
-            변경·취소 실행 기능은 후속 작업입니다. 예약 확정 상태만으로 현재 취소 가능 여부를
-            보장하지 않으며 사전 수수료 견적은 제공되지 않습니다.
+            취소 실행 기능은 후속 작업입니다. 예약 확정 상태만으로 현재 취소 가능 여부를 보장하지
+            않으며 사전 수수료 견적은 제공되지 않습니다.
           </p>
         </section>
       )}
