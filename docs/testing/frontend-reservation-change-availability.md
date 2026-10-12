@@ -1,5 +1,9 @@
 # 예약 일정 변경 준비와 일반 가용성 재조회 (#199)
 
+이 문서는 #199의 조회 전용 구현·검증 기록이다. 이후 #200은 참고 요금과 실제 PATCH 제출을
+추가했다. 현재 실행 계약과 전송 중/결과 불명 잠금은
+[일정 변경 Flow](frontend-reservation-change-flow.md)를 따른다.
+
 ## 확인한 Backend 계약
 
 `PATCH /api/v1/reservations/{reservationId}`는 JWT 소유자만 호출할 수 있으며

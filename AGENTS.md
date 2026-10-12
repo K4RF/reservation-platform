@@ -359,19 +359,25 @@ Before completing a change:
   tokens. Always reload availability before restoring a selected room after login.
   See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
   non-destructive local demo preparation. `/reservations` now loads the owner's
-  offset-paginated history; `/reservations/:reservationId` provides a read-only
+  offset-paginated history; `/reservations/:reservationId` provides an owner-only
   detail with saved guest, per-night price, cancellation-policy snapshots, and
   cancellation results. Reservation names come from current public Room/Accommodation
   lookups, not historical snapshots. Do not infer cancellation eligibility or a
-  fee quote from browser time; the response has no such fields. Change/cancel
+  fee quote from browser time; the response has no such fields. Cancellation
   execution and admin UI remain roadmap work. CONFIRMED reservations support
-  a read-only schedule-change preparation form with fixed room/guest count.
+  date-only schedule changes with fixed room/guest count. Reference estimates
+  reuse public daily-price reads; the PATCH response is the authoritative amount.
+  Never automatically replay a change PATCH, including after 401. Ambiguous
+  transport/response/5xx results lock resubmission and direct users to detail GET.
+  Success reloads owner detail; reservation lists reload on remount without a
+  shared response cache. Client aborts do not imply server rollback.
   General availability does not exclude the owner's existing occupancy: do not
   treat a missing room as change denial or a listed room as guaranteed success.
   The change API is the final authority; do not correct inventory in the browser.
   See `docs/testing/frontend-my-reservations.md`,
-  `docs/testing/frontend-reservation-detail.md`, and
-  `docs/testing/frontend-reservation-change-availability.md` for contracts and verification.
+  `docs/testing/frontend-reservation-detail.md`,
+  `docs/testing/frontend-reservation-change-availability.md`, and
+  `docs/testing/frontend-reservation-change-flow.md` for contracts and verification.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
