@@ -33,10 +33,12 @@ canCancel, 사전 수수료 견적은 응답에 없어 추가하지 않는다. �
 취소 정책 구간은 저장된 임계일/비율의 정적 안내다. 브라우저 today/Date.now로
 취소 가능 여부나 견적을 계산하지 않는다. 실제 정책 판단은 서버의 숙소 TimeZone 기준이다.
 CONFIRMED의 변경 버튼은 이후 #199의 **일정 변경 준비**와 #200 변경 실행에 연결했다.
-#201의 [취소 정책/수수료 확인](frontend-cancellation-summary.md)은 조회만 수행하며 취소 실행은 비활성이다.
+#201의 [취소 정책/수수료 확인](frontend-cancellation-summary.md)에 이어
+#202의 [취소 실행](frontend-reservation-cancel-flow.md)을 연결했다. 안내 동의만으로 요청하지
+않으며 별도의 확정 클릭으로 PATCH를 보내고 성공 후 상세 GET을 수행한다.
 가용성 재조회 계약은 [일정 변경 준비 검증](frontend-reservation-change-availability.md)을 따른다.
 CANCELLED에는 해당 버튼을 숨기고 상태상 변경/재취소 불가와 저장된 취소 결과를 표시한다.
-이번 이슈는 읽기 전용이며 PATCH나 새로운 변경·취소 Route는 추가하지 않았다.
+#198 당시에는 읽기 전용이었으며 PATCH 실행은 후속 #200/#202에서 기존 상세 Route에 연결했다.
 예상 환불 금액은 결제 취소/환불 완료를 의미하지 않는다.
 
 ## 오류·개인정보 경계
