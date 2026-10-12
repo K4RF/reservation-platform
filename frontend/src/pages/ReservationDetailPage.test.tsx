@@ -5,7 +5,7 @@ import { AppRoutes } from '../app/routes'
 import { AuthProvider } from '../state/AuthProvider'
 import { clearAccessToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
-import { reservationDetail } from '../test/reservation'
+import { reservationDetail, changedReservationDetail } from '../test/reservation'
 import { accommodation } from '../test/accommodation'
 import { room, roomPage } from '../test/room'
 
@@ -31,6 +31,32 @@ function respond(url: string, detail = reservationDetail) {
   return url.endsWith('/rooms/3')
     ? Response.json({ ...room, nightlyPrice: 9999 })
     : Response.json(accommodation)
+}
+
+async function confirmChange() {
+  fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
+  fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
+  fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+  fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
+  await screen.findByText('현재 객실이 일반 신규 예약 가능 목록에 없습니다.')
+  fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
+  await screen.findByText('새 일정 참고 예상 총액: 200.20')
+  fireEvent.click(screen.getByRole('checkbox'))
+  fireEvent.click(screen.getByRole('button', { name: '예약 일정 변경 확정' }))
+}
+
+function changeFlowResponse(url: string, detail = reservationDetail) {
+  if (url.includes('/rooms/available?'))
+    return Response.json(roomPage({ content: [], totalElements: 0, totalPages: 0 }))
+  if (url.includes('/prices/'))
+    return Response.json({
+      roomId: 3,
+      stayDate: url.slice(-10),
+      nightlyPrice: 100.1,
+      source: 'DEFAULT',
+      roomDailyPriceId: null,
+    })
+  return respond(url, detail)
 }
 
 describe('reservation detail snapshots through router/auth/API client', () => {
@@ -258,5 +284,150 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect(screen.queryByText('guest@example.com')).toBeNull()
     await screen.findByText('new@example.com')
     expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations/42'))).toHaveLength(2)
+  })
+  it('changes despite advisory absence and reloads all saved detail snapshots from GET', async () => {
+    signIn()
+    let detail = reservationDetail
+    const mock = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        detail = changedReservationDetail
+        return Response.json(detail)
+      }
+      return changeFlowResponse(url, detail)
+    })
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    await confirmChange()
+    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    expect(screen.getByText('550.15')).toBeTruthy()
+    expect(screen.getByText(/일정 변경 완료: 2030-01-02 ~ 2030-01-04/)).toBeTruthy()
+    expect(screen.queryByText('350.25')).toBeNull()
+    expect(screen.queryByText('기존 확정 총액: 350.25')).toBeNull()
+    expect(screen.getByText('guest@example.com')).toBeTruthy()
+    expect(screen.getByText('체크인 7일 전 이상: 무료 취소')).toBeTruthy()
+    const table = screen.getByRole('table', { name: '숙박일별 확정 요금 Snapshot' })
+    expect(within(table).getByText('2030-01-03')).toBeTruthy()
+    expect(within(table).queryByText('2030-01-01')).toBeNull()
+    expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+    expect(
+      mock.mock.calls.filter(
+        ([url, init]) => url.endsWith('/reservations/42') && init.method === 'GET',
+      ),
+    ).toHaveLength(2)
+    for (const [url, init] of mock.mock.calls) {
+      expect(new Headers(init.headers).has('Authorization')).toBe(url.includes('/reservations/'))
+    }
+  })
+  it('preserves original detail and date inputs on inventory conflict', async () => {
+    signIn()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init: RequestInit) =>
+        init.method === 'PATCH'
+          ? Response.json(
+              { status: 409, code: 'INVENTORY_011', message: '재고 충돌' },
+              { status: 409 },
+            )
+          : changeFlowResponse(url),
+      ),
+    )
+    renderDetail()
+    await confirmChange()
+    expect((await screen.findByRole('alert')).textContent).toContain('INVENTORY_011')
+    expect(screen.getByText('350.25')).toBeTruthy()
+    expect(screen.getByText('첫 숙박일 요금 Snapshot: 100.10')).toBeTruthy()
+    expect(screen.getByLabelText('새 체크인')).toHaveProperty('value', '2030-01-02')
+    expect(screen.getByRole('button', { name: '변경 날짜 가용성 조회' })).toHaveProperty(
+      'disabled',
+      false,
+    )
+  })
+  it('locks editing/closing after lost acknowledgement and recovers by detail GET only', async () => {
+    signIn()
+    let detail = reservationDetail
+    const mock = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        detail = changedReservationDetail
+        return Promise.reject(new TypeError('lost response'))
+      }
+      return Promise.resolve(changeFlowResponse(url, detail))
+    })
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    await confirmChange()
+    await screen.findByRole('alert')
+    expect(screen.getByRole('button', { name: '예약 일정 변경 준비' })).toHaveProperty(
+      'disabled',
+      true,
+    )
+    expect(screen.getByLabelText('새 체크인').closest('fieldset')).toHaveProperty('disabled', true)
+    expect(screen.getByText('350.25')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
+    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    expect(screen.getByText('550.15')).toBeTruthy()
+    expect(screen.getByText(/변경 요청은 다시 보내지 않습니다/)).toBeTruthy()
+    expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('returns to login on PATCH 401 without mutation replay or refresh', async () => {
+    signIn()
+    const mock = vi.fn((url: string, init: RequestInit) =>
+      init.method === 'PATCH' ? Response.json({}, { status: 401 }) : changeFlowResponse(url),
+    )
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    await confirmChange()
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(screen.queryByText('guest@example.com')).toBeNull()
+    expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+    expect(mock.mock.calls.some(([url]) => url.includes('/reissue'))).toBe(false)
+  })
+  it('discards reference prices and acknowledgement when dates change before PATCH', async () => {
+    signIn()
+    const mock = vi.fn().mockImplementation((url: string) => changeFlowResponse(url))
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
+    fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
+    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+    fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
+    fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
+    await screen.findByText('새 일정 참고 예상 총액: 200.20')
+    fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-05' } })
+    expect(screen.queryByText('새 일정 참고 예상 총액: 200.20')).toBeNull()
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
+    fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
+    await screen.findByText('새 일정 참고 예상 총액: 300.30')
+    expect(screen.getByRole('checkbox')).toHaveProperty('checked', false)
+    expect(screen.getByRole('button', { name: '예약 일정 변경 확정' })).toHaveProperty(
+      'disabled',
+      true,
+    )
+    expect(screen.getByText('350.25')).toBeTruthy()
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+  })
+  it('retries only detail GET when refresh after acknowledged success fails', async () => {
+    signIn()
+    let changed = false,
+      failRead = true
+    const mock = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        changed = true
+        return Response.json(changedReservationDetail)
+      }
+      if (url.endsWith('/reservations/42') && changed && failRead)
+        return Response.json({}, { status: 500 })
+      return changeFlowResponse(url, changed ? changedReservationDetail : reservationDetail)
+    })
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    await confirmChange()
+    await screen.findByRole('alert')
+    expect(screen.getByText(/일정 변경 완료: 2030-01-02 ~ 2030-01-04/)).toBeTruthy()
+    failRead = false
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
   })
 })
