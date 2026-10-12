@@ -13,6 +13,8 @@ import { routePaths } from '../app/routePaths'
 import { getSessionVersion } from '../state/accessToken'
 import { useAuth } from '../state/useAuth'
 import { formatMinorUnits, toMinorUnits } from '../utils/money'
+import type { ReservationCancellationResponse } from '../api/reservationCancellation'
+import { ReservationCancellationFeedback } from '../components/reservation/ReservationCancellationFeedback'
 
 export function ReservationDetailPage() {
   useAuth()
@@ -25,6 +27,7 @@ export function ReservationDetailPage() {
 
 function ReservationDetail({ id }: { id: number }) {
   const [notice, setNotice] = useState<string>()
+  const [cancelled, setCancelled] = useState<ReservationCancellationResponse>()
   const load = useCallback(
     async (signal: AbortSignal) => {
       const detail = await getReservationDetail(id, signal)
@@ -44,6 +47,7 @@ function ReservationDetail({ id }: { id: number }) {
     <section className="page-content reservation-detail-page">
       <h1>예약 상세</h1>
       {notice && <p role="status">{notice}</p>}
+      {cancelled && <ReservationCancellationFeedback result={cancelled} />}
       {state.status === 'loading' && <LoadingState message="예약을 불러오고 있습니다." />}
       {state.status === 'error' && (
         <ErrorState message={reservationReadError(state.error)} onRetry={retry} />
@@ -58,7 +62,17 @@ function ReservationDetail({ id }: { id: number }) {
           <ReservationSnapshots
             reservation={state.data.detail}
             accommodationId={state.data.accommodationId}
-            onRefreshDetail={retry}
+            onRefreshDetail={() => {
+              setNotice(
+                '취소 요청은 다시 보내지 않습니다. 서버에 저장된 예약 상태를 다시 조회합니다.',
+              )
+              retry()
+            }}
+            onCancelled={(result) => {
+              setNotice(undefined)
+              setCancelled(result)
+              retry()
+            }}
             onRefresh={(changed) => {
               setNotice(
                 changed

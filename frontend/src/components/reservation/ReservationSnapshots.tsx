@@ -6,6 +6,8 @@ import {
   ReservationCancellationResult,
 } from './ReservationCancellationSummary'
 import { ReservationCancellationSection } from './ReservationCancellationSection'
+import { useState } from 'react'
+import type { ReservationCancellationResponse } from '../../api/reservationCancellation'
 
 const amountLabel = (amount: number | null) =>
   amount === null ? '저장된 정보 없음' : formatMinorUnits(toMinorUnits(amount, 19))
@@ -15,12 +17,16 @@ export function ReservationSnapshots({
   accommodationId,
   onRefresh,
   onRefreshDetail,
+  onCancelled,
 }: {
   reservation: ReservationDetail
   accommodationId: number | null
   onRefresh?: (changed?: ReservationDetail) => void
   onRefreshDetail?: () => void
+  onCancelled?: (result: ReservationCancellationResponse) => void
 }) {
+  const [changeLocked, setChangeLocked] = useState(false)
+  const [cancelLocked, setCancelLocked] = useState(false)
   const { representativeGuest: guest } = reservation
   return (
     <>
@@ -87,15 +93,25 @@ export function ReservationSnapshots({
       ) : (
         <section className="reservation-card" aria-labelledby="reservation-actions-heading">
           <h2 id="reservation-actions-heading">예약 관리</h2>
-          <ReservationChangeAvailabilitySection
-            reservation={reservation}
-            accommodationId={accommodationId}
-            onRefresh={onRefresh}
-          />{' '}
-          <ReservationCancellationSection reservation={reservation} onRefresh={onRefreshDetail} />
+          <fieldset className="reservation-change-fields" disabled={cancelLocked}>
+            <ReservationChangeAvailabilitySection
+              reservation={reservation}
+              accommodationId={accommodationId}
+              onRefresh={onRefresh}
+              onLock={setChangeLocked}
+            />
+          </fieldset>
+          <fieldset className="reservation-change-fields" disabled={changeLocked}>
+            <ReservationCancellationSection
+              reservation={reservation}
+              onRefresh={onRefreshDetail}
+              onCancelled={onCancelled}
+              onLock={setCancelLocked}
+            />
+          </fieldset>
           <p>
-            취소 실행 기능은 후속 작업입니다. 예약 확정 상태만으로 현재 취소 가능 여부를 보장하지
-            않으며 사전 수수료 견적은 제공되지 않습니다.
+            예약 확정 상태만으로 현재 취소 가능 여부를 보장하지 않으며 사전 수수료 견적은 제공되지
+            않습니다.
           </p>
         </section>
       )}
