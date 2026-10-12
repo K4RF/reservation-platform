@@ -3,26 +3,37 @@ import { ApiError } from '../../api/errors'
 import {
   getReservationCancellationSummary,
   type ReservationCancellationSummary as CancellationSummary,
+  type ReservationCancellationResponse,
 } from '../../api/reservationCancellation'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import { reservationReadError } from './reservationView'
 import { ReservationCancellationSummary } from './ReservationCancellationSummary'
+import { ReservationCancellationSubmit } from './ReservationCancellationSubmit'
+
+interface CancellationActions {
+  onRefresh?: () => void
+  onCancelled?: (result: ReservationCancellationResponse) => void
+  onLock?: (locked: boolean) => void
+}
 
 export function ReservationCancellationSection({
   reservation,
   onRefresh,
+  onCancelled,
+  onLock,
 }: {
   reservation: CancellationSummary
-  onRefresh?: () => void
-}) {
+} & CancellationActions) {
   if (reservation.status !== 'CONFIRMED') return null
   return (
     <CancellationPreparation
       key={JSON.stringify(reservation)}
       reservationId={reservation.reservationId}
       onRefresh={onRefresh}
+      onCancelled={onCancelled}
+      onLock={onLock}
     />
   )
 }
@@ -30,16 +41,19 @@ export function ReservationCancellationSection({
 function CancellationPreparation({
   reservationId,
   onRefresh,
+  onCancelled,
+  onLock,
 }: {
   reservationId: number
-  onRefresh?: () => void
-}) {
+} & CancellationActions) {
   const [open, setOpen] = useState(false)
+  const [locked, setLocked] = useState(false)
   const id = `reservation-${reservationId}-cancellation-preparation`
   return (
     <>
       <button
         type="button"
+        disabled={locked}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((value) => !value)}
@@ -47,7 +61,16 @@ function CancellationPreparation({
         취소 정책 및 수수료 확인
       </button>
       {open && (
-        <CancellationConfirmation reservationId={reservationId} id={id} onRefresh={onRefresh} />
+        <CancellationConfirmation
+          reservationId={reservationId}
+          id={id}
+          onRefresh={onRefresh}
+          onCancelled={onCancelled}
+          onLock={(value) => {
+            setLocked(value)
+            onLock?.(value)
+          }}
+        />
       )}
     </>
   )
@@ -57,11 +80,12 @@ function CancellationConfirmation({
   reservationId,
   id,
   onRefresh,
+  onCancelled,
+  onLock,
 }: {
   reservationId: number
   id: string
-  onRefresh?: () => void
-}) {
+} & CancellationActions) {
   const load = useCallback(
     (signal: AbortSignal) => getReservationCancellationSummary(reservationId, signal),
     [reservationId],
@@ -81,6 +105,8 @@ function CancellationConfirmation({
           key={JSON.stringify(state.data)}
           reservation={state.data}
           onRefresh={onRefresh}
+          onCancelled={onCancelled}
+          onLock={onLock}
         />
       )}
     </section>
@@ -90,36 +116,23 @@ function CancellationConfirmation({
 function CancellationReview({
   reservation,
   onRefresh,
+  onCancelled,
+  onLock,
 }: {
   reservation: CancellationSummary
-  onRefresh?: () => void
-}) {
-  const [acknowledged, setAcknowledged] = useState(false)
+} & CancellationActions) {
   return (
     <>
       <ReservationCancellationSummary reservation={reservation} />
       {reservation.status === 'CONFIRMED' && (
-        <>
-          <label>
-            <input
-              type="checkbox"
-              checked={acknowledged}
-              onChange={(event) => setAcknowledged(event.target.checked)}
-            />
-            저장된 정책과 사전 금액 미제공 안내를 확인했습니다.
-          </label>
-          <p role="status">
-            {acknowledged
-              ? '안내를 확인했습니다. 아직 취소 요청은 전송되지 않았습니다.'
-              : '취소 전에 저장된 정책과 금액 미제공 안내를 확인하세요.'}
-          </p>
-          <button type="button" disabled>
-            예약 취소 실행 (준비 중)
-          </button>
-          <p>취소 실행은 아직 제공되지 않습니다. 이 화면은 예약이나 재고를 변경하지 않습니다.</p>
-        </>
+        <ReservationCancellationSubmit
+          reservationId={reservation.reservationId}
+          onLock={(value) => onLock?.(value)}
+          onRefresh={onRefresh}
+          onCancelled={onCancelled}
+        />
       )}
-      {onRefresh && (
+      {onRefresh && reservation.status === 'CANCELLED' && (
         <button type="button" onClick={onRefresh}>
           예약 상세 다시 조회
         </button>

@@ -3,6 +3,7 @@ import { ApiError } from './errors'
 import { readReservationResult, type ReservationResult } from './reservation'
 import { isCalendarDate } from '../utils/calendarDate'
 import { toMinorUnits } from '../utils/money'
+import { isUtcInstant } from '../utils/utcInstant'
 
 export interface ReservationNight {
   stayDate: string
@@ -86,15 +87,7 @@ export function readReservationDetail(value: ReservationDetail | undefined): Res
       previous = rule.minDaysBeforeCheckIn
     }
     if (previous !== policy.cancellationDeadlineDaysBeforeCheckIn) throw new Error()
-    if (
-      result.cancelledAt !== null &&
-      (typeof result.cancelledAt !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?Z$/.test(
-          result.cancelledAt,
-        ) ||
-        !isCalendarDate(result.cancelledAt.slice(0, 10)))
-    )
-      throw new Error()
+    if (result.cancelledAt !== null && !isUtcInstant(result.cancelledAt)) throw new Error()
     for (const amount of [result.cancellationFeeAmount, result.refundAmount]) {
       if (amount !== null) toMinorUnits(amount, 19)
     }

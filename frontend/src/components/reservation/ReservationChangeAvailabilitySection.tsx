@@ -16,10 +16,12 @@ export function ReservationChangeAvailabilitySection({
   reservation,
   accommodationId,
   onRefresh,
+  onLock,
 }: {
   reservation: ChangeReservation
   accommodationId: number | null
   onRefresh?: (changed?: ReservationDetail) => void
+  onLock?: (locked: boolean) => void
 }) {
   if (reservation.status !== 'CONFIRMED') return null
   return (
@@ -28,6 +30,7 @@ export function ReservationChangeAvailabilitySection({
       reservation={reservation}
       accommodationId={accommodationId}
       onRefresh={onRefresh}
+      onLock={onLock}
     />
   )
 }
@@ -36,10 +39,12 @@ function ChangePreparation({
   reservation,
   accommodationId,
   onRefresh,
+  onLock,
 }: {
   reservation: ChangeReservation
   accommodationId: number | null
   onRefresh?: (changed?: ReservationDetail) => void
+  onLock?: (locked: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   const [locked, setLocked] = useState(false)
@@ -65,7 +70,10 @@ function ChangePreparation({
           reservation={reservation}
           accommodationId={accommodationId}
           locked={locked}
-          onLock={setLocked}
+          onLock={(value) => {
+            setLocked(value)
+            onLock?.(value)
+          }}
           onRefresh={onRefresh}
         />
       )}

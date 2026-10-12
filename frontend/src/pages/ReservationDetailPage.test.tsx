@@ -5,7 +5,13 @@ import { AppRoutes } from '../app/routes'
 import { AuthProvider } from '../state/AuthProvider'
 import { clearAccessToken, setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
-import { reservationDetail, changedReservationDetail } from '../test/reservation'
+import {
+  reservationDetail,
+  changedReservationDetail,
+  cancellationResponse,
+  cancelledReservationDetail,
+  reservationPage,
+} from '../test/reservation'
 import { accommodation } from '../test/accommodation'
 import { room, roomPage } from '../test/room'
 
@@ -57,6 +63,14 @@ function changeFlowResponse(url: string, detail = reservationDetail) {
       roomDailyPriceId: null,
     })
   return respond(url, detail)
+}
+
+async function confirmCancellation() {
+  fireEvent.click(await screen.findByRole('button', { name: '취소 정책 및 수수료 확인' }))
+  await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
+  const panel = screen.getByRole('region', { name: '취소 전 확인' })
+  fireEvent.click(within(panel).getByRole('checkbox'))
+  fireEvent.click(within(panel).getByRole('button', { name: '예약 취소 확정' }))
 }
 
 describe('reservation detail snapshots through router/auth/API client', () => {
@@ -439,10 +453,14 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     const panel = screen.getByRole('region', { name: '취소 전 확인' })
     expect(within(panel).getByText('체크인 7일 전 이상: 무료 취소')).toBeTruthy()
     expect(within(panel).getByText('취소 전 예상 환불 금액: 제공되지 않음')).toBeTruthy()
-    fireEvent.click(within(panel).getByRole('checkbox'))
-    expect(within(panel).getByRole('button', { name: '예약 취소 실행 (준비 중)' })).toHaveProperty(
+    expect(within(panel).getByRole('button', { name: '예약 취소 확정' })).toHaveProperty(
       'disabled',
       true,
+    )
+    fireEvent.click(within(panel).getByRole('checkbox'))
+    expect(within(panel).getByRole('button', { name: '예약 취소 확정' })).toHaveProperty(
+      'disabled',
+      false,
     )
     expect(screen.getByText('guest@example.com')).toBeTruthy()
     expect(screen.getByText('350.25')).toBeTruthy()
@@ -501,5 +519,168 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: '취소 전 확인' })).toBeNull()
     expect(screen.queryByText('guest@example.com')).toBeNull()
+  })
+  it('cancels once, displays every authoritative response field and refreshes detail and list', async () => {
+    signIn()
+    let detail = reservationDetail
+    const fetch = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        detail = cancelledReservationDetail
+        return Response.json(cancellationResponse)
+      }
+      if (url.includes('/reservations?'))
+        return Response.json(reservationPage({ content: [detail] }))
+      return respond(url, detail)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    await screen.findByRole('heading', { name: '저장된 취소 결과' })
+    const result = screen.getByRole('region', { name: '예약 취소 완료' })
+    for (const text of [
+      cancellationResponse.cancelledAt,
+      '2029-12-30',
+      '2일',
+      '350.25',
+      '50%',
+      '175.13',
+      '175.12',
+    ]) {
+      expect(within(result).getByText(text)).toBeTruthy()
+    }
+    expect(screen.getByText('예약 취소')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '취소 정책 및 수수료 확인' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '예약 일정 변경 준비' })).toBeNull()
+    expect(
+      fetch.mock.calls.filter(
+        ([url, init]) => url.endsWith('/reservations/42') && init.method === 'GET',
+      ),
+    ).toHaveLength(3)
+    fireEvent.click(screen.getByRole('link', { name: '내 예약 목록으로' }))
+    await screen.findByRole('link', { name: '예약 42 상세 보기' })
+    expect(screen.getByText('예약 취소')).toBeTruthy()
+    expect(fetch.mock.calls.filter(([url]) => url.includes('/reservations?'))).toHaveLength(1)
+    expect(fetch.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('keeps acknowledged success feedback when detail refresh fails and retries GET only', async () => {
+    signIn()
+    let done = false,
+      fail = true
+    const fetch = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        done = true
+        return Response.json(cancellationResponse)
+      }
+      if (done && fail && url.endsWith('/reservations/42'))
+        return Response.json({}, { status: 500 })
+      return respond(url, done ? cancelledReservationDetail : reservationDetail)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    await screen.findByRole('alert')
+    expect(screen.getByRole('heading', { name: '예약 취소 완료' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '예약 취소 확정' })).toBeNull()
+    fail = false
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+    await screen.findByRole('heading', { name: '저장된 취소 결과' })
+    expect(fetch.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('confirms server cancellation after lost response without replay or fabricated success metadata', async () => {
+    signIn()
+    let detail = reservationDetail
+    const fetch = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PATCH') {
+        detail = cancelledReservationDetail
+        return Promise.reject(new TypeError('lost acknowledgement'))
+      }
+      return respond(url, detail)
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    await screen.findByRole('alert')
+    expect(
+      screen.getByRole('button', { name: '예약 일정 변경 준비' }).closest('fieldset'),
+    ).toHaveProperty('disabled', true)
+    expect(screen.queryByRole('heading', { name: '예약 취소 완료' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
+    await screen.findByRole('heading', { name: '저장된 취소 결과' })
+    expect(screen.getByText('예약 취소')).toBeTruthy()
+    expect(screen.getByText('175.12')).toBeTruthy()
+    expect(screen.queryByText('50%')).toBeNull()
+    expect(fetch.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('does not replay cancellation after 401 and removes private state on redirect', async () => {
+    signIn()
+    const fetch = vi.fn((url: string, init: RequestInit) =>
+      init.method === 'PATCH' ? Response.json({}, { status: 401 }) : respond(url),
+    )
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(screen.queryByText('guest@example.com')).toBeNull()
+    expect(fetch.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+    expect(fetch.mock.calls.some(([url]) => url.includes('/reissue'))).toBe(false)
+  })
+  it('requires fresh detail and fresh acknowledgement after a policy denial', async () => {
+    signIn()
+    const fetch = vi.fn((url: string, init: RequestInit) =>
+      init.method === 'PATCH'
+        ? Response.json(
+            { status: 409, code: 'RESERVATION_009', message: '취소 마감' },
+            { status: 409 },
+          )
+        : respond(url),
+    )
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    expect((await screen.findByRole('alert')).textContent).toContain('RESERVATION_009')
+    expect(screen.getByText('예약 확정')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '예약 취소 완료' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
+    fireEvent.click(await screen.findByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
+    expect(screen.getByRole('checkbox')).toHaveProperty('checked', false)
+    expect(screen.getByRole('button', { name: '예약 취소 확정' })).toHaveProperty('disabled', true)
+    expect(fetch.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
+  it('blocks cancel while schedule change is pending or uncertain', async () => {
+    signIn()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init: RequestInit) =>
+        init.method === 'PATCH' ? Promise.reject(new TypeError('lost')) : changeFlowResponse(url),
+      ),
+    )
+    renderDetail()
+    await confirmChange()
+    await screen.findByRole('alert')
+    expect(
+      screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }).closest('fieldset'),
+    ).toHaveProperty('disabled', true)
+  })
+  it('aborts cancellation on logout and ignores late mutation success', async () => {
+    signIn()
+    let finish!: (response: Response) => void
+    const fetch = vi.fn((url: string, init: RequestInit) =>
+      init.method === 'PATCH'
+        ? new Promise<Response>((resolve) => {
+            finish = resolve
+          })
+        : respond(url),
+    )
+    vi.stubGlobal('fetch', fetch)
+    renderDetail()
+    await confirmCancellation()
+    await waitFor(() => expect(finish).toBeTypeOf('function'))
+    const signal = fetch.mock.calls.find(([, init]) => init.method === 'PATCH')![1].signal!
+    act(() => clearAccessToken())
+    expect(signal.aborted).toBe(true)
+    await act(async () => finish(Response.json(cancellationResponse)))
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '예약 취소 완료' })).toBeNull()
   })
 })

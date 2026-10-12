@@ -26,13 +26,13 @@ describe('stored cancellation policy and confirmation', () => {
     expect(screen.getByText('취소 전 예상 환불 금액: 제공되지 않음')).toBeTruthy()
     expect(screen.getByText('저장된 예약 총액: 350.25')).toBeTruthy()
     expect(screen.getByText('취소 마감: 체크인 1일 전까지')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '예약 취소 확정' })).toHaveProperty('disabled', true)
     fireEvent.click(screen.getByRole('checkbox'))
     expect(
       screen.getByText('안내를 확인했습니다. 아직 취소 요청은 전송되지 않았습니다.'),
     ).toBeTruthy()
-    const button = screen.getByRole('button', { name: '예약 취소 실행 (준비 중)' })
-    expect(button).toHaveProperty('disabled', true)
-    fireEvent.click(button)
+    const button = screen.getByRole('button', { name: '예약 취소 확정' })
+    expect(button).toHaveProperty('disabled', false)
     expect(mock).toHaveBeenCalledTimes(1)
     expect(mock.mock.calls[0][0]).toMatch(/\/reservations\/42$/)
     expect(mock.mock.calls[0][1].method).toBe('GET')
@@ -81,7 +81,7 @@ describe('stored cancellation policy and confirmation', () => {
       cancelled.cancelledAt,
     )
     expect(screen.queryByRole('checkbox')).toBeNull()
-    expect(screen.queryByRole('button', { name: '예약 취소 실행 (준비 중)' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '예약 취소 확정' })).toBeNull()
     expect(screen.queryByText('취소 전 예상 수수료 금액: 제공되지 않음')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
     expect(refresh).toHaveBeenCalledOnce()
@@ -140,7 +140,7 @@ describe('stored cancellation policy and confirmation', () => {
       open()
       await screen.findByRole('alert')
       expect(screen.queryByRole('checkbox')).toBeNull()
-      expect(screen.queryByRole('button', { name: '예약 취소 실행 (준비 중)' })).toBeNull()
+      expect(screen.queryByRole('button', { name: '예약 취소 확정' })).toBeNull()
     },
   )
   it('aborts and ignores a late read after closing', async () => {
