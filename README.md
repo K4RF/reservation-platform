@@ -328,6 +328,17 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 `v*`는 Backend/Platform, `f*`는 Frontend Track입니다. 아래는 소스·문서 기준의 구현 범위이며,
 GitHub Milestone의 병합·종료 상태와는 구분합니다.
 
+GitHub에서 Backend `v0.1.0`·`v0.1.1`·`v0.1.2`·`v0.1.3`·`v0.2.0`·`v0.3.0`·`v0.4.0`과
+Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`은 **Completed**입니다.
+`f0.4.0 — Reservation Management`는 Issue #197–#203 7건과 PR #204–#210 7건을 통해
+생성 이후 본인 목록 → 상세 → 날짜 변경 → 저장 취소 정책 확인 → 취소 → 재조회를 연결했습니다.
+다음 Frontend Phase는 **`f0.5.0 — Admin Management` (Next)**이며, `f0.6.0`·`v0.5.0`·
+`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
+
+f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
+전체 UX를 수동 검수하는 Issue를 두는 계획을 유지합니다. 작은 수정은 f0.6.0에서,
+큰 재설계·추가 기능은 별도 후속 Frontend Milestone으로 분리합니다.
+
 | 영역                 | 현재 범위                                                | 후속 개발                                         |
 | -------------------- | -------------------------------------------------------- | ------------------------------------------------- |
 | Backend `v0.1–v0.4`  | 예약 도메인·동시성·조회/캐시·이벤트 처리 및 구조 검증    | `v0.5` 부하 테스트, `v0.6` 관측성, `v1.0` 배포    |

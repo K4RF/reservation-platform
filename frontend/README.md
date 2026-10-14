@@ -14,12 +14,15 @@ Protected/Role Route와 HTTP Mock 통합 검증을 연결했습니다.
 Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니다.
 공개 검색·URL Pagination·상세/객실·날짜/인원 가용성·예상 요금·로그인 문맥 재검증·
 대표 투숙객 입력/확인·예약 POST·서버 ID 완료 GET을 연결했습니다.
-`f0.4.0 — Reservation Management`는 진행 중이며 #197 본인 목록과 #198 상세 Snapshot 조회를 구현했습니다.
-`f0.5.0` Admin과 `f0.6.0` 통합/UX는 Planned입니다.
+`f0.4.0 — Reservation Management`도 완료했습니다. Milestone #15의 Issue #197–#203
+7건과 PR #204–#210 7건이 종료됐습니다. 본인 목록/상세 → 날짜 변경 준비/일반 가용성 →
+일정 변경 PATCH → 저장 취소 정책 확인 → 명시적 취소 PATCH → 상세/목록 재조회를 연결했습니다.
+`f0.5.0 — Admin Management`는 Next, `f0.6.0` 통합/UX는 Planned입니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
-전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 예약·관리
-전체 기능 화면은 아직 없습니다(예약 생성/완료·본인 목록/상세 조회는 구현). 실제 로그인부터 예약까지의 Backend·Redis·Google 브라우저 E2E는 미검증이며
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 관리자 전체 UI는 아직 없습니다.
+사용자 예약 생성·목록/상세·날짜 변경·취소는 구현됐지만 실제 Backend·Redis·Google
+브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
 ## 요구 환경
@@ -321,10 +324,10 @@ Vite의 `VITE_` 접두사 변수는 브라우저 번들에 포함되므로 비�
 넣지 마세요. 실제 `.env`와 `node_modules/`, `dist/`는 Git에서 제외됩니다.
 
 현재 구현 범위는 React 진입점, Home/Not Found/Signup/Login 및 OAuth2 Callback Route,
-공개 Accommodation Search/Detail, 인증된 Reservation Complete Route,
+공개 Accommodation Search/Detail, 인증된 Reservation Complete·My Reservations·Detail Route,
 공통 Header/Main Layout, 기본 스타일, 회원가입·이메일/Google 로그인과 Header 로그아웃, 메모리 기반 Token 인증,
 자동 재발급, 공통 Bearer Header, Protected/Role Route 및 로그인 후 원래 경로 복귀입니다. 새로고침 후 세션 복원, 사용자 정보
-조회, 내 예약 관리·관리자 전체 기능은 후속 Frontend 이슈 범위입니다.
+조회·관리자 전체 기능은 후속 Frontend 이슈 범위입니다. 본인 예약 일정 변경·취소는 구현됐습니다.
 
 ### f0.3.0 검증 상태 (2026-10-09 문서 동기화)
 
@@ -705,8 +708,23 @@ Projection과 Mutation의 서로 다른 잠금 정책은 유지합니다. Bookin
 `test/bookingFlow.ts`로 재사용하며 생성 UI 전체를 변경/취소 화면에 합치지 않습니다.
 
 의존성·환경변수·Workflow 변경은 없습니다. 전체 57 files / 641 tests와 기존 CI 명령이
-성공했고 별도 H2/Redis의 실제 Backend Lifecycle도 검증했습니다. Browser/Google E2E와
-새 브랜치 원격 CI는 별도입니다. ADMIN도 사용자 영역에서는 자기 예약만 관리하며,
+성공했고 별도 H2/Redis의 실제 Backend Lifecycle 검증은 Repository의 2026-10-14 기록에 있습니다.
+Browser/Google E2E는 별도입니다. ADMIN도 사용자 영역에서는 자기 예약만 관리하며,
 전체 회원 예약/카탈로그/재고 관리 UI는 f0.5.0 범위로 남깁니다.
 Coverage Matrix·타입/상태/Component 책임·실제 API 및 비파괴 수동 검증은
 [`Reservation Management Flow`](../docs/testing/frontend-reservation-management-flow.md)를 따릅니다.
+
+### f0.4.0 문서 동기화 검증 (2026-10-14)
+
+이번 문서 작업에서 `pnpm lint`, `format:check`, `typecheck`, `test`(57 files / 641 tests),
+`build`를 직접 실행해 성공했습니다. Backend의 기존 `ReservationCancellationPolicyTest`와
+`CancellationPolicySnapshotTest`도 Gradle Wrapper의 `--rerun-tasks`로 직접 실행해
+2 suites / 8 tests, failures/errors/skipped 0건을 확인했습니다.
+이 두 Suite는 정책/금액 계산과 Snapshot 단위 검증이며 HTTP·MySQL·Redis·Kafka 검증이 아닙니다.
+Backend 소스/Schema 변경이 없어 전체 Backend test/build와 기록된 임시 실제 HTTP Probe는
+이번 문서 작업에서 재실행하지 않았습니다.
+
+병합 HEAD `ae8dc17`의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/38509485810),
+최종 PR #210 HEAD `0d17b64`의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/38509153290)·
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/38509153367)는 success입니다.
+Mock 통합 테스트·기록된 H2/Redis HTTP·이번 로컬 실행·원격 CI·Browser E2E를 구분합니다.
