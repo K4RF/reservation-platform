@@ -690,3 +690,23 @@ Abort/이탈/로그아웃은 서버 롤백을 뜻하지 않습니다. 다중 Tab
 
 의존성·lockfile·환경변수·실행/Workflow 변경은 없습니다. 테스트·실제 HTTP 연동·수동 확인은
 [`예약 취소 Flow`](../docs/testing/frontend-reservation-cancel-flow.md)를 따릅니다.
+
+## Reservation Management 통합 검증 (#203)
+
+생성 Booking → 완료 → 내 예약 목록 → 상세 → 일정 변경 → 저장 취소 정책 확인 →
+취소 → 상세/목록 갱신을 실제 Router/AuthProvider/UI/API Client와 HTTP 경계 Mock으로 검증합니다.
+하나의 생성 Snapshot을 전체 흐름에 전달하며 기존 #197–#202의 세부 테스트는 재사용합니다.
+공유 날짜 점유의 일반 가용성 미포함, 변경 재고/Booking Policy 거절, 취소 정책 거절,
+응답 유실 GET 복구, History 무재전송과 메모리 인증 상실 뒤 보호 상세 재마운트를 포함합니다.
+
+ID/Path·요청/응답 식별 검증은 `api/reservationContract.ts`, 변경/취소 불명 결과 분류와
+오류 상세는 `components/reservation/reservationFailure.ts`로 정리합니다. 화면별 Response
+Projection과 Mutation의 서로 다른 잠금 정책은 유지합니다. Booking 생성 동작 테스트 Helper를
+`test/bookingFlow.ts`로 재사용하며 생성 UI 전체를 변경/취소 화면에 합치지 않습니다.
+
+의존성·환경변수·Workflow 변경은 없습니다. 전체 57 files / 641 tests와 기존 CI 명령이
+성공했고 별도 H2/Redis의 실제 Backend Lifecycle도 검증했습니다. Browser/Google E2E와
+새 브랜치 원격 CI는 별도입니다. ADMIN도 사용자 영역에서는 자기 예약만 관리하며,
+전체 회원 예약/카탈로그/재고 관리 UI는 f0.5.0 범위로 남깁니다.
+Coverage Matrix·타입/상태/Component 책임·실제 API 및 비파괴 수동 검증은
+[`Reservation Management Flow`](../docs/testing/frontend-reservation-management-flow.md)를 따릅니다.

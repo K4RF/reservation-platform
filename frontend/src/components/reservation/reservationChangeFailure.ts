@@ -1,9 +1,8 @@
 import { ApiError } from '../../api/errors'
+import { isUncertainReservationFailure, reservationErrorDetails } from './reservationFailure'
 
 export function reservationChangeFailure(error: unknown) {
-  // A transport/response/5xx failure can occur after commit. Never infer rollback or replay.
-  const uncertain =
-    !(error instanceof ApiError) || error.kind !== 'http' || (error.status ?? 500) >= 500
+  const uncertain = isUncertainReservationFailure(error)
   if (uncertain)
     return {
       uncertain: true,
@@ -19,9 +18,9 @@ export function reservationChangeFailure(error: unknown) {
       '재고·예약 상태 또는 예약 정책 충돌로 변경하지 못했습니다. 조건과 예약 상세를 다시 확인해 주세요.',
     other: '서버가 변경 요청을 거절했습니다. 조건을 확인해 주세요.',
     server_error: '',
-  }[error.category ?? 'other']
+  }[(error as ApiError).category ?? 'other']
   return {
     uncertain: false,
-    message: `${message}${error.code ? ` [${error.code}] ${error.message}` : ''}${error.fieldErrors.map((field) => ` ${field.field}: ${field.message}`).join('')}`,
+    message: message + reservationErrorDetails(error),
   }
 }

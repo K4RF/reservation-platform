@@ -4,6 +4,7 @@ import { ApiError } from './errors'
 import { isCalendarDate } from '../utils/calendarDate'
 import { isUtcInstant } from '../utils/utcInstant'
 import { toMinorUnits } from '../utils/money'
+import { reservationPath, requireReservationIdentity } from './reservationContract'
 
 // PATCH cancel has no request body. These fields are a completed operation, not a preview.
 export interface ReservationCancellationResponse {
@@ -22,9 +23,8 @@ export async function cancelReservation(
   id: number,
   signal?: AbortSignal,
 ): Promise<ReservationCancellationResponse> {
-  if (!Number.isSafeInteger(id) || id < 1) throw new RangeError('Invalid reservation ID')
   const result = await apiClient.request<ReservationCancellationResponse>(
-    `/reservations/${id}/cancel`,
+    `${reservationPath(id)}/cancel`,
     {
       method: 'PATCH',
       retryOnUnauthorized: false,
@@ -34,7 +34,6 @@ export async function cancelReservation(
   try {
     if (
       !result ||
-      result.reservationId !== id ||
       result.status !== 'CANCELLED' ||
       !isUtcInstant(result.cancelledAt) ||
       typeof result.cancellationDate !== 'string' ||
@@ -56,7 +55,7 @@ export async function cancelReservation(
   } catch {
     throw new ApiError('취소 처리 응답을 확인할 수 없습니다.', { kind: 'unexpected_response' })
   }
-  return result
+  return requireReservationIdentity(result, id)
 }
 
 // Projection of stored ReservationResponse fields, NOT a cancellation quote.

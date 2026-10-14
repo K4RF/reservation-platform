@@ -1,5 +1,8 @@
 # f0.3.0 Accommodation Search → Booking 통합 검증 (#185)
 
+이 문서는 #185 당시 생성 Flow와 f0.4 인계 기록이다. 이후 목록/상세/변경/취소가 연결됐으며
+생성부터의 현재 통합 검증은 [Reservation Management Flow](frontend-reservation-management-flow.md)를 따른다.
+
 ## 검증 경계
 
 현재 Source 기준 흐름은 공개 `/accommodations` 검색 → 숙소 상세 → 날짜/전체 인원 조회 →

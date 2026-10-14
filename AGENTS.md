@@ -392,6 +392,15 @@ Before completing a change:
   `docs/testing/frontend-reservation-change-flow.md`,
   `docs/testing/frontend-cancellation-summary.md`, and
   `docs/testing/frontend-reservation-cancel-flow.md` for contracts and verification.
+  The complete creation-to-list/detail/change/cancel lifecycle is covered by
+  `ReservationManagementFlow.integration.test.tsx` at the HTTP mock boundary.
+  Existing fine-grained suites remain the coverage source; do not duplicate them.
+  Shared reservationContract helpers check IDs, not JWT ownership. Read projections
+  and mutation lock policies remain distinct. ADMINs also manage only their own
+  reservations in the user area; global reservation/catalog/inventory Admin UI is
+  f0.5.0 work. See `docs/testing/frontend-reservation-management-flow.md` for the
+  coverage matrix, isolated real HTTP evidence, state/component responsibilities,
+  and explicit Browser/remote-CI verification boundaries.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under
   `backend/src/test/java/junsik/reservation/support`.
