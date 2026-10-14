@@ -4,6 +4,7 @@ import { readReservationResult, type ReservationResult } from './reservation'
 import { isCalendarDate } from '../utils/calendarDate'
 import { toMinorUnits } from '../utils/money'
 import { isUtcInstant } from '../utils/utcInstant'
+import { reservationPath, requireReservationIdentity } from './reservationContract'
 
 export interface ReservationNight {
   stayDate: string
@@ -110,11 +111,8 @@ export async function getReservationDetail(
   id: number,
   signal?: AbortSignal,
 ): Promise<ReservationDetail> {
-  if (!Number.isSafeInteger(id) || id < 1) throw new RangeError('Invalid reservation ID')
   const result = readReservationDetail(
-    await apiClient.request<ReservationDetail>(`/reservations/${id}`, { signal }),
+    await apiClient.request<ReservationDetail>(reservationPath(id), { signal }),
   )
-  if (result.reservationId !== id)
-    throw new ApiError('예약 ID가 일치하지 않습니다.', { kind: 'unexpected_response' })
-  return result
+  return requireReservationIdentity(result, id)
 }

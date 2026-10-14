@@ -2,6 +2,7 @@ import { apiClient } from './client'
 import { ApiError } from './errors'
 import { validateAvailability } from './availabilityValidation'
 import { readReservationDetail, type ReservationDetail } from './reservationDetail'
+import { reservationPath, requireReservationIdentity } from './reservationContract'
 
 // UpdateReservationScheduleRequest: identity, room, guests and prices are never submitted.
 export interface ReservationChangeRequest {
@@ -14,12 +15,11 @@ export async function changeReservationSchedule(
   request: ReservationChangeRequest,
   signal?: AbortSignal,
 ): Promise<ReservationDetail> {
-  if (!Number.isSafeInteger(reservation.reservationId) || reservation.reservationId < 1)
-    throw new RangeError('Invalid reservation ID')
+  const path = reservationPath(reservation.reservationId)
   const error = validateAvailability({ ...request, guestCount: reservation.guestCount })
   if (error) throw new RangeError(error)
   const result = readReservationDetail(
-    await apiClient.request<ReservationDetail>(`/reservations/${reservation.reservationId}`, {
+    await apiClient.request<ReservationDetail>(path, {
       method: 'PATCH',
       body: { checkInDate: request.checkInDate, checkOutDate: request.checkOutDate },
       signal,
@@ -27,7 +27,6 @@ export async function changeReservationSchedule(
     }),
   )
   if (
-    result.reservationId !== reservation.reservationId ||
     result.roomId !== reservation.roomId ||
     result.guestCount !== reservation.guestCount ||
     result.reservationNumber !== reservation.reservationNumber ||
@@ -39,7 +38,7 @@ export async function changeReservationSchedule(
     !samePolicy(result, reservation)
   )
     throw new ApiError('일정 변경 결과를 확인할 수 없습니다.', { kind: 'unexpected_response' })
-  return result
+  return requireReservationIdentity(result, reservation.reservationId)
 }
 
 function sameGuest(a: ReservationDetail, b: ReservationDetail) {

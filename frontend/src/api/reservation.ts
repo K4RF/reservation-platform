@@ -3,6 +3,7 @@ import { ApiError } from './errors'
 import type { BookingRequest, RepresentativeGuestRequest } from './booking'
 import { validateAvailability } from './availabilityValidation'
 import { toMinorUnits } from '../utils/money'
+import { reservationPath, requireReservationIdentity } from './reservationContract'
 
 // Projection of ReservationResponse fields used by reservation reads (not a new API DTO).
 export interface ReservationResult {
@@ -78,11 +79,8 @@ export async function createReservation(request: BookingRequest): Promise<Reserv
 }
 
 export async function getReservation(id: number, signal?: AbortSignal): Promise<ReservationResult> {
-  if (!Number.isSafeInteger(id) || id < 1) throw new RangeError('Invalid reservation ID')
   const result = readReservationResult(
-    await apiClient.request<ReservationResult>(`/reservations/${id}`, { signal }),
+    await apiClient.request<ReservationResult>(reservationPath(id), { signal }),
   )
-  if (result.reservationId !== id)
-    throw new ApiError('예약 ID가 일치하지 않습니다.', { kind: 'unexpected_response' })
-  return result
+  return requireReservationIdentity(result, id)
 }
