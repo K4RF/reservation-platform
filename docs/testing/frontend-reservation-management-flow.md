@@ -1,5 +1,8 @@
 # f0.4.0 Reservation Management 통합 검증 (#203)
 
+이 문서는 f0.4.0 당시 구현·검증 기록이다. 이후 #211에서 관리자 공통 Layout과 메뉴를
+추가했으며 현재 경계는 [관리자 Layout 검증](frontend-admin-layout.md)을 따른다. 관리자 CRUD는 아직 미연결이다.
+
 ## 검증 범위와 경계
 
 f0.3.0 예약 생성 → 완료 GET → 내 예약 목록 → 본인 상세 → 날짜 변경 →
