@@ -376,7 +376,14 @@ Before completing a change:
   Transport/response/5xx errors may occur after commit. Pending changes/cancellations
   disable the other operation in the current UI. Success reloads detail and lists
   reload on remount. No payment cancellation or completed refund is implemented.
-  Admin UI remains roadmap work. CONFIRMED reservations support
+  The ADMIN-only `/admin` layout provides accommodation, room, price and inventory
+  navigation and explicitly unconnected route-entry pages. CRUD forms/API wiring
+  remain roadmap work. It reuses AuthProvider/ProtectedRoute and JWT role hints;
+  it does not add persistent token storage or restore ADMIN after full reload.
+  Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
+  production controller or reservation-wide Admin menu is implied by the UI.
+  See `docs/testing/frontend-admin-layout.md` for contracts and verification.
+  CONFIRMED reservations support
   date-only schedule changes with fixed room/guest count. Reference estimates
   reuse public daily-price reads; the PATCH response is the authoritative amount.
   Never automatically replay a change PATCH, including after 401. Ambiguous
@@ -398,8 +405,9 @@ Before completing a change:
   Shared reservationContract helpers check IDs, not JWT ownership. Read projections
   and mutation lock policies remain distinct. ADMINs also manage only their own
   reservations in the user area; global reservation/catalog/inventory Admin UI is
-  f0.5.0 work. See `docs/testing/frontend-reservation-management-flow.md` for the
-  coverage matrix, isolated real HTTP evidence, state/component responsibilities,
+  f0.5.0 work beyond the shared Admin shell. See
+  `docs/testing/frontend-reservation-management-flow.md` for the coverage matrix,
+  isolated real HTTP evidence, state/component responsibilities,
   and explicit Browser/remote-CI verification boundaries.
 - Test fixtures for members, accommodations, rooms, daily room inventories,
   daily room prices, reservations, and JWT Bearer headers live under

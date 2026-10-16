@@ -7,7 +7,11 @@ import { NotFoundPage } from '../pages/NotFoundPage'
 import { SignUpPage } from '../pages/SignUpPage'
 import { routePaths } from './routePaths'
 import { ProtectedRoute } from '../layouts/ProtectedRoute'
-import { ProtectedAreaPage } from '../pages/ProtectedAreaPage'
+import { AdminLayout } from '../layouts/AdminLayout'
+import { AdminHomePage } from '../pages/admin/AdminHomePage'
+import { AdminSectionPage } from '../pages/admin/AdminSectionPage'
+import { AdminNotFoundPage } from '../pages/admin/AdminNotFoundPage'
+import { adminSections } from './adminSections'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
 import { BookingCompletePage } from '../pages/BookingCompletePage'
@@ -36,9 +40,16 @@ export function AppRoutes() {
           </Route>
         </Route>
         <Route element={<ProtectedRoute roles={['ADMIN']} />}>
-          <Route path={routePaths.admin}>
-            <Route index element={<ProtectedAreaPage admin />} />
-            <Route path="*" element={<NotFoundPage />} />
+          <Route path={routePaths.admin} element={<AdminLayout />}>
+            <Route index element={<AdminHomePage />} />
+            {adminSections.map((section) => (
+              <Route
+                key={section.path}
+                path={section.path}
+                element={<AdminSectionPage section={section} />}
+              />
+            ))}
+            <Route path="*" element={<AdminNotFoundPage />} />
           </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />
