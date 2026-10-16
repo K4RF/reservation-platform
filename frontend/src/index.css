@@ -660,6 +660,56 @@ form[aria-label='대표 투숙객 정보'] {
 .reservation-facts dd {
   margin: 0.4rem 0 0;
 }
+
+.admin-layout {
+  width: min(100%, 70rem);
+  min-width: 0;
+  text-align: left;
+}
+.admin-header {
+  margin-bottom: 1.5rem;
+}
+.admin-workspace {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.admin-sidebar,
+.admin-content {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+.admin-sidebar ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-sidebar .nav-link {
+  width: 100%;
+  justify-content: flex-start;
+}
+.admin-sidebar .nav-link-active {
+  background: #edf2eb;
+}
+.admin-content h2 {
+  margin-top: 0;
+}
+.admin-content p,
+.admin-sidebar p {
+  line-height: 1.7;
+}
+@media (max-width: 48rem) {
+  .admin-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 40rem) {
   form[aria-label='숙소 검색 조건'] {
     grid-template-columns: minmax(0, 1fr);
