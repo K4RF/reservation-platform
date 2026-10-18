@@ -4,7 +4,8 @@
 추가했으며 현재 경계는 [관리자 Layout 검증](frontend-admin-layout.md)을 따른다.
 #212 숙소 관리는 [숙소 관리 검증](frontend-admin-accommodations.md), #213 객실 관리는
 [객실 관리 검증](frontend-admin-rooms.md)에 기록한다. #214 단일 날짜 가격은
-[가격 관리 검증](frontend-admin-daily-prices.md)을 따르며 재고 화면은 아직 미연결이다.
+[가격 관리 검증](frontend-admin-daily-prices.md), #215 재고 Calendar는
+[재고 관리 검증](frontend-admin-inventories.md)을 따른다. 아래 #203 당시 기록과 구분한다.
 
 ## 검증 범위와 경계
 

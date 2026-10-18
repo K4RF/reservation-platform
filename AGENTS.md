@@ -400,7 +400,18 @@ Before completing a change:
   Success reloads the effective price; ambiguous writes remain locked across GET
   until explicit review. Room/date/session changes reset state and ignore stale
   responses. Do not add client fallback, currency, Calendar/batch or DELETE/reset
-  behavior absent from the API. Inventory UI wiring remains roadmap work. See
+  behavior absent from the API. Inventory management uses an inclusive date-range
+  Calendar; missing dates are uncreated, never zero or CLOSED. All Inventory HTTP
+  APIs require ADMIN authentication, including GET. Only totalQuantity and
+  OPEN/CLOSED are editable; never send reservedQuantity, availableQuantity or
+  version. INACTIVE Rooms are readable but not writable. CLOSED does not release
+  occupancy, and its available quantity may remain positive. Single-date POST/PUT
+  only; no batch or delete. The 366-day UI limit is a rendering guard, not a Backend
+  policy. Every inventory write failure requires a successful fresh Calendar GET,
+  explicit result review and new submission acknowledgement. INVENTORY_006/011
+  never trigger automatic repair or replay. JPA Version detects overlapping
+  transactions; the API does not expose version/If-Match for stale-screen edits.
+  See `docs/testing/frontend-admin-inventories.md`. See
   `docs/testing/frontend-admin-accommodations.md` and `docs/testing/frontend-admin-rooms.md`.
   See `docs/testing/frontend-admin-daily-prices.md` for price management.
   It reuses AuthProvider/ProtectedRoute and JWT role hints;
@@ -429,8 +440,8 @@ Before completing a change:
   Existing fine-grained suites remain the coverage source; do not duplicate them.
   Shared reservationContract helpers check IDs, not JWT ownership. Read projections
   and mutation lock policies remain distinct. ADMINs also manage only their own
-  reservations in the user area; global reservation/catalog/inventory Admin UI is
-  f0.5.0 work beyond the shared Admin shell. See
+  reservations in the user area; global reservation Admin UI is not implemented.
+  Catalog/price/inventory Admin management is separate from owner reservations. See
   `docs/testing/frontend-reservation-management-flow.md` for the coverage matrix,
   isolated real HTTP evidence, state/component responsibilities,
   and explicit Browser/remote-CI verification boundaries.
