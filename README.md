@@ -48,6 +48,8 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 재고는 날짜 범위 Calendar 조회와 단일 날짜의 총수량·판매 상태 관리까지 연결되어 있습니다.
 미생성 날짜는 별도 표시하고 예약·가용 수량은 수정하지 않습니다. 가격·재고 일괄 설정과 삭제/복원은 지원하지 않습니다.
 정책 조회·삭제 API는 없어 정책은 명시적 생성/수정과 성공 응답 확인만 지원합니다.
+로그인→숙소→객실→가격→재고의 [통합 검증](docs/testing/frontend-admin-management-flow.md)은 HTTP Mock 기준입니다.
+실제 Backend Admin 전체 연동·Browser 수동 검수·이 변경의 원격 CI는 별도 확인 대상입니다.
 전체 API의 Method·요청·응답·권한은 실행 후 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 확인합니다.
 
 ## 핵심 설계
@@ -330,6 +332,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [관리자 객실 관리 계약과 검증](docs/testing/frontend-admin-rooms.md)
 - [관리자 날짜별 가격 계약과 검증](docs/testing/frontend-admin-daily-prices.md)
 - [관리자 재고 Calendar 계약과 검증](docs/testing/frontend-admin-inventories.md)
+- [관리자 전체 흐름·구조·권한 검증 경계](docs/testing/frontend-admin-management-flow.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -341,8 +344,9 @@ GitHub에서 Backend `v0.1.0`·`v0.1.1`·`v0.1.2`·`v0.1.3`·`v0.2.0`·`v0.3.0`�
 Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`은 **Completed**입니다.
 `f0.4.0 — Reservation Management`는 Issue #197–#203 7건과 PR #204–#210 7건을 통해
 생성 이후 본인 목록 → 상세 → 날짜 변경 → 저장 취소 정책 확인 → 취소 → 재조회를 연결했습니다.
-현재 `f0.5.0 — Admin Management`는 공통 Layout·Route와 숙소·객실·날짜별 가격·재고 관리까지 구현 중이며, `f0.6.0`·`v0.5.0`·
-`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
+현재 `f0.5.0 — Admin Management`는 공통 Layout·Route, 숙소·객실·가격·재고와 통합 Mock 회귀 검증을 구현했습니다.
+실제 Admin HTTP·Browser 검증과 원격 CI 완료를 뜻하지는 않습니다.
+`f0.6.0`·`v0.5.0`·`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
 
 f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
 전체 UX를 수동 검수하는 Issue를 두는 계획을 유지합니다. 작은 수정은 f0.6.0에서,

@@ -5,6 +5,7 @@
 이후 #213에서 [숙소별 객실 관리](frontend-admin-rooms.md)도 연결했다.
 #214의 [단일 날짜 가격 관리](frontend-admin-daily-prices.md), #215의
 [재고 Calendar 관리](frontend-admin-inventories.md)도 연결했다. 아래 진입 안내 표와 검증 기록은 #211 당시 기준이다.
+#216의 [Admin 전체 흐름·구조 정리](frontend-admin-management-flow.md)에서 현재 회귀 범위와 검증 경계를 정리했다.
 
 ## 구현 범위
 

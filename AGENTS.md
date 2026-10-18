@@ -419,6 +419,15 @@ Before completing a change:
   Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
   production controller or reservation-wide Admin menu is implied by the UI.
   See `docs/testing/frontend-admin-layout.md` for contracts and verification.
+  `test/AdminManagementFlow.integration.test.tsx` connects email login, navigation,
+  accommodation/policies, rooms, price and inventory at the HTTP-mock boundary,
+  including ADMIN owner-detail/foreign-403 UI regression. It does not prove server
+  authorization or a real inventory race. Reuse fine-grained suites rather than
+  duplicating them. `CatalogStatusForm` shares only catalog status input and
+  acknowledgement; domain API calls, page-level gates and after-success GETs stay
+  in pages. Policy/price/inventory recovery rules remain distinct. See
+  `docs/testing/frontend-admin-management-flow.md` for coverage, API/type/state
+  responsibilities, actual HTTP/Browser/remote-CI limits and f0.6.0 readiness gates.
   CONFIRMED reservations support
   date-only schedule changes with fixed room/guest count. Reference estimates
   reuse public daily-price reads; the PATCH response is the authoritative amount.

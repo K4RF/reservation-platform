@@ -18,7 +18,7 @@ Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니�
 7건과 PR #204–#210 7건이 종료됐습니다. 본인 목록/상세 → 날짜 변경 준비/일반 가용성 →
 일정 변경 PATCH → 저장 취소 정책 확인 → 명시적 취소 PATCH → 상세/목록 재조회를 연결했습니다.
 `f0.5.0 — Admin Management`는 #211 공통 Layout, #212 숙소, #213 객실, #214 단일 날짜 가격,
-#215 재고 Calendar 관리를 구현했으며,
+#215 재고 Calendar, #216 통합 Mock 검증과 중복 상태 Form 정리를 구현했으며,
 `f0.6.0` 통합/UX는 Planned입니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
@@ -743,8 +743,9 @@ Projection과 Mutation의 서로 다른 잠금 정책은 유지합니다. Bookin
 
 의존성·환경변수·Workflow 변경은 없습니다. 전체 57 files / 641 tests와 기존 CI 명령이
 성공했고 별도 H2/Redis의 실제 Backend Lifecycle 검증은 Repository의 2026-10-14 기록에 있습니다.
-Browser/Google E2E는 별도입니다. ADMIN도 사용자 영역에서는 자기 예약만 관리하며,
-전체 회원 예약/카탈로그/재고 관리 UI는 f0.5.0 범위로 남깁니다.
+Browser/Google E2E는 별도입니다. ADMIN도 사용자 영역에서는 자기 예약만 관리합니다.
+이 문단의 검증 결과는 #203 당시 기준입니다. 현재 카탈로그·가격·재고 관리 UI는 #211–#215에서 연결했으며
+전체 회원 예약 Admin UI는 구현하지 않았습니다.
 Coverage Matrix·타입/상태/Component 책임·실제 API 및 비파괴 수동 검증은
 [`Reservation Management Flow`](../docs/testing/frontend-reservation-management-flow.md)를 따릅니다.
 
@@ -762,3 +763,20 @@ Backend 소스/Schema 변경이 없어 전체 Backend test/build와 기록된 �
 최종 PR #210 HEAD `0d17b64`의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/38509153290)·
 [Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/38509153367)는 success입니다.
 Mock 통합 테스트·기록된 H2/Redis HTTP·이번 로컬 실행·원격 CI·Browser E2E를 구분합니다.
+
+## Admin Management 통합 검증 (#216)
+
+ADMIN 이메일 로그인→관리 홈/메뉴→숙소 생성/수정/상태/정책→숙소별 객실→단일 날짜 가격→
+재고 Calendar를 실제 Router/AuthProvider/UI/apiClient와 HTTP 경계 Mock으로 연결합니다.
+기존 개별 Suite는 유지하고 006/011 재고 충돌 복구, 관리 쓰기 401/403/Network 무재전송,
+메모리 인증 상실 뒤 깊은 URL 재로그인과 ADMIN 본인 예약/타인 예약 403 UI 경계를 검증합니다.
+Mock이 실제 서버 Authorization/DB Race를 검증하는 것은 아닙니다.
+
+숙소/객실의 상태 선택·동의 UI는 CatalogStatusForm으로 공통화했습니다. API·성공 후 GET과
+Mutation Gate는 Page에 남겼으며 정책·가격·재고의 서로 다른 복구 규칙은 합치지 않습니다.
+미사용 AdminSectionPage는 제거했고 지원하지 않는 전체 예약 메뉴/사용자·권한 관리 기능은 만들지 않았습니다.
+
+전체 69 files / 968 tests 및 기존 Frontend CI 명령을 로컬에서 검증했습니다.
+Docker/Backend/Redis 미실행으로 이번 실제 Admin HTTP와 Browser/원격 CI는 미검증입니다.
+Coverage Matrix·구조 책임·실제 연동 확인과 f0.6.0 진입 조건은
+[`Admin Management Flow`](../docs/testing/frontend-admin-management-flow.md)를 따릅니다.
