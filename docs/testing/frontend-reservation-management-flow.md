@@ -2,7 +2,8 @@
 
 이 문서는 f0.4.0 당시 구현·검증 기록이다. 이후 #211에서 관리자 공통 Layout과 메뉴를
 추가했으며 현재 경계는 [관리자 Layout 검증](frontend-admin-layout.md)을 따른다.
-#212의 숙소 관리는 [숙소 관리 검증](frontend-admin-accommodations.md)에 기록하며, 객실·가격·재고 화면은 아직 미연결이다.
+#212 숙소 관리는 [숙소 관리 검증](frontend-admin-accommodations.md), #213 객실 관리는
+[객실 관리 검증](frontend-admin-rooms.md)에 기록하며, 날짜별 가격·재고 화면은 아직 미연결이다.
 
 ## 검증 범위와 경계
 

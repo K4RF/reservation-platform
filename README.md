@@ -36,7 +36,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 
 예약 조회·변경·취소는 JWT 소유자 기준입니다. `ADMIN`도 사용자 예약 영역에서는
 자기 예약만 관리합니다. `/admin`에는 ADMIN 전용 공통 Layout과 숙소·객실·가격·재고 메뉴가
-있으며, 숙소 목록·생성·수정·운영 상태와 예약/취소 정책 입력을 연결했습니다.
+있으며, 숙소·객실 목록·생성·수정·운영 상태와 숙소 예약/취소 정책 입력을 연결했습니다.
 
 ### 관리자 API
 
@@ -44,7 +44,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - 숙소별 예약 가능 조건과 취소 정책 관리
 - 객실별 날짜 재고·`OPEN/CLOSED` 판매 상태 및 날짜별 가격 관리
 
-숙소 관리 화면은 연결되어 있습니다. 객실·가격·재고 관리 화면은 아직 진입 안내만 제공합니다.
+숙소·객실 관리 화면은 연결되어 있습니다. 날짜별 가격·재고 관리 화면은 아직 진입 안내만 제공합니다.
 정책 조회·삭제 API는 없어 정책은 명시적 생성/수정과 성공 응답 확인만 지원합니다.
 전체 API의 Method·요청·응답·권한은 실행 후 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 확인합니다.
 
@@ -325,6 +325,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [예약관리 전체 흐름](docs/testing/frontend-reservation-management-flow.md)
 - [관리자 Route·공통 Layout·권한 경계](docs/testing/frontend-admin-layout.md)
 - [관리자 숙소·정책 입력 계약과 검증](docs/testing/frontend-admin-accommodations.md)
+- [관리자 객실 관리 계약과 검증](docs/testing/frontend-admin-rooms.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -336,7 +337,7 @@ GitHub에서 Backend `v0.1.0`·`v0.1.1`·`v0.1.2`·`v0.1.3`·`v0.2.0`·`v0.3.0`�
 Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`은 **Completed**입니다.
 `f0.4.0 — Reservation Management`는 Issue #197–#203 7건과 PR #204–#210 7건을 통해
 생성 이후 본인 목록 → 상세 → 날짜 변경 → 저장 취소 정책 확인 → 취소 → 재조회를 연결했습니다.
-현재 `f0.5.0 — Admin Management`는 공통 Layout·Route와 #212 숙소 관리까지 구현 중이며, `f0.6.0`·`v0.5.0`·
+현재 `f0.5.0 — Admin Management`는 공통 Layout·Route와 숙소·객실 관리까지 구현 중이며, `f0.6.0`·`v0.5.0`·
 `v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
 
 f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
@@ -351,7 +352,7 @@ f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layo
 아직 구현하지 않은 주요 범위:
 
 - 결제/PG 연동, 실제 환불 처리, 취소 전 금액 견적 API
-- 객실·가격·재고 관리 화면 연동, 현재 숙소 정책 조회, 전체 사용자 예약 관리, 새로고침 후 인증 복원
+- 날짜별 가격·재고 관리 화면 연동, 현재 숙소 정책 조회, 전체 사용자 예약 관리, 새로고침 후 인증 복원
 - Access Token 블랙리스트, 추가 OAuth2 Provider, 서버 요청 멱등성
 - 변경·취소 재시도, Retry Backoff/Jitter, 분산 락 범위 확대
 - 외부 Kafka 후처리, 자동 DLT 재처리, Outbox/처리 이력 Cleanup

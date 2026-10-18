@@ -386,8 +386,15 @@ Before completing a change:
   never current-policy reads or reservation snapshots. All Admin writes disable
   automatic 401 replay and share a page-level submit gate; ambiguous outcomes lock
   writes until explicit outcome review. Detail reloads after catalog update/status
-  success; lists reload on remount. Room/price/inventory UI wiring remains roadmap
-  work. See `docs/testing/frontend-admin-accommodations.md` for #212 contracts.
+  success; lists reload on remount. Room management selects a parent accommodation
+  via catalog links or ID, reuses public scoped lists with all statuses and supported
+  filters/sorts, and supports ADMIN create/full update/status PATCH only. Validate
+  RoomResponse roomId/accommodationId against the selected context. Parent changes
+  reset list filters/page/form state and ignore stale responses. Capacity is total
+  guests; room PUT changes the base price, not daily overrides or stored reservations.
+  Price input conservatively respects DECIMAL(12,2), without silent rounding.
+  Daily-price/inventory UI wiring remains roadmap work. See
+  `docs/testing/frontend-admin-accommodations.md` and `docs/testing/frontend-admin-rooms.md`.
   It reuses AuthProvider/ProtectedRoute and JWT role hints;
   it does not add persistent token storage or restore ADMIN after full reload.
   Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
