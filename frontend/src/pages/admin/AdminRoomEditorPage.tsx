@@ -1,16 +1,15 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
 import { getRoom } from '../../api/room'
-import type { RoomResponse } from '../../api/room'
 import { saveRoom, changeRoomStatus } from '../../api/adminRoom'
 import { ApiError } from '../../api/errors'
 import { RoomCard } from '../../components/room/RoomCard'
 import { RoomForm } from '../../components/admin/RoomForm'
+import { CatalogStatusForm } from '../../components/admin/CatalogStatusForm'
 import { readPositiveId } from '../../components/admin/roomValidation'
 import { AdminMutationFeedback } from '../../components/admin/AdminMutationFeedback'
 import { adminErrorMessage, useAdminMutation } from '../../components/admin/useAdminMutation'
-import type { AdminMutation } from '../../components/admin/useAdminMutation'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { getSessionVersion } from '../../state/accessToken'
@@ -141,70 +140,22 @@ function RoomEditor({
             }}
           />
           {state.data.room && (
-            <RoomStatusForm room={state.data.room} mutation={mutation} onSuccess={retry} />
+            <CatalogStatusForm
+              resource="room"
+              currentStatus={state.data.room.status}
+              disabled={mutation.disabled}
+              onSave={(status) => {
+                const room = state.data.room!
+                void mutation.run(
+                  (signal) => changeRoomStatus(room.accommodationId, room.roomId, status, signal),
+                  retry,
+                  '객실 운영 상태를 저장했습니다. 최신 상세를 다시 조회합니다.',
+                )
+              }}
+            />
           )}
         </>
       )}
     </section>
-  )
-}
-function RoomStatusForm({
-  room,
-  mutation,
-  onSuccess,
-}: {
-  room: RoomResponse
-  mutation: AdminMutation
-  onSuccess: () => void
-}) {
-  const [status, setStatus] = useState<RoomResponse['status']>(
-    room.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-  )
-  const [confirmed, setConfirmed] = useState(false)
-  return (
-    <form
-      className="admin-form"
-      aria-label="객실 운영 상태 변경"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (!confirmed || mutation.disabled) return
-        setConfirmed(false)
-        void mutation.run(
-          (signal) => changeRoomStatus(room.accommodationId, room.roomId, status, signal),
-          onSuccess,
-          '객실 운영 상태를 저장했습니다. 최신 상세를 다시 조회합니다.',
-        )
-      }}
-    >
-      <fieldset disabled={mutation.disabled}>
-        <legend>객실 운영 상태 변경</legend>
-        <p>운영 중지는 삭제가 아니며 기존 예약 이력과 재고를 임의로 제거하지 않습니다.</p>
-        <div className="form-field">
-          <label htmlFor="admin-room-status">변경할 객실 상태</label>
-          <select
-            id="admin-room-status"
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as RoomResponse['status'])
-              setConfirmed(false)
-            }}
-          >
-            <option value="ACTIVE">운영 중 (ACTIVE)</option>
-            <option value="INACTIVE">운영 중지 (INACTIVE)</option>
-          </select>
-        </div>
-        <label className="admin-check">
-          <input
-            type="checkbox"
-            checked={confirmed}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
-          객실 상태 변경을 확인했습니다.
-        </label>
-        <button type="submit" disabled={!confirmed}>
-          객실 상태 저장
-        </button>
-      </fieldset>
-    </form>
   )
 }
