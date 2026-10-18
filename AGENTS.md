@@ -393,8 +393,16 @@ Before completing a change:
   reset list filters/page/form state and ignore stale responses. Capacity is total
   guests; room PUT changes the base price, not daily overrides or stored reservations.
   Price input conservatively respects DECIMAL(12,2), without silent rounding.
-  Daily-price/inventory UI wiring remains roadmap work. See
+  Daily-price management supports one Room/stayDate GET plus ADMIN POST/PUT.
+  Reuse the effective-price response: DEFAULT/null ID is a valid base fallback,
+  DAILY/positive ID is an override. Choose create/update from the last successful
+  GET only; 409/404 never trigger automatic operation switching or writes.
+  Success reloads the effective price; ambiguous writes remain locked across GET
+  until explicit review. Room/date/session changes reset state and ignore stale
+  responses. Do not add client fallback, currency, Calendar/batch or DELETE/reset
+  behavior absent from the API. Inventory UI wiring remains roadmap work. See
   `docs/testing/frontend-admin-accommodations.md` and `docs/testing/frontend-admin-rooms.md`.
+  See `docs/testing/frontend-admin-daily-prices.md` for price management.
   It reuses AuthProvider/ProtectedRoute and JWT role hints;
   it does not add persistent token storage or restore ADMIN after full reload.
   Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
