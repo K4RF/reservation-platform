@@ -62,6 +62,8 @@ describe('Admin shared layout and existing role guard', () => {
       expect(screen.getByRole('heading', { name: label, level: 2 })).toBeTruthy()
       if (path === '/admin/rooms')
         expect(screen.getByRole('form', { name: '관리 숙소 선택' })).toBeTruthy()
+      else if (path === '/admin/prices')
+        expect(screen.getByRole('form', { name: '가격 조회 대상 선택' })).toBeTruthy()
       else expect(screen.getByText('관리 화면 준비 중')).toBeTruthy()
       expect(
         within(navigation()).getByRole('link', { name: label }).getAttribute('aria-current'),
@@ -70,7 +72,8 @@ describe('Admin shared layout and existing role guard', () => {
         within(navigation()).getByRole('link', { name: '관리 홈' }).getAttribute('aria-current'),
       ).toBeNull()
       expect(within(navigation()).getAllByRole('link')).toHaveLength(5)
-      if (path !== '/admin/rooms') expect(screen.queryByRole('form')).toBeNull()
+      if (path !== '/admin/rooms' && path !== '/admin/prices')
+        expect(screen.queryByRole('form')).toBeNull()
       expect(fetch).not.toHaveBeenCalled()
     },
   )
