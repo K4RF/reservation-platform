@@ -22,7 +22,19 @@ export interface RoomPageResponse {
   last: boolean
 }
 
-function isRoomResponse(room: RoomResponse | undefined): room is RoomResponse {
+export interface RoomSearchRequest {
+  minCapacity?: number
+  minPrice?: string
+  maxPrice?: string
+  status?: RoomResponse['status']
+  amenities?: RoomAmenity[]
+  page?: number
+  size?: number
+  sortBy?: 'ID' | 'NAME' | 'CAPACITY' | 'NIGHTLY_PRICE'
+  direction?: 'ASC' | 'DESC'
+}
+
+export function isRoomResponse(room: RoomResponse | undefined): room is RoomResponse {
   return (
     !!room &&
     Number.isSafeInteger(room.roomId) &&
@@ -57,11 +69,32 @@ export async function getAccommodationRooms(
   page = 0,
   signal?: AbortSignal,
 ): Promise<RoomPageResponse> {
+  return searchAccommodationRooms(
+    accommodationId,
+    { page, size: 20, sortBy: 'ID', direction: 'ASC' },
+    signal,
+  )
+}
+
+// Same public endpoint, without imposing exploration/availability filters on Admin callers.
+export async function searchAccommodationRooms(
+  accommodationId: number,
+  request: RoomSearchRequest = {},
+  signal?: AbortSignal,
+): Promise<RoomPageResponse> {
+  if (!Number.isSafeInteger(accommodationId) || accommodationId < 1)
+    throw new RangeError('Invalid accommodation ID')
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(request)) {
+    if (value === undefined || value === '') continue
+    if (Array.isArray(value)) value.forEach((item) => query.append(key, item))
+    else query.set(key, String(value))
+  }
   const response = await apiClient.request<RoomPageResponse>(
-    `/accommodations/${accommodationId}/rooms?page=${page}&size=20&sortBy=ID&direction=ASC`,
+    `/accommodations/${accommodationId}/rooms${query.size ? `?${query}` : ''}`,
     { signal, includeAuth: false },
   )
-  return readRoomPage(response, accommodationId, page)
+  return readRoomPage(response, accommodationId, request.page ?? 0)
 }
 
 function readRoomPage(

@@ -1,4 +1,5 @@
 import type { RoomPageResponse, RoomResponse } from '../api/room'
+import type { RoomWriteRequest } from '../api/adminRoom'
 
 export const room: RoomResponse = {
   roomId: 3,
@@ -8,6 +9,12 @@ export const room: RoomResponse = {
   nightlyPrice: 123456.78,
   amenities: ['WIFI', 'AIR_CONDITIONER'],
   status: 'ACTIVE',
+}
+export const roomWrite: RoomWriteRequest = {
+  name: room.name,
+  capacity: room.capacity,
+  nightlyPrice: room.nightlyPrice,
+  amenities: room.amenities,
 }
 export function roomPage(overrides: Partial<RoomPageResponse> = {}): RoomPageResponse {
   return {
