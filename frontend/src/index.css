@@ -792,3 +792,12 @@ form[aria-label='대표 투숙객 정보'] {
     padding: 1.25rem;
   }
 }
+
+.inventory-calendar {
+  overflow-x: auto;
+  margin-block: 1rem;
+}
+
+.inventory-calendar table {
+  min-width: 36rem;
+}

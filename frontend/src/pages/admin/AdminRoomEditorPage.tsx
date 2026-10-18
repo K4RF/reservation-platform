@@ -18,6 +18,7 @@ import { useAuth } from '../../state/useAuth'
 import { useDetailQuery } from '../useDetailQuery'
 import { adminRoomListPath } from './adminRoomQuery'
 import { adminDailyPricePath } from './adminDailyPriceQuery'
+import { adminInventoryPath } from './adminInventoryQuery'
 
 export function AdminRoomEditorPage({ create = false }: { create?: boolean }) {
   const { roomId } = useParams(),
@@ -113,6 +114,9 @@ function RoomEditor({
               <RoomCard room={state.data.room} />
               <Link to={adminDailyPricePath(state.data.room.roomId)}>
                 이 객실의 날짜별 가격 관리
+              </Link>
+              <Link className="nav-link" to={adminInventoryPath(state.data.room.roomId)}>
+                이 객실의 날짜별 재고 관리
               </Link>
             </section>
           )}

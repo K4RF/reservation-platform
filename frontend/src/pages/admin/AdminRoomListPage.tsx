@@ -10,6 +10,7 @@ import { ErrorState } from '../../components/ui/ErrorState'
 import { useDetailQuery } from '../useDetailQuery'
 import { adminRoomSearchFields, readAdminRoomQuery, roomSortFields } from './adminRoomQuery'
 import { adminDailyPricePath } from './adminDailyPriceQuery'
+import { adminInventoryPath } from './adminInventoryQuery'
 
 export function AdminRoomListPage() {
   const [params, setParams] = useSearchParams()
@@ -198,6 +199,9 @@ function RoomManagementList({
                   </Link>
                   <Link className="nav-link" to={adminDailyPricePath(room.roomId)}>
                     {room.name} 날짜별 가격 관리
+                  </Link>
+                  <Link className="nav-link" to={adminInventoryPath(room.roomId)}>
+                    {room.name} 날짜별 재고 관리
                   </Link>
                 </li>
               ))}

@@ -10,10 +10,12 @@ export function AdminMutationFeedback({
   mutation,
   reviewLink,
   reviewMessage,
+  reviewControls = true,
 }: {
   mutation: AdminMutation
   reviewLink?: { to: string; label: string }
   reviewMessage?: string
+  reviewControls?: boolean
 }) {
   const [reviewed, setReviewed] = useState(false)
   return (
@@ -45,24 +47,28 @@ export function AdminMutationFeedback({
           <Link to={reviewLink?.to ?? '/admin/accommodations'}>
             {reviewLink?.label ?? '숙소 목록에서 결과 확인'}
           </Link>
-          <label className="admin-check">
-            <input
-              type="checkbox"
-              checked={reviewed}
-              onChange={(event) => setReviewed(event.target.checked)}
-            />
-            저장 결과를 별도로 확인했으며 새 요청을 준비합니다.
-          </label>
-          <button
-            type="button"
-            disabled={!reviewed}
-            onClick={() => {
-              setReviewed(false)
-              mutation.resetAfterReview()
-            }}
-          >
-            확인 후 입력 잠금 해제
-          </button>
+          {reviewControls && (
+            <>
+              <label className="admin-check">
+                <input
+                  type="checkbox"
+                  checked={reviewed}
+                  onChange={(event) => setReviewed(event.target.checked)}
+                />
+                저장 결과를 별도로 확인했으며 새 요청을 준비합니다.
+              </label>
+              <button
+                type="button"
+                disabled={!reviewed}
+                onClick={() => {
+                  setReviewed(false)
+                  mutation.resetAfterReview()
+                }}
+              >
+                확인 후 입력 잠금 해제
+              </button>
+            </>
+          )}
         </section>
       )}
     </>
