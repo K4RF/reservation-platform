@@ -58,7 +58,7 @@ export interface AccommodationPageResponse {
   last: boolean
 }
 
-function isAccommodation(value: unknown): value is AccommodationResponse {
+export function isAccommodation(value: unknown): value is AccommodationResponse {
   if (!value || typeof value !== 'object') return false
   const row = value as Record<string, unknown>
   return (

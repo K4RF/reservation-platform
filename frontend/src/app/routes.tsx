@@ -11,6 +11,8 @@ import { AdminLayout } from '../layouts/AdminLayout'
 import { AdminHomePage } from '../pages/admin/AdminHomePage'
 import { AdminSectionPage } from '../pages/admin/AdminSectionPage'
 import { AdminNotFoundPage } from '../pages/admin/AdminNotFoundPage'
+import { AdminAccommodationListPage } from '../pages/admin/AdminAccommodationListPage'
+import { AdminAccommodationEditorPage } from '../pages/admin/AdminAccommodationEditorPage'
 import { adminSections } from './adminSections'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
@@ -42,13 +44,21 @@ export function AppRoutes() {
         <Route element={<ProtectedRoute roles={['ADMIN']} />}>
           <Route path={routePaths.admin} element={<AdminLayout />}>
             <Route index element={<AdminHomePage />} />
-            {adminSections.map((section) => (
-              <Route
-                key={section.path}
-                path={section.path}
-                element={<AdminSectionPage section={section} />}
-              />
-            ))}
+            <Route path="accommodations" element={<AdminAccommodationListPage />} />
+            <Route path="accommodations/new" element={<AdminAccommodationEditorPage create />} />
+            <Route
+              path="accommodations/:accommodationId"
+              element={<AdminAccommodationEditorPage />}
+            />
+            {adminSections
+              .filter((section) => section.path !== 'accommodations')
+              .map((section) => (
+                <Route
+                  key={section.path}
+                  path={section.path}
+                  element={<AdminSectionPage section={section} />}
+                />
+              ))}
             <Route path="*" element={<AdminNotFoundPage />} />
           </Route>
         </Route>

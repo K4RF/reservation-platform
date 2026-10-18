@@ -377,8 +377,18 @@ Before completing a change:
   disable the other operation in the current UI. Success reloads detail and lists
   reload on remount. No payment cancellation or completed refund is implemented.
   The ADMIN-only `/admin` layout provides accommodation, room, price and inventory
-  navigation and explicitly unconnected route-entry pages. CRUD forms/API wiring
-  remain roadmap work. It reuses AuthProvider/ProtectedRoute and JWT role hints;
+  navigation. Accommodation management reuses public catalog GETs without the
+  public UI's ACTIVE filter, with name/city/region, status, pagination and ID/NAME
+  sorting. ADMIN writes support create, full update and status PATCH, not deletion.
+  Separate booking/cancellation policy forms require an explicit POST/PUT choice,
+  complete input and acknowledgement; there is no policy GET/DELETE or automatic
+  existence detection. Display successful policy responses as last-write results,
+  never current-policy reads or reservation snapshots. All Admin writes disable
+  automatic 401 replay and share a page-level submit gate; ambiguous outcomes lock
+  writes until explicit outcome review. Detail reloads after catalog update/status
+  success; lists reload on remount. Room/price/inventory UI wiring remains roadmap
+  work. See `docs/testing/frontend-admin-accommodations.md` for #212 contracts.
+  It reuses AuthProvider/ProtectedRoute and JWT role hints;
   it does not add persistent token storage or restore ADMIN after full reload.
   Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
   production controller or reservation-wide Admin menu is implied by the UI.
