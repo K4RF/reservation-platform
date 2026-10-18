@@ -1,10 +1,11 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
-import type { AccommodationResponse, AccommodationStatus } from '../../api/accommodation'
 import { changeAccommodationStatus, saveAccommodation } from '../../api/adminAccommodation'
 import { AccommodationForm } from '../../components/admin/AccommodationForm'
 import { AccommodationPolicyForm } from '../../components/admin/AccommodationPolicyForm'
+import { CatalogStatusForm } from '../../components/admin/CatalogStatusForm'
+import { readPositiveId } from '../../components/admin/roomValidation'
 import { AdminMutationFeedback } from '../../components/admin/AdminMutationFeedback'
 import { adminErrorMessage, useAdminMutation } from '../../components/admin/useAdminMutation'
 import type { AdminMutation } from '../../components/admin/useAdminMutation'
@@ -22,14 +23,8 @@ import { adminRoomListPath } from './adminRoomQuery'
 export function AdminAccommodationEditorPage({ create = false }: { create?: boolean }) {
   const { accommodationId } = useParams()
   useAuth()
-  const id = create ? null : Number(accommodationId)
-  if (
-    !create &&
-    (!accommodationId ||
-      !/^\d+$/.test(accommodationId) ||
-      !Number.isSafeInteger(id) ||
-      Number(id) < 1)
-  )
+  const id = create ? null : readPositiveId(accommodationId)
+  if (!create && id === null)
     return (
       <>
         <h2>숙소 관리</h2>
@@ -132,71 +127,22 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
               )
             }}
           />
-          <StatusForm row={state.data} mutation={mutation} onSuccess={retry} />
+          <CatalogStatusForm
+            resource="accommodation"
+            currentStatus={state.data.status}
+            disabled={mutation.disabled}
+            onSave={(status) => {
+              void mutation.run(
+                (signal) => changeAccommodationStatus(id, status, signal),
+                retry,
+                '운영 상태를 저장했습니다. 최신 상세를 다시 조회합니다.',
+              )
+            }}
+          />
           <AccommodationPolicyForm id={id} kind="booking" mutation={mutation} />
           <AccommodationPolicyForm id={id} kind="cancellation" mutation={mutation} />
         </>
       )}
     </>
-  )
-}
-function StatusForm({
-  row,
-  mutation,
-  onSuccess,
-}: {
-  row: AccommodationResponse
-  mutation: AdminMutation
-  onSuccess: () => void
-}) {
-  const [status, setStatus] = useState<AccommodationStatus>(
-    row.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
-  )
-  const [confirmed, setConfirmed] = useState(false)
-  return (
-    <form
-      className="admin-form"
-      aria-label="숙소 운영 상태 변경"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (!confirmed || mutation.disabled) return
-        setConfirmed(false)
-        void mutation.run(
-          (signal) => changeAccommodationStatus(row.accommodationId, status, signal),
-          onSuccess,
-          '운영 상태를 저장했습니다. 최신 상세를 다시 조회합니다.',
-        )
-      }}
-    >
-      <fieldset disabled={mutation.disabled}>
-        <legend>운영 상태 변경</legend>
-        <p>삭제 대신 운영 상태만 변경합니다. 기존 예약을 삭제하지 않습니다.</p>
-        <div className="form-field">
-          <label htmlFor="accommodation-status">변경할 운영 상태</label>
-          <select
-            id="accommodation-status"
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as AccommodationStatus)
-              setConfirmed(false)
-            }}
-          >
-            <option value="ACTIVE">운영 중 (ACTIVE)</option>
-            <option value="INACTIVE">운영 중지 (INACTIVE)</option>
-          </select>
-        </div>
-        <label className="admin-check">
-          <input
-            type="checkbox"
-            checked={confirmed}
-            onChange={(event) => setConfirmed(event.target.checked)}
-          />
-          운영 상태 변경을 확인했습니다.
-        </label>
-        <button type="submit" disabled={!confirmed}>
-          운영 상태 저장
-        </button>
-      </fieldset>
-    </form>
   )
 }

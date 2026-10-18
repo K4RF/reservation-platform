@@ -6,6 +6,8 @@
 [객실 관리 검증](frontend-admin-rooms.md)에 기록한다. #214 단일 날짜 가격은
 [가격 관리 검증](frontend-admin-daily-prices.md), #215 재고 Calendar는
 [재고 관리 검증](frontend-admin-inventories.md)을 따른다. 아래 #203 당시 기록과 구분한다.
+현재 Admin 연결 Flow와 ADMIN 예약 소유권 UI 회귀 경계는
+[#216 통합 검증](frontend-admin-management-flow.md)을 따른다.
 
 ## 검증 범위와 경계
 
