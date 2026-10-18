@@ -3,7 +3,8 @@
 이 문서는 #211 당시의 골격·검증 기록이다. 이후 #212에서 숙소 조회·입력 화면을 연결했다.
 현재 숙소 화면의 범위와 정책 API 제약은 [숙소 관리 검증](frontend-admin-accommodations.md)을 따른다.
 이후 #213에서 [숙소별 객실 관리](frontend-admin-rooms.md)도 연결했다.
-#214의 [단일 날짜 가격 관리](frontend-admin-daily-prices.md)도 연결했으며 재고는 미연결 진입 안내이다.
+#214의 [단일 날짜 가격 관리](frontend-admin-daily-prices.md), #215의
+[재고 Calendar 관리](frontend-admin-inventories.md)도 연결했다. 아래 진입 안내 표와 검증 기록은 #211 당시 기준이다.
 
 ## 구현 범위
 

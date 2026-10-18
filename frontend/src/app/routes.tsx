@@ -9,14 +9,13 @@ import { routePaths } from './routePaths'
 import { ProtectedRoute } from '../layouts/ProtectedRoute'
 import { AdminLayout } from '../layouts/AdminLayout'
 import { AdminHomePage } from '../pages/admin/AdminHomePage'
-import { AdminSectionPage } from '../pages/admin/AdminSectionPage'
 import { AdminNotFoundPage } from '../pages/admin/AdminNotFoundPage'
 import { AdminAccommodationListPage } from '../pages/admin/AdminAccommodationListPage'
 import { AdminAccommodationEditorPage } from '../pages/admin/AdminAccommodationEditorPage'
 import { AdminRoomListPage } from '../pages/admin/AdminRoomListPage'
 import { AdminRoomEditorPage } from '../pages/admin/AdminRoomEditorPage'
 import { AdminDailyPricePage } from '../pages/admin/AdminDailyPricePage'
-import { adminSections } from './adminSections'
+import { AdminInventoryPage } from '../pages/admin/AdminInventoryPage'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
 import { BookingCompletePage } from '../pages/BookingCompletePage'
@@ -57,15 +56,7 @@ export function AppRoutes() {
             <Route path="rooms/new" element={<AdminRoomEditorPage create />} />
             <Route path="rooms/:roomId" element={<AdminRoomEditorPage />} />
             <Route path="prices" element={<AdminDailyPricePage />} />
-            {adminSections
-              .filter((section) => !['accommodations', 'rooms', 'prices'].includes(section.path))
-              .map((section) => (
-                <Route
-                  key={section.path}
-                  path={section.path}
-                  element={<AdminSectionPage section={section} />}
-                />
-              ))}
+            <Route path="inventories" element={<AdminInventoryPage />} />
             <Route path="*" element={<AdminNotFoundPage />} />
           </Route>
         </Route>
