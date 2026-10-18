@@ -17,6 +17,7 @@ import { getSessionVersion } from '../../state/accessToken'
 import { useAuth } from '../../state/useAuth'
 import { useDetailQuery } from '../useDetailQuery'
 import { adminRoomListPath } from './adminRoomQuery'
+import { adminDailyPricePath } from './adminDailyPriceQuery'
 
 export function AdminRoomEditorPage({ create = false }: { create?: boolean }) {
   const { roomId } = useParams(),
@@ -110,6 +111,9 @@ function RoomEditor({
           {state.data.room && (
             <section aria-label="현재 객실 정보">
               <RoomCard room={state.data.room} />
+              <Link to={adminDailyPricePath(state.data.room.roomId)}>
+                이 객실의 날짜별 가격 관리
+              </Link>
             </section>
           )}
           <RoomForm

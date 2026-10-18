@@ -36,6 +36,15 @@ export async function getEffectiveRoomPrice(
     `/rooms/${roomId}/prices/${stayDate}`,
     { signal, includeAuth: false },
   )
+  return readRoomDailyPrice(response, roomId, stayDate)
+}
+
+// Shared GET/write response contract; only Backend decides DAILY versus DEFAULT.
+export function readRoomDailyPrice(
+  response: RoomDailyPriceResponse | undefined,
+  roomId: number,
+  stayDate: string,
+): RoomDailyPriceResponse {
   if (
     !response ||
     response.roomId !== roomId ||
