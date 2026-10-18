@@ -6,6 +6,7 @@ import { AuthProvider } from '../state/AuthProvider'
 import { clearAccessToken, getRoleHint, getRefreshToken, setTokenPair } from '../state/accessToken'
 import { apiClient } from '../api/client'
 import { accessTokenWithExpiry } from '../test/jwt'
+import { accommodationPage } from '../test/accommodation'
 
 const sections = [
   ['/admin/accommodations', '숙소 관리'],
@@ -49,7 +50,7 @@ const submitLogin = () => {
 }
 
 describe('Admin shared layout and existing role guard', () => {
-  it.each(sections)(
+  it.each(sections.filter(([path]) => path !== '/admin/accommodations'))(
     'supports direct ADMIN entry at %s without sending management requests',
     (path, label) => {
       signIn()
@@ -73,7 +74,7 @@ describe('Admin shared layout and existing role guard', () => {
   )
   it('keeps one layout while switching menus and navigating history, with no unsupported business menus', async () => {
     signIn()
-    const fetch = vi.fn()
+    const fetch = vi.fn().mockImplementation(() => Response.json(accommodationPage()))
     vi.stubGlobal('fetch', fetch)
     renderAt()
     const nav = navigation()
@@ -104,7 +105,8 @@ describe('Admin shared layout and existing role guard', () => {
         name: /예약|사용자|권한|통계|매출|Dashboard|결제|Kafka|Audit/,
       }),
     ).toBeNull()
-    expect(fetch).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0][0]).toMatch(/\/accommodations\?/)
   })
   it.each(paths)('redirects anonymous %s before mounting the Admin layout', (path) => {
     const fetch = vi.fn()
