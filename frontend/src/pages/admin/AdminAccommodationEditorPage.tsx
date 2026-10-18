@@ -17,6 +17,7 @@ import { LoadingState } from '../../components/ui/LoadingState'
 import { getSessionVersion } from '../../state/accessToken'
 import { useAuth } from '../../state/useAuth'
 import { useDetailQuery } from '../useDetailQuery'
+import { adminRoomListPath } from './adminRoomQuery'
 
 export function AdminAccommodationEditorPage({ create = false }: { create?: boolean }) {
   const { accommodationId } = useParams()
@@ -80,6 +81,7 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
       )}
       {state.status === 'success' && (
         <>
+          <Link to={adminRoomListPath(id)}>이 숙소의 객실 관리</Link>
           <section aria-label="현재 숙소 정보">
             <h3>{state.data.name}</h3>
             <p>{state.data.description}</p>

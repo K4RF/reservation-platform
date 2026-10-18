@@ -10,14 +10,14 @@ export function adminErrorMessage(error: unknown): string {
       : error.status === 403
         ? '서버가 관리자 권한을 거절했습니다.'
         : error.status === 404
-          ? '숙소 또는 정책이 존재하지 않습니다.'
+          ? '요청한 숙소·객실 또는 정책이 존재하지 않습니다.'
           : error.status === 409
             ? '이미 존재하거나 현재 상태와 충돌합니다. 선택한 작업을 확인해 주세요.'
             : ''
   return `${error.message}${error.code ? ` (${error.code})` : ''} ${guidance}`.trim()
 }
 
-// One shared gate for all writes on the current accommodation page, including policies.
+// One shared gate for all writes on the current management page.
 export function useAdminMutation() {
   const [state, setState] = useState<{
     pending: boolean

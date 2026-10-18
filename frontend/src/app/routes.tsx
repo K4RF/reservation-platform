@@ -13,6 +13,8 @@ import { AdminSectionPage } from '../pages/admin/AdminSectionPage'
 import { AdminNotFoundPage } from '../pages/admin/AdminNotFoundPage'
 import { AdminAccommodationListPage } from '../pages/admin/AdminAccommodationListPage'
 import { AdminAccommodationEditorPage } from '../pages/admin/AdminAccommodationEditorPage'
+import { AdminRoomListPage } from '../pages/admin/AdminRoomListPage'
+import { AdminRoomEditorPage } from '../pages/admin/AdminRoomEditorPage'
 import { adminSections } from './adminSections'
 import { AccommodationSearchPage } from '../pages/AccommodationSearchPage'
 import { AccommodationDetailPage } from '../pages/AccommodationDetailPage'
@@ -50,8 +52,11 @@ export function AppRoutes() {
               path="accommodations/:accommodationId"
               element={<AdminAccommodationEditorPage />}
             />
+            <Route path="rooms" element={<AdminRoomListPage />} />
+            <Route path="rooms/new" element={<AdminRoomEditorPage create />} />
+            <Route path="rooms/:roomId" element={<AdminRoomEditorPage />} />
             {adminSections
-              .filter((section) => section.path !== 'accommodations')
+              .filter((section) => !['accommodations', 'rooms'].includes(section.path))
               .map((section) => (
                 <Route
                   key={section.path}
