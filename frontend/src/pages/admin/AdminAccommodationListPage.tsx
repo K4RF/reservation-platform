@@ -7,6 +7,7 @@ import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { adminErrorMessage } from '../../components/admin/useAdminMutation'
 import { useDetailQuery } from '../useDetailQuery'
+import { adminRoomListPath } from './adminRoomQuery'
 
 import {
   adminAccommodationSearchFields as fields,
@@ -147,6 +148,7 @@ function AccommodationResults({
                     <p>
                       {card.status} · {card.location}
                     </p>
+                    <Link to={adminRoomListPath(card.id)}>{card.name} 객실 관리</Link>
                   </li>
                 )
               })}

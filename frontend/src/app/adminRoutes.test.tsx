@@ -60,7 +60,9 @@ describe('Admin shared layout and existing role guard', () => {
       expect(screen.getAllByRole('main')).toHaveLength(1)
       expect(screen.getByRole('heading', { name: '관리자 영역', level: 1 })).toBeTruthy()
       expect(screen.getByRole('heading', { name: label, level: 2 })).toBeTruthy()
-      expect(screen.getByText('관리 화면 준비 중')).toBeTruthy()
+      if (path === '/admin/rooms')
+        expect(screen.getByRole('form', { name: '관리 숙소 선택' })).toBeTruthy()
+      else expect(screen.getByText('관리 화면 준비 중')).toBeTruthy()
       expect(
         within(navigation()).getByRole('link', { name: label }).getAttribute('aria-current'),
       ).toBe('page')
@@ -68,7 +70,7 @@ describe('Admin shared layout and existing role guard', () => {
         within(navigation()).getByRole('link', { name: '관리 홈' }).getAttribute('aria-current'),
       ).toBeNull()
       expect(within(navigation()).getAllByRole('link')).toHaveLength(5)
-      expect(screen.queryByRole('form')).toBeNull()
+      if (path !== '/admin/rooms') expect(screen.queryByRole('form')).toBeNull()
       expect(fetch).not.toHaveBeenCalled()
     },
   )
@@ -134,7 +136,7 @@ describe('Admin shared layout and existing role guard', () => {
     expect(screen.getByRole('heading', { name: '접근 권한이 없습니다.' })).toBeTruthy()
     expect(screen.queryByRole('navigation', { name: '관리 메뉴' })).toBeNull()
   })
-  it.each(['/admin/reservations', '/admin/users', '/admin/reports', '/admin/rooms/unknown'])(
+  it.each(['/admin/reservations', '/admin/users', '/admin/reports', '/admin/rooms/3/unknown'])(
     'shows protected Not Found for unsupported %s',
     (path) => {
       signIn()

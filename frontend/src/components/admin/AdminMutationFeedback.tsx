@@ -6,7 +6,15 @@ import { LoadingState } from '../ui/LoadingState'
 import { adminErrorMessage } from './useAdminMutation'
 import type { AdminMutation } from './useAdminMutation'
 
-export function AdminMutationFeedback({ mutation }: { mutation: AdminMutation }) {
+export function AdminMutationFeedback({
+  mutation,
+  reviewLink,
+  reviewMessage,
+}: {
+  mutation: AdminMutation
+  reviewLink?: { to: string; label: string }
+  reviewMessage?: string
+}) {
   const [reviewed, setReviewed] = useState(false)
   return (
     <>
@@ -30,10 +38,13 @@ export function AdminMutationFeedback({ mutation }: { mutation: AdminMutation })
         <section aria-label="불명확한 저장 결과 확인">
           <p role="alert">
             저장이 이미 반영되었을 수 있어 재전송을 잠갔습니다. 요청은 자동 재시도하지 않습니다.
-            숙소는 목록·상세를 재조회하고, 조회 API가 없는 정책은 서버 기록 등으로 결과를
-            확인하세요. 화면 이동이나 요청 중단은 서버 Rollback을 의미하지 않습니다.
+            {reviewMessage ??
+              '숙소는 목록·상세를 재조회하고, 조회 API가 없는 정책은 서버 기록 등으로 결과를 확인하세요.'}{' '}
+            화면 이동이나 요청 중단은 서버 Rollback을 의미하지 않습니다.
           </p>
-          <Link to="/admin/accommodations">숙소 목록에서 결과 확인</Link>
+          <Link to={reviewLink?.to ?? '/admin/accommodations'}>
+            {reviewLink?.label ?? '숙소 목록에서 결과 확인'}
+          </Link>
           <label className="admin-check">
             <input
               type="checkbox"

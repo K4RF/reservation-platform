@@ -17,7 +17,7 @@ Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니�
 `f0.4.0 — Reservation Management`도 완료했습니다. Milestone #15의 Issue #197–#203
 7건과 PR #204–#210 7건이 종료됐습니다. 본인 목록/상세 → 날짜 변경 준비/일반 가용성 →
 일정 변경 PATCH → 저장 취소 정책 확인 → 명시적 취소 PATCH → 상세/목록 재조회를 연결했습니다.
-`f0.5.0 — Admin Management`는 #211 공통 Layout과 #212 숙소 관리를 구현했으며, `f0.6.0` 통합/UX는 Planned입니다.
+`f0.5.0 — Admin Management`는 #211 공통 Layout, #212 숙소, #213 객실 관리를 구현했으며, `f0.6.0` 통합/UX는 Planned입니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
 전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 관리자 전체 UI는 아직 없습니다.
@@ -95,31 +95,36 @@ Prettier의 `endOfLine: lf` 설정과 일치시킵니다.
 `<main>` 영역을 제공하며, 실제 화면 내용은 `src/pages/`의 페이지가 `<Outlet>`에
 표시됩니다. Footer는 공통 서비스 안내를 표시합니다.
 
-| 경로                                     | 현재 동작                                |
-| ---------------------------------------- | ---------------------------------------- |
-| `/`                                      | Home 페이지                              |
-| `/signup`                                | 이메일·비밀번호 회원가입                 |
-| `/login`                                 | 이메일·비밀번호 및 Google 로그인         |
-| `/oauth2/callback`                       | Google 인증 결과 처리                    |
-| `/accommodations`                        | 비로그인 숙소 검색·목록                  |
-| `/accommodations/:accommodationId`       | 숙소 상세·객실 목록 조회                 |
-| `/reservations`                          | `USER`/`ADMIN` 본인 예약 목록            |
-| `/reservations/:reservationId`           | 본인 예약 상세·저장된 Snapshot 조회      |
-| `/reservations/:reservationId/complete`  | 예약 생성 결과 본인 조회                 |
-| `/admin`                                 | `ADMIN` 공통 관리 Layout·관리 홈         |
-| `/admin/accommodations`                  | 모든 상태 숙소 관리 목록·검색·Pagination |
-| `/admin/accommodations/new`              | 숙소 생성                                |
-| `/admin/accommodations/:accommodationId` | 숙소 조회·정보 수정·상태 변경·정책 입력  |
-| `/admin/rooms`                           | 객실 관리 진입 안내 (CRUD 미연결)        |
-| `/admin/prices`                          | 날짜별 가격 관리 진입 안내 (CRUD 미연결) |
-| `/admin/inventories`                     | 재고 관리 진입 안내 (CRUD 미연결)        |
-| 그 외 경로 (`*`)                         | 공통 Layout 안의 Not Found 페이지        |
+| 경로                                     | 현재 동작                                    |
+| ---------------------------------------- | -------------------------------------------- |
+| `/`                                      | Home 페이지                                  |
+| `/signup`                                | 이메일·비밀번호 회원가입                     |
+| `/login`                                 | 이메일·비밀번호 및 Google 로그인             |
+| `/oauth2/callback`                       | Google 인증 결과 처리                        |
+| `/accommodations`                        | 비로그인 숙소 검색·목록                      |
+| `/accommodations/:accommodationId`       | 숙소 상세·객실 목록 조회                     |
+| `/reservations`                          | `USER`/`ADMIN` 본인 예약 목록                |
+| `/reservations/:reservationId`           | 본인 예약 상세·저장된 Snapshot 조회          |
+| `/reservations/:reservationId/complete`  | 예약 생성 결과 본인 조회                     |
+| `/admin`                                 | `ADMIN` 공통 관리 Layout·관리 홈             |
+| `/admin/accommodations`                  | 모든 상태 숙소 관리 목록·검색·Pagination     |
+| `/admin/accommodations/new`              | 숙소 생성                                    |
+| `/admin/accommodations/:accommodationId` | 숙소 조회·정보 수정·상태 변경·정책 입력      |
+| `/admin/rooms`                           | 숙소 선택·숙소별 객실 목록·필터·Pagination   |
+| `/admin/rooms/new?accommodationId=...`   | 선택한 숙소의 객실 생성                      |
+| `/admin/rooms/:roomId`                   | 객실 조회·정보/기본 가격 수정·운영 상태 변경 |
+| `/admin/prices`                          | 날짜별 가격 관리 진입 안내 (CRUD 미연결)     |
+| `/admin/inventories`                     | 재고 관리 진입 안내 (CRUD 미연결)            |
+| 그 외 경로 (`*`)                         | 공통 Layout 안의 Not Found 페이지            |
 
 경로는 소문자와 kebab-case를 쓰고, 리소스는 복수형 URL을 사용합니다.
 `ProtectedRoute`의 중첩 Route가 `/reservations`와 `/admin` 및 각 하위 경로를 보호합니다.
 본인 예약 조회·일정 변경·취소 실행과 관리자 숙소 조회·생성·수정·운영 상태 변경은 연결되어 있습니다.
 예약/취소 정책은 별도 POST/PUT Form이며 정책 GET/DELETE가 없어 기존 정책 자동 로딩은 지원하지 않습니다.
-객실·가격·재고는 진입 안내만 제공하며 실제 조회·입력 화면은 후속 범위입니다.
+객실은 숙소 관리의 객실 관리 링크 또는 ID 선택으로 진입하며 상태 미지정/ACTIVE/INACTIVE와
+수용 인원·기본 가격·편의시설 필터를 제공합니다. 객실 생성에는 숙소 선택이 필요하며,
+기존 객실은 상세 응답의 accommodationId를 확인합니다. 숙소 변경 시 조건/페이지/입력과 이전 응답을 분리합니다.
+날짜별 가격·재고는 진입 안내만 제공하며 실제 조회·입력 화면은 후속 범위입니다.
 등록되지 않은 하위 경로도 먼저 인증·역할 검사 후 Not Found를 표시합니다.
 숙소 검색·상세·객실 가용성·요금은 공개 탐색입니다. 익명은 선택 후 로그인해야 투숙객 입력/예약을
 진행할 수 있습니다. 공개 GET은 토큰을 보내지 않으며 예약 POST/본인 GET의 Bearer는 유지합니다.
@@ -161,6 +166,8 @@ Token 변조로 화면 표시를 바꿔도 Backend의 JWT 서명·만료 검사,
 [관리자 Layout 검증](../docs/testing/frontend-admin-layout.md)을 따릅니다.
 숙소 관리의 실제 DTO·검색 조건·정책 조회 부재와 재전송 잠금은
 [관리자 숙소 검증](../docs/testing/frontend-admin-accommodations.md)에 정리했습니다.
+숙소별 객실 관리와 기본 가격/날짜별 가격 경계는
+[관리자 객실 검증](../docs/testing/frontend-admin-rooms.md)에 정리했습니다.
 
 ## 공통 UI 기본 스타일 (#177)
 
