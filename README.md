@@ -49,7 +49,10 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 미생성 날짜는 별도 표시하고 예약·가용 수량은 수정하지 않습니다. 가격·재고 일괄 설정과 삭제/복원은 지원하지 않습니다.
 정책 조회·삭제 API는 없어 정책은 명시적 생성/수정과 성공 응답 확인만 지원합니다.
 로그인→숙소→객실→가격→재고의 [통합 검증](docs/testing/frontend-admin-management-flow.md)은 HTTP Mock 기준입니다.
-실제 Backend Admin 전체 연동·Browser 수동 검수·이 변경의 원격 CI는 별도 확인 대상입니다.
+실제 Backend Admin 전체 연동·Browser 수동 검수는 별도 확인 대상입니다.
+PR #223의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783049)·
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783111)와
+병합된 develop의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39130734369)는 성공했습니다.
 전체 API의 Method·요청·응답·권한은 실행 후 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 확인합니다.
 
 ## 핵심 설계
@@ -341,12 +344,16 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 GitHub Milestone의 병합·종료 상태와는 구분합니다.
 
 GitHub에서 Backend `v0.1.0`·`v0.1.1`·`v0.1.2`·`v0.1.3`·`v0.2.0`·`v0.3.0`·`v0.4.0`과
-Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`은 **Completed**입니다.
+Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`·`f0.5.0`은 **Completed**입니다.
 `f0.4.0 — Reservation Management`는 Issue #197–#203 7건과 PR #204–#210 7건을 통해
 생성 이후 본인 목록 → 상세 → 날짜 변경 → 저장 취소 정책 확인 → 취소 → 재조회를 연결했습니다.
-현재 `f0.5.0 — Admin Management`는 공통 Layout·Route, 숙소·객실·가격·재고와 통합 Mock 회귀 검증을 구현했습니다.
-실제 Admin HTTP·Browser 검증과 원격 CI 완료를 뜻하지는 않습니다.
-`f0.6.0`·`v0.5.0`·`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
+`f0.5.0 — Admin Management`는 Milestone #16의 Issue #211–#216 6건과 PR #218–#223 6건을 종료했습니다.
+공통 Layout·Route, 숙소·객실·가격·재고와 HTTP Mock 통합 회귀 검증을 구현했습니다.
+2026-10-18 문서 동기화에서 lint·format:check·typecheck·69 files / 968 tests·build를 직접 실행했습니다.
+Backend는 RoomInventoryTest·ReservationTest 12건만 재실행했으며 전체 Backend test/build는 실행하지 않았습니다.
+위 자동 테스트·원격 CI 성공은 실제 Admin HTTP·Browser 검증 완료를 뜻하지 않습니다.
+`f0.6.0 — Frontend Integration & UX Completion`은 **Next / Planned**입니다.
+`v0.5.0`·`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
 
 f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
 전체 UX를 수동 검수하는 Issue를 두는 계획을 유지합니다. 작은 수정은 f0.6.0에서,
@@ -355,7 +362,7 @@ f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layo
 | 영역                 | 현재 범위                                                | 후속 개발                                         |
 | -------------------- | -------------------------------------------------------- | ------------------------------------------------- |
 | Backend `v0.1–v0.4`  | 예약 도메인·동시성·조회/캐시·이벤트 처리 및 구조 검증    | `v0.5` 부하 테스트, `v0.6` 관측성, `v1.0` 배포    |
-| Frontend `f0.1–f0.4` | 기반·인증·공개 탐색/예약 생성·본인 예약관리 및 통합 검증 | `f0.5` 관리자 UI, `f0.6` 전체 사용자 흐름·UX 검수 |
+| Frontend `f0.1–f0.5` | 기반·인증·공개 탐색/예약·본인 예약관리·관리자 카탈로그/가격/재고 | `f0.6` 전체 사용자·관리자 흐름 및 최종 UX 검수 |
 
 아직 구현하지 않은 주요 범위:
 

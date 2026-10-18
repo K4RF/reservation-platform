@@ -17,12 +17,13 @@ Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니�
 `f0.4.0 — Reservation Management`도 완료했습니다. Milestone #15의 Issue #197–#203
 7건과 PR #204–#210 7건이 종료됐습니다. 본인 목록/상세 → 날짜 변경 준비/일반 가용성 →
 일정 변경 PATCH → 저장 취소 정책 확인 → 명시적 취소 PATCH → 상세/목록 재조회를 연결했습니다.
-`f0.5.0 — Admin Management`는 #211 공통 Layout, #212 숙소, #213 객실, #214 단일 날짜 가격,
-#215 재고 Calendar, #216 통합 Mock 검증과 중복 상태 Form 정리를 구현했으며,
-`f0.6.0` 통합/UX는 Planned입니다.
+`f0.5.0 — Admin Management`도 완료했습니다. Milestone #16의 Issue #211–#216 6건과
+PR #218–#223 6건이 종료됐습니다. 공통 Layout, 숙소, 객실, 단일 날짜 가격,
+재고 Calendar, 통합 Mock 검증과 중복 상태 Form 정리를 구현했습니다.
+`f0.6.0 — Frontend Integration & UX Completion`은 Next / Planned입니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
-전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 관리자 전체 UI는 아직 없습니다.
+전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 전체 사용자 예약 Admin UI는 아직 없습니다.
 사용자 예약 생성·목록/상세·날짜 변경·취소는 구현됐지만 실제 Backend·Redis·Google
 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
@@ -776,7 +777,11 @@ Mock이 실제 서버 Authorization/DB Race를 검증하는 것은 아닙니다.
 Mutation Gate는 Page에 남겼으며 정책·가격·재고의 서로 다른 복구 규칙은 합치지 않습니다.
 미사용 AdminSectionPage는 제거했고 지원하지 않는 전체 예약 메뉴/사용자·권한 관리 기능은 만들지 않았습니다.
 
-전체 69 files / 968 tests 및 기존 Frontend CI 명령을 로컬에서 검증했습니다.
-Docker/Backend/Redis 미실행으로 이번 실제 Admin HTTP와 Browser/원격 CI는 미검증입니다.
+2026-10-18 문서 동기화에서도 lint·format:check·typecheck·69 files / 968 tests·build를 직접 실행했습니다.
+Backend RoomInventoryTest·ReservationTest 12건도 재실행했으며 전체 Backend test/build는 실행하지 않았습니다.
+실제 Admin HTTP와 Browser는 이번 작업에서 검증하지 않았습니다.
+PR #223의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783049)·
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783111),
+병합 develop의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39130734369)는 success입니다.
 Coverage Matrix·구조 책임·실제 연동 확인과 f0.6.0 진입 조건은
 [`Admin Management Flow`](../docs/testing/frontend-admin-management-flow.md)를 따릅니다.

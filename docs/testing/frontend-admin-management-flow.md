@@ -99,16 +99,24 @@ CI에 DB/Redis/Docker 서비스나 Secret을 추가로 요구하지 않는다. B
 
 ## 실제 HTTP·Browser·원격 CI 및 f0.6.0 진입
 
-현재 Docker Engine Pipe(dockerDesktopLinuxEngine)가 없고 localhost:8080 Backend와
+#216 구현 당시에는 Docker Engine Pipe(dockerDesktopLinuxEngine)가 없고 localhost:8080 Backend와
 localhost:6380 Redis TCP가 연결되지 않았다. 이번 #216의 실제 Backend Admin 전체 Flow,
 서버 ADMIN/USER 권한·예약 소유권 HTTP, MySQL Race 검증은 실행하지 못했다.
 기존 #203의 별도 실제 HTTP 성공 기록을 이번 Admin Flow 검증 성공으로 재사용하지 않는다.
 개발 Compose DB/Volume·기존 권한·실제 예약 데이터를 변경/삭제하지 않았다.
 실제 Browser E2E/Refresh/키보드·반응형·시각 검수도 미실행이다.
 
-현재 요청은 로컬 브랜치 생성/커밋까지이므로 push/PR/원격 Actions 실행은 하지 않는다.
-**이 변경의 원격 CI 통과는 아직 확인되지 않았다.** 기존 Workflow 단계와 로컬 결과만 확인했다.
-GitHub Milestone/Issue를 종료하거나 f0.5.0의 모든 수동 검증이 완료되었다고 표시하지 않는다.
+구현 당시 요청은 로컬 브랜치 생성/커밋까지였으므로 원격 CI는 당시 확인하지 않았다.
+이후 2026-10-18 문서 동기화에서 Milestone #16 Closed, Issue #211–#216 6건 Closed와
+PR #218–#223 6건 Merged를 확인했다. PR #223 HEAD `23bd56d`의
+[Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783049)·
+[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783111),
+병합 develop `ba81d8a`의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39130734369)는 success다.
+문서 동기화에서도 Frontend lint·format:check·typecheck·69 files / 968 tests·build와
+Backend RoomInventoryTest 7건·ReservationTest 5건을 직접 재실행했다.
+전체 Backend test/build·실제 Admin HTTP·Browser E2E는 재실행하지 않았다.
+f0.5.0은 구현 범위 기준 Completed이며 모든 수동 검증이 완료되었다는 뜻은 아니다.
+f0.6.0 통합/UX는 Next / Planned다. 최초 문서 동기화에서는 새 브랜치·커밋·Push·PR·Issue를 만들지 않았다.
 
 코드/Mock 회귀 기반은 f0.6.0 통합·UX 작업에 사용할 수 있다. 다음 확인은 별도 완료 조건으로 남긴다.
 
