@@ -336,6 +336,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [관리자 날짜별 가격 계약과 검증](docs/testing/frontend-admin-daily-prices.md)
 - [관리자 재고 Calendar 계약과 검증](docs/testing/frontend-admin-inventories.md)
 - [관리자 전체 흐름·구조·권한 검증 경계](docs/testing/frontend-admin-management-flow.md)
+- [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -352,7 +353,9 @@ Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`·`f0.5.0`은 **Completed**입니
 2026-10-18 문서 동기화에서 lint·format:check·typecheck·69 files / 968 tests·build를 직접 실행했습니다.
 Backend는 RoomInventoryTest·ReservationTest 12건만 재실행했으며 전체 Backend test/build는 실행하지 않았습니다.
 위 자동 테스트·원격 CI 성공은 실제 Admin HTTP·Browser 검증 완료를 뜻하지 않습니다.
-`f0.6.0 — Frontend Integration & UX Completion`은 **Next / Planned**입니다.
+다음 UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#232의 Token·공통 UI·화면별 개선·회귀 검증을 진행합니다.
+현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.
+이후 `f0.6.0 — Frontend Integration & UX Completion`에서 실제 연동·Edge Case·최종 UX 검수를 진행할 계획입니다.
 `v0.5.0`·`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
 
 f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
@@ -362,7 +365,7 @@ f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layo
 | 영역                 | 현재 범위                                                | 후속 개발                                         |
 | -------------------- | -------------------------------------------------------- | ------------------------------------------------- |
 | Backend `v0.1–v0.4`  | 예약 도메인·동시성·조회/캐시·이벤트 처리 및 구조 검증    | `v0.5` 부하 테스트, `v0.6` 관측성, `v1.0` 배포    |
-| Frontend `f0.1–f0.5` | 기반·인증·공개 탐색/예약·본인 예약관리·관리자 카탈로그/가격/재고 | `f0.6` 전체 사용자·관리자 흐름 및 최종 UX 검수 |
+| Frontend `f0.1–f0.5` | 기반·인증·공개 탐색/예약·본인 예약관리·관리자 카탈로그/가격/재고 | `f0.5.1` UI 정돈 → `f0.6` 실제 연동·최종 UX 검수 |
 
 아직 구현하지 않은 주요 범위:
 
