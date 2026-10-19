@@ -54,7 +54,7 @@ export function ReservationCancellationSubmit({
   const disabled = pending || Boolean(failure) || Boolean(result)
   return (
     <>
-      <label>
+      <label className="confirmation-check">
         <input
           type="checkbox"
           checked={acknowledged}
@@ -77,14 +77,22 @@ export function ReservationCancellationSubmit({
       {pending && <LoadingState message="예약을 취소하고 있습니다. 중복 제출하지 마세요." />}
       {failure && <ErrorState message={failure} />}
       {result && !onCancelled && <ReservationCancellationFeedback result={result} />}
-      <button type="button" disabled={disabled || !acknowledged} onClick={() => void submit()}>
-        예약 취소 확정
-      </button>
-      {onRefresh && (
-        <button type="button" disabled={pending} onClick={onRefresh}>
-          예약 상세 다시 조회
+      <div className="action-group">
+        <button
+          type="button"
+          className="danger-action"
+          aria-busy={pending}
+          disabled={disabled || !acknowledged}
+          onClick={() => void submit()}
+        >
+          예약 취소 확정
         </button>
-      )}
+        {onRefresh && (
+          <button type="button" disabled={pending} onClick={onRefresh}>
+            예약 상세 다시 조회
+          </button>
+        )}
+      </div>
       <p>
         화면 이탈이나 요청 중단은 서버 롤백을 의미하지 않습니다. 중복 제출 방지는 다중 탭·서버
         멱등성을 보장하지 않습니다.

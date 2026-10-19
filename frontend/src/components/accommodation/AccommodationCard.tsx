@@ -20,7 +20,7 @@ export function AccommodationCard({ accommodation }: { accommodation: Accommodat
       </h2>
       <p>{accommodation.location}</p>
       <p>{accommodation.description}</p>
-      <p>{accommodation.status}</p>
+      <p className="catalog-status">{accommodation.status}</p>
       {accommodation.amenities.length > 0 && (
         <ul aria-label="숙소 편의시설">
           {accommodation.amenities.map((amenity) => (

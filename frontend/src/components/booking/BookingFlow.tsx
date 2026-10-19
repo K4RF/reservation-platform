@@ -84,7 +84,7 @@ function BookingInput({
           <button type="submit">예약 입력 내용 확인</button>
         </form>
       ) : (
-        <section aria-labelledby="booking-review-title">
+        <section className="confirmation-panel" aria-labelledby="booking-review-title">
           <h3 id="booking-review-title">제출 전 최종 확인</h3>
           <p>대표 투숙객: {state.request.representativeGuest.name}</p>
           <p>안내 이메일: {state.request.representativeGuest.email}</p>

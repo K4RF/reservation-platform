@@ -63,7 +63,7 @@ export function ReservationChangeConfirmation({
   }
   const disabled = pending || Boolean(result) || Boolean(failure?.uncertain)
   return (
-    <section aria-labelledby="reservation-change-confirm-heading">
+    <section className="confirmation-panel" aria-labelledby="reservation-change-confirm-heading">
       <h4 id="reservation-change-confirm-heading">일정 변경 전 확인</h4>
       <p>
         기존 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
@@ -105,7 +105,7 @@ export function ReservationChangeConfirmation({
         예상액은 가격 보장이나 원자적 견적이 아닙니다. 변경 시 서버가 전체 기간 요금·재고·예약
         정책·현재 상태를 재검증하며 응답 금액이 확정값입니다.
       </p>
-      <label>
+      <label className="confirmation-check">
         <input
           type="checkbox"
           checked={acknowledged}
@@ -121,18 +121,22 @@ export function ReservationChangeConfirmation({
           일정 변경 완료. 서버 확정 총액: {formatMinorUnits(toMinorUnits(result.totalAmount, 19))}
         </p>
       )}
-      <button
-        type="button"
-        disabled={disabled || price.status !== 'success' || !acknowledged}
-        onClick={() => void submit()}
-      >
-        예약 일정 변경 확정
-      </button>
-      {failure && (
-        <button type="button" disabled={!onRefresh || pending} onClick={() => onRefresh?.()}>
-          예약 상세 다시 조회
+      <div className="action-group">
+        <button
+          type="button"
+          disabled={disabled || price.status !== 'success' || !acknowledged}
+          onClick={() => void submit()}
+          className="primary-action"
+          aria-busy={pending}
+        >
+          예약 일정 변경 확정
         </button>
-      )}
+        {failure && (
+          <button type="button" disabled={!onRefresh || pending} onClick={() => onRefresh?.()}>
+            예약 상세 다시 조회
+          </button>
+        )}
+      </div>
       <p>
         화면 이탈이나 요청 취소가 서버 롤백을 의미하지 않습니다. 이 화면의 중복 제출 방지는 다중
         탭·서버 멱등성을 보장하지 않습니다.

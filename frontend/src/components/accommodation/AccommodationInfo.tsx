@@ -6,7 +6,7 @@ export function AccommodationInfo({ accommodation }: { accommodation: Accommodat
   return (
     <section aria-label="숙소 기본 정보">
       <h1>{card.name}</h1>
-      <p>{card.status}</p>
+      <p className="catalog-status">{card.status}</p>
       <h2>숙소 설명</h2>
       <p className="accommodation-description">{card.description}</p>
       <h2>위치</h2>
