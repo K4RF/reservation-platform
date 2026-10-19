@@ -75,6 +75,7 @@ export function RootLayout() {
               className="nav-link nav-action"
               type="button"
               disabled={loggingOut}
+              aria-busy={loggingOut}
               onClick={() => void handleLogout()}
             >
               {loggingOut ? '로그아웃 중…' : '로그아웃'}
