@@ -140,6 +140,7 @@ describe('login flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
     const pendingButton = screen.getByRole('button', { name: '로그아웃 중…' })
     expect(pendingButton.hasAttribute('disabled')).toBe(true)
+    expect(pendingButton.getAttribute('aria-busy')).toBe('true')
     fireEvent.click(pendingButton)
     expect(logoutFromBackend).toHaveBeenCalledOnce()
 
