@@ -337,6 +337,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [관리자 재고 Calendar 계약과 검증](docs/testing/frontend-admin-inventories.md)
 - [관리자 전체 흐름·구조·권한 검증 경계](docs/testing/frontend-admin-management-flow.md)
 - [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
+- [Frontend Design Tokens·전역 스타일 기준 (#225)](docs/ui/frontend-design-tokens-225.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위

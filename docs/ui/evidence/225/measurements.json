@@ -1,0 +1,2463 @@
+{
+  "auditDate": "2026-10-19 (Asia/Tokyo)",
+  "baselineCommit": "accc4f0",
+  "scope": "Issue 225 working CSS; in-app browser / synthetic fixture auth and API, not real backend or device E2E",
+  "notes": [
+    "CSS viewport sizes are DOM values. Native screenshots can exclude scrollbars or be scaled.",
+    "33 sampled renders are smoke evidence, not complete visual, contrast or accessibility approval.",
+    "Known 320px global overflow and native Admin controls are deferred, not fixed here."
+  ],
+  "focus": {
+    "name": "password",
+    "outline": "rgb(23, 103, 95) solid 3px",
+    "outlineOffset": "3px",
+    "tag": "INPUT"
+  },
+  "images": [
+    "home-desktop.jpg",
+    "login-desktop.jpg",
+    "admin-inventory-desktop.jpg",
+    "home-mobile.jpg",
+    "reservation-mobile.jpg",
+    "inventory-mobile.jpg",
+    "focus-mobile.jpg"
+  ],
+  "observations": [
+    {
+      "id": "home-desktop",
+      "path": "/",
+      "role": "anonymous",
+      "scenario": "ready",
+      "screenshot": "home-desktop.jpg",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 279.02
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 199.3
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 199.3
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 119.58
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(83, 103, 96)",
+          "fontSize": "16px",
+          "height": 20,
+          "lineHeight": "20px",
+          "text": "Reservation Platform",
+          "width": 992
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "나에게 맞는 숙소",
+          "width": 352
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "실제 가능한 객실",
+          "width": 352
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "login-desktop",
+      "path": "/login",
+      "role": "anonymous",
+      "scenario": "ready",
+      "screenshot": "login-desktop.jpg",
+      "calendar": [],
+      "contentWidth": 448,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "email",
+          "width": 382
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "password",
+          "width": 382
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "로그인",
+          "width": 382
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "Google로 로그인",
+          "width": 382
+        }
+      ],
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "로그인",
+          "width": 382
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "signup-desktop",
+      "path": "/signup",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 448,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "email",
+          "width": 382
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "password",
+          "width": 382
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "회원가입",
+          "width": 382
+        }
+      ],
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "회원가입",
+          "width": 382
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "search-desktop",
+      "path": "/accommodations",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 328.81
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 234.86
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 234.88
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 152.66
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "숙소 검색",
+          "width": 1120
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "서울 호텔",
+          "width": 1070
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "detail-desktop",
+      "path": "/accommodations/7",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 458.11
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 458.11
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 458.11
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "예약 가능 객실 조회",
+          "width": 458.11
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "서울 호텔",
+          "width": 455.89
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "숙소 설명",
+          "width": 455.89
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "위치",
+          "width": 455.89
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "complete-desktop",
+      "path": "/reservations/42/complete",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 720,
+      "controls": [],
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "예약 결과 확인",
+          "width": 622
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "예약이 확정되었습니다.",
+          "width": 622
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "reservations-desktop",
+      "path": "/reservations",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 960,
+      "controls": [
+        {
+          "background": "rgba(239, 239, 239, 0.3)",
+          "color": "rgba(16, 16, 16, 0.3)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "이전",
+          "width": 71.19
+        },
+        {
+          "background": "rgba(239, 239, 239, 0.3)",
+          "color": "rgba(16, 16, 16, 0.3)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "다음",
+          "width": 71.19
+        }
+      ],
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "내 예약",
+          "width": 960
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "서울 호텔",
+          "width": 104.44
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [
+        {
+          "background": "rgb(226, 243, 237)",
+          "color": "rgb(32, 92, 77)",
+          "fontSize": "16px",
+          "height": 36.78,
+          "lineHeight": "24px",
+          "text": "예약 확정",
+          "width": 93.63
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "reservation-desktop",
+      "path": "/reservations/42",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 960,
+      "controls": [
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "예약 일정 변경 준비",
+          "width": 184.06
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "취소 정책 및 수수료 확인",
+          "width": 221.69
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "예약 상세",
+          "width": 960
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "서울 호텔",
+          "width": 104.44
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "대표 투숙객",
+          "width": 894
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [
+        {
+          "background": "rgb(226, 243, 237)",
+          "color": "rgb(32, 92, 77)",
+          "fontSize": "16px",
+          "height": 36.78,
+          "lineHeight": "24px",
+          "text": "예약 확정",
+          "width": 93.63
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "admin-home-desktop",
+      "path": "/admin",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [],
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 1120
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "관리 홈",
+          "width": 790
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "admin-room-desktop",
+      "path": "/admin/rooms/3?accommodationId=7",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "객실 상세 새로 조회",
+          "width": 172.88
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "name",
+          "width": 752
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "capacity",
+          "width": 752
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "nightlyPrice",
+          "width": 752
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 1120
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "객실 관리 #3",
+          "width": 790
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "admin-price-desktop",
+      "path": "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "roomId",
+          "width": 790
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "stayDate",
+          "width": 790
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "적용 가격 조회",
+          "width": 790
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "적용 가격 새로 조회",
+          "width": 172.88
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 1120
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "가격 관리",
+          "width": 790
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "admin-inventory-desktop",
+      "path": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "screenshot": "admin-inventory-desktop.jpg",
+      "calendar": [
+        {
+          "clientWidth": 790,
+          "scrollWidth": 790
+        }
+      ],
+      "contentWidth": 1120,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "roomId",
+          "width": 790
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "startDate",
+          "width": 790
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "endDate",
+          "width": 790
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "재고 Calendar 조회",
+          "width": 790
+        }
+      ],
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 1120
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "재고 관리",
+          "width": 790
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "home-mobile",
+      "path": "/",
+      "role": "anonymous",
+      "scenario": "ready",
+      "screenshot": "home-mobile.jpg",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 263
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 263
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 263
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 263
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(83, 103, 96)",
+          "fontSize": "16px",
+          "height": 20,
+          "lineHeight": "20px",
+          "text": "Reservation Platform",
+          "width": 295
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "나에게 맞는 숙소",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "실제 가능한 객실",
+          "width": 343
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "login-mobile",
+      "path": "/login",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 358,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "email",
+          "width": 316
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "password",
+          "width": 316
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "로그인",
+          "width": 316
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "Google로 로그인",
+          "width": 316
+        }
+      ],
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "로그인",
+          "width": 316
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "signup-mobile",
+      "path": "/signup",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 358,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "email",
+          "width": 316
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "password",
+          "width": 316
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "회원가입",
+          "width": 316
+        }
+      ],
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "회원가입",
+          "width": 316
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "search-mobile",
+      "path": "/accommodations",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 293
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "숙소 검색",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "서울 호텔",
+          "width": 293
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "detail-mobile",
+      "path": "/accommodations/7",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 259
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 259
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "",
+          "width": 259
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "예약 가능 객실 조회",
+          "width": 259
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "서울 호텔",
+          "width": 309
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "숙소 설명",
+          "width": 309
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "위치",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "complete-mobile",
+      "path": "/reservations/42/complete",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 358,
+      "controls": [],
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "예약 결과 확인",
+          "width": 316
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "예약이 확정되었습니다.",
+          "width": 316
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "reservations-mobile",
+      "path": "/reservations",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgba(239, 239, 239, 0.3)",
+          "color": "rgba(16, 16, 16, 0.3)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "이전",
+          "width": 71.19
+        },
+        {
+          "background": "rgba(239, 239, 239, 0.3)",
+          "color": "rgba(16, 16, 16, 0.3)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "다음",
+          "width": 71.19
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "내 예약",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "서울 호텔",
+          "width": 104.44
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [
+        {
+          "background": "rgb(226, 243, 237)",
+          "color": "rgb(32, 92, 77)",
+          "fontSize": "16px",
+          "height": 36.78,
+          "lineHeight": "24px",
+          "text": "예약 확정",
+          "width": 93.63
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "reservation-mobile",
+      "path": "/reservations/42",
+      "role": "USER",
+      "scenario": "ready",
+      "screenshot": "reservation-mobile.jpg",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "예약 일정 변경 준비",
+          "width": 184.06
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 52,
+          "lineHeight": "24px",
+          "text": "취소 정책 및 수수료 확인",
+          "width": 221.69
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "예약 상세",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "서울 호텔",
+          "width": 104.44
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "대표 투숙객",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [
+        {
+          "background": "rgb(226, 243, 237)",
+          "color": "rgb(32, 92, 77)",
+          "fontSize": "16px",
+          "height": 36.78,
+          "lineHeight": "24px",
+          "text": "예약 확정",
+          "width": 93.63
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "admin-home-mobile",
+      "path": "/admin",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "관리 홈",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "admin-room-mobile",
+      "path": "/admin/rooms/3?accommodationId=7",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "객실 상세 새로 조회",
+          "width": 172.88
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "name",
+          "width": 271
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "capacity",
+          "width": 271
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "nightlyPrice",
+          "width": 271
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "객실 관리 #3",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "admin-price-mobile",
+      "path": "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "roomId",
+          "width": 309
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "stayDate",
+          "width": 309
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "적용 가격 조회",
+          "width": 309
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "적용 가격 새로 조회",
+          "width": 172.88
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "가격 관리",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "admin-inventory-mobile",
+      "path": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [
+        {
+          "clientWidth": 309,
+          "scrollWidth": 576
+        }
+      ],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "roomId",
+          "width": 309
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "startDate",
+          "width": 309
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "endDate",
+          "width": 309
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "재고 Calendar 조회",
+          "width": 309
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "재고 관리",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "cancelled-mobile",
+      "path": "/reservations/42",
+      "role": "USER",
+      "scenario": "cancelled",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "예약 상세",
+          "width": 343
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "서울 호텔",
+          "width": 104.44
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "대표 투숙객",
+          "width": 309
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [
+        {
+          "background": "rgb(242, 236, 231)",
+          "color": "rgb(101, 80, 68)",
+          "fontSize": "16px",
+          "height": 36.78,
+          "lineHeight": "24px",
+          "text": "예약 취소",
+          "width": 93.63
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "error-mobile",
+      "path": "/accommodations",
+      "role": "anonymous",
+      "scenario": "error",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 293
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "숙소 검색",
+          "width": 343
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "empty-mobile",
+      "path": "/accommodations",
+      "role": "anonymous",
+      "scenario": "empty",
+      "calendar": [],
+      "contentWidth": 343,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 293
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 293
+        }
+      ],
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "숙소 검색",
+          "width": 343
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "forbidden-mobile",
+      "path": "/admin",
+      "role": "USER",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 318.88,
+      "controls": [],
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "접근 권한이 없습니다.",
+          "width": 318.88
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "focus-login-mobile",
+      "path": "/login",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 358,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "email",
+          "width": 316
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "password",
+          "width": 316
+        },
+        {
+          "background": "rgb(23, 103, 95)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "로그인",
+          "width": 316
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "16px",
+          "height": 48.38,
+          "lineHeight": "24px",
+          "text": "Google로 로그인",
+          "width": 316
+        }
+      ],
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "로그인",
+          "width": 316
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "home-320",
+      "path": "/",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 288,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 208
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 208
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 208
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 208
+        }
+      ],
+      "document": {
+        "clientWidth": 305,
+        "scrollWidth": 320
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(83, 103, 96)",
+          "fontSize": "16px",
+          "height": 20,
+          "lineHeight": "20px",
+          "text": "Reservation Platform",
+          "width": 240
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "나에게 맞는 숙소",
+          "width": 288
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "실제 가능한 객실",
+          "width": 288
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 320
+      }
+    },
+    {
+      "id": "inventory-320",
+      "path": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [
+        {
+          "clientWidth": 254,
+          "scrollWidth": 576
+        }
+      ],
+      "contentWidth": 288,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "roomId",
+          "width": 254
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "startDate",
+          "width": 254
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "endDate",
+          "width": 254
+        },
+        {
+          "background": "rgb(240, 240, 240)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 44,
+          "lineHeight": "24px",
+          "text": "재고 Calendar 조회",
+          "width": 254
+        }
+      ],
+      "document": {
+        "clientWidth": 305,
+        "scrollWidth": 320
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 288
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "재고 관리",
+          "width": 254
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 320
+      }
+    },
+    {
+      "id": "home-tablet",
+      "path": "/",
+      "role": "anonymous",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 705,
+      "controls": [
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "city",
+          "width": 588.22
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkInDate",
+          "width": 288.11
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 48.78,
+          "lineHeight": "24px",
+          "text": "checkOutDate",
+          "width": 288.11
+        },
+        {
+          "background": "rgb(255, 255, 255)",
+          "color": "rgb(0, 0, 0)",
+          "fontSize": "16px",
+          "height": 46.78,
+          "lineHeight": "24px",
+          "text": "guestCount",
+          "width": 288.11
+        }
+      ],
+      "document": {
+        "clientWidth": 753,
+        "scrollWidth": 753
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(83, 103, 96)",
+          "fontSize": "16px",
+          "height": 20,
+          "lineHeight": "20px",
+          "text": "Reservation Platform",
+          "width": 628.22
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "나에게 맞는 숙소",
+          "width": 213.66
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "19.2px",
+          "height": 24,
+          "lineHeight": "24px",
+          "text": "실제 가능한 객실",
+          "width": 213.67
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      }
+    },
+    {
+      "id": "admin-tablet",
+      "path": "/admin",
+      "role": "ADMIN",
+      "scenario": "ready",
+      "calendar": [],
+      "contentWidth": 705,
+      "controls": [],
+      "document": {
+        "clientWidth": 753,
+        "scrollWidth": 753
+      },
+      "headings": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "32px",
+          "height": 40,
+          "lineHeight": "40px",
+          "text": "관리자 영역",
+          "width": 705
+        },
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "color": "rgb(23, 58, 57)",
+          "fontSize": "24px",
+          "height": 30,
+          "lineHeight": "30px",
+          "text": "관리 홈",
+          "width": 656.94
+        }
+      ],
+      "root": {
+        "background": "rgb(247, 248, 244)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "lineHeight": "24px",
+        "primary": "#17675f"
+      },
+      "statuses": [],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      }
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+/* Single light-theme source. Keep geometry/state-specific rules in index.css. */
+:root {
+  --color-primary: #17675f;
+  --color-primary-hover: #124e48;
+  --color-on-primary: #fff;
+  --color-secondary: #edf2eb;
+  --color-secondary-hover: #dce5df;
+  --color-on-secondary: #173a39;
+  --color-background: #f7f8f4;
+  --color-surface: #fff;
+  --color-surface-hover: #f3f6f1;
+  --color-text: #173a39;
+  --color-text-muted: #4b5563;
+  --color-text-subtle: #536760;
+  --color-border: #dce5df;
+  --color-border-control: #9ba8b9;
+  --color-focus: var(--color-primary);
+  --color-success: #205c4d;
+  --color-success-surface: #e2f3ed;
+  --color-error: #b42318;
+  --color-error-surface: #fff1ef;
+  --color-warning: #854d0e;
+  --color-warning-surface: #fef3c7;
+  /* CANCELLED is a stored state, not an error or a completed refund. */
+  --color-cancelled: #655044;
+  --color-cancelled-surface: #f2ece7;
+  --color-hero-highlight: #d3e6dc;
+  --color-catalog-pattern: #17675f08;
+
+  --font-family-body: system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.85rem;
+  --font-size-base: 1rem;
+  --font-size-brand: 1.1rem;
+  --font-size-lg: 1.2rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-size-display-min: 1.7rem;
+  --font-size-display-max: 3rem;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-strong: 650;
+  --font-weight-bold: 700;
+  --font-weight-display: 750;
+  --leading-heading: 1.25;
+  --leading-display: 1.35;
+  --leading-body: 1.5;
+  --leading-description: 1.6;
+  --leading-long: 1.7;
+  --leading-guide: 1.8;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  /* Preserve existing control geometry until Shared UI (#226). */
+  --inset-control: 0.65rem;
+  --inset-auth-action: 0.7rem;
+  --inset-action-inline: 1.1rem;
+  --inset-badge: 0.4rem;
+  --radius-sm: 0.35rem;
+  --radius-control: 0.6rem;
+  --radius-card: 1rem;
+  --radius-hero: 1.5rem;
+  --shadow-none: none;
+  --shadow-raised: 0 12px 35px #173a3910;
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 3px;
+  --control-min-height: 2.75rem;
+
+  --content-auth: 28rem;
+  --content-form: 32rem;
+  --content-result: 45rem;
+  --content-reservation: 60rem;
+  --content-wide: 70rem;
+}

@@ -1,38 +1,96 @@
+@import './styles/tokens.css';
+
 :root {
-  font-family: system-ui, sans-serif;
-  color: #173a39;
-  background: #f7f8f4;
-  --accent: #17675f;
-  --ink: #173a39;
-  --line: #dce5df;
+  font-family: var(--font-family-body);
+  font-size: 100%;
+  font-weight: var(--font-weight-regular);
+  line-height: var(--leading-body);
+  color: var(--color-text);
+  background: var(--color-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 
+/* Global defaults; component-specific appearance stays below. */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-size: var(--font-size-base);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-heading);
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+p {
+  color: var(--color-text-muted);
+}
+
+a {
+  color: var(--color-primary);
+}
+
+:is(a, button, input, select, textarea, summary):focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  min-height: var(--control-min-height);
+  border-radius: var(--radius-control);
+  padding: var(--space-3) var(--inset-action-inline);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 .admin-form {
   display: grid;
-  gap: 1rem;
-  margin-block: 1.5rem;
+  gap: var(--space-4);
+  margin-block: var(--space-6);
   text-align: left;
 }
 
 .admin-form fieldset {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 0.35rem;
-  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
 }
 
 .admin-form select,
 .admin-form textarea {
   width: 100%;
   min-width: 0;
-  min-height: 2.75rem;
-  padding: 0.65rem;
-  border: 1px solid #9ba8b9;
-  border-radius: 0.35rem;
+  min-height: var(--control-min-height);
+  padding: var(--inset-control);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
   font: inherit;
 }
 
@@ -42,8 +100,8 @@
 }
 
 .admin-content button {
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
+  min-height: var(--control-min-height);
+  padding: var(--space-2) var(--space-3);
   font: inherit;
   cursor: pointer;
 }
@@ -56,21 +114,12 @@
 .admin-check {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
-  line-height: 1.5;
+  gap: var(--space-2);
+  line-height: var(--leading-body);
 }
 
 .admin-catalog-list {
-  padding-left: 1.5rem;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
+  padding-left: var(--space-6);
 }
 
 .app-shell {
@@ -81,31 +130,33 @@ body {
 
 .skip-link {
   position: absolute;
-  left: 1rem;
-  top: -4rem;
-  padding: 0.5rem 0.75rem;
-  background: #fff;
+  left: var(--space-4);
+  top: calc(-1 * var(--space-16));
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
 }
 
 .skip-link:focus {
-  top: 0.5rem;
+  top: var(--space-2);
 }
 
 .site-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  padding: 1.25rem max(1.5rem, calc((100vw - 70rem) / 2));
-  border-bottom: 1px solid #dbe2ec;
-  background: #fff;
+  padding: var(--space-5) max(var(--space-6), calc((100vw - var(--content-wide)) / 2));
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .site-brand {
-  color: inherit;
-  font-weight: 700;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
   text-decoration: none;
+  letter-spacing: -0.035em;
+  font-size: var(--font-size-brand);
 }
 
 .site-nav {
@@ -113,42 +164,30 @@ body {
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .nav-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.75rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.35rem;
-  color: #4b5563;
+  min-height: var(--control-min-height);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
   font: inherit;
-  line-height: 1.5;
+  line-height: var(--leading-body);
   text-decoration: none;
 }
 
 .nav-link:hover:not(:disabled) {
-  color: #172033;
-  background: #f7f9fc;
-}
-
-.site-brand:focus-visible,
-.nav-link:focus-visible,
-.signup-page a:focus-visible,
-.login-page a:focus-visible,
-.form-field input:focus-visible,
-.signup-form button:focus-visible,
-.login-form button:focus-visible,
-.google-login-button:focus-visible {
-  outline: 2px solid #172033;
-  outline-offset: 3px;
+  color: var(--color-text);
+  background: var(--color-surface-hover);
 }
 
 .nav-link-active {
-  color: #172033;
-  font-weight: 700;
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
 }
 
 .nav-action {
@@ -168,68 +207,66 @@ body {
   display: grid;
   justify-items: center;
   align-content: start;
-  padding: 3rem 1.5rem;
+  padding: var(--space-12) var(--space-6);
 }
 
 .page-content {
   text-align: center;
 }
 
-h1 {
-  margin: 0;
-}
-
-p {
-  color: #4b5563;
-}
-
 .home-link {
   display: inline-block;
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
+  font-weight: var(--font-weight-strong);
+  margin-bottom: var(--space-8);
 }
 
 .signup-page,
 .login-page {
-  width: min(100%, 28rem);
+  width: min(100%, var(--content-auth));
   min-width: 0;
+  padding: var(--space-8);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .signup-form,
 .login-form {
   display: grid;
-  gap: 1rem;
-  margin-top: 1.5rem;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
   text-align: left;
 }
 
 .form-field {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .form-field label {
-  font-weight: 600;
-  line-height: 1.5;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-body);
 }
 
 .form-field input {
   width: 100%;
   min-width: 0;
-  padding: 0.65rem;
-  border: 1px solid #9ba8b9;
-  border-radius: 0.35rem;
+  padding: var(--inset-control);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
   font: inherit;
-  min-height: 2.75rem;
-  line-height: 1.5;
+  min-height: var(--control-min-height);
+  line-height: var(--leading-body);
 }
 
 .form-field input[aria-invalid='true'] {
-  border-color: #b42318;
+  border-color: var(--color-error);
 }
 
 .form-field p {
   margin: 0;
-  color: #b42318;
+  color: var(--color-error);
 }
 
 .signup-form button,
@@ -238,21 +275,21 @@ p {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 2.75rem;
-  padding: 0.7rem 1rem;
-  border: 0;
-  border-radius: 0.35rem;
-  background: #172033;
-  color: #fff;
+  min-height: var(--control-min-height);
+  padding: var(--inset-auth-action) var(--space-4);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font: inherit;
-  font-weight: 600;
-  line-height: 1.5;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-body);
   cursor: pointer;
 }
 
 .signup-form button:hover:not(:disabled),
 .login-form button:hover:not(:disabled) {
-  background: #4b5563;
+  background: var(--color-primary-hover);
 }
 
 .google-login-button {
@@ -260,22 +297,22 @@ p {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 2.75rem;
-  margin-top: 1rem;
-  padding: 0.7rem 1rem;
-  border: 1px solid #9ba8b9;
-  border-radius: 0.35rem;
-  background: #fff;
-  color: #172033;
+  min-height: var(--control-min-height);
+  margin-top: var(--space-4);
+  padding: var(--inset-auth-action) var(--space-4);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
-  font-weight: 600;
-  line-height: 1.5;
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--leading-body);
   cursor: pointer;
 }
 
 .google-login-button:hover {
-  background: #f7f9fc;
-  border-color: #172033;
+  background: var(--color-surface-hover);
+  border-color: var(--color-text);
 }
 
 .signup-form button:disabled,
@@ -284,15 +321,8 @@ p {
   opacity: 0.65;
 }
 
-@media (max-width: 40rem) {
-  .site-nav {
-    width: 100%;
-    justify-content: flex-start;
-  }
-}
-
 .accommodation-search-page {
-  width: min(100%, 70rem);
+  width: min(100%, var(--content-wide));
   min-width: 0;
   align-self: start;
 }
@@ -300,22 +330,22 @@ p {
 .accommodation-search-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
   align-items: end;
-  padding: 1.5rem;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
 }
 
 .accommodation-search-page button,
 .accommodation-search-page select {
-  min-height: 2.75rem;
-  padding: 0.65rem;
-  border: 1px solid #9ba8b9;
-  border-radius: 0.35rem;
-  background: #fff;
+  min-height: var(--control-min-height);
+  padding: var(--inset-control);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
   color: inherit;
   font: inherit;
 }
@@ -327,52 +357,51 @@ p {
   opacity: 0.5;
 }
 .accommodation-search-page button:hover:not(:disabled) {
-  background: #dbe2ec;
-}
-.accommodation-search-page :is(a, button, select):focus-visible {
-  outline: 2px solid #172033;
-  outline-offset: 3px;
+  background: var(--color-secondary-hover);
 }
 
 .accommodation-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
   list-style: none;
   padding: 0;
 }
 
 .accommodation-card {
   height: 100%;
-  padding: 1.5rem;
-  border: 1px solid #dbe2ec;
-  border-radius: 1rem;
-  background: #fff;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
   overflow-wrap: anywhere;
 }
 .accommodation-card h2 {
   margin-top: 0;
+  font-size: var(--font-size-lg);
 }
 .accommodation-card a {
   color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: var(--space-1);
 }
 .accommodation-pagination {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
 .amenity-option {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
 }
 .accommodation-search-form fieldset {
   min-width: 0;
-  border: 1px solid #9ba8b9;
-  border-radius: 0.35rem;
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-sm);
 }
 .accommodation-search-form input[type='checkbox'] {
   min-width: 1.25rem;
@@ -390,13 +419,13 @@ p {
 }
 
 .accommodation-detail-page section {
-  margin: 2rem 0;
+  margin: var(--space-8) 0;
   overflow-wrap: anywhere;
 }
 .accommodation-detail-page dl {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 .accommodation-detail-page dd {
   margin: 0;
@@ -408,7 +437,7 @@ p {
 .availability-room-item {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 .availability-room-item .accommodation-card {
   height: auto;
@@ -422,15 +451,12 @@ p {
 }
 .booking-price-table th,
 .booking-price-table td {
-  padding: 0.5rem;
-  border: 1px solid #dbe2ec;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
   text-align: left;
   overflow-wrap: anywhere;
 }
 
-a {
-  color: var(--accent);
-}
 .search-filters {
   grid-column: 1 / -1;
   order: 2;
@@ -443,73 +469,54 @@ form[aria-label='숙소 검색 조건'] > button {
 }
 .search-filters summary {
   cursor: pointer;
-  padding: 0.5rem 0;
-  color: var(--accent);
-  font-weight: 600;
+  padding: var(--space-2) 0;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
 }
 .search-filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-}
-:is(a, button, input, select, summary):focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
-}
-button {
-  font: inherit;
-  cursor: pointer;
-  min-height: 2.75rem;
-  border-radius: 0.6rem;
-  padding: 0.75rem 1.1rem;
-}
-button:disabled {
-  cursor: not-allowed;
-}
-.site-brand {
-  color: var(--accent);
-  letter-spacing: -0.035em;
-  font-size: 1.1rem;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 .site-footer {
-  padding: 2rem 1.5rem;
-  border-top: 1px solid var(--line);
+  padding: var(--space-8) var(--space-6);
+  border-top: 1px solid var(--color-border);
   text-align: center;
-  color: #536760;
-  font-size: 0.85rem;
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
 }
 .accommodation-search-page .primary-action {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
 }
 .accommodation-search-page .primary-action:hover:not(:disabled) {
-  background: #124e48;
+  background: var(--color-primary-hover);
 }
 .booking-complete-page {
-  width: min(100%, 45rem);
-  padding: clamp(1.25rem, 4vw, 3rem);
-  border-radius: 1rem;
-  border: 1px solid var(--line);
-  background: #fff;
+  width: min(100%, var(--content-result));
+  padding: clamp(var(--space-5), 4vw, var(--space-12));
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 .booking-complete-page h2 {
-  color: var(--accent);
+  color: var(--color-primary);
 }
 form[aria-label='대표 투숙객 정보'] {
   display: grid;
-  gap: 1rem;
-  max-width: 32rem;
+  gap: var(--space-4);
+  max-width: var(--content-form);
 }
 .booking-price-table th {
-  background: #edf2eb;
+  background: var(--color-secondary);
 }
 @media (min-width: 60rem) {
   .accommodation-detail-page {
     display: grid;
     grid-template-columns: 1fr 1.1fr;
-    gap: 1.5rem;
+    gap: var(--space-6);
     align-items: start;
   }
   .accommodation-detail-page > a,
@@ -521,133 +528,113 @@ form[aria-label='대표 투숙객 정보'] {
   }
 }
 .home-page {
-  width: min(100%, 70rem);
+  width: min(100%, var(--content-wide));
 }
 .home-hero {
-  padding: clamp(1.5rem, 5vw, 4rem);
-  border-radius: 1.5rem;
-  background: radial-gradient(ellipse at top right, #d3e6dc 0, transparent 65%), #edf2eb;
+  padding: clamp(var(--space-6), 5vw, var(--space-16));
+  border-radius: var(--radius-hero);
+  background:
+    radial-gradient(ellipse at top right, var(--color-hero-highlight) 0, transparent 65%),
+    var(--color-secondary);
 }
 .eyebrow {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
   letter-spacing: 0.14em;
-  color: var(--accent);
+  color: var(--color-primary);
 }
 .home-hero h1 {
-  font-size: 1rem;
-  color: #52675f;
+  font-size: var(--font-size-base);
+  color: var(--color-text-subtle);
 }
 .hero-heading {
-  font-size: clamp(1.7rem, 4vw, 3rem);
-  color: var(--ink);
-  font-weight: 750;
-  line-height: 1.35;
+  font-size: clamp(var(--font-size-display-min), 4vw, var(--font-size-display-max));
+  color: var(--color-text);
+  font-weight: var(--font-weight-display);
+  line-height: var(--leading-display);
   letter-spacing: -0.05em;
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
   word-break: keep-all;
 }
 .home-search {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr 0.6fr auto;
   align-items: end;
-  gap: 0.75rem;
-  background: #fff;
-  padding: 1.25rem;
-  border-radius: 1rem;
-  margin-top: 2rem;
-  box-shadow: 0 12px 35px #173a3910;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  padding: var(--space-5);
+  border-radius: var(--radius-card);
+  margin-top: var(--space-8);
+  box-shadow: var(--shadow-raised);
 }
 .home-search .form-field {
   min-width: 0;
 }
 .home-search [role='alert'] {
   grid-column: 1 / -1;
-  color: #b42318;
+  color: var(--color-error);
 }
 .home-search button,
-.accommodation-search-page button[type='submit'],
-.signup-form button,
-.login-form button {
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid var(--accent);
+.accommodation-search-page button[type='submit'] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: 1px solid var(--color-primary);
 }
 .home-search button:hover,
-.accommodation-search-page button[type='submit']:hover,
-.signup-form button:hover:not(:disabled),
-.login-form button:hover:not(:disabled) {
-  background: #124e48;
+.accommodation-search-page button[type='submit']:hover {
+  background: var(--color-primary-hover);
 }
 .home-guide {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  margin: 3rem 0 1rem;
+  gap: var(--space-8);
+  margin: var(--space-12) 0 var(--space-4);
 }
 .home-guide h2 {
-  font-size: 1.2rem;
+  font-size: var(--font-size-lg);
   letter-spacing: -0.035em;
 }
 .home-guide p {
-  line-height: 1.8;
-}
-.home-link {
-  font-weight: 650;
-  margin-bottom: 2rem;
+  line-height: var(--leading-guide);
 }
 .catalog-card-visual {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 8rem;
-  padding: 1rem;
-  margin: -1.5rem -1.5rem 1.25rem;
-  border-radius: 1rem 1rem 0 0;
+  padding: var(--space-4);
+  margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-5);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
   background:
     repeating-linear-gradient(
       135deg,
       transparent,
       transparent 18px,
-      #17675f08 18px,
-      #17675f08 19px
+      var(--color-catalog-pattern) 18px,
+      var(--color-catalog-pattern) 19px
     ),
-    #edf2eb;
-  color: #52675f;
-  font-size: 0.75rem;
+    var(--color-secondary);
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
   letter-spacing: 0.05em;
 }
 .catalog-card-visual small {
   align-self: end;
   letter-spacing: 0;
 }
-.accommodation-card h2 {
-  font-size: 1.2rem;
-}
-.accommodation-card a {
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25rem;
-}
 .accommodation-card p {
-  line-height: 1.6;
+  line-height: var(--leading-description);
 }
 .accommodation-detail-page > section,
 .accommodation-detail-page [aria-label='선택한 객실'],
 .empty-state {
-  border: 1px solid var(--line);
-  background: #fff;
-  padding: clamp(1rem, 3vw, 2rem);
-  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: clamp(var(--space-4), 3vw, var(--space-8));
+  border-radius: var(--radius-card);
 }
 .accommodation-detail-page [aria-label='선택한 객실'] > button {
-  margin: 0.5rem 0.5rem 0.5rem 0;
-}
-.signup-page,
-.login-page {
-  padding: 2rem;
-  border-radius: 1rem;
-  border: 1px solid var(--line);
-  background: #fff;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
 }
 @media (max-width: 60rem) {
   form[aria-label='숙소 검색 조건'] {
@@ -663,85 +650,85 @@ form[aria-label='대표 투숙객 정보'] {
 
 .reservation-list {
   display: grid;
-  gap: 1rem;
+  gap: var(--space-4);
   padding: 0;
   list-style: none;
 }
 .my-reservations-page,
 .reservation-detail-page {
-  width: min(100%, 60rem);
+  width: min(100%, var(--content-reservation));
   min-width: 0;
   text-align: left;
 }
 .reservation-card {
   min-width: 0;
-  padding: clamp(1rem, 3vw, 2rem);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: #fff;
+  padding: clamp(var(--space-4), 3vw, var(--space-8));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
   overflow-wrap: anywhere;
 }
 .reservation-detail-page > .reservation-card {
-  margin-block: 1rem;
+  margin-block: var(--space-4);
 }
 .reservation-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 .reservation-card-header h2 {
   margin: 0;
 }
 .reservation-status {
-  padding: 0.4rem 0.75rem;
-  border-radius: 1rem;
-  background: #e2f3ed;
-  color: #205c4d;
+  padding: var(--inset-badge) var(--space-3);
+  border-radius: var(--radius-card);
+  background: var(--color-success-surface);
+  color: var(--color-success);
 }
 .reservation-status-cancelled {
-  background: #f2ece7;
-  color: #655044;
+  background: var(--color-cancelled-surface);
+  color: var(--color-cancelled);
 }
 .reservation-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
 }
 .reservation-facts dt {
-  color: #536760;
+  color: var(--color-text-subtle);
 }
 .reservation-facts dd {
-  margin: 0.4rem 0 0;
+  margin: var(--inset-badge) 0 0;
 }
 
 .admin-layout {
-  width: min(100%, 70rem);
+  width: min(100%, var(--content-wide));
   min-width: 0;
   text-align: left;
 }
 .admin-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--space-6);
 }
 .admin-workspace {
   display: grid;
   grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: var(--space-6);
   align-items: start;
 }
 .admin-sidebar,
 .admin-content {
   min-width: 0;
-  padding: clamp(1rem, 3vw, 1.5rem);
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: #fff;
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
   overflow-wrap: anywhere;
 }
 .admin-sidebar ul {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -751,14 +738,14 @@ form[aria-label='대표 투숙객 정보'] {
   justify-content: flex-start;
 }
 .admin-sidebar .nav-link-active {
-  background: #edf2eb;
+  background: var(--color-secondary);
 }
 .admin-content h2 {
   margin-top: 0;
 }
 .admin-content p,
 .admin-sidebar p {
-  line-height: 1.7;
+  line-height: var(--leading-long);
 }
 @media (max-width: 48rem) {
   .admin-workspace {
@@ -766,22 +753,26 @@ form[aria-label='대표 투숙객 정보'] {
   }
 }
 @media (max-width: 40rem) {
+  .site-nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
   form[aria-label='숙소 검색 조건'] {
     grid-template-columns: minmax(0, 1fr);
   }
   .site-main {
-    padding: 1.5rem 1rem;
+    padding: var(--space-6) var(--space-4);
   }
   .site-header {
-    padding: 1rem;
+    padding: var(--space-4);
   }
   .home-guide {
     grid-template-columns: 1fr;
-    gap: 1rem;
-    margin-top: 2rem;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
   }
   .home-search {
-    padding: 1rem;
+    padding: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
   }
   .home-search button {
@@ -789,13 +780,13 @@ form[aria-label='대표 투숙객 정보'] {
   }
   .signup-page,
   .login-page {
-    padding: 1.25rem;
+    padding: var(--space-5);
   }
 }
 
 .inventory-calendar {
   overflow-x: auto;
-  margin-block: 1rem;
+  margin-block: var(--space-4);
 }
 
 .inventory-calendar table {
