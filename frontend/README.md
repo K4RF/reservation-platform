@@ -38,6 +38,10 @@ Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 
 사용 기준·의도된 전역 변화·Browser 검증과 후속 범위는
 [Design Tokens / Global Style (#225)](../docs/ui/frontend-design-tokens-225.md)을 참고하세요.
 
+공통 Button/Input/Card/Badge·Navigation과 기존 인라인 확인 UI는 같은 CSS 표현을 재사용합니다.
+새 범용 Form/Modal Library를 추가한 것은 아닙니다. Action 역할·Native disabled·도메인 제출 잠금 경계는
+[Shared UI / Navigation (#226)](../docs/ui/frontend-shared-ui-226.md)을 따릅니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
