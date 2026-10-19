@@ -33,6 +33,11 @@ UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#232 스타일 정돈/회�
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.
 
+전역 스타일은 `src/index.css`가 `src/styles/tokens.css`를 먼저 불러옵니다.
+색상·글꼴·간격·Radius·Shadow·역할별 최대 폭은 공통 Token을 사용합니다.
+사용 기준·의도된 전역 변화·Browser 검증과 후속 범위는
+[Design Tokens / Global Style (#225)](../docs/ui/frontend-design-tokens-225.md)을 참고하세요.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
