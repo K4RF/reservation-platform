@@ -61,6 +61,8 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('main')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '홈' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.queryByRole('link', { name: '내 예약' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
   })
 
   it('renders the not found page inside the shared layout for an unknown direct path', () => {

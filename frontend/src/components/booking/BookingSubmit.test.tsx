@@ -21,6 +21,8 @@ describe('booking submission', () => {
     fireEvent.click(button)
     fireEvent.click(button)
     expect((button as HTMLButtonElement).disabled).toBe(true)
+    expect(button.classList.contains('primary-action')).toBe(true)
+    expect(button.getAttribute('aria-busy')).toBe('true')
     expect(
       (screen.getByRole('button', { name: '투숙객 정보 수정' }) as HTMLButtonElement).disabled,
     ).toBe(true)

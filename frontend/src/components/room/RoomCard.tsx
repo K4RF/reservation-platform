@@ -8,7 +8,7 @@ export function RoomCard({ room }: { room: RoomResponse }) {
       <p>
         기본 1박 가격: {room.nightlyPrice.toLocaleString('ko-KR', { maximumFractionDigits: 20 })}
       </p>
-      <p>{room.status === 'ACTIVE' ? '운영 중' : '운영 중지'}</p>
+      <p className="catalog-status">{room.status === 'ACTIVE' ? '운영 중' : '운영 중지'}</p>
       {room.amenities.length > 0 && (
         <ul aria-label="객실 편의시설">
           {room.amenities.map((item) => (

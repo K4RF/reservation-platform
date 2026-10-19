@@ -51,6 +51,7 @@ describe('protected and role routes', () => {
     renderAt('/reservations')
     expect(screen.getByRole('heading', { name: '내 예약' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '내 예약' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '내 예약' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('link', { name: '숙소 검색' })).toBeTruthy()
     expect(screen.queryByRole('link', { name: '로그인' })).toBeNull()
     expect(screen.queryByRole('link', { name: '회원가입' })).toBeNull()
@@ -60,6 +61,7 @@ describe('protected and role routes', () => {
     renderAt('/admin')
     expect(screen.getByRole('heading', { name: '관리자 영역' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '관리자' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '관리자' }).getAttribute('aria-current')).toBe('page')
   })
   it.each(['/admin', '/admin/rooms'])('blocks USER at %s without a login loop', (path) => {
     signIn()

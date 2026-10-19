@@ -55,6 +55,8 @@ describe('reservation change confirmation', () => {
     fireEvent.click(patchButton())
     await waitFor(() => expect(finish).toBeTypeOf('function'))
     expect(lock).toHaveBeenLastCalledWith(true)
+    expect(patchButton().classList.contains('primary-action')).toBe(true)
+    expect(patchButton().getAttribute('aria-busy')).toBe('true')
     expect(patchButton()).toHaveProperty('disabled', true)
     expect(screen.getByRole('checkbox')).toHaveProperty('disabled', true)
     expect(screen.getByText('일정을 변경하고 있습니다. 중복 제출하지 마세요.')).toBeTruthy()

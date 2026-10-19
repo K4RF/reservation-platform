@@ -91,11 +91,20 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss.match(/\.site-brand\s*\{/g)).toHaveLength(1)
     expect(globalCss.match(/\.home-link\s*\{/g)).toHaveLength(1)
     expect(globalCss.match(/\.signup-form button,\s*\.login-form button\s*\{/g)).toHaveLength(1)
-    expect(
-      globalCss.match(
-        /\.signup-form button:hover:not\(:disabled\),\s*\.login-form button:hover:not\(:disabled\)\s*\{/g,
-      ),
-    ).toHaveLength(1)
+    // Authentication now inherits the common submit/hover appearance, not a private duplicate.
+    expect(globalCss).not.toContain('.signup-form button:hover')
+    expect(globalCss.match(/button\[type='submit'\]:hover:enabled/g)).toHaveLength(1)
     expect(globalCss).not.toContain('var(--accent)')
+  })
+
+  it('shares controls without suppressing native disabled or confirmation semantics', () => {
+    expect(globalCss).toContain(".nav-link[aria-current='page']")
+    expect(globalCss).toContain("button[aria-busy='true']")
+    expect(globalCss).toContain("input:is([type='checkbox'], [type='radio'])")
+    expect(globalCss).toContain("[aria-invalid='true']")
+    expect(globalCss).toContain('.confirmation-panel {')
+    expect(globalCss).not.toContain('pointer-events: none')
+    expect(globalCss).not.toContain('appearance: none')
+    expect(globalCss).not.toContain('.admin-content button {')
   })
 })

@@ -42,6 +42,12 @@ describe('explicit cancellation submission', () => {
       fireEvent.click(button)
     }
     expect(screen.getByRole('checkbox')).toHaveProperty('disabled', true)
+    expect(
+      screen.getByRole('button', { name: '예약 취소 확정' }).classList.contains('danger-action'),
+    ).toBe(true)
+    expect(screen.getByRole('button', { name: '예약 취소 확정' }).getAttribute('aria-busy')).toBe(
+      'true',
+    )
     expect(screen.getByText('예약을 취소하고 있습니다. 중복 제출하지 마세요.')).toBeTruthy()
     expect(lock).toHaveBeenCalledWith(true)
     await act(async () => finish(Response.json(cancellationResponse)))
