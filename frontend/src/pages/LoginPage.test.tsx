@@ -41,6 +41,13 @@ describe('login flow', () => {
   it('renders the login route, signup link, and blocks invalid local input', () => {
     renderLogin()
     expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '로그인' }).classList.contains('auth-page')).toBe(
+      true,
+    )
+    expect(screen.getByRole('form', { name: '이메일 로그인' })).toBeTruthy()
+    expect(screen.getByLabelText('이메일').getAttribute('inputmode')).toBe('email')
+    expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
+    expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('current-password')
     expect(screen.getByRole('button', { name: 'Google로 로그인' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Google로 로그인' }).className).toBe(
       'google-login-button',
@@ -52,6 +59,10 @@ describe('login flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
     expect(screen.getByText('이메일을 입력해 주세요.')).toBeTruthy()
     expect(screen.getByText('비밀번호를 입력해 주세요.')).toBeTruthy()
+    expect(screen.getByLabelText('비밀번호').getAttribute('aria-describedby')?.split(' ')).toEqual([
+      'login-password-hint',
+      'login-password-error',
+    ])
     expect(loginWithEmail).not.toHaveBeenCalled()
   })
 
@@ -75,6 +86,7 @@ describe('login flow', () => {
       password: 'Password123!',
     })
     expect(screen.getByRole('button', { name: '로그인' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '로그인' }).getAttribute('aria-busy')).toBe('true')
     expect(screen.getByRole('status').textContent).toContain('처리하고 있습니다')
 
     complete(tokens)
