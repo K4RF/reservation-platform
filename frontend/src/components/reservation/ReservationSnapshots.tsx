@@ -56,27 +56,40 @@ export function ReservationSnapshots({
         <p>첫 숙박일 요금 Snapshot: {amountLabel(reservation.nightlyPriceSnapshot)}</p>
         <p>확정 예약 금액은 위 예약 기록의 총액입니다. 현재 객실 요금으로 재계산하지 않습니다.</p>
         {reservation.nights.length ? (
-          <table className="booking-price-table">
-            <caption>숙박일별 확정 요금 Snapshot</caption>
-            <thead>
-              <tr>
-                <th scope="col">숙박일</th>
-                <th scope="col">저장된 요금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...reservation.nights]
-                .sort((a, b) => a.stayDate.localeCompare(b.stayDate))
-                .map((night) => (
-                  <tr key={night.stayDate}>
-                    <th scope="row">
-                      <time dateTime={night.stayDate}>{night.stayDate}</time>
-                    </th>
-                    <td>{amountLabel(night.priceSnapshot)}</td>
+          <>
+            <p className="reservation-note" id="saved-price-scroll-hint">
+              좁은 화면에서는 요금 표를 좌우로 스크롤할 수 있습니다.
+            </p>
+            <div
+              className="reservation-price-scroll"
+              role="region"
+              aria-label="저장된 숙박 요금 표"
+              aria-describedby="saved-price-scroll-hint"
+              tabIndex={0}
+            >
+              <table className="booking-price-table">
+                <caption>숙박일별 확정 요금 Snapshot</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">숙박일</th>
+                    <th scope="col">저장된 요금</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {[...reservation.nights]
+                    .sort((a, b) => a.stayDate.localeCompare(b.stayDate))
+                    .map((night) => (
+                      <tr key={night.stayDate}>
+                        <th scope="row">
+                          <time dateTime={night.stayDate}>{night.stayDate}</time>
+                        </th>
+                        <td>{amountLabel(night.priceSnapshot)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         ) : (
           <p>숙박일별 요금이 저장되지 않은 과거 예약입니다. 일별 금액을 추정하지 않습니다.</p>
         )}
@@ -93,7 +106,11 @@ export function ReservationSnapshots({
       ) : (
         <section className="reservation-card" aria-labelledby="reservation-actions-heading">
           <h2 id="reservation-actions-heading">예약 관리</h2>
-          <fieldset className="reservation-change-fields" disabled={cancelLocked}>
+          <fieldset
+            className="reservation-change-fields reservation-change-action"
+            disabled={cancelLocked}
+          >
+            <legend>일정 변경</legend>
             <ReservationChangeAvailabilitySection
               reservation={reservation}
               accommodationId={accommodationId}
@@ -101,7 +118,11 @@ export function ReservationSnapshots({
               onLock={setChangeLocked}
             />
           </fieldset>
-          <fieldset className="reservation-change-fields" disabled={changeLocked}>
+          <fieldset
+            className="reservation-change-fields reservation-cancel-action"
+            disabled={changeLocked}
+          >
+            <legend>예약 취소</legend>
             <ReservationCancellationSection
               reservation={reservation}
               onRefresh={onRefreshDetail}

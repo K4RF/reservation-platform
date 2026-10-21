@@ -1,0 +1,1149 @@
+{
+  "issue": 229,
+  "recordedDate": "2026-10-21",
+  "timeZone": "Asia/Tokyo",
+  "sourceBaseCommit": "9ed9d31",
+  "sourceState": "Issue 229 working UI changes before commits",
+  "environment": "Actual routes/components/CSS with read-only fixtures and synthetic USER hint; no real Backend/OAuth2 or PATCH",
+  "screenshots": "Native viewport JPEG. Use DOM measurements for dimensions; images may exclude scrollbars or be scaled.",
+  "notes": [
+    "Mobile controlled dates changed with native ArrowUp keyboard input to 2031-01-01 / 2031-01-03 after verifying the rendered input values.",
+    "Checkbox acknowledgement only; final change/cancel actions were not clicked.",
+    "Post-mutation success/error/locking behavior is covered by existing HTTP-mock automated suites, not a Browser mutation run."
+  ],
+  "records": [
+    {
+      "id": "list-desktop",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "이전"
+        },
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "다음"
+        }
+      ],
+      "groups": [],
+      "heading": "내 예약",
+      "root": {
+        "clientWidth": 1440,
+        "scrollHeight": 1000,
+        "scrollWidth": 1440
+      },
+      "statuses": [
+        "총 1개 예약"
+      ],
+      "tables": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "list-desktop.jpg"
+    },
+    {
+      "id": "list-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "이전"
+        },
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "다음"
+        }
+      ],
+      "groups": [],
+      "heading": "내 예약",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1150,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "총 1개 예약"
+      ],
+      "tables": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "list-mobile.jpg"
+    },
+    {
+      "id": "detail-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2606,
+        "scrollWidth": 375
+      },
+      "statuses": [],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "detail-mobile.jpg"
+    },
+    {
+      "id": "saved-prices-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2606,
+        "scrollWidth": 375
+      },
+      "statuses": [],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": true,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 23,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "saved-prices-mobile.jpg"
+    },
+    {
+      "id": "change-availability-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "일정 변경 내용 확인"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 3639,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "change-availability-mobile.jpg"
+    },
+    {
+      "id": "change-confirm-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 4675,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 275,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 448,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "change-confirm-mobile.jpg"
+    },
+    {
+      "id": "change-table-keyboard-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 4675,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 275,
+          "focused": true,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 3,
+          "scrollWidth": 448,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": null
+    },
+    {
+      "id": "cancel-policy-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "취소 정책 및 수수료 확인"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 취소 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "예약 상세 다시 조회"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 6259,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다.",
+        "취소 전에 저장된 정책과 금액 미제공 안내를 확인하세요."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 275,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 448,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "cancel-policy-mobile.jpg"
+    },
+    {
+      "id": "cancel-acknowledgement-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "취소 정책 및 수수료 확인"
+        },
+        {
+          "busy": "false",
+          "disabled": false,
+          "expanded": null,
+          "text": "예약 취소 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "예약 상세 다시 조회"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 6259,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다.",
+        "안내를 확인했습니다. 아직 취소 요청은 전송되지 않았습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 275,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 40,
+          "scrollWidth": 448,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "cancel-acknowledgement-mobile.jpg"
+    },
+    {
+      "id": "change-confirm-desktop",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 3663,
+        "scrollWidth": 1425
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 없습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 894,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 894,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 860,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 860,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "change-confirm-desktop.jpg"
+    },
+    {
+      "id": "cancel-confirm-desktop",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "취소 정책 및 수수료 확인"
+        },
+        {
+          "busy": "false",
+          "disabled": false,
+          "expanded": null,
+          "text": "예약 취소 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "예약 상세 다시 조회"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 4691,
+        "scrollWidth": 1425
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 포함되어 있습니다.",
+        "안내를 확인했습니다. 아직 취소 요청은 전송되지 않았습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 894,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 894,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 860,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 860,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "cancel-confirm-desktop.jpg"
+    },
+    {
+      "id": "cancelled-detail-desktop",
+      "alerts": [],
+      "buttons": [],
+      "groups": [],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 2046,
+        "scrollWidth": 1425
+      },
+      "statuses": [],
+      "tables": [
+        {
+          "clientWidth": 894,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 894,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "cancelled-detail-desktop.jpg"
+    },
+    {
+      "id": "cancelled-result-desktop",
+      "alerts": [],
+      "buttons": [],
+      "groups": [],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 2046,
+        "scrollWidth": 1425
+      },
+      "statuses": [],
+      "tables": [
+        {
+          "clientWidth": 894,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 894,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "cancelled-result-desktop.jpg"
+    },
+    {
+      "id": "cancelled-result-mobile",
+      "alerts": [],
+      "buttons": [],
+      "groups": [],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2635,
+        "scrollWidth": 375
+      },
+      "statuses": [],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "cancelled-result-mobile.jpg"
+    },
+    {
+      "id": "list-empty-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "이전"
+        },
+        {
+          "busy": null,
+          "disabled": true,
+          "expanded": null,
+          "text": "다음"
+        }
+      ],
+      "groups": [],
+      "heading": "내 예약",
+      "root": {
+        "clientWidth": 390,
+        "scrollHeight": 844,
+        "scrollWidth": 390
+      },
+      "statuses": [
+        "총 0개 예약",
+        "표시할 예약이 없습니다."
+      ],
+      "tables": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "list-empty-mobile.jpg"
+    },
+    {
+      "id": "list-error-mobile",
+      "alerts": [
+        "예약을 불러오지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.다시 시도"
+      ],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "다시 시도"
+        }
+      ],
+      "groups": [],
+      "heading": "내 예약",
+      "root": {
+        "clientWidth": 390,
+        "scrollHeight": 844,
+        "scrollWidth": 390
+      },
+      "statuses": [],
+      "tables": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "list-error-mobile.jpg"
+    },
+    {
+      "id": "list-loading-mobile",
+      "alerts": [],
+      "buttons": [],
+      "groups": [],
+      "heading": "내 예약",
+      "root": {
+        "clientWidth": 390,
+        "scrollHeight": 844,
+        "scrollWidth": 390
+      },
+      "statuses": [
+        "내 예약을 불러오고 있습니다."
+      ],
+      "tables": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": null
+    },
+    {
+      "id": "availability-not-listed-mobile",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "일정 변경 내용 확인"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 3687,
+        "scrollWidth": 375
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 없습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 309,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "availability-not-listed-mobile.jpg"
+    },
+    {
+      "id": "detail-tablet",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "일정 변경 내용 확인"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 753,
+        "scrollHeight": 2967,
+        "scrollWidth": 753
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 없습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 657,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 657,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      },
+      "screenshot": null
+    },
+    {
+      "id": "detail-320-boundary",
+      "alerts": [],
+      "buttons": [
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "true",
+          "text": "예약 일정 변경 준비"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": null,
+          "text": "변경 날짜 가용성 조회"
+        },
+        {
+          "busy": "false",
+          "disabled": true,
+          "expanded": null,
+          "text": "예약 일정 변경 확정"
+        },
+        {
+          "busy": null,
+          "disabled": false,
+          "expanded": "false",
+          "text": "취소 정책 및 수수료 확인"
+        }
+      ],
+      "groups": [
+        {
+          "disabled": false,
+          "legend": "일정 변경"
+        },
+        {
+          "disabled": false,
+          "legend": null
+        },
+        {
+          "disabled": false,
+          "legend": "예약 취소"
+        }
+      ],
+      "heading": "예약 상세",
+      "root": {
+        "clientWidth": 305,
+        "scrollHeight": 5055,
+        "scrollWidth": 320
+      },
+      "statuses": [
+        "현재 객실이 일반 신규 예약 가능 목록에 없습니다."
+      ],
+      "tables": [
+        {
+          "clientWidth": 254,
+          "focused": false,
+          "label": "저장된 숙박 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 384,
+          "tabIndex": 0
+        },
+        {
+          "clientWidth": 220,
+          "focused": false,
+          "label": "변경 참고 요금 표",
+          "overflowX": "auto",
+          "scrollLeft": 0,
+          "scrollWidth": 448,
+          "tabIndex": 0
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 320
+      },
+      "screenshot": null
+    }
+  ]
+}

@@ -119,4 +119,18 @@ describe('design token and global stylesheet contracts', () => {
     )
     expect(globalCss).not.toContain('overflow-x: hidden')
   })
+
+  it('keeps reservation money tables scrollable and cancellation warnings separate from saved results', () => {
+    expect(globalCss).toMatch(/\.reservation-price-scroll\s*\{[^}]*overflow-x: auto;/)
+    expect(globalCss).toMatch(
+      /\.reservation-price-scroll \.booking-price-table\s*\{[^}]*table-layout: auto;/,
+    )
+    expect(globalCss).toMatch(
+      /\.reservation-cancel-confirmation\s*\{[^}]*border-color: var\(--color-error\);/,
+    )
+    expect(globalCss).toMatch(
+      /\.reservation-operation-result\s*\{[^}]*border-color: var\(--color-success\);/,
+    )
+    expect(globalCss).toContain('.reservation-quote-unavailable')
+  })
 })

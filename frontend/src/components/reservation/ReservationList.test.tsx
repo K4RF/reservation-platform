@@ -23,11 +23,23 @@ describe('ReservationList and card mapping', () => {
       </MemoryRouter>,
     )
     const card = within(screen.getByRole('article', { name: '예약 42' }))
+    expect(
+      screen
+        .getByRole('article', { name: '예약 42' })
+        .classList.contains('reservation-summary-confirmed'),
+    ).toBe(true)
+    expect(
+      screen
+        .getByRole('article', { name: '예약 43' })
+        .classList.contains('reservation-summary-cancelled'),
+    ).toBe(true)
     expect(card.getByRole('heading', { name: '현재 숙소 이름' })).toBeTruthy()
     expect(card.getByText('객실: 현재 객실 이름')).toBeTruthy()
     expect(card.getByText(`예약 번호: ${reservationResult.reservationNumber}`)).toBeTruthy()
     expect(card.getByText('2030-01-01')).toBeTruthy()
     expect(card.getByText('2030-01-03')).toBeTruthy()
+    expect(card.getByText('2030-01-01').getAttribute('datetime')).toBe('2030-01-01')
+    expect(card.getByText('2030-01-03').getAttribute('datetime')).toBe('2030-01-03')
     expect(card.getByText('2박 · 2명')).toBeTruthy()
     expect(card.getByText('350.25')).toBeTruthy()
     expect(card.getByText('예약 확정')).toBeTruthy()

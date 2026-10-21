@@ -92,7 +92,11 @@ function CancellationConfirmation({
   )
   const { state, retry } = useDetailQuery(load)
   return (
-    <section className="confirmation-panel" id={id} aria-labelledby={`${id}-heading`}>
+    <section
+      className="confirmation-panel reservation-cancel-confirmation"
+      id={id}
+      aria-labelledby={`${id}-heading`}
+    >
       <h3 id={`${id}-heading`}>취소 전 확인</h3>
       {state.status === 'loading' && (
         <LoadingState message="저장된 취소 정책과 예약 상태를 다시 조회하고 있습니다." />

@@ -63,12 +63,15 @@ export function ReservationChangeConfirmation({
   }
   const disabled = pending || Boolean(result) || Boolean(failure?.uncertain)
   return (
-    <section className="confirmation-panel" aria-labelledby="reservation-change-confirm-heading">
+    <section
+      className="confirmation-panel reservation-change-confirmation"
+      aria-labelledby="reservation-change-confirm-heading"
+    >
       <h4 id="reservation-change-confirm-heading">일정 변경 전 확인</h4>
-      <p>
+      <p className="reservation-stay-line">
         기존 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
       </p>
-      <p>
+      <p className="reservation-stay-line reservation-new-stay">
         새 일정: {request.checkInDate} ~ {request.checkOutDate} (체크아웃 제외)
       </p>
       <p>기존 확정 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}</p>
@@ -79,29 +82,42 @@ export function ReservationChangeConfirmation({
       )}
       {price.status === 'success' && (
         <>
-          <table className="booking-price-table">
-            <caption>변경 참고 숙박일별 요금</caption>
-            <thead>
-              <tr>
-                <th scope="col">숙박일</th>
-                <th scope="col">가격 출처</th>
-                <th scope="col">참고 요금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {price.data.nights.map((night) => (
-                <tr key={night.stayDate}>
-                  <th scope="row">{night.stayDate}</th>
-                  <td>{night.source === 'DAILY' ? '날짜별 요금' : '기본 요금'}</td>
-                  <td>{formatMinorUnits(toMinorUnits(night.nightlyPrice))}</td>
+          <p className="reservation-note" id="change-price-scroll-hint">
+            좁은 화면에서는 요금 표를 좌우로 스크롤할 수 있습니다.
+          </p>
+          <div
+            className="reservation-price-scroll"
+            role="region"
+            aria-label="변경 참고 요금 표"
+            aria-describedby="change-price-scroll-hint"
+            tabIndex={0}
+          >
+            <table className="booking-price-table">
+              <caption>변경 참고 숙박일별 요금</caption>
+              <thead>
+                <tr>
+                  <th scope="col">숙박일</th>
+                  <th scope="col">가격 출처</th>
+                  <th scope="col">참고 요금</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p>새 일정 참고 예상 총액: {formatMinorUnits(price.data.totalMinorUnits)}</p>
+              </thead>
+              <tbody>
+                {price.data.nights.map((night) => (
+                  <tr key={night.stayDate}>
+                    <th scope="row">{night.stayDate}</th>
+                    <td>{night.source === 'DAILY' ? '날짜별 요금' : '기본 요금'}</td>
+                    <td>{formatMinorUnits(toMinorUnits(night.nightlyPrice))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="reservation-reference-total">
+            새 일정 참고 예상 총액: {formatMinorUnits(price.data.totalMinorUnits)}
+          </p>
         </>
       )}
-      <p>
+      <p className="reservation-note">
         예상액은 가격 보장이나 원자적 견적이 아닙니다. 변경 시 서버가 전체 기간 요금·재고·예약
         정책·현재 상태를 재검증하며 응답 금액이 확정값입니다.
       </p>
@@ -117,7 +133,7 @@ export function ReservationChangeConfirmation({
       {pending && <LoadingState message="일정을 변경하고 있습니다. 중복 제출하지 마세요." />}
       {failure && <ErrorState message={failure.message} />}
       {result && (
-        <p role="status">
+        <p className="reservation-feedback reservation-success" role="status">
           일정 변경 완료. 서버 확정 총액: {formatMinorUnits(toMinorUnits(result.totalAmount, 19))}
         </p>
       )}

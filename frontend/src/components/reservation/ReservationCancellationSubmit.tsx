@@ -53,7 +53,7 @@ export function ReservationCancellationSubmit({
   }
   const disabled = pending || Boolean(failure) || Boolean(result)
   return (
-    <>
+    <div className="reservation-cancel-submit">
       <label className="confirmation-check">
         <input
           type="checkbox"
@@ -70,7 +70,7 @@ export function ReservationCancellationSubmit({
             : '취소 전에 저장된 정책과 금액 미제공 안내를 확인하세요.'}
         </p>
       )}
-      <p>
+      <p className="reservation-risk-note">
         아래 버튼을 누르면 실제 취소를 요청합니다. 수수료가 발생할 수 있으며 취소 후 일정 변경은
         불가능합니다.
       </p>
@@ -93,10 +93,10 @@ export function ReservationCancellationSubmit({
           </button>
         )}
       </div>
-      <p>
+      <p className="reservation-note">
         화면 이탈이나 요청 중단은 서버 롤백을 의미하지 않습니다. 중복 제출 방지는 다중 탭·서버
         멱등성을 보장하지 않습니다.
       </p>
-    </>
+    </div>
   )
 }

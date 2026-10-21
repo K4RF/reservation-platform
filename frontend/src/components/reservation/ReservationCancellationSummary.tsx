@@ -4,9 +4,9 @@ import { formatMinorUnits, toMinorUnits } from '../../utils/money'
 
 export function ReservationCancellationPolicy({ policy }: { policy: CancellationPolicySnapshot }) {
   return (
-    <>
+    <div className="reservation-policy">
       <p>체크인 {policy.freeCancellationDaysBeforeCheckIn}일 전 이상: 무료 취소</p>
-      <ul>
+      <ul className="reservation-policy-tiers">
         {policy.feeRules.map((rule, index) => {
           // Display saved relative thresholds only; never calculate a fee, today or deadline date.
           const upper =
@@ -24,12 +24,14 @@ export function ReservationCancellationPolicy({ policy }: { policy: Cancellation
           )
         })}
       </ul>
-      <p>취소 마감: 체크인 {policy.cancellationDeadlineDaysBeforeCheckIn}일 전까지</p>
-      <p>
+      <p className="reservation-policy-deadline">
+        취소 마감: 체크인 {policy.cancellationDeadlineDaysBeforeCheckIn}일 전까지
+      </p>
+      <p className="reservation-note">
         현재 숙소 정책이 아닌 예약에 저장된 정책입니다. 실제 취소 가능 여부와 수수료는 서버가 숙소
         TimeZone 기준으로 판단합니다.
       </p>
-    </>
+    </div>
   )
 }
 
@@ -53,11 +55,11 @@ export function ReservationCancellationResult({
             )}
           </dd>
         </div>
-        <div>
+        <div className="reservation-amount">
           <dt>적용 취소 수수료</dt>
           <dd>{amount(reservation.cancellationFeeAmount)}</dd>
         </div>
-        <div>
+        <div className="reservation-amount">
           <dt>예상 환불 금액</dt>
           <dd>{amount(reservation.refundAmount)}</dd>
         </div>
@@ -80,7 +82,9 @@ export function ReservationCancellationSummary({
       <p>
         예약 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
       </p>
-      <p>저장된 예약 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}</p>
+      <p className="reservation-saved-total">
+        저장된 예약 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}
+      </p>
       <h4>확인할 저장 취소 정책</h4>
       <ReservationCancellationPolicy policy={reservation.cancellationPolicySnapshot} />
       {reservation.status === 'CANCELLED' ? (
@@ -90,8 +94,10 @@ export function ReservationCancellationSummary({
         </>
       ) : (
         <>
-          <p>취소 전 예상 수수료 금액: 제공되지 않음</p>
-          <p>취소 전 예상 환불 금액: 제공되지 않음</p>
+          <div className="reservation-quote-unavailable">
+            <p>취소 전 예상 수수료 금액: 제공되지 않음</p>
+            <p>취소 전 예상 환불 금액: 제공되지 않음</p>
+          </div>
           <p>
             확정 상태만으로 현재 취소 가능 여부를 보장하지 않습니다. 수수료·환불 금액은 실제 취소 시
             서버가 계산하며, 브라우저에서 계산하지 않습니다.
