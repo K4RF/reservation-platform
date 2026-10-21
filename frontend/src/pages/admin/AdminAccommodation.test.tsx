@@ -103,7 +103,9 @@ describe('Accommodation Admin list and URL conditions', () => {
     open()
     expect(screen.getByText('관리 숙소 목록을 불러오고 있습니다.')).toBeTruthy()
     await screen.findByRole('link', { name: '서울 호텔 (ID 7)' })
-    expect(screen.getByText(/운영 중지 ·/)).toBeTruthy()
+    const item = screen.getByRole('link', { name: '서울 호텔 (ID 7)' }).closest('li')!
+    expect(within(item).getByText('운영 중지').getAttribute('data-status')).toBe('INACTIVE')
+    expect(item.textContent).toContain('운영 중지 ·')
     const [url, init] = fetch.mock.calls[0] as [string, RequestInit]
     const params = new URL(url, 'http://localhost').searchParams
     for (const field of ['status', 'available', 'checkInDate', 'guestCount'])

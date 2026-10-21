@@ -209,7 +209,11 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     fireEvent.click(await screen.findByRole('link', { name: '이 객실의 날짜별 가격 관리' }))
     change('가격 관리 숙박 날짜', '2030-07-20')
     fireEvent.submit(form('가격 조회 대상 선택'))
-    await screen.findByText('DEFAULT', { selector: 'dd' })
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole('region', { name: '현재 적용 가격' })).getByText('DEFAULT'),
+      ).toBeTruthy(),
+    )
     change('설정할 날짜별 1박 가격', '0')
     fireEvent.click(screen.getByLabelText('객실·숙박 날짜·가격과 생성/수정 작업을 확인했습니다.'))
     fireEvent.submit(form('날짜별 가격 입력'))
@@ -218,7 +222,11 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     change('설정할 날짜별 1박 가격', '150.25')
     fireEvent.click(screen.getByLabelText('객실·숙박 날짜·가격과 생성/수정 작업을 확인했습니다.'))
     fireEvent.submit(form('날짜별 가격 입력'))
-    await screen.findByText('DAILY', { selector: 'dd' })
+    await waitFor(() =>
+      expect(
+        within(screen.getByRole('region', { name: '현재 적용 가격' })).getByText('DAILY'),
+      ).toBeTruthy(),
+    )
     change('설정할 날짜별 1박 가격', '160.50')
     fireEvent.click(screen.getByLabelText('객실·숙박 날짜·가격과 생성/수정 작업을 확인했습니다.'))
     fireEvent.submit(form('날짜별 가격 입력'))
@@ -229,7 +237,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     await screen.findByRole('button', { name: '날짜 재고 저장' })
     change('판매 상태', 'CLOSED')
     inventorySubmit('2')
-    await waitFor(() => expect(screen.getByText('CLOSED', { selector: 'td' })).toBeTruthy())
+    await screen.findByRole('cell', { name: 'CLOSED' })
     expect(api.state.inventories[0]).toMatchObject({
       totalQuantity: 2,
       reservedQuantity: 0,
@@ -297,7 +305,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       api.failWrites(undefined)
       change('판매 상태', 'CLOSED')
       inventorySubmit('3')
-      await screen.findByText('CLOSED', { selector: 'td' })
+      await screen.findByRole('cell', { name: 'CLOSED' })
       expect(api.state.inventories[0]).toMatchObject({
         reservedQuantity: 2,
         availableQuantity: 1,

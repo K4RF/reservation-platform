@@ -89,6 +89,10 @@ describe('Inventory Calendar reads and uncreated dates', () => {
     const fetch = stubReads()
     open()
     await screen.findByRole('table')
+    expect(calendar().getAttribute('tabindex')).toBe('0')
+    const help = document.getElementById(calendar().getAttribute('aria-describedby')!)!
+    expect(help.textContent).toContain('가로로 스크롤')
+    expect(help.textContent).toContain('미생성은 0이나 CLOSED를 뜻하지 않습니다')
     const rows = within(calendar()).getAllByRole('row')
     expect(rows).toHaveLength(4)
     expect(
@@ -115,6 +119,10 @@ describe('Inventory Calendar reads and uncreated dates', () => {
     expect(screen.getByRole('button', { name: '날짜 재고 생성' })).toBeTruthy()
     expect(screen.queryByRole('combobox')).toBeNull()
     await selectDate('2030-07-22')
+    expect(
+      within(calendar()).getByRole('button', { name: '2030-07-22' }).getAttribute('aria-pressed'),
+    ).toBe('true')
+    expect(within(calendar()).getByRole('cell', { name: 'CLOSED' }).textContent).toBe('CLOSED')
     expect((screen.getByLabelText('판매 상태') as HTMLSelectElement).value).toBe('CLOSED')
     expect((screen.getByLabelText('설정할 총수량') as HTMLInputElement).value).toBe('5')
     expect(writes(fetch)).toHaveLength(0)

@@ -133,4 +133,21 @@ describe('design token and global stylesheet contracts', () => {
     )
     expect(globalCss).toContain('.reservation-quote-unavailable')
   })
+
+  it('keeps Admin layout, status, recovery and Calendar styles scoped without clipping tables', () => {
+    expect(globalCss).toMatch(/\.admin-sidebar ul\s*\{[^}]*grid-template-columns: repeat\(3,/)
+    expect(globalCss).toMatch(/\.admin-query-form\s*\{[^}]*align-items: end;/)
+    expect(globalCss).toMatch(/\.inventory-calendar\s*\{[^}]*overflow-x: auto;/)
+    expect(globalCss).toMatch(/\.inventory-calendar table\s*\{[^}]*table-layout: auto;/)
+    expect(globalCss).toContain(".inventory-calendar button[aria-pressed='true']")
+    expect(globalCss).toContain(
+      ".admin-status-badge:is([data-status='INACTIVE'], [data-status='CLOSED'])",
+    )
+    expect(globalCss).toMatch(
+      /\.admin-recovery-panel\s*\{[^}]*border-color: var\(--color-warning\);/,
+    )
+    expect(globalCss).toMatch(
+      /\.admin-content \.admin-save-success\s*\{[^}]*border-color: var\(--color-success\);/,
+    )
+  })
 })
