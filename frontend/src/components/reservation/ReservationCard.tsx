@@ -9,7 +9,10 @@ export function ReservationCard({
   linkToDetail?: boolean
 }) {
   return (
-    <article className="reservation-card" aria-label={`예약 ${reservation.id}`}>
+    <article
+      className={`reservation-card reservation-summary-card reservation-summary-${reservation.status.toLowerCase()}`}
+      aria-label={`예약 ${reservation.id}`}
+    >
       <div className="reservation-card-header">
         <h2>{reservation.accommodationName}</h2>
         <span
@@ -39,7 +42,7 @@ export function ReservationCard({
             {reservation.stayNights}박 · {reservation.guestCount}명
           </dd>
         </div>
-        <div>
+        <div className="reservation-amount">
           <dt>확정 예약 금액</dt>
           <dd>{reservation.totalAmount}</dd>
         </div>
@@ -48,7 +51,11 @@ export function ReservationCard({
         <p>현재 숙소·객실 정보 일부를 불러오지 못했습니다. 예약 기록은 유지됩니다.</p>
       )}
       {linkToDetail && (
-        <Link to={reservation.detailPath} aria-label={`예약 ${reservation.id} 상세 보기`}>
+        <Link
+          className="reservation-detail-link"
+          to={reservation.detailPath}
+          aria-label={`예약 ${reservation.id} 상세 보기`}
+        >
           예약 상세 보기
         </Link>
       )}

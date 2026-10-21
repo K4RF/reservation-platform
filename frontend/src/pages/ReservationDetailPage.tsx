@@ -45,8 +45,15 @@ function ReservationDetail({ id }: { id: number }) {
   const { state, retry } = useDetailQuery(load)
   return (
     <section className="page-content reservation-detail-page">
-      <h1>예약 상세</h1>
-      {notice && <p role="status">{notice}</p>}
+      <header className="reservation-page-header">
+        <h1>예약 상세</h1>
+        <p>저장된 예약 정보와 일정 변경·취소 결과를 확인하세요.</p>
+      </header>
+      {notice && (
+        <p className="reservation-feedback" role="status">
+          {notice}
+        </p>
+      )}
       {cancelled && <ReservationCancellationFeedback result={cancelled} />}
       {state.status === 'loading' && <LoadingState message="예약을 불러오고 있습니다." />}
       {state.status === 'error' && (
@@ -55,7 +62,7 @@ function ReservationDetail({ id }: { id: number }) {
       {state.status === 'success' && (
         <>
           <ReservationCard reservation={state.data.card} linkToDetail={false} />
-          <p>
+          <p className="reservation-context-note">
             숙소·객실 이름은 현재 정보입니다. 금액은 예약 Snapshot이며 결제 완료를 의미하지
             않습니다.
           </p>
@@ -87,7 +94,9 @@ function ReservationDetail({ id }: { id: number }) {
           )}
         </>
       )}
-      <Link to={routePaths.reservations}>내 예약 목록으로</Link>
+      <Link className="reservation-detail-link" to={routePaths.reservations}>
+        내 예약 목록으로
+      </Link>
     </section>
   )
 }

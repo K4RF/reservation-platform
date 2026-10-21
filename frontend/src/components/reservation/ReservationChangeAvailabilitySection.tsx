@@ -103,15 +103,19 @@ function ChangeDates({
     false,
   )
   return (
-    <section id="reservation-change-preparation" aria-labelledby="reservation-change-heading">
+    <section
+      className="reservation-change-preparation"
+      id="reservation-change-preparation"
+      aria-labelledby="reservation-change-heading"
+    >
       <h3 id="reservation-change-heading">새 일정의 일반 가용성 조회</h3>
-      <p>
+      <p className="reservation-stay-line">
         현재 예약 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
       </p>
       <p>
         객실 ID: {reservation.roomId} · 인원: {reservation.guestCount}명 (변경하지 않음)
       </p>
-      <p>
+      <p className="reservation-context-note">
         일반 신규 예약 기준의 참고 정보입니다. 기존 예약 점유는 제외되지 않으며, 현재 객실이 목록에
         없어도 일정 변경 불가를 의미하지 않습니다.
       </p>
@@ -203,7 +207,9 @@ function ChangeAvailabilityResults({
   if (state.status === 'error')
     return <ErrorState message={availabilityError(state.error)} onRetry={retry} />
   return (
-    <div className={state.data === 'not_listed' ? 'empty-state' : undefined}>
+    <div
+      className={`reservation-availability-result${state.data === 'not_listed' ? ' empty-state' : ''}`}
+    >
       <p>
         조회한 새 일정: {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
       </p>
