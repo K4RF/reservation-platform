@@ -50,6 +50,10 @@ Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을
 요금 표는 내부 스크롤을 제공하고, 예상 합계와 서버 저장 금액을 구분합니다. 화면별 변경·
 Browser Fixture 증거·320px 후속 경계는 [Search & Booking UI (#228)](../docs/ui/frontend-search-booking-ui-228.md)를 따릅니다.
 
+본인 예약 목록/상세는 저장 정보와 현재 Catalog 안내를 구분하고, 변경 참고 요금과 취소 전
+금액 미제공 안내·저장 결과를 별도 표현합니다. 제출/복구 안전장치와 검증 경계는
+[Reservation Management UI (#229)](../docs/ui/frontend-reservation-management-ui-229.md)를 따릅니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
