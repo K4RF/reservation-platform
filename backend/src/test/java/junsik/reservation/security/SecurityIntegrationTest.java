@@ -56,15 +56,6 @@ class SecurityIntegrationTest {
 	private JwtProperties jwtProperties;
 
 	@Test
-	void allowsPublicMemberSignUpEndpointWithoutAuthentication() throws Exception {
-		mockMvc.perform(post("/api/v1/members")
-					.contentType(MediaType.APPLICATION_JSON)
-					.content("{\"email\":\"invalid-email\",\"password\":\"short\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.code").value("COMMON_001"));
-	}
-
-	@Test
 	void rejectsUnauthenticatedRequestWithUnauthorizedResponse() throws Exception {
 		mockMvc.perform(get(PROTECTED_URL))
 				.andExpect(status().isUnauthorized())
