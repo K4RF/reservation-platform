@@ -50,7 +50,7 @@ function AvailabilityForm({
     initialContext?.stay ?? null,
   )
   return (
-    <section aria-labelledby="availability-title">
+    <section className="room-availability" aria-labelledby="availability-title">
       <h2 id="availability-title">예약 가능한 객실 조회</h2>
       <p>조회 시점의 가용성입니다. 최종 예약 시 Backend가 재고와 가격을 다시 검증합니다.</p>
       <form className="accommodation-search-form" onSubmit={submit} aria-label="객실 가용성 조건">
@@ -71,7 +71,9 @@ function AvailabilityForm({
         <button type="submit">예약 가능 객실 조회</button>
       </form>
       {error && <ErrorState message={error} />}
-      {!request && !error && <p>날짜와 인원을 입력한 후 조회하세요.</p>}
+      {!request && !error && (
+        <p className="availability-guidance">날짜와 인원을 입력한 후 조회하세요.</p>
+      )}
       {request && (
         <AvailabilityResults
           key={revision}
@@ -133,8 +135,14 @@ function AvailabilityResults({
       ) : (
         <ul className="accommodation-list" aria-label="예약 가능한 객실 목록">
           {state.data.content.map((room) => (
-            <li className="availability-room-item" key={room.roomId}>
+            <li
+              className={`availability-room-item${selected?.roomId === room.roomId ? ' availability-room-selected' : ''}`}
+              key={room.roomId}
+            >
               <RoomCard room={room} />
+              {selected?.roomId === room.roomId && (
+                <p className="room-selection-label">선택된 객실</p>
+              )}
               <button
                 className="primary-action"
                 type="button"
@@ -164,8 +172,8 @@ function AvailabilityResults({
         </p>
       )}
       {selected && (
-        <div role="status" aria-label="선택한 객실">
-          <p>선택한 객실: {selected.name}</p>
+        <div className="selected-room" role="status" aria-label="선택한 객실">
+          <p className="selected-room-title">선택한 객실: {selected.name}</p>
           <p>
             {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
           </p>

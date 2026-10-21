@@ -48,12 +48,19 @@ function BookingInput({
       dispatch({ type: 'review', request: buildBookingRequest(selection, state.guest) })
   }
   return (
-    <section aria-label="예약 정보 입력 및 확인">
+    <section className="booking-flow" aria-label="예약 정보 입력 및 확인">
       <p>숙소: {selection.accommodation.name ?? `ID ${selection.accommodation.accommodationId}`}</p>
       <BookingSummary room={selection.room} request={selection.stay} />
-      <p>예약 소유자는 로그인한 회원입니다. 대표 투숙객은 별도로 입력하세요.</p>
+      <p className="booking-note">
+        예약 소유자는 로그인한 회원입니다. 대표 투숙객은 별도로 입력하세요.
+      </p>
       {state.step === 'input' ? (
-        <form aria-label="대표 투숙객 정보" noValidate onSubmit={review}>
+        <form
+          className="booking-guest-form"
+          aria-label="대표 투숙객 정보"
+          noValidate
+          onSubmit={review}
+        >
           <h3>대표 투숙객 정보</h3>
           {(['name', 'email', 'phone'] as const).map((field, index) => (
             <div className="form-field" key={field}>
@@ -84,7 +91,10 @@ function BookingInput({
           <button type="submit">예약 입력 내용 확인</button>
         </form>
       ) : (
-        <section className="confirmation-panel" aria-labelledby="booking-review-title">
+        <section
+          className="confirmation-panel booking-review"
+          aria-labelledby="booking-review-title"
+        >
           <h3 id="booking-review-title">제출 전 최종 확인</h3>
           <p>대표 투숙객: {state.request.representativeGuest.name}</p>
           <p>안내 이메일: {state.request.representativeGuest.email}</p>
@@ -97,7 +107,7 @@ function BookingInput({
           />
         </section>
       )}
-      <p>
+      <p className="booking-note">
         입력 정보는 이 화면에만 유지됩니다. 새로고침·화면 이탈·객실 또는 조건 변경 시 초기화됩니다.
       </p>
     </section>

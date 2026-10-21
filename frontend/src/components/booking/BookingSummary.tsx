@@ -21,7 +21,7 @@ export function BookingSummary({
   )
   const { state, retry } = useDetailQuery(load)
   return (
-    <section aria-labelledby="booking-summary-title">
+    <section className="booking-summary" aria-labelledby="booking-summary-title">
       <h3 id="booking-summary-title">예약 요약</h3>
       <p>
         객실: {room.name} · 최대 {room.capacity}명 · 요청 {request.guestCount}명
@@ -43,30 +43,45 @@ export function BookingSummary({
       {state.status === 'success' && (
         <>
           <p>{state.data.nights.length}박</p>
-          <table className="booking-price-table">
-            <caption>숙박일별 Backend 적용 요금</caption>
-            <thead>
-              <tr>
-                <th scope="col">숙박일</th>
-                <th scope="col">가격 출처</th>
-                <th scope="col">적용 요금</th>
-              </tr>
-            </thead>
-            <tbody>
-              {state.data.nights.map((night) => (
-                <tr key={night.stayDate}>
-                  <th scope="row">{night.stayDate}</th>
-                  <td>{night.source === 'DAILY' ? '날짜별 요금' : '기본 요금'}</td>
-                  <td>{formatMinorUnits(toMinorUnits(night.nightlyPrice))}</td>
+          <p className="booking-table-hint" id="booking-table-hint">
+            좁은 화면에서는 요금 표를 좌우로 스크롤할 수 있습니다.
+          </p>
+          <div
+            className="booking-price-scroll"
+            role="region"
+            aria-label="숙박일별 요금 표"
+            aria-describedby="booking-table-hint"
+            tabIndex={0}
+          >
+            <table className="booking-price-table">
+              <caption>숙박일별 Backend 적용 요금</caption>
+              <thead>
+                <tr>
+                  <th scope="col">숙박일</th>
+                  <th scope="col">가격 출처</th>
+                  <th scope="col">적용 요금</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p role="status">총 예상 금액: {formatMinorUnits(state.data.totalMinorUnits)}</p>
+              </thead>
+              <tbody>
+                {state.data.nights.map((night) => (
+                  <tr key={night.stayDate}>
+                    <th scope="row">{night.stayDate}</th>
+                    <td>{night.source === 'DAILY' ? '날짜별 요금' : '기본 요금'}</td>
+                    <td>{formatMinorUnits(toMinorUnits(night.nightlyPrice))}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="booking-total" role="status">
+            총 예상 금액: {formatMinorUnits(state.data.totalMinorUnits)}
+          </p>
         </>
       )}
-      <p>통화·세금·추가 수수료·Add-on 정보는 API에 없습니다. 별도 금액을 추가하지 않습니다.</p>
-      <p>
+      <p className="booking-note">
+        통화·세금·추가 수수료·Add-on 정보는 API에 없습니다. 별도 금액을 추가하지 않습니다.
+      </p>
+      <p className="booking-note">
         조회 시점의 예상 합계이며 가격 보장이 아닙니다. 최종 금액은 예약 생성 시 Backend가 다시
         계산합니다.
       </p>
