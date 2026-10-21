@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ReservationChangeConfirmation } from './ReservationChangeConfirmation'
 import { reservationChangeFailure } from './reservationChangeFailure'
@@ -49,6 +49,11 @@ describe('reservation change confirmation', () => {
     prepare(refresh, lock)
     expect(screen.getByText('기존 확정 총액: 350.25')).toBeTruthy()
     await screen.findByText('새 일정 참고 예상 총액: 200.20')
+    const priceScroll = screen.getByRole('region', { name: '변경 참고 요금 표' })
+    expect(priceScroll.tabIndex).toBe(0)
+    expect(priceScroll.getAttribute('aria-describedby')).toBe('change-price-scroll-hint')
+    expect(within(priceScroll).getByRole('table', { name: '변경 참고 숙박일별 요금' })).toBeTruthy()
+    expect(within(priceScroll).getAllByText('100.10')).toHaveLength(2)
     expect(patchButton()).toHaveProperty('disabled', true)
     await acknowledge()
     fireEvent.click(patchButton())
