@@ -1,0 +1,851 @@
+{
+  "date": "2026-10-21 (Asia/Tokyo)",
+  "baselineCommit": "d0a98fa",
+  "scope": "Issue 227 working UI in a synthetic read-only audit server; not real Backend/Google authentication",
+  "notes": [
+    "Only blank local validation was submitted. No credential or real login/signup/Google request was sent.",
+    "OAuth callback evidence is invalid/unsolicited only; working/cancelled/exchange error are covered at the Mock test boundary.",
+    "Images are visible viewports; dimensions can exclude scrollbars or be scaled. DOM dimensions are used for width comparisons.",
+    "320px global 15px overflow remains for issue 231; this is sampled verification, not complete accessibility or visual approval."
+  ],
+  "images": [
+    "login-desktop.jpg",
+    "signup-desktop.jpg",
+    "oauth-invalid-desktop.jpg",
+    "oauth-invalid-mobile.jpg",
+    "login-mobile.jpg",
+    "login-errors-mobile.jpg",
+    "signup-mobile.jpg",
+    "signup-errors-mobile.jpg"
+  ],
+  "observations": [
+    {
+      "id": "login-desktop",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인",
+          "width": 382
+        },
+        {
+          "align": "center",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "busy": null,
+          "color": "rgb(23, 58, 57)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "Google로 로그인",
+          "width": 382
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 628.78,
+        "width": 448
+      },
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 382
+        },
+        {
+          "align": "start",
+          "autocomplete": "current-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 382
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 70.41
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "login-desktop.jpg"
+    },
+    {
+      "id": "signup-desktop",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 382
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 524.39,
+        "width": 448
+      },
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 382
+        },
+        {
+          "align": "start",
+          "autocomplete": "new-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "signup-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 382
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "로그인",
+          "width": 56.81
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "signup-desktop.jpg"
+    },
+    {
+      "id": "oauth-invalid-desktop",
+      "buttons": [],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 319,
+        "width": 448
+      },
+      "document": {
+        "clientWidth": 1440,
+        "scrollWidth": 1440
+      },
+      "feedback": [
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 72,
+          "role": "alert",
+          "width": 382
+        }
+      ],
+      "googleIconCount": 0,
+      "inputs": [],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인으로 돌아가기",
+          "width": 165.63
+        }
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "oauth-invalid-desktop.jpg"
+    },
+    {
+      "id": "oauth-invalid-mobile",
+      "buttons": [],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 295,
+        "width": 358
+      },
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "feedback": [
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 72,
+          "role": "alert",
+          "width": 316
+        }
+      ],
+      "googleIconCount": 0,
+      "inputs": [],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인으로 돌아가기",
+          "width": 165.63
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "oauth-invalid-mobile.jpg"
+    },
+    {
+      "id": "login-mobile",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인",
+          "width": 301
+        },
+        {
+          "align": "center",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "busy": null,
+          "color": "rgb(23, 58, 57)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "Google로 로그인",
+          "width": 301
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 604.78,
+        "width": 343
+      },
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 301
+        },
+        {
+          "align": "start",
+          "autocomplete": "current-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 301
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 70.41
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "login-mobile.jpg"
+    },
+    {
+      "id": "login-errors-mobile",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인",
+          "width": 301
+        },
+        {
+          "align": "center",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "busy": null,
+          "color": "rgb(23, 58, 57)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "Google로 로그인",
+          "width": 301
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 716.78,
+        "width": 343
+      },
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "feedback": [
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 48,
+          "role": "alert",
+          "width": 301
+        },
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 48,
+          "role": "alert",
+          "width": 301
+        }
+      ],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(180, 35, 24)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-email-error",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "true",
+          "name": "email",
+          "type": "email",
+          "width": 301
+        },
+        {
+          "align": "start",
+          "autocomplete": "current-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(180, 35, 24)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-password-hint login-password-error",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "true",
+          "name": "password",
+          "type": "password",
+          "width": 301
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 70.41
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "login-errors-mobile.jpg"
+    },
+    {
+      "id": "signup-mobile",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 316
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 500.39,
+        "width": 358
+      },
+      "document": {
+        "clientWidth": 390,
+        "scrollWidth": 390
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 316
+        },
+        {
+          "align": "start",
+          "autocomplete": "new-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "signup-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 316
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "로그인",
+          "width": 56.81
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "signup-mobile.jpg"
+    },
+    {
+      "id": "signup-errors-mobile",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 301
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 612.39,
+        "width": 343
+      },
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "feedback": [
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 48,
+          "role": "alert",
+          "width": 301
+        },
+        {
+          "align": "left",
+          "background": "rgb(255, 241, 239)",
+          "border": "",
+          "color": "rgb(180, 35, 24)",
+          "fontSize": "16px",
+          "height": 48,
+          "role": "alert",
+          "width": 301
+        }
+      ],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(180, 35, 24)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "signup-email-error",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "true",
+          "name": "email",
+          "type": "email",
+          "width": 301
+        },
+        {
+          "align": "start",
+          "autocomplete": "new-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(180, 35, 24)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "signup-password-hint signup-password-error",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "true",
+          "name": "password",
+          "type": "password",
+          "width": 301
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "로그인",
+          "width": 56.81
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "signup-errors-mobile.jpg"
+    },
+    {
+      "id": "login-320",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인",
+          "width": 246
+        },
+        {
+          "align": "center",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "busy": null,
+          "color": "rgb(23, 58, 57)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "Google로 로그인",
+          "width": 246
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 649.17,
+        "width": 288
+      },
+      "document": {
+        "clientWidth": 305,
+        "scrollWidth": 320
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 246
+        },
+        {
+          "align": "start",
+          "autocomplete": "current-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 246
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 70.41
+        }
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 320
+      }
+    },
+    {
+      "id": "login-tablet",
+      "buttons": [
+        {
+          "align": "center",
+          "background": "rgb(23, 103, 95)",
+          "border": "1px solid rgb(23, 103, 95)",
+          "busy": "false",
+          "color": "rgb(255, 255, 255)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "로그인",
+          "width": 382
+        },
+        {
+          "align": "center",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "busy": null,
+          "color": "rgb(23, 58, 57)",
+          "disabled": false,
+          "fontSize": "16px",
+          "height": 44,
+          "label": "Google로 로그인",
+          "width": 382
+        }
+      ],
+      "card": {
+        "align": "left",
+        "background": "rgb(255, 255, 255)",
+        "border": "1px solid rgb(220, 229, 223)",
+        "color": "rgb(23, 58, 57)",
+        "fontSize": "16px",
+        "height": 628.78,
+        "width": 448
+      },
+      "document": {
+        "clientWidth": 768,
+        "scrollWidth": 768
+      },
+      "feedback": [],
+      "googleIconCount": 0,
+      "inputs": [
+        {
+          "align": "start",
+          "autocomplete": "email",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": null,
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "email",
+          "type": "email",
+          "width": 382
+        },
+        {
+          "align": "start",
+          "autocomplete": "current-password",
+          "background": "rgb(255, 255, 255)",
+          "border": "1px solid rgb(155, 168, 185)",
+          "color": "rgb(23, 58, 57)",
+          "describedBy": "login-password-hint",
+          "fontSize": "16px",
+          "height": 44,
+          "invalid": "false",
+          "name": "password",
+          "type": "password",
+          "width": 382
+        }
+      ],
+      "links": [
+        {
+          "align": "left",
+          "background": "rgba(0, 0, 0, 0)",
+          "border": "0px none rgb(23, 103, 95)",
+          "color": "rgb(23, 103, 95)",
+          "fontSize": "13.6px",
+          "height": 44,
+          "label": "회원가입",
+          "width": 70.41
+        }
+      ],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      }
+    }
+  ]
+}

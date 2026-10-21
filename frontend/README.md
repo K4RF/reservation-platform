@@ -42,6 +42,10 @@ Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 
 새 범용 Form/Modal Library를 추가한 것은 아닙니다. Action 역할·Native disabled·도메인 제출 잠금 경계는
 [Shared UI / Navigation (#226)](../docs/ui/frontend-shared-ui-226.md)을 따릅니다.
 
+Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
+비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은
+[Authentication UI (#227)](../docs/ui/frontend-authentication-ui-227.md)에 정리했습니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
