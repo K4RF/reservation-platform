@@ -54,6 +54,10 @@ Browser Fixture 증거·320px 후속 경계는 [Search & Booking UI (#228)](../d
 금액 미제공 안내·저장 결과를 별도 표현합니다. 제출/복구 안전장치와 검증 경계는
 [Reservation Management UI (#229)](../docs/ui/frontend-reservation-management-ui-229.md)를 따릅니다.
 
+관리자는 압축된 모바일 메뉴와 조회/편집 Form 구획, 운영 상태·가격 출처 Badge,
+가로 스크롤 재고 Calendar를 사용합니다. 기존 제출 잠금·재확인 규칙과 검증 범위는
+[Admin Management UI (#230)](../docs/ui/frontend-admin-management-ui-230.md)를 따릅니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)

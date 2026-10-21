@@ -23,7 +23,7 @@ export function CatalogStatusForm({
   const [confirmed, setConfirmed] = useState(false)
   return (
     <form
-      className="admin-form"
+      className="admin-form admin-status-form"
       aria-label={room ? title : '숙소 운영 상태 변경'}
       onSubmit={(event) => {
         event.preventDefault()
@@ -61,7 +61,7 @@ export function CatalogStatusForm({
           />
           {acknowledgement}
         </label>
-        <button type="submit" disabled={!confirmed}>
+        <button type="submit" data-status={status} disabled={!confirmed}>
           {room ? '객실 상태 저장' : '운영 상태 저장'}
         </button>
       </fieldset>

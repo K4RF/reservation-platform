@@ -25,7 +25,7 @@ export function AdminRoomListPage() {
       <Link to="/admin/accommodations">숙소 관리 목록에서 선택</Link>
       <form
         key={params.get('accommodationId') ?? ''}
-        className="admin-form"
+        className="admin-form admin-query-form"
         aria-label="관리 숙소 선택"
         onSubmit={(event) => {
           event.preventDefault()
@@ -93,7 +93,7 @@ function RoomManagementList({
   return (
     <>
       <form
-        className="admin-form"
+        className="admin-form admin-query-form"
         aria-label="객실 관리 검색"
         onSubmit={(event) => {
           event.preventDefault()
@@ -184,11 +184,16 @@ function RoomManagementList({
             {state.data.accommodation.name} (숙소 ID {accommodationId})
           </h3>
           <p>숙소 상태: {state.data.accommodation.status === 'ACTIVE' ? '운영 중' : '운영 중지'}</p>
-          <Link to={`/admin/rooms/new?accommodationId=${accommodationId}`}>새 객실 생성</Link>
+          <Link
+            className="nav-link primary-action"
+            to={`/admin/rooms/new?accommodationId=${accommodationId}`}
+          >
+            새 객실 생성
+          </Link>
           <p role="status">총 {state.data.rooms.totalElements}개 객실</p>
           <button onClick={retry}>객실 목록 새로 조회</button>
           {!state.data.rooms.content.length ? (
-            <p>검색 조건에 맞는 객실이 없습니다.</p>
+            <p className="admin-empty-state">검색 조건에 맞는 객실이 없습니다.</p>
           ) : (
             <ul className="admin-catalog-list">
               {state.data.rooms.content.map((room) => (

@@ -40,7 +40,7 @@ export function RoomForm({
         onSave({ name: name.trim(), capacity: count, nightlyPrice, amenities })
       }}
     >
-      <fieldset disabled={disabled}>
+      <fieldset className="admin-fields-grid" disabled={disabled}>
         <legend>{initial ? '객실 정보 수정' : '새 객실 생성 (ACTIVE)'}</legend>
         <div className="form-field">
           <label htmlFor="admin-room-name">객실 이름</label>

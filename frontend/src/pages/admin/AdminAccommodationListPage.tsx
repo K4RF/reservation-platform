@@ -22,7 +22,9 @@ export function AdminAccommodationListPage() {
       <p>
         공개 목록 API를 관리 조건으로 조회합니다. 기본값은 모든 운영 상태이며 삭제 기능은 없습니다.
       </p>
-      <Link to="/admin/accommodations/new">새 숙소 생성</Link>
+      <Link className="nav-link primary-action" to="/admin/accommodations/new">
+        새 숙소 생성
+      </Link>
       {!query ? (
         <>
           <ErrorState message="숙소 관리 검색 조건이 올바르지 않습니다." />
@@ -32,7 +34,7 @@ export function AdminAccommodationListPage() {
         <>
           <form
             key={params.toString()}
-            className="admin-form"
+            className="admin-form admin-query-form"
             aria-label="숙소 관리 검색"
             onSubmit={(event) => {
               event.preventDefault()
@@ -135,7 +137,7 @@ function AccommodationResults({
           <p role="status">총 {state.data.totalElements}개 숙소</p>
           <button onClick={retry}>숙소 목록 새로 조회</button>
           {!state.data.content.length ? (
-            <p>검색 조건에 맞는 숙소가 없습니다.</p>
+            <p className="admin-empty-state">검색 조건에 맞는 숙소가 없습니다.</p>
           ) : (
             <ul className="admin-catalog-list">
               {state.data.content.map((row) => {
@@ -146,7 +148,10 @@ function AccommodationResults({
                       {card.name} (ID {card.id})
                     </Link>
                     <p>
-                      {card.status} · {card.location}
+                      <span className="admin-status-badge" data-status={row.status}>
+                        {card.status}
+                      </span>{' '}
+                      · {card.location}
                     </p>
                     <Link to={adminRoomListPath(card.id)}>{card.name} 객실 관리</Link>
                   </li>

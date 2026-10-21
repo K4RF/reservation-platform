@@ -33,7 +33,7 @@ export function AdminDailyPricePage() {
       <Link to="/admin/rooms">객실 관리에서 선택</Link>
       <form
         key={`${params.get('roomId')}-${params.get('stayDate')}`}
-        className="admin-form"
+        className="admin-form admin-query-form"
         aria-label="가격 조회 대상 선택"
         onSubmit={(event) => {
           event.preventDefault()
@@ -126,15 +126,21 @@ function DailyPriceManager({ roomId, stayDate }: { roomId: number; stayDate: str
               객실 기본 가격 관리
             </Link>
           </section>
-          <section aria-label="현재 적용 가격">
+          <section className="admin-read-panel" aria-label="현재 적용 가격">
             <h3>서버 적용 가격</h3>
-            <dl>
+            <dl className="admin-key-values">
               <dt>숙박 날짜</dt>
               <dd>{state.data.price.stayDate}</dd>
               <dt>적용 1박 금액</dt>
-              <dd>{formatMinorUnits(toMinorUnits(state.data.price.nightlyPrice))}</dd>
+              <dd className="admin-money">
+                {formatMinorUnits(toMinorUnits(state.data.price.nightlyPrice))}
+              </dd>
               <dt>출처</dt>
-              <dd>{state.data.price.source}</dd>
+              <dd>
+                <span className="admin-status-badge" data-status={state.data.price.source}>
+                  {state.data.price.source}
+                </span>
+              </dd>
               <dt>날짜별 가격 ID</dt>
               <dd>{state.data.price.roomDailyPriceId ?? '없음 (기본 가격 적용)'}</dd>
             </dl>

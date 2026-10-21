@@ -37,10 +37,12 @@ export function AdminLayout() {
               ))}
             </ul>
           </nav>
-          <p>
+          <p className="admin-sidebar-note">
             본인 예약은 <Link to={routePaths.reservations}>내 예약으로 이동</Link>하여 관리합니다.
           </p>
-          <p>이 화면의 역할 표시는 UI 안내이며, 실제 권한은 각 API에서 서버가 검증합니다.</p>
+          <p className="admin-sidebar-note">
+            이 화면의 역할 표시는 UI 안내이며, 실제 권한은 각 API에서 서버가 검증합니다.
+          </p>
         </aside>
         <div className="admin-content">
           <Outlet />

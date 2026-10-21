@@ -53,7 +53,7 @@ export function AccommodationPolicyForm({
     )
   }
   return (
-    <section aria-label={`${label} 관리`}>
+    <section className="admin-policy-section" aria-label={`${label} 관리`}>
       <h3>{label}</h3>
       <p>
         현재 정책 GET/DELETE API가 없어 기존 값·존재 여부를 불러올 수 없습니다.
@@ -126,7 +126,7 @@ export function AccommodationPolicyForm({
           }
         }}
       >
-        <fieldset disabled={mutation.disabled}>
+        <fieldset className="admin-fields-grid" disabled={mutation.disabled}>
           <legend>{label} 전체 입력</legend>
           <div className="form-field">
             <label htmlFor={`${kind}-operation`}>{label} 작업</label>
@@ -148,7 +148,7 @@ export function AccommodationPolicyForm({
             <fieldset>
               <legend>부분 취소 수수료 구간</legend>
               {rows.map((row, index) => (
-                <fieldset key={row}>
+                <fieldset className="admin-fields-grid" key={row}>
                   <legend>구간 {index + 1}</legend>
                   {field(`days-${row}`, `구간 ${index + 1} 시작일`, 0)}
                   {field(`rate-${row}`, `구간 ${index + 1} 수수료율 (%)`, 1, 100)}
@@ -192,7 +192,7 @@ export function AccommodationPolicyForm({
         </fieldset>
       </form>
       {result && (
-        <section aria-label={`${label} 성공 응답`}>
+        <section className="admin-last-write-result" aria-label={`${label} 성공 응답`}>
           <h4>직전 성공 응답 — 현재 정책 재조회 결과가 아닙니다.</h4>
           <dl>
             <dt>숙소 ID</dt>

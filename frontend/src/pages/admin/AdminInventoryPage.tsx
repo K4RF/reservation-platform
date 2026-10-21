@@ -38,7 +38,7 @@ export function AdminInventoryPage() {
       <Link to="/admin/rooms">객실 관리에서 선택</Link>
       <form
         key={`${params.get('roomId')}-${params.get('startDate')}-${params.get('endDate')}`}
-        className="admin-form"
+        className="admin-form admin-query-form"
         aria-label="재고 조회 대상 선택"
         onSubmit={(event) => {
           event.preventDefault()
@@ -223,7 +223,7 @@ function InventoryManager({
 function InventoryRecovery({ allowed, onReview }: { allowed: boolean; onReview: () => void }) {
   const [reviewed, setReviewed] = useState(false)
   return (
-    <section aria-label="재고 저장 결과 재확인">
+    <section className="admin-recovery-panel" aria-label="재고 저장 결과 재확인">
       <p>
         {allowed
           ? '새 Calendar를 조회했습니다. 변경된 수량과 상태를 확인하세요.'
@@ -258,54 +258,70 @@ function InventoryCalendar({
 }) {
   const rows = new Map(calendar.inventories.map((row) => [row.inventoryDate, row]))
   return (
-    <div
-      className="inventory-calendar"
-      tabIndex={0}
-      role="region"
-      aria-label="날짜별 재고 Calendar"
-    >
-      <table className="booking-price-table">
-        <caption>
-          {calendar.startDate} ~ {calendar.endDate} (양 끝 날짜 포함)
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">날짜 선택</th>
-            <th scope="col">총수량</th>
-            <th scope="col">예약 수량</th>
-            <th scope="col">가용 수량</th>
-            <th scope="col">판매 상태</th>
-          </tr>
-        </thead>
-        <tbody>
-          {inventoryCalendarDates(calendar.startDate, calendar.endDate)!.map((date) => {
-            const row = rows.get(date)
-            return (
-              <tr key={date}>
-                <th scope="row">
-                  <button
-                    disabled={disabled}
-                    aria-pressed={selectedDate === date}
-                    onClick={() => onSelect(date)}
-                  >
-                    {date}
-                  </button>
-                </th>
-                {row ? (
-                  <>
-                    <td>{row.totalQuantity}</td>
-                    <td>{row.reservedQuantity}</td>
-                    <td>{row.availableQuantity}</td>
-                    <td>{row.saleStatus}</td>
-                  </>
-                ) : (
-                  <td colSpan={4}>미생성 (수량·상태 미정)</td>
-                )}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <p id="inventory-calendar-help" className="admin-calendar-help">
+        날짜 버튼을 선택해 입력합니다. 좁은 화면에서는 표를 가로로 스크롤하세요. 예약·가용 수량은
+        읽기 전용이며, 미생성은 0이나 CLOSED를 뜻하지 않습니다.
+      </p>
+      <div
+        className="inventory-calendar"
+        tabIndex={0}
+        role="region"
+        aria-label="날짜별 재고 Calendar"
+        aria-describedby="inventory-calendar-help"
+      >
+        <table className="booking-price-table">
+          <caption>
+            {calendar.startDate} ~ {calendar.endDate} (양 끝 날짜 포함)
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">날짜 선택</th>
+              <th scope="col">총수량</th>
+              <th scope="col">예약 수량</th>
+              <th scope="col">가용 수량</th>
+              <th scope="col">판매 상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {inventoryCalendarDates(calendar.startDate, calendar.endDate)!.map((date) => {
+              const row = rows.get(date)
+              return (
+                <tr
+                  key={date}
+                  className={selectedDate === date ? 'inventory-date-selected' : undefined}
+                >
+                  <th scope="row">
+                    <button
+                      disabled={disabled}
+                      aria-pressed={selectedDate === date}
+                      onClick={() => onSelect(date)}
+                    >
+                      {date}
+                    </button>
+                  </th>
+                  {row ? (
+                    <>
+                      <td>{row.totalQuantity}</td>
+                      <td>{row.reservedQuantity}</td>
+                      <td>{row.availableQuantity}</td>
+                      <td>
+                        <span className="admin-status-badge" data-status={row.saleStatus}>
+                          {row.saleStatus}
+                        </span>
+                      </td>
+                    </>
+                  ) : (
+                    <td className="inventory-uncreated" colSpan={4}>
+                      미생성 (수량·상태 미정)
+                    </td>
+                  )}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }

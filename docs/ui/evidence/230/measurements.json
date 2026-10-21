@@ -1,0 +1,1120 @@
+{
+  "issue": 230,
+  "sourceBaseCommit": "53be1aa",
+  "date": "2026-10-21",
+  "environment": "In-app Browser; real AppRoutes/styles, synthetic ADMIN UI hint and HTTP read fixtures; all writes blocked; no Backend",
+  "screenshots": "Native viewport JPEGs, not full-page images; DOM widths are authoritative",
+  "records": [
+    {
+      "id": "home-desktop",
+      "route": "/admin",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 540.96875,
+        "clientWidth": 878,
+        "height": 311.96875,
+        "left": 400,
+        "right": 1280,
+        "scrollWidth": 878,
+        "top": 229,
+        "width": 880,
+        "x": 400,
+        "y": 229
+      },
+      "document": {
+        "clientWidth": 1440,
+        "height": 1000,
+        "scrollWidth": 1440
+      },
+      "formColumns": [],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": 663.75,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 160,
+        "right": 384,
+        "scrollWidth": 222,
+        "top": 229,
+        "width": 224,
+        "x": 160,
+        "y": 229
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "home-mobile",
+      "route": "/admin",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 1039.359375,
+        "clientWidth": 341,
+        "height": 500.71875,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": 538.640625,
+        "width": 343,
+        "x": 16,
+        "y": 538.640625
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 1149,
+        "scrollWidth": 375
+      },
+      "formColumns": [],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": 522.640625,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": 307.390625,
+        "width": 343,
+        "x": 16,
+        "y": 307.390625
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "room-edit-desktop",
+      "route": "/admin/rooms/3?accommodationId=7",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 1165.875,
+        "clientWidth": 878,
+        "height": 1456.875,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": -291,
+        "width": 880,
+        "x": 392.5,
+        "y": -291
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 1819,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "객실 정보 수정"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": 143.75,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": -291,
+        "width": 224,
+        "x": 152.5,
+        "y": -291
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "price-desktop",
+      "route": "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "badges": [
+        {
+          "status": "DEFAULT",
+          "text": "DEFAULT"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 866.21875,
+        "clientWidth": 878,
+        "height": 1696.21875,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": -830,
+        "width": 880,
+        "x": 392.5,
+        "y": -830
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 2059,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "254.656px 254.672px 254.672px",
+          "label": "가격 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": -395.25,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": -830,
+        "width": 224,
+        "x": 152.5,
+        "y": -830
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "note": "DEFAULT fixture; DAILY covered by existing automated tests, not Browser"
+    },
+    {
+      "id": "price-mobile",
+      "route": "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "badges": [
+        {
+          "status": "DEFAULT",
+          "text": "DEFAULT"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 735,
+        "clientWidth": 341,
+        "height": 2099.359375,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1364.359375,
+        "width": 343,
+        "x": 16,
+        "y": -1364.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 2747,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "가격 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -1380.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1595.609375,
+        "width": 343,
+        "x": 16,
+        "y": -1595.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "inventory-mobile",
+      "route": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "badges": [
+        {
+          "status": "OPEN",
+          "text": "OPEN"
+        },
+        {
+          "status": "CLOSED",
+          "text": "CLOSED"
+        }
+      ],
+      "calendar": {
+        "bottom": 634.078125,
+        "clientWidth": 309,
+        "height": 288,
+        "left": 33,
+        "right": 342,
+        "scrollWidth": 576,
+        "top": 346.078125,
+        "width": 309,
+        "x": 33,
+        "y": 346.078125
+      },
+      "content": {
+        "bottom": 1238.640625,
+        "clientWidth": 341,
+        "height": 2289,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1050.359375,
+        "width": 343,
+        "x": 16,
+        "y": -1050.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 2937,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "재고 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -1066.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1281.609375,
+        "width": 343,
+        "x": 16,
+        "y": -1281.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "note": "CLOSED date selected; uncreated date remains separate; write not submitted"
+    },
+    {
+      "id": "inventory-desktop",
+      "route": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "badges": [
+        {
+          "status": "OPEN",
+          "text": "OPEN"
+        },
+        {
+          "status": "CLOSED",
+          "text": "CLOSED"
+        }
+      ],
+      "calendar": {
+        "bottom": 530.5625,
+        "clientWidth": 830,
+        "height": 273,
+        "left": 417.5,
+        "right": 1247.5,
+        "scrollWidth": 830,
+        "top": 257.5625,
+        "width": 830,
+        "x": 417.5,
+        "y": 257.5625
+      },
+      "content": {
+        "bottom": 1042.34375,
+        "clientWidth": 878,
+        "height": 1859.34375,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": -817,
+        "width": 880,
+        "x": 392.5,
+        "y": -817
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 2222,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "254.656px 254.672px 254.672px",
+          "label": "재고 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": -382.25,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": -817,
+        "width": 224,
+        "x": 152.5,
+        "y": -817
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "inventory-mobile-scrolled",
+      "route": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "badges": [
+        {
+          "status": "OPEN",
+          "text": "OPEN"
+        },
+        {
+          "status": "CLOSED",
+          "text": "CLOSED"
+        }
+      ],
+      "calendar": {
+        "bottom": 566.078125,
+        "clientWidth": 309,
+        "height": 288,
+        "left": 33,
+        "right": 342,
+        "scrollWidth": 576,
+        "top": 278.078125,
+        "width": 309,
+        "x": 33,
+        "y": 278.078125
+      },
+      "content": {
+        "bottom": 1170.640625,
+        "clientWidth": 341,
+        "height": 2289,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1118.359375,
+        "width": 343,
+        "x": 16,
+        "y": -1118.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 2937,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "재고 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -1134.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -1349.609375,
+        "width": 343,
+        "x": 16,
+        "y": -1349.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "scrollLeft": 240
+    },
+    {
+      "id": "inventory-tablet",
+      "route": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "badges": [
+        {
+          "status": "OPEN",
+          "text": "OPEN"
+        },
+        {
+          "status": "CLOSED",
+          "text": "CLOSED"
+        }
+      ],
+      "calendar": {
+        "bottom": 380.15625,
+        "clientWidth": 657,
+        "height": 273,
+        "left": 48.03125,
+        "right": 704.96875,
+        "scrollWidth": 657,
+        "top": 107.15625,
+        "width": 656.9375,
+        "x": 48.03125,
+        "y": 107.15625
+      },
+      "content": {
+        "bottom": 890.96875,
+        "clientWidth": 703,
+        "height": 1857.40625,
+        "left": 24,
+        "right": 729,
+        "scrollWidth": 703,
+        "top": -966.4375,
+        "width": 705,
+        "x": 24,
+        "y": -966.4375
+      },
+      "document": {
+        "clientWidth": 753,
+        "height": 2443,
+        "scrollWidth": 753
+      },
+      "formColumns": [
+        {
+          "columns": "196.969px 196.984px 196.984px",
+          "label": "재고 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "216.312px 216.312px 216.312px",
+      "sidebar": {
+        "bottom": -982.4375,
+        "clientWidth": 703,
+        "height": 207.5625,
+        "left": 24,
+        "right": 729,
+        "scrollWidth": 703,
+        "top": -1190,
+        "width": 705,
+        "x": 24,
+        "y": -1190
+      },
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      },
+      "screenshot": false
+    },
+    {
+      "id": "inventory-320",
+      "route": "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22",
+      "badges": [
+        {
+          "status": "OPEN",
+          "text": "OPEN"
+        },
+        {
+          "status": "CLOSED",
+          "text": "CLOSED"
+        }
+      ],
+      "calendar": {
+        "bottom": 950.609375,
+        "clientWidth": 254,
+        "height": 288,
+        "left": 33,
+        "right": 287,
+        "scrollWidth": 576,
+        "top": 662.609375,
+        "width": 254,
+        "x": 33,
+        "y": 662.609375
+      },
+      "content": {
+        "bottom": 1630.359375,
+        "clientWidth": 286,
+        "height": 2440.96875,
+        "left": 16,
+        "right": 304,
+        "scrollWidth": 286,
+        "top": -810.609375,
+        "width": 288,
+        "x": 16,
+        "y": -810.609375
+      },
+      "document": {
+        "clientWidth": 305,
+        "height": 3179,
+        "scrollWidth": 320
+      },
+      "formColumns": [
+        {
+          "columns": "220px",
+          "label": "재고 조회 대상 선택"
+        }
+      ],
+      "menuColumns": "125px 125px",
+      "sidebar": {
+        "bottom": -826.609375,
+        "clientWidth": 286,
+        "height": 285,
+        "left": 16,
+        "right": 304,
+        "scrollWidth": 286,
+        "top": -1111.609375,
+        "width": 288,
+        "x": 16,
+        "y": -1111.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 320
+      },
+      "screenshot": false,
+      "note": "Known document overflow tracked by #231; do not hide overflow"
+    },
+    {
+      "id": "empty-mobile",
+      "route": "/admin/accommodations",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 734.609375,
+        "clientWidth": 341,
+        "height": 1221.96875,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -487.359375,
+        "width": 343,
+        "x": 16,
+        "y": -487.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 1870,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "숙소 관리 검색"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -503.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -718.609375,
+        "width": 343,
+        "x": 16,
+        "y": -718.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "scenario": "empty"
+    },
+    {
+      "id": "error-mobile",
+      "route": "/admin/accommodations",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 734.609375,
+        "clientWidth": 341,
+        "height": 1129.96875,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -395.359375,
+        "width": 343,
+        "x": 16,
+        "y": -395.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 1778,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "숙소 관리 검색"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -411.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -626.609375,
+        "width": 343,
+        "x": 16,
+        "y": -626.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "scenario": "error"
+    },
+    {
+      "id": "loading-mobile",
+      "route": "/admin/accommodations",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 1591.015625,
+        "clientWidth": 341,
+        "height": 1052.375,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": 538.640625,
+        "width": 343,
+        "x": 16,
+        "y": 538.640625
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 1700,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "숙소 관리 검색"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": 522.640625,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": 307.390625,
+        "width": 343,
+        "x": 16,
+        "y": 307.390625
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "scenario": "loading",
+      "screenshot": false,
+      "status": "관리 숙소 목록을 불러오고 있습니다."
+    },
+    {
+      "id": "accommodations-desktop",
+      "route": "/admin/accommodations",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 1181.9375,
+        "clientWidth": 878,
+        "height": 952.9375,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": 229,
+        "width": 880,
+        "x": 392.5,
+        "y": 229
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 1315,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "254.656px 254.672px 254.672px",
+          "label": "숙소 관리 검색"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": 663.75,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": 229,
+        "width": 224,
+        "x": 152.5,
+        "y": 229
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "accommodation-edit-desktop",
+      "route": "/admin/accommodations/7",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 2883.5,
+        "clientWidth": 878,
+        "height": 3256.5,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": -373,
+        "width": 880,
+        "x": 392.5,
+        "y": -373
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 3619,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "숙소 정보 수정"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "예약 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "취소 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "구간 1"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": 61.75,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": -373,
+        "width": 224,
+        "x": 152.5,
+        "y": -373
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "id": "policy-desktop",
+      "route": "/admin/accommodations/7",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 1509.5,
+        "clientWidth": 878,
+        "height": 3256.5,
+        "left": 392.5,
+        "right": 1272.5,
+        "scrollWidth": 878,
+        "top": -1747,
+        "width": 880,
+        "x": 392.5,
+        "y": -1747
+      },
+      "document": {
+        "clientWidth": 1425,
+        "height": 3619,
+        "scrollWidth": 1425
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "숙소 정보 수정"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "예약 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "취소 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "구간 1"
+        }
+      ],
+      "menuColumns": "174px",
+      "sidebar": {
+        "bottom": -1312.25,
+        "clientWidth": 222,
+        "height": 434.75,
+        "left": 152.5,
+        "right": 376.5,
+        "scrollWidth": 222,
+        "top": -1747,
+        "width": 224,
+        "x": 152.5,
+        "y": -1747
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "note": "Explicit PUT; acknowledgement false; no write"
+    },
+    {
+      "id": "policy-mobile",
+      "route": "/admin/accommodations/7",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 2007.671875,
+        "clientWidth": 341,
+        "height": 4558.03125,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -2550.359375,
+        "width": 343,
+        "x": 16,
+        "y": -2550.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 5206,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "숙소 정보 수정"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "예약 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "취소 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "구간 1"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -2566.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -2781.609375,
+        "width": 343,
+        "x": 16,
+        "y": -2781.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "note": "Explicit PUT; acknowledgement false; no write"
+    },
+    {
+      "id": "accommodation-edit-mobile",
+      "route": "/admin/accommodations/7",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 3944.671875,
+        "clientWidth": 341,
+        "height": 4558.03125,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -613.359375,
+        "width": 343,
+        "x": 16,
+        "y": -613.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 5206,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "숙소 정보 수정"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "예약 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "취소 정책 전체 입력"
+        },
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "구간 1"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -629.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -844.609375,
+        "width": 343,
+        "x": 16,
+        "y": -844.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "accommodations-mobile",
+      "route": "/admin/accommodations",
+      "badges": [
+        {
+          "status": "ACTIVE",
+          "text": "운영 중"
+        }
+      ],
+      "calendar": null,
+      "content": {
+        "bottom": 1509.359375,
+        "clientWidth": 341,
+        "height": 1381.71875,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": 127.640625,
+        "width": 343,
+        "x": 16,
+        "y": 127.640625
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 2030,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "275px",
+          "label": "숙소 관리 검색"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": 111.640625,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -103.609375,
+        "width": 343,
+        "x": 16,
+        "y": -103.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "id": "room-edit-mobile",
+      "route": "/admin/rooms/3?accommodationId=7",
+      "badges": [],
+      "calendar": null,
+      "content": {
+        "bottom": 1366.078125,
+        "clientWidth": 341,
+        "height": 1822.4375,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -456.359375,
+        "width": 343,
+        "x": 16,
+        "y": -456.359375
+      },
+      "document": {
+        "clientWidth": 375,
+        "height": 2470,
+        "scrollWidth": 375
+      },
+      "formColumns": [
+        {
+          "columns": "repeat(auto-fit, minmax(min(100%, 224px), 1fr))",
+          "label": "객실 정보 수정"
+        }
+      ],
+      "menuColumns": "100.328px 100.328px 100.344px",
+      "sidebar": {
+        "bottom": -472.359375,
+        "clientWidth": 341,
+        "height": 215.25,
+        "left": 16,
+        "right": 359,
+        "scrollWidth": 341,
+        "top": -687.609375,
+        "width": 343,
+        "x": 16,
+        "y": -687.609375
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    }
+  ]
+}
