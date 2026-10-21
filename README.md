@@ -308,6 +308,7 @@ pnpm build
 
 HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서로 다른 검증입니다.
 최근 예약관리 검증의 결과·한계는 [통합 검증 기록](docs/testing/frontend-reservation-management-flow.md)에 있습니다.
+중복·초기 Smoke 테스트의 정리 근거와 유지한 커버리지는 [테스트 정리 기록](docs/testing/test-suite-maintenance.md)에 있습니다.
 
 ## 상세 문서
 
