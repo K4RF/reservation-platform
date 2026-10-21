@@ -136,6 +136,7 @@ describe('Admin shared layout and existing role guard', () => {
     renderAt('/admin/prices')
     expect(screen.getByRole('heading', { name: '접근 권한이 없습니다.' })).toBeTruthy()
     expect(screen.queryByRole('navigation', { name: '관리 메뉴' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
   })
   it.each(['/admin/reservations', '/admin/users', '/admin/reports', '/admin/rooms/3/unknown'])(
     'shows protected Not Found for unsupported %s',

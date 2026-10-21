@@ -114,6 +114,7 @@ function mockApi(
 }
 async function searchToDetail() {
   fireEvent.click(await screen.findByRole('link', { name: '서울 호텔' }))
+  await screen.findByRole('heading', { name: '서울 호텔', level: 1 })
   await screen.findByLabelText('숙박 체크인')
 }
 describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
