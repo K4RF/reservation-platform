@@ -1,0 +1,576 @@
+{
+  "issue": 228,
+  "recordedDate": "2026-10-21",
+  "timeZone": "Asia/Tokyo",
+  "sourceBaseCommit": "6d18c56",
+  "sourceState": "Working UI changes for issue 228 before commits",
+  "environment": "Read-only ui-audit fixtures; no real Backend, OAuth2, or mutation requests",
+  "screenshots": "Native viewport JPEG; dimensions may exclude scrollbars or be scaled. Use DOM viewport/root measurements for overflow checks.",
+  "records": [
+    {
+      "id": "search-desktop",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 1213,
+        "scrollWidth": 1425
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 1개 숙소"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "search-desktop.jpg"
+    },
+    {
+      "id": "filters-desktop",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 1648,
+        "scrollWidth": 1425
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 1개 숙소"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "filters-desktop.jpg"
+    },
+    {
+      "id": "filters-mobile",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2825,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 1개 숙소"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "filters-mobile.jpg"
+    },
+    {
+      "id": "filters-mobile-fields",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2825,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 1개 숙소"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "filters-mobile-fields.jpg"
+    },
+    {
+      "id": "detail-mobile",
+      "alerts": [],
+      "heading": "서울 호텔",
+      "pressed": [
+        {
+          "pressed": "false",
+          "text": "스탠다드 선택"
+        }
+      ],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 2829,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "detail-mobile.jpg"
+    },
+    {
+      "id": "room-selected-mobile",
+      "alerts": [],
+      "heading": "서울 호텔",
+      "pressed": [
+        {
+          "pressed": "true",
+          "text": "스탠다드 선택"
+        }
+      ],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 4421,
+        "scrollWidth": 375
+      },
+      "scrollTable": {
+        "clientWidth": 275,
+        "height": 172.5625,
+        "overflowX": "auto",
+        "scrollWidth": 400,
+        "tabIndex": 0,
+        "width": 275,
+        "x": 50,
+        "y": 1115.703125
+      },
+      "statuses": [
+        "선택한 객실: 스탠다드2030-01-01 ~ 2030-01-03 · 2명숙소: 서울 호텔예약 요약객실: 스탠다드 · 최대 2명 · 요청 2명2030-01-01 ~ 2030-01-03 (체크아웃 날짜 제외)객실 기본 1박 가격: 123,456.782박좁은 화면에서는 요금 표를 좌우로 스크",
+        "총 예상 금액: 246,913.56"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "room-selected-mobile.jpg"
+    },
+    {
+      "id": "booking-summary-mobile",
+      "alerts": [],
+      "heading": "서울 호텔",
+      "pressed": [
+        {
+          "pressed": "true",
+          "text": "스탠다드 선택"
+        }
+      ],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 4421,
+        "scrollWidth": 375
+      },
+      "scrollTable": {
+        "clientWidth": 275,
+        "height": 172.5625,
+        "overflowX": "auto",
+        "scrollWidth": 400,
+        "tabIndex": 0,
+        "width": 275,
+        "x": 50,
+        "y": 335.703125
+      },
+      "statuses": [
+        "선택한 객실: 스탠다드2030-01-01 ~ 2030-01-03 · 2명숙소: 서울 호텔예약 요약객실: 스탠다드 · 최대 2명 · 요청 2명2030-01-01 ~ 2030-01-03 (체크아웃 날짜 제외)객실 기본 1박 가격: 123,456.782박좁은 화면에서는 요금 표를 좌우로 스크",
+        "총 예상 금액: 246,913.56"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "booking-summary-mobile.jpg",
+      "keyboardScroll": {
+        "focused": true,
+        "scrollLeft": 39
+      }
+    },
+    {
+      "id": "booking-review-mobile",
+      "alerts": [],
+      "heading": "서울 호텔",
+      "pressed": [
+        {
+          "pressed": "true",
+          "text": "스탠다드 선택"
+        }
+      ],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 4538,
+        "scrollWidth": 375
+      },
+      "scrollTable": {
+        "clientWidth": 275,
+        "height": 172.5625,
+        "overflowX": "auto",
+        "scrollWidth": 400,
+        "tabIndex": 0,
+        "width": 275,
+        "x": 50,
+        "y": -117.296875
+      },
+      "statuses": [
+        "선택한 객실: 스탠다드2030-01-01 ~ 2030-01-03 · 2명숙소: 서울 호텔예약 요약객실: 스탠다드 · 최대 2명 · 요청 2명2030-01-01 ~ 2030-01-03 (체크아웃 날짜 제외)객실 기본 1박 가격: 123,456.782박좁은 화면에서는 요금 표를 좌우로 스크",
+        "총 예상 금액: 246,913.56"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "booking-review-mobile.jpg"
+    },
+    {
+      "id": "booking-desktop",
+      "alerts": [],
+      "heading": "서울 호텔",
+      "pressed": [
+        {
+          "pressed": "true",
+          "text": "스탠다드 선택"
+        }
+      ],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 3180,
+        "scrollWidth": 1425
+      },
+      "scrollTable": {
+        "clientWidth": 498,
+        "height": 157.5625,
+        "overflowX": "auto",
+        "scrollWidth": 498,
+        "tabIndex": 0,
+        "width": 498.203125,
+        "x": 708.296875,
+        "y": 723.8125
+      },
+      "statuses": [
+        "선택한 객실: 스탠다드2030-01-01 ~ 2030-01-03 · 2명숙소: 서울 호텔예약 요약객실: 스탠다드 · 최대 2명 · 요청 2명2030-01-01 ~ 2030-01-03 (체크아웃 날짜 제외)객실 기본 1박 가격: 123,456.782박좁은 화면에서는 요금 표를 좌우로 스크",
+        "총 예상 금액: 246,913.56"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "booking-desktop.jpg"
+    },
+    {
+      "id": "complete-desktop",
+      "alerts": [],
+      "heading": "예약 결과 확인",
+      "pressed": [],
+      "resultActions": [
+        {
+          "height": 44,
+          "href": "/accommodations",
+          "text": "숙소 검색으로 돌아가기",
+          "width": 197.25,
+          "x": 409,
+          "y": 755.921875
+        },
+        {
+          "height": 44,
+          "href": "/reservations",
+          "text": "내 예약 목록 확인",
+          "width": 154.875,
+          "x": 618.25,
+          "y": 755.921875
+        }
+      ],
+      "root": {
+        "clientWidth": 1440,
+        "scrollHeight": 1000,
+        "scrollWidth": 1440
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "complete-desktop.jpg"
+    },
+    {
+      "id": "complete-mobile",
+      "alerts": [],
+      "heading": "예약 결과 확인",
+      "pressed": [],
+      "resultActions": [
+        {
+          "height": 44,
+          "href": "/accommodations",
+          "text": "숙소 검색으로 돌아가기",
+          "width": 197.25,
+          "x": 37,
+          "y": 776.0625
+        },
+        {
+          "height": 44,
+          "href": "/reservations",
+          "text": "내 예약 목록 확인",
+          "width": 154.875,
+          "x": 37,
+          "y": 832.0625
+        }
+      ],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1006,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "complete-mobile.jpg"
+    },
+    {
+      "id": "complete-cancelled-mobile",
+      "alerts": [],
+      "heading": "예약 결과 확인",
+      "pressed": [],
+      "resultActions": [
+        {
+          "height": 44,
+          "href": "/accommodations",
+          "text": "숙소 검색으로 돌아가기",
+          "width": 197.25,
+          "x": 37,
+          "y": 776.0625
+        },
+        {
+          "height": 44,
+          "href": "/reservations",
+          "text": "내 예약 목록 확인",
+          "width": 154.875,
+          "x": 37,
+          "y": 832.0625
+        }
+      ],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1006,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "complete-cancelled-mobile.jpg"
+    },
+    {
+      "id": "search-empty-mobile",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1248,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 0개 숙소",
+        "검색 조건에 맞는 숙소가 없습니다."
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "search-empty-mobile.jpg"
+    },
+    {
+      "id": "search-error-mobile",
+      "alerts": [
+        "숙소를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.다시 시도"
+      ],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1189,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "search-error-mobile.jpg"
+    },
+    {
+      "id": "search-error-feedback-mobile",
+      "alerts": [
+        "숙소를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.다시 시도"
+      ],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1189,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "search-error-feedback-mobile.jpg"
+    },
+    {
+      "id": "search-loading-mobile",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1115,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [
+        "숙소를 불러오고 있습니다."
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": null
+    },
+    {
+      "id": "home-mobile",
+      "alerts": [],
+      "heading": "Reservation Platform",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1636,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "home-mobile.jpg"
+    },
+    {
+      "id": "home-tablet",
+      "alerts": [],
+      "heading": "Reservation Platform",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 753,
+        "scrollHeight": 1208,
+        "scrollWidth": 753
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      },
+      "screenshot": null
+    },
+    {
+      "id": "home-320-boundary",
+      "alerts": [],
+      "heading": "Reservation Platform",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 305,
+        "scrollHeight": 1761,
+        "scrollWidth": 320
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 320
+      },
+      "screenshot": null
+    },
+    {
+      "id": "home-desktop",
+      "alerts": [],
+      "heading": "Reservation Platform",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 1425,
+        "scrollHeight": 1101,
+        "scrollWidth": 1425
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "screenshot": "home-desktop.jpg"
+    },
+    {
+      "id": "search-card-mobile",
+      "alerts": [],
+      "heading": "숙소 검색",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 1573,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [
+        "총 1개 숙소"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": "search-card-mobile.jpg"
+    },
+    {
+      "id": "anonymous-booking-login",
+      "alerts": [],
+      "heading": "로그인",
+      "pressed": [],
+      "resultActions": [],
+      "root": {
+        "clientWidth": 375,
+        "scrollHeight": 850,
+        "scrollWidth": 375
+      },
+      "scrollTable": null,
+      "statuses": [],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "screenshot": null
+    }
+  ]
+}
