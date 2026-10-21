@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingSummary } from './BookingSummary'
 import { room } from '../../test/room'
@@ -28,6 +28,13 @@ describe('BookingSummary', () => {
     expect(screen.getByText('2박')).toBeTruthy()
     expect(screen.getByText('날짜별 요금')).toBeTruthy()
     expect(screen.getByText('기본 요금')).toBeTruthy()
+    const scroll = screen.getByRole('region', { name: '숙박일별 요금 표' })
+    expect(scroll.tabIndex).toBe(0)
+    expect(scroll.getAttribute('aria-describedby')).toBe('booking-table-hint')
+    expect(within(scroll).getByRole('table', { name: '숙박일별 Backend 적용 요금' })).toBeTruthy()
+    expect(within(scroll).getByRole('cell', { name: '180,000.55' })).toBeTruthy()
+    expect(within(scroll).getByRole('cell', { name: '100,000.10' })).toBeTruthy()
+    expect(screen.getByText(/통화·세금·추가 수수료/)).toBeTruthy()
     expect(screen.getByText(/최종 금액은 예약 생성 시 Backend/)).toBeTruthy()
   })
   it('does not show a partial total on failure and retries all prices', async () => {

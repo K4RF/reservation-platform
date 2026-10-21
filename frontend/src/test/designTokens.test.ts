@@ -107,4 +107,16 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toContain('appearance: none')
     expect(globalCss).not.toContain('.admin-content button {')
   })
+
+  it('scopes booking price overflow and result actions without clipping the document', () => {
+    expect(globalCss).toMatch(/\.booking-price-scroll\s*\{[^}]*overflow-x: auto;/)
+    expect(globalCss).toMatch(
+      /\.booking-summary \.booking-price-table\s*\{[^}]*table-layout: auto;/,
+    )
+    expect(globalCss).toMatch(/\.booking-result-actions\s*\{[^}]*gap: var\(--space-3\);/)
+    expect(globalCss).toContain(
+      '.availability-room-item.availability-room-selected .accommodation-card',
+    )
+    expect(globalCss).not.toContain('overflow-x: hidden')
+  })
 })

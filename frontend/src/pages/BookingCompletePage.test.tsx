@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingCompletePage } from './BookingCompletePage'
@@ -21,6 +21,14 @@ describe('completion owner lookup', () => {
     await screen.findByText('예약이 확정되었습니다.')
     expect(screen.getByText(`예약 번호: ${reservationResult.reservationNumber}`)).toBeTruthy()
     expect(screen.getByText('예약 금액 Snapshot: 350.25')).toBeTruthy()
+    const actions = within(screen.getByRole('navigation', { name: '예약 결과 다음 단계' }))
+    expect(actions.getAllByRole('link')).toHaveLength(2)
+    expect(actions.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href')).toBe(
+      '/accommodations',
+    )
+    expect(actions.getByRole('link', { name: '내 예약 목록 확인' }).getAttribute('href')).toBe(
+      '/reservations',
+    )
     expect(screen.getByText(/결제 완료를 의미하지 않습니다/)).toBeTruthy()
     expect(mock.mock.calls[0][1].method).toBe('GET')
   })
@@ -54,6 +62,11 @@ describe('completion owner lookup', () => {
     )
     renderAt()
     await screen.findByText('취소된 예약입니다.')
+    expect(
+      screen
+        .getByRole('heading', { name: '취소된 예약입니다.' })
+        .classList.contains('booking-result-cancelled'),
+    ).toBe(true)
     expect(screen.queryByText('예약이 확정되었습니다.')).toBeNull()
   })
 })

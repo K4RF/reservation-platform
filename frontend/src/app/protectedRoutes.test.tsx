@@ -38,14 +38,11 @@ function signIn(role = 'USER', seconds = 60) {
 }
 
 describe('protected and role routes', () => {
-  it.each(['/reservations', '/admin', '/admin/rooms'])(
-    'redirects anonymous direct access at %s to login',
-    (path) => {
-      renderAt(path)
-      expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
-      expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
-    },
-  )
+  it.each(['/reservations'])('redirects anonymous direct access at %s to login', (path) => {
+    renderAt(path)
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
+  })
   it.each(['USER', 'ADMIN'])('allows %s to enter the member area', (role) => {
     signIn(role)
     renderAt('/reservations')
@@ -62,19 +59,6 @@ describe('protected and role routes', () => {
     expect(screen.getByRole('heading', { name: '관리자 영역' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '관리자' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '관리자' }).getAttribute('aria-current')).toBe('page')
-  })
-  it.each(['/admin', '/admin/rooms'])('blocks USER at %s without a login loop', (path) => {
-    signIn()
-    renderAt(path)
-    expect(screen.getByRole('heading', { name: '접근 권한이 없습니다.' })).toBeTruthy()
-    expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
-    expect(screen.getByTestId('location').textContent).toBe(path)
-  })
-  it('fails closed on an unknown role', () => {
-    signIn('SUPERUSER')
-    renderAt('/admin')
-    expect(screen.getByRole('heading', { name: '접근 권한이 없습니다.' })).toBeTruthy()
-    expect(screen.queryByRole('link', { name: '관리자' })).toBeNull()
   })
   it('returns to the original path including query and fragment after email login', async () => {
     vi.mocked(loginWithEmail).mockResolvedValue({

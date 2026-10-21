@@ -58,9 +58,14 @@ export function AccommodationSearchPage() {
   }
   return (
     <section className="accommodation-search-page" aria-labelledby="accommodation-search-title">
-      <h1 id="accommodation-search-title">숙소 검색</h1>
-      <p>숙소를 검색합니다. 날짜 입력 시 모든 숙박일의 예약 가능 여부를 확인합니다.</p>
-      <p>가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다.</p>
+      <header className="search-page-header">
+        <p className="eyebrow">EXPLORE STAYS</p>
+        <h1 id="accommodation-search-title">숙소 검색</h1>
+        <p>숙소를 검색합니다. 날짜 입력 시 모든 숙박일의 예약 가능 여부를 확인합니다.</p>
+      </header>
+      <p className="search-price-note">
+        가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다.
+      </p>
       <AccommodationSearchForm
         key={queryKey}
         initialQuery={parsed.valid ? parsed.query : defaultSearchQuery}
@@ -75,7 +80,9 @@ export function AccommodationSearchPage() {
       )}
       {parsed.valid && state.status === 'success' && (
         <>
-          <p role="status">총 {state.result.totalElements}개 숙소</p>
+          <p className="search-result-count" role="status">
+            총 {state.result.totalElements}개 숙소
+          </p>
           <AccommodationList accommodations={state.result.content.map(toAccommodationCard)} />
           <nav className="accommodation-pagination" aria-label="숙소 페이지">
             <button

@@ -35,7 +35,7 @@ function BookingComplete({ id }: { id: number }) {
       )}
       {state.status === 'success' && (
         <>
-          <h2>
+          <h2 className={`booking-result-status booking-result-${state.data.status.toLowerCase()}`}>
             {state.data.status === 'CONFIRMED' ? '예약이 확정되었습니다.' : '취소된 예약입니다.'}
           </h2>
           <p>예약 ID: {state.data.reservationId}</p>
@@ -45,7 +45,9 @@ function BookingComplete({ id }: { id: number }) {
             {state.data.checkInDate} ~ {state.data.checkOutDate} · {state.data.stayNights}박 ·{' '}
             {state.data.guestCount}명
           </p>
-          <p>예약 금액 Snapshot: {formatMinorUnits(toMinorUnits(state.data.totalAmount, 19))}</p>
+          <p className="booking-total">
+            예약 금액 Snapshot: {formatMinorUnits(toMinorUnits(state.data.totalAmount, 19))}
+          </p>
           {state.data.representativeGuest ? (
             <>
               <p>대표 투숙객: {state.data.representativeGuest.name}</p>
@@ -55,11 +57,15 @@ function BookingComplete({ id }: { id: number }) {
           ) : (
             <p>과거 예약의 대표 투숙객 정보가 없습니다.</p>
           )}
-          <p>서버에 저장된 예약 결과입니다. 결제 완료를 의미하지 않습니다.</p>
+          <p className="booking-note">
+            서버에 저장된 예약 결과입니다. 결제 완료를 의미하지 않습니다.
+          </p>
         </>
       )}
-      <Link to={routePaths.accommodations}>숙소 검색으로 돌아가기</Link>
-      <Link to={routePaths.reservations}>내 예약 목록 확인</Link>
+      <nav className="action-group booking-result-actions" aria-label="예약 결과 다음 단계">
+        <Link to={routePaths.accommodations}>숙소 검색으로 돌아가기</Link>
+        <Link to={routePaths.reservations}>내 예약 목록 확인</Link>
+      </nav>
     </section>
   )
 }

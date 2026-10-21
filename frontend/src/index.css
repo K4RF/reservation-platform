@@ -514,6 +514,51 @@ legend {
   align-self: start;
 }
 
+.search-page-header {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.search-page-header p {
+  margin: 0;
+}
+.search-price-note,
+.availability-guidance {
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
+  background: var(--color-secondary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.search-result-count {
+  margin-block: var(--space-8) var(--space-4);
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Discovery feedback only; reservation/admin recovery semantics stay in their pages. */
+:is(.home-page, .accommodation-search-page, .booking-complete-page) [role='alert'] {
+  padding: var(--space-3);
+  border-inline-start: var(--focus-ring-width) solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-surface);
+  color: var(--color-error);
+  overflow-wrap: anywhere;
+}
+:is(.home-page, .accommodation-search-page, .booking-complete-page) [role='alert'] p {
+  color: inherit;
+}
+.accommodation-search-page > p[role='status']:not(.search-result-count, .empty-state),
+.room-availability > p[role='status'],
+.booking-summary > p[role='status']:not(.booking-total),
+.booking-complete-page > p[role='status'] {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-secondary);
+}
+
 .accommodation-search-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
@@ -553,6 +598,44 @@ legend {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-4);
+}
+.accommodation-search-page .accommodation-pagination {
+  justify-content: center;
+  margin-block: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.accommodation-search-page .catalog-amenities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+.accommodation-search-page .catalog-amenities li {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+.catalog-stay-card .catalog-location {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
+}
+.catalog-stay-card .catalog-description {
+  white-space: pre-wrap;
+}
+.accommodation-info > h2 {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-lg);
+}
+.accommodation-search-page .room-base-price {
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
 }
 
 .amenity-option {
@@ -597,6 +680,33 @@ legend {
   height: auto;
   flex: 1;
 }
+.availability-room-item.availability-room-selected .accommodation-card {
+  border-color: var(--color-primary);
+  background: var(--color-secondary);
+}
+.room-selection-label {
+  margin: 0;
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+.availability-room-item button[aria-pressed='true'] {
+  border-style: dashed;
+  background: var(--color-primary-hover);
+}
+.selected-room .selected-room-title {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+.accommodation-detail-page .selected-room {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  border-color: var(--color-primary);
+}
+.room-availability > .accommodation-search-form {
+  padding: var(--space-4);
+  background: var(--color-background);
+}
 
 .booking-price-table {
   width: 100%;
@@ -614,6 +724,8 @@ legend {
 .search-filters {
   grid-column: 1 / -1;
   order: 2;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
 }
 form[aria-label='숙소 검색 조건'] {
   grid-template-columns: 1.4fr 1fr 1fr 0.65fr auto;
@@ -633,6 +745,14 @@ form[aria-label='숙소 검색 조건'] > button {
   gap: var(--space-4);
   margin-top: var(--space-4);
 }
+.search-filter-grid fieldset {
+  margin: 0;
+}
+.accommodation-search-form > [role='alert'] {
+  grid-column: 1 / -1;
+  order: 3;
+  margin: 0;
+}
 .site-footer {
   padding: var(--space-8) var(--space-6);
   border-top: 1px solid var(--color-border);
@@ -644,9 +764,91 @@ form[aria-label='숙소 검색 조건'] > button {
 .booking-complete-page {
   width: min(100%, var(--content-result));
   padding: clamp(var(--space-5), 4vw, var(--space-12));
+  text-align: left;
+  overflow-wrap: anywhere;
 }
-.booking-complete-page h2 {
-  color: var(--color-primary);
+.booking-complete-page .booking-result-status {
+  margin-block: var(--space-6) var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+.booking-complete-page .booking-result-cancelled {
+  background: var(--color-cancelled-surface);
+  color: var(--color-cancelled);
+}
+.booking-result-actions {
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.booking-result-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  font-weight: var(--font-weight-semibold);
+  text-underline-offset: var(--space-1);
+}
+.booking-result-actions a:hover {
+  background: var(--color-surface-hover);
+}
+.booking-total {
+  padding: var(--space-4);
+  border-block: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.booking-note,
+.booking-table-hint {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.accommodation-detail-page :is(.booking-flow, .booking-summary, .booking-review) {
+  margin-block: var(--space-5);
+}
+.booking-summary {
+  min-width: 0;
+  padding-block: var(--space-4);
+  border-block: 1px solid var(--color-border);
+}
+.booking-price-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.booking-price-scroll:focus {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+.booking-summary .booking-price-table {
+  min-width: 25rem;
+  table-layout: auto;
+  font-size: var(--font-size-sm);
+}
+.booking-summary .booking-price-table caption {
+  padding-block: var(--space-3);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+}
+.booking-summary .booking-price-table :is(th:first-child, td:last-child) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-variant-numeric: tabular-nums;
+}
+.booking-summary .booking-price-table :is(th:last-child, td:last-child) {
+  text-align: right;
+}
+.booking-guest-form {
+  margin-block: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 form[aria-label='대표 투숙객 정보'] {
   display: grid;
@@ -659,7 +861,7 @@ form[aria-label='대표 투숙객 정보'] {
 @media (min-width: 60rem) {
   .accommodation-detail-page {
     display: grid;
-    grid-template-columns: 1fr 1.1fr;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
     gap: var(--space-6);
     align-items: start;
   }
@@ -728,6 +930,10 @@ form[aria-label='대표 투숙객 정보'] {
 .home-guide h2 {
   font-size: var(--font-size-lg);
   letter-spacing: -0.035em;
+}
+.home-guide > div {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
 }
 .home-guide p {
   line-height: var(--leading-guide);

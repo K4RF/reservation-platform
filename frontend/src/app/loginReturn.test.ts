@@ -4,15 +4,19 @@ import { consumeGoogleReturn, safeLoginReturn, saveGoogleReturn } from './loginR
 afterEach(() => sessionStorage.clear())
 
 describe('login return target', () => {
-  it.each(['/reservations?status=CONFIRMED#result', '/admin', '/admin/rooms'])(
-    'preserves %s',
-    (path) => {
-      expect(safeLoginReturn(path)).toBe(path)
-    },
-  )
+  it.each([
+    '/reservations?status=CONFIRMED#result',
+    '/admin',
+    '/admin/rooms',
+    '/accommodations/7?from=search',
+  ])('preserves %s', (path) => {
+    expect(safeLoginReturn(path)).toBe(path)
+  })
   it.each([
     undefined,
     '//evil.test/admin',
+    '//evil.example/accommodations',
+    '/accommodations-evil',
     'https://evil.test/admin',
     '/\\evil.test/admin',
     '/login',

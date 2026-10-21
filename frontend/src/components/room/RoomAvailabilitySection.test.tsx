@@ -43,8 +43,19 @@ describe('availability and selection lifecycle with real API client', () => {
       'true',
     )
     await screen.findByText('총 예상 금액: 246,913.56')
+    expect(screen.getByText('선택된 객실')).toBeTruthy()
+    expect(
+      screen
+        .getByRole('button', { name: '스탠다드 선택' })
+        .closest('li')
+        ?.classList.contains('availability-room-selected'),
+    ).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '객실 선택 해제' }))
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+    expect(screen.queryByText('선택된 객실')).toBeNull()
+    expect(screen.getByRole('button', { name: '스탠다드 선택' }).getAttribute('aria-pressed')).toBe(
+      'false',
+    )
   })
   it('blocks same/reversed dates without API calls', () => {
     const mock = mockApi()
@@ -67,6 +78,7 @@ describe('availability and selection lifecycle with real API client', () => {
         target: { value: label === '숙박 인원' ? '2' : '2030-01-02' },
       })
       expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+      expect(screen.queryByText('선택된 객실')).toBeNull()
       expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
     },
   )

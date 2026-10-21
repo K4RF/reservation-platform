@@ -10,7 +10,7 @@ export function AccommodationCard({ accommodation }: { accommodation: Accommodat
     ? bookingContextPath(accommodation.id, { stay: context.stay, roomPage: 0 })
     : `${routePaths.accommodations}/${accommodation.id}`
   return (
-    <article className="accommodation-card">
+    <article className="accommodation-card catalog-stay-card">
       <div className="catalog-card-visual" aria-hidden="true">
         <span>STAY / {accommodation.location}</span>
         <small>사진 정보 미제공</small>
@@ -18,11 +18,11 @@ export function AccommodationCard({ accommodation }: { accommodation: Accommodat
       <h2>
         <Link to={detailPath}>{accommodation.name}</Link>
       </h2>
-      <p>{accommodation.location}</p>
-      <p>{accommodation.description}</p>
+      <p className="catalog-location">{accommodation.location}</p>
+      <p className="catalog-description">{accommodation.description}</p>
       <p className="catalog-status">{accommodation.status}</p>
       {accommodation.amenities.length > 0 && (
-        <ul aria-label="숙소 편의시설">
+        <ul className="catalog-amenities" aria-label="숙소 편의시설">
           {accommodation.amenities.map((amenity) => (
             <li key={amenity}>{amenity}</li>
           ))}

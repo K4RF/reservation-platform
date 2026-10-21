@@ -4,7 +4,7 @@ import { toAccommodationCard } from './accommodationView'
 export function AccommodationInfo({ accommodation }: { accommodation: AccommodationResponse }) {
   const card = toAccommodationCard(accommodation)
   return (
-    <section aria-label="숙소 기본 정보">
+    <section className="accommodation-info" aria-label="숙소 기본 정보">
       <h1>{card.name}</h1>
       <p className="catalog-status">{card.status}</p>
       <h2>숙소 설명</h2>
@@ -13,7 +13,7 @@ export function AccommodationInfo({ accommodation }: { accommodation: Accommodat
       <p>{card.location}</p>
       <h2>숙소 편의시설</h2>
       {card.amenities.length ? (
-        <ul>
+        <ul className="catalog-amenities">
           {card.amenities.map((item) => (
             <li key={item}>{item}</li>
           ))}
