@@ -47,7 +47,7 @@ export function AccommodationForm({
         if (!problems.length) onSave(next)
       }}
     >
-      <fieldset disabled={disabled}>
+      <fieldset className="admin-fields-grid" disabled={disabled}>
         <legend>{initial ? '숙소 정보 수정' : '새 숙소 생성 (ACTIVE)'}</legend>
         {initial && (
           <p>
@@ -55,7 +55,10 @@ export function AccommodationForm({
           </p>
         )}
         {textFields.map(([field, label, max]) => (
-          <div className="form-field" key={field}>
+          <div
+            className={`form-field${field === 'description' ? ' admin-field-wide' : ''}`}
+            key={field}
+          >
             <label htmlFor={`accommodation-${field}`}>{label}</label>
             {field === 'description' ? (
               <textarea

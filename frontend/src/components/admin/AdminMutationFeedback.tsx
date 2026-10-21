@@ -19,9 +19,13 @@ export function AdminMutationFeedback({
 }) {
   const [reviewed, setReviewed] = useState(false)
   return (
-    <>
+    <div className="admin-mutation-feedback">
       {mutation.pending && <LoadingState message="저장 중입니다. 중복 요청을 보내지 마세요." />}
-      {mutation.success && <p role="status">{mutation.success}</p>}
+      {mutation.success && (
+        <p className="admin-save-success" role="status">
+          {mutation.success}
+        </p>
+      )}
       {mutation.error !== undefined && (
         <>
           <ErrorState message={adminErrorMessage(mutation.error)} />
@@ -37,7 +41,7 @@ export function AdminMutationFeedback({
         </>
       )}
       {mutation.uncertain && (
-        <section aria-label="불명확한 저장 결과 확인">
+        <section className="admin-recovery-panel" aria-label="불명확한 저장 결과 확인">
           <p role="alert">
             저장이 이미 반영되었을 수 있어 재전송을 잠갔습니다. 요청은 자동 재시도하지 않습니다.
             {reviewMessage ??
@@ -71,6 +75,6 @@ export function AdminMutationFeedback({
           )}
         </section>
       )}
-    </>
+    </div>
   )
 }

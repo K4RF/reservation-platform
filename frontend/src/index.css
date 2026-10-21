@@ -254,7 +254,10 @@ legend {
 }
 
 .admin-catalog-list {
-  padding-left: var(--space-6);
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
 }
 
 .app-shell {
@@ -1271,10 +1274,16 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-header {
   margin-bottom: var(--space-6);
 }
+.admin-header h1 {
+  margin-block: 0 var(--space-2);
+}
+.admin-header p {
+  margin: 0;
+}
 .admin-workspace {
   display: grid;
-  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
-  gap: var(--space-6);
+  grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
+  gap: var(--space-4);
   align-items: start;
 }
 .admin-sidebar,
@@ -1297,16 +1306,206 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-sidebar .nav-link-active {
   background: var(--color-secondary);
 }
+.admin-sidebar-note {
+  margin-block: var(--space-3) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+}
 .admin-content h2 {
   margin-top: 0;
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-xl);
+}
+.admin-content a.primary-action {
+  color: var(--color-on-primary);
+}
+.admin-content a.primary-action:hover {
+  background: var(--color-primary-hover);
+}
+.admin-content section > a:not(.nav-link) {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  margin-inline-end: var(--space-3);
 }
 .admin-content p,
 .admin-sidebar p {
-  line-height: var(--leading-long);
+  line-height: var(--leading-description);
+}
+.admin-content :is(h3, h4) {
+  line-height: var(--leading-heading);
+}
+.admin-content :is(.admin-read-panel, .admin-policy-section) {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.admin-content :is(.admin-read-panel, .admin-policy-section) > h3 {
+  margin-top: 0;
+}
+.admin-query-form {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  align-items: end;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-background);
+}
+.admin-query-form > :is(fieldset, button) {
+  grid-column: 1 / -1;
+}
+.admin-form .admin-fields-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  align-items: start;
+}
+.admin-fields-grid > :not(.form-field, legend),
+.admin-fields-grid > .admin-field-wide {
+  grid-column: 1 / -1;
+}
+.admin-form :is(button, .admin-check) {
+  justify-self: start;
+}
+.admin-form :is(p, [role='alert']) {
+  margin: 0;
+}
+.admin-form > fieldset {
+  padding: var(--space-4);
+  border-radius: var(--radius-card);
+}
+.admin-status-form > fieldset {
+  background: var(--color-background);
+}
+.admin-status-form button[data-status='INACTIVE'],
+.admin-status-form button[data-status='INACTIVE']:hover:enabled {
+  background: var(--color-warning-surface);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.admin-catalog-list > li {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.admin-catalog-list > li > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  margin-inline-end: var(--space-3);
+}
+.admin-catalog-list .accommodation-card {
+  padding: 0;
+  border: 0;
+}
+.admin-catalog-list .accommodation-card h3 {
+  margin-top: 0;
+}
+.admin-status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-secondary);
+  color: var(--color-on-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+.admin-status-badge:is([data-status='INACTIVE'], [data-status='CLOSED']) {
+  background: var(--color-warning-surface);
+  color: var(--color-warning);
+}
+.admin-status-badge[data-status='DAILY'] {
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+.admin-key-values,
+.admin-facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-2) var(--space-3);
+  align-items: baseline;
+}
+.admin-facts > div {
+  padding-block: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-content dt {
+  color: var(--color-text-subtle);
+}
+.admin-content dd {
+  margin-inline-start: 0;
+}
+.admin-money {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+.admin-last-write-result,
+.admin-recovery-panel {
+  padding: var(--space-4);
+  margin-block: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.admin-last-write-result {
+  border-color: var(--color-success);
+  background: var(--color-success-surface);
+}
+.admin-last-write-result h4 {
+  margin-top: 0;
+}
+.admin-recovery-panel {
+  display: grid;
+  gap: var(--space-3);
+  border-color: var(--color-warning);
+  background: var(--color-warning-surface);
+}
+.admin-recovery-panel > :is(button, a) {
+  justify-self: start;
+}
+.admin-content :is([role='alert'], [role='status'], .admin-empty-state) {
+  margin-block: var(--space-4);
+  padding: var(--space-3);
+  border-inline-start: var(--focus-ring-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  background: var(--color-background);
+}
+.admin-content [role='alert'] {
+  border-color: var(--color-error);
+  background: var(--color-error-surface);
+  color: var(--color-error);
+}
+.admin-content [role='alert'] p {
+  color: inherit;
+  margin-block: 0 var(--space-2);
+}
+.admin-content .admin-save-success {
+  border-color: var(--color-success);
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+.admin-mutation-feedback:empty {
+  display: none;
+}
+.admin-calendar-help {
+  margin-block: var(--space-5) var(--space-2);
+  font-size: var(--font-size-sm);
 }
 @media (max-width: 48rem) {
   .admin-workspace {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-sidebar ul {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+  }
+  .admin-sidebar .nav-link {
+    justify-content: center;
+    padding-inline: var(--space-1);
+  }
+}
+@media (max-width: 24rem) {
+  .admin-sidebar ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 40rem) {
@@ -1347,4 +1546,31 @@ form[aria-label='대표 투숙객 정보'] {
 
 .inventory-calendar table {
   min-width: 36rem;
+  table-layout: auto;
+  font-variant-numeric: tabular-nums;
+}
+.inventory-calendar caption {
+  padding-block: var(--space-3);
+  text-align: left;
+  font-weight: var(--font-weight-semibold);
+}
+.inventory-calendar :is(th, td) {
+  vertical-align: middle;
+}
+.inventory-calendar td:not(:last-child) {
+  text-align: right;
+}
+.inventory-calendar th button {
+  white-space: nowrap;
+}
+.inventory-calendar .inventory-date-selected {
+  background: var(--color-secondary);
+}
+.inventory-calendar button[aria-pressed='true'] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.inventory-uncreated {
+  color: var(--color-text-subtle);
 }

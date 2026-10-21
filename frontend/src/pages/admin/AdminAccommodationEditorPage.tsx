@@ -77,11 +77,15 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
       {state.status === 'success' && (
         <>
           <Link to={adminRoomListPath(id)}>이 숙소의 객실 관리</Link>
-          <section aria-label="현재 숙소 정보">
+          <section className="admin-read-panel" aria-label="현재 숙소 정보">
             <h3>{state.data.name}</h3>
             <p>{state.data.description}</p>
-            <p>{toAccommodationCard(state.data).status}</p>
-            <dl>
+            <p>
+              <span className="admin-status-badge" data-status={state.data.status}>
+                {toAccommodationCard(state.data).status}
+              </span>
+            </p>
+            <dl className="admin-facts">
               {(
                 [
                   'country',
@@ -110,10 +114,12 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
                   <dd>{state.data[field] ?? '미등록'}</dd>
                 </div>
               ))}
-              <dt>편의시설</dt>
-              <dd>
-                {state.data.amenities.map((value) => amenityLabels[value]).join(', ') || '없음'}
-              </dd>
+              <div>
+                <dt>편의시설</dt>
+                <dd>
+                  {state.data.amenities.map((value) => amenityLabels[value]).join(', ') || '없음'}
+                </dd>
+              </div>
             </dl>
           </section>
           <AccommodationForm
