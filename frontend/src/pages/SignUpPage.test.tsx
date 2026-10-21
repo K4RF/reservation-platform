@@ -29,10 +29,24 @@ describe('signup flow', () => {
   it('renders the signup route and blocks invalid local input', () => {
     renderSignup()
     expect(screen.getByRole('heading', { name: '회원가입' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '회원가입' }).classList.contains('auth-page')).toBe(
+      true,
+    )
+    expect(screen.getByRole('form', { name: '이메일 회원가입' })).toBeTruthy()
+    expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
+    expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('new-password')
+    expect(screen.getByText('비밀번호는 8자 이상 72자 이하로 입력하세요.')).toHaveProperty(
+      'id',
+      'signup-password-hint',
+    )
 
     fireEvent.click(screen.getByRole('button', { name: '회원가입' }))
     expect(screen.getByText('이메일을 입력해 주세요.')).toBeTruthy()
     expect(screen.getByText('비밀번호를 입력해 주세요.')).toBeTruthy()
+    expect(screen.getByLabelText('비밀번호').getAttribute('aria-describedby')?.split(' ')).toEqual([
+      'signup-password-hint',
+      'signup-password-error',
+    ])
     expect(signUpMember).not.toHaveBeenCalled()
   })
 
@@ -56,6 +70,7 @@ describe('signup flow', () => {
       password: 'Password123!',
     })
     expect(screen.getByRole('button', { name: '회원가입' }).hasAttribute('disabled')).toBe(true)
+    expect(screen.getByRole('button', { name: '회원가입' }).getAttribute('aria-busy')).toBe('true')
     expect(screen.getByRole('status').textContent).toContain('처리하고 있습니다')
 
     complete({ memberId: 7, email: 'member@example.com', role: 'USER' })

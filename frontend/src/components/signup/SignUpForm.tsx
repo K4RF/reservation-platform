@@ -62,7 +62,13 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <form className="signup-form" noValidate onSubmit={handleSubmit} aria-busy={submitting}>
+    <form
+      className="signup-form"
+      aria-label="이메일 회원가입"
+      noValidate
+      onSubmit={handleSubmit}
+      aria-busy={submitting}
+    >
       <div className="form-field">
         <label htmlFor="signup-email">이메일</label>
         <input
@@ -70,6 +76,9 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
           name="email"
           type="email"
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
           value={email}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'signup-email-error' : undefined}
@@ -93,12 +102,15 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
           autoComplete="new-password"
           value={password}
           aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'signup-password-error' : undefined}
+          aria-describedby={`signup-password-hint${errors.password ? ' signup-password-error' : ''}`}
           onChange={(event) => {
             setPassword(event.target.value)
             setErrors((current) => ({ ...current, password: undefined }))
           }}
         />
+        <p className="auth-field-hint" id="signup-password-hint">
+          비밀번호는 8자 이상 72자 이하로 입력하세요.
+        </p>
         {errors.password && (
           <p id="signup-password-error" role="alert">
             {errors.password}
@@ -107,7 +119,7 @@ export function SignUpForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       {formError && <ErrorState message={formError} />}
       {submitting && <LoadingState message="회원가입을 처리하고 있습니다." />}
-      <button type="submit" disabled={submitting}>
+      <button type="submit" disabled={submitting} aria-busy={submitting}>
         회원가입
       </button>
     </form>

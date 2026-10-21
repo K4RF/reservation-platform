@@ -41,6 +41,19 @@ function renderCallback(entry: string) {
 }
 
 describe('Google callback page', () => {
+  it('keeps the callback working feedback inside the shared auth card without premature sign-in', async () => {
+    vi.mocked(exchangeGoogleLoginCode).mockReturnValue(new Promise(() => {}))
+    renderCallback(callbackEntry(`code=${'a'.repeat(43)}`))
+    expect(await screen.findByRole('status')).toHaveProperty(
+      'textContent',
+      'Google 로그인을 완료하고 있습니다.',
+    )
+    expect(
+      screen.getByRole('region', { name: 'Google 로그인' }).classList.contains('auth-page'),
+    ).toBe(true)
+    expect(exchangeGoogleLoginCode).toHaveBeenCalledOnce()
+    expect(getAccessToken()).toBeNull()
+  })
   it('returns to the protected destination after the full-page Google flow', async () => {
     saveGoogleReturn('/reservations?status=CONFIRMED')
     vi.mocked(exchangeGoogleLoginCode).mockResolvedValue({
@@ -78,6 +91,11 @@ describe('Google callback page', () => {
       'Google 로그인이 취소되었습니다.',
     )
     expect(exchangeGoogleLoginCode).not.toHaveBeenCalled()
+    expect(
+      screen
+        .getByRole('link', { name: '로그인으로 돌아가기' })
+        .classList.contains('auth-return-link'),
+    ).toBe(true)
   })
 
   it('rejects an unsolicited callback and displays exchange errors', async () => {

@@ -221,6 +221,7 @@ legend {
   .booking-complete-page,
   .signup-page,
   .login-page,
+  .oauth-callback-page,
   .admin-sidebar,
   .admin-content,
   .empty-state,
@@ -360,11 +361,118 @@ legend {
   margin-bottom: var(--space-8);
 }
 
-.signup-page,
-.login-page {
+.auth-page {
   width: min(100%, var(--content-auth));
   min-width: 0;
   padding: var(--space-8);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.auth-header {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.auth-header p {
+  margin: 0;
+}
+
+.auth-page :is(.login-form, .signup-form) {
+  margin-top: 0;
+  gap: var(--space-5);
+}
+
+.auth-page .auth-field-hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.auth-page [role='alert'] {
+  margin-block: 0 var(--space-4);
+  padding: var(--space-3);
+  border-inline-start: var(--focus-ring-width) solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-surface);
+  color: var(--color-error);
+  overflow-wrap: anywhere;
+}
+
+.auth-page .form-field [role='alert'] {
+  margin: 0;
+}
+
+.auth-page [role='alert'] p {
+  margin: 0;
+  color: inherit;
+}
+
+.auth-page [role='status'] {
+  margin-block: 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+
+.auth-page :is(.login-form, .signup-form) > :is([role='alert'], [role='status']) {
+  margin: 0;
+}
+
+.auth-page .auth-success {
+  background: var(--color-success-surface);
+  color: var(--color-success);
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-5);
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--color-border);
+}
+
+.auth-page .google-login-button {
+  margin-top: 0;
+}
+
+.auth-switch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block: var(--space-5) 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.auth-switch a,
+.auth-return-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  padding: var(--space-2);
+  font-weight: var(--font-weight-semibold);
+  text-underline-offset: var(--space-1);
+}
+
+.auth-return-link {
+  margin-top: var(--space-2);
 }
 
 .signup-form,
@@ -806,8 +914,7 @@ form[aria-label='대표 투숙객 정보'] {
   .home-search button {
     grid-column: 1 / -1;
   }
-  .signup-page,
-  .login-page {
+  .auth-page {
     padding: var(--space-5);
   }
 }

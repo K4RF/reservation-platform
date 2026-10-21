@@ -57,14 +57,17 @@ export function OAuth2CallbackPage() {
   } as const
 
   return (
-    <section className="page-content">
-      <h1>Google 로그인</h1>
+    <section className="page-content auth-page oauth-callback-page" aria-labelledby="oauth-title">
+      <header className="auth-header">
+        <h1 id="oauth-title">Google 로그인</h1>
+        <p>인증 결과를 확인합니다.</p>
+      </header>
       {status === 'working' ? (
         <LoadingState message="Google 로그인을 완료하고 있습니다." />
       ) : (
         <>
           <p role="alert">{message[status]}</p>
-          <Link to={routePaths.login} state={{ from: returnTarget }}>
+          <Link className="auth-return-link" to={routePaths.login} state={{ from: returnTarget }}>
             로그인으로 돌아가기
           </Link>
         </>

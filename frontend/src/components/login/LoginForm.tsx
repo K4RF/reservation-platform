@@ -65,7 +65,13 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <form className="login-form" noValidate onSubmit={handleSubmit} aria-busy={submitting}>
+    <form
+      className="login-form"
+      aria-label="이메일 로그인"
+      noValidate
+      onSubmit={handleSubmit}
+      aria-busy={submitting}
+    >
       <div className="form-field">
         <label htmlFor="login-email">이메일</label>
         <input
@@ -73,6 +79,9 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           name="email"
           type="email"
           autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
           value={email}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'login-email-error' : undefined}
@@ -96,12 +105,15 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           autoComplete="current-password"
           value={password}
           aria-invalid={Boolean(errors.password)}
-          aria-describedby={errors.password ? 'login-password-error' : undefined}
+          aria-describedby={`login-password-hint${errors.password ? ' login-password-error' : ''}`}
           onChange={(event) => {
             setPassword(event.target.value)
             setErrors((current) => ({ ...current, password: undefined }))
           }}
         />
+        <p className="auth-field-hint" id="login-password-hint">
+          가입할 때 사용한 비밀번호를 입력하세요.
+        </p>
         {errors.password && (
           <p id="login-password-error" role="alert">
             {errors.password}
@@ -110,7 +122,7 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
       {formError && <ErrorState message={formError} />}
       {submitting && <LoadingState message="로그인을 처리하고 있습니다." />}
-      <button type="submit" disabled={submitting}>
+      <button type="submit" disabled={submitting} aria-busy={submitting}>
         로그인
       </button>
     </form>
