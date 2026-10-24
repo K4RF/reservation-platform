@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
+import { StayDateFields } from '../components/room/StayDateFields'
 
 export function HomePage() {
   const location = useLocation()
@@ -10,6 +11,7 @@ export function HomePage() {
   const { state } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const [dates, setDates] = useState({ checkInDate: '', checkOutDate: '' })
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = new URLSearchParams()
@@ -44,14 +46,16 @@ export function HomePage() {
             <label htmlFor="home-city">어디로 떠나세요?</label>
             <input id="home-city" name="city" maxLength={100} placeholder="도시의 정확한 이름" />
           </div>
-          <div className="form-field">
-            <label htmlFor="home-in">체크인</label>
-            <input id="home-in" name="checkInDate" type="date" />
-          </div>
-          <div className="form-field">
-            <label htmlFor="home-out">체크아웃</label>
-            <input id="home-out" name="checkOutDate" type="date" />
-          </div>
+          <StayDateFields
+            prefix="home"
+            labelPrefix=""
+            required={false}
+            draft={dates}
+            onChange={(field, value) => {
+              setDates((current) => ({ ...current, [field]: value }))
+              setError('')
+            }}
+          />
           <div className="form-field">
             <label htmlFor="home-guests">인원</label>
             <input

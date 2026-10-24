@@ -116,6 +116,21 @@ Compose database or its volumes.
 Do not report application integration as available until the corresponding
 Backend configuration and behavior are implemented and verified.
 
+## Frontend Design References
+
+- Before any Frontend UI/UX issue, read `docs/ui/approved-design.md` and its
+  prototype/screenshots under `docs/ui/prototypes/premium-travel/`. Do not rely on
+  another chat, a local `.codex` path, or the name "A1" alone.
+- Approved target: Home A1, Navy & Ivory, Search for comparison and Detail for
+  accommodation/room exploration. A2 and other palettes are archived alternatives.
+- The design is a target, not implementation evidence. Historical green-token
+  documents describe the old baseline. f0.5.1 date/guest/room UX stays scoped;
+  full visual rollout belongs to f0.5.3. State the reference and intended differences.
+- For visual changes, compare real 1440px/390px renders and report deviations and
+  verification limits. Preserve API/domain/Auth/mutation safety contracts.
+- Prototype images/prices/metadata are fictional; do not use them as real catalog
+  data or invent unsupported fields. Final user UI/UX approval stays in f0.6.0.
+
 ## Working Rules
 
 - Read `README.md`, `backend/build.gradle`, and the relevant source and test files

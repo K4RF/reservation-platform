@@ -1,5 +1,9 @@
 # Frontend Design Tokens / Global Style (#225)
 
+> 이 문서는 #225 당시의 녹색 구현 기록이다. 이후 승인된 목표는
+> [A1·Navy & Ivory 디자인 기준](approved-design.md)을 따른다.
+> 현재 토큰이 승인 디자인을 이미 구현한 것으로 해석하지 않는다. 전면 적용은 f0.5.3이다.
+
 ## 범위와 적용 경로
 
 #224 Audit이 병합된 `develop` (`accc4f0`)에서 시작했다. 기존 녹색/밝은 배경을 유지하며

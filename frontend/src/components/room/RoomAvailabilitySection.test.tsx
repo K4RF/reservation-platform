@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { RoomAvailabilitySection } from './RoomAvailabilitySection'
 import { room, roomPage } from '../../test/room'
@@ -28,6 +28,33 @@ function mockApi() {
   return mock
 }
 describe('availability and selection lifecycle with real API client', () => {
+  it('keeps selected rooms/prices during calendar preview/cancel, then invalidates them on apply before a fresh GET', async () => {
+    const mock = mockApi()
+    render(<RoomAvailabilitySection accommodationId={7} />)
+    dates()
+    submit()
+    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    await screen.findByText('총 예상 금액: 246,913.56')
+    const calls = mock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+    fireEvent.click(screen.getByRole('button', { name: '2030-01-10' }))
+    expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '날짜 선택 취소' }))
+    expect(screen.getByText('총 예상 금액: 246,913.56')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+    fireEvent.click(screen.getByRole('button', { name: '2030-01-10' }))
+    fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
+    expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+    expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
+    expect(mock).toHaveBeenCalledTimes(calls)
+    expect(screen.getByLabelText('숙박 체크아웃')).toHaveProperty('value', '2030-01-11')
+    submit()
+    await screen.findByRole('button', { name: '스탠다드 선택' })
+    expect(mock.mock.calls.at(-1)![0]).toContain('checkInDate=2030-01-10&checkOutDate=2030-01-11')
+    expect(
+      within(screen.getByRole('form', { name: '객실 가용성 조건' })).queryByRole('region'),
+    ).toBeNull()
+  })
   it('only queries after valid submission and selects a backend-returned room', async () => {
     const mock = mockApi()
     render(<RoomAvailabilitySection accommodationId={7} />)
@@ -151,26 +178,40 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     await screen.findByRole('button', { name: '스탠다드 선택' })
   })
-  it('ignores old availability responses after dates change', async () => {
-    let resolveOld!: (response: Response) => void
-    const mock = mockApi()
-    mock
-      .mockImplementationOnce(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveOld = resolve
-          }),
+  it.each(['direct input', 'calendar apply'])(
+    'ignores old availability responses after %s',
+    async (edit) => {
+      let resolveOld!: (response: Response) => void
+      const mock = mockApi()
+      mock
+        .mockImplementationOnce(
+          () =>
+            new Promise<Response>((resolve) => {
+              resolveOld = resolve
+            }),
+        )
+        .mockResolvedValueOnce(
+          Response.json(roomPage({ content: [{ ...room, roomId: 4, name: '새 객실' }] })),
+        )
+      render(<RoomAvailabilitySection accommodationId={7} />)
+      dates()
+      submit()
+      if (edit === 'direct input') {
+        fireEvent.change(screen.getByLabelText('숙박 체크아웃'), {
+          target: { value: '2030-01-04' },
+        })
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+        fireEvent.click(screen.getByRole('button', { name: '체크아웃 선택' }))
+        fireEvent.click(screen.getByRole('button', { name: '2030-01-04' }))
+        fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
+      }
+      submit()
+      await screen.findByRole('button', { name: '새 객실 선택' })
+      resolveOld(Response.json(roomPage()))
+      await waitFor(() =>
+        expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull(),
       )
-      .mockResolvedValueOnce(
-        Response.json(roomPage({ content: [{ ...room, roomId: 4, name: '새 객실' }] })),
-      )
-    render(<RoomAvailabilitySection accommodationId={7} />)
-    dates()
-    submit()
-    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-04' } })
-    submit()
-    await screen.findByRole('button', { name: '새 객실 선택' })
-    resolveOld(Response.json(roomPage()))
-    await waitFor(() => expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull())
-  })
+    },
+  )
 })
