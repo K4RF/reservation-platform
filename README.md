@@ -346,6 +346,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [본인 예약 조회·변경·취소 UI와 검증 (#229)](docs/ui/frontend-reservation-management-ui-229.md)
 - [관리자 탐색·입력·재고 Calendar UI와 검증 (#230)](docs/ui/frontend-admin-management-ui-230.md)
 - [통합 숙박 날짜 범위 UX·키보드·적용/취소 계약 (#241)](docs/testing/frontend-stay-date-range.md)
+- [전체 인원 Stepper·직접 입력·가용성 초기화와 검증 (#242)](docs/testing/frontend-guest-count-stepper.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
