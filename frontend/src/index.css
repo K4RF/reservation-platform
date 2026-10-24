@@ -491,6 +491,82 @@ legend {
   gap: var(--space-2);
 }
 
+/* Range editing is an inline disclosure, not a modal or an API availability promise. */
+.stay-date-range {
+  grid-column: span 2;
+  min-width: 0;
+  text-align: left;
+}
+.stay-date-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.stay-date-summary {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+.stay-date-help {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.home-search:has(> .stay-date-range),
+.accommodation-search-form:has(> .stay-date-range),
+.accommodation-search-form fieldset.reservation-change-fields:has(> .stay-date-range) {
+  align-items: start;
+}
+.stay-calendar {
+  margin-top: var(--space-4);
+  padding-block: var(--space-3);
+  border-block: 1px solid var(--color-border-control);
+  overflow-wrap: anywhere;
+}
+.stay-calendar-month {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+.stay-calendar-grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-block: var(--space-3);
+}
+.stay-calendar-grid :is(th, td) {
+  padding: 0;
+  text-align: center;
+}
+.stay-calendar-grid button {
+  width: 100%;
+  padding-inline: 0;
+  border-color: transparent;
+  background: transparent;
+}
+.stay-calendar-grid [aria-selected='true'] {
+  background: var(--color-secondary);
+}
+.stay-calendar-grid .stay-date-boundary button,
+.stay-calendar .action-group button[aria-pressed='true'] {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+}
+@media (max-width: 40rem) {
+  .stay-date-range {
+    grid-column: 1 / -1;
+  }
+  .stay-date-inputs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stay-calendar-month {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stay-calendar-month > .form-field {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+}
+
 .form-field label {
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-body);
@@ -985,7 +1061,7 @@ form[aria-label='대표 투숙객 정보'] {
   .home-search {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .home-search .form-field:first-child {
+  .home-search > .form-field:first-child {
     grid-column: 1 / -1;
   }
 }
@@ -1531,7 +1607,7 @@ form[aria-label='대표 투숙객 정보'] {
     padding: var(--space-4);
     grid-template-columns: minmax(0, 1fr);
   }
-  .home-search button {
+  .home-search > button {
     grid-column: 1 / -1;
   }
   .auth-page {
