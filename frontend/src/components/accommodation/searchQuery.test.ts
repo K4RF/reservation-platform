@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { defaultSearchQuery, parseSearchQuery, toSearchParams } from './searchQuery'
+import {
+  defaultSearchQuery,
+  parseSearchQuery,
+  toSearchParams,
+  canonicalSearchQuery,
+} from './searchQuery'
 
 describe('accommodation URL query', () => {
+  it('canonicalizes key order, defaults, integer spelling, text and amenity sets idempotently without rounding prices', () => {
+    const first = canonicalSearchQuery(
+      'page=02&city=%20서울특별시%20&roomAmenities=WIFI&roomAmenities=WIFI&maxPrice=123.456',
+    )!
+    const second = canonicalSearchQuery(
+      'maxPrice=123.456&city=서울특별시&page=2&roomAmenities=WIFI',
+    )
+    expect(first).toBe(second)
+    expect(canonicalSearchQuery(first)).toBe(first)
+    expect(new URLSearchParams(first).get('maxPrice')).toBe('123.456')
+    expect(new URLSearchParams(first).get('status')).toBe('ACTIVE')
+    expect(new URLSearchParams(first).has('guestCount')).toBe(false)
+    expect(canonicalSearchQuery('page=1&page=2')).toBeNull()
+  })
   it('restores defaults and converts every supported filter without inventing API fields', () => {
     const query = {
       ...defaultSearchQuery,

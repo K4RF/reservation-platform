@@ -118,9 +118,28 @@ async function searchToDetail() {
   await screen.findByLabelText('숙박 체크인')
 }
 describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
+  it('preserves edited stay/room hints on Back from login but rechecks availability without restoring guest data or writing', async () => {
+    const mock = mockApi()
+    renderAt('/accommodations?city=서울특별시&page=1&sortBy=NAME')
+    await searchToDetail()
+    await selectRoom()
+    fireEvent.click(screen.getByRole('button', { name: '예약하려면 로그인' }))
+    await screen.findByRole('heading', { name: '로그인' })
+    fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
+    await screen.findByRole('status', { name: '선택한 객실' })
+    const restored = new URL(screen.getByTestId('location').textContent!, 'http://localhost')
+    expect(restored.searchParams.get('checkInDate')).toBe('2030-01-01')
+    expect(restored.searchParams.get('checkOutDate')).toBe('2030-01-03')
+    expect(restored.searchParams.get('guestCount')).toBe('2')
+    expect(restored.searchParams.get('roomId')).toBe('3')
+    expect(new URLSearchParams(restored.searchParams.get('search')!).get('page')).toBe('1')
+    expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(2)
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+  })
   it('lets an anonymous visitor explore and restores a fresh selection after login before creating a reservation', async () => {
     const mock = mockApi()
-    renderAt('/accommodations')
+    renderAt('/accommodations?city=서울특별시&page=1&size=10&sortBy=NAME&direction=DESC')
     await searchToDetail()
     await selectRoom()
     await screen.findByText('총 예상 금액: 200.00')
@@ -135,8 +154,21 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123!' } })
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
     await screen.findByRole('form', { name: '대표 투숙객 정보' })
-    expect(screen.getByTestId('location').textContent).toBe(
-      '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3',
+    const returned = new URL(screen.getByTestId('location').textContent!, 'http://localhost')
+    expect(returned.pathname).toBe('/accommodations/7')
+    expect([...returned.searchParams.keys()].sort()).toEqual(
+      ['checkInDate', 'checkOutDate', 'guestCount', 'roomId', 'search'].sort(),
+    )
+    expect(returned.searchParams.get('checkInDate')).toBe('2030-01-01')
+    expect(returned.searchParams.get('checkOutDate')).toBe('2030-01-03')
+    expect(returned.searchParams.get('guestCount')).toBe('2')
+    expect(returned.searchParams.get('roomId')).toBe('3')
+    const original = new URLSearchParams(returned.searchParams.get('search')!)
+    expect(original.get('page')).toBe('1')
+    expect(original.get('sortBy')).toBe('NAME')
+    expect(original.get('city')).toBe('서울특별시')
+    expect(screen.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href')).toBe(
+      '/accommodations?' + original,
     )
     expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(2)
     expect(screen.queryByRole('link', { name: '로그인' })).toBeNull()
@@ -305,6 +337,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     const mock = mockApi(false, { create: () => Promise.reject(new TypeError('offline')) })
     renderAt('/accommodations')
     await searchToDetail()
+    const draftPath = screen.getByTestId('location').textContent
     await reachReview()
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     await waitFor(() =>
@@ -314,7 +347,8 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
-    expect(screen.getByTestId('location').textContent).toBe('/accommodations/7')
+    expect(screen.getByTestId('location').textContent).toBe(draftPath)
+    expect(new URL(draftPath!, 'http://localhost').pathname).toBe('/accommodations/7')
   })
   it('creates once, replaces draft route, and displays backend amount rather than estimate', async () => {
     const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
