@@ -58,6 +58,11 @@ Browser Fixture 증거·320px 후속 경계는 [Search & Booking UI (#228)](../d
 가로 스크롤 재고 Calendar를 사용합니다. 기존 제출 잠금·재확인 규칙과 검증 범위는
 [Admin Management UI (#230)](../docs/ui/frontend-admin-management-ui-230.md)를 따릅니다.
 
+Home·검색·숙소 상세·예약 일정 변경은 같은 숙박 날짜 범위 입력을 사용합니다.
+직접 날짜 입력과 펼침형 달력을 제공하며, 달력 미리보기는 명시적 적용 전까지 기존 조건을 바꾸지 않습니다.
+체크인 변경 시 최소 1박 보정, 키보드 조작과 조회 초기화 경계는
+[숙박 날짜 범위 UX (#241)](../docs/testing/frontend-stay-date-range.md)를 참고하세요.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)

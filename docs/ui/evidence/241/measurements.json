@@ -1,0 +1,891 @@
+{
+  "issue": 241,
+  "date": "2026-10-24",
+  "sourceBaseCommit": "8319377",
+  "environment": "In-app Browser with real AppRoutes and CSS, read-only HTTP fixtures; unsigned UI role hints; all server writes blocked",
+  "note": "Viewport JPEGs, not full-page images; DOM widths are authoritative. No real Backend authentication or reservation mutation.",
+  "records": [
+    {
+      "id": "home-calendar-desktop",
+      "route": "/",
+      "note": "Keyboard Enter: Oct30 check-in, ArrowRight through Nov1, Enter checkout; staged only",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 834.875,
+        "height": 686.4375,
+        "left": 531.421875,
+        "right": 947.609375,
+        "top": 148.4375,
+        "width": 416.1875,
+        "x": 531.421875,
+        "y": 148.4375
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -46.40625,
+            "height": 44,
+            "left": 531.421875,
+            "right": 733.515625,
+            "top": -90.40625,
+            "width": 202.09375,
+            "x": 531.421875,
+            "y": -90.40625
+          },
+          "value": ""
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -46.40625,
+            "height": 44,
+            "left": 745.515625,
+            "right": 947.609375,
+            "top": -90.40625,
+            "width": 202.09375,
+            "x": 745.515625,
+            "y": -90.40625
+          },
+          "value": ""
+        }
+      ],
+      "focused": "2026-11-01 체크아웃",
+      "notice": "숙박 범위를 확인한 뒤 날짜 적용을 누르세요. 아직 조회나 예약 요청은 보내지 않았습니다.",
+      "root": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "summary": [
+        "숙박 기간 미선택 · 최소 1박",
+        "선택 중: 체크인 2026-10-30 ~ 체크아웃 2026-11-01 · 2박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "dayButtons": {
+        "count": 30,
+        "minWidth": 59.453125,
+        "minHeight": 44,
+        "tabStops": [
+          "2026-11-01 체크아웃"
+        ]
+      }
+    },
+    {
+      "id": "home-escape",
+      "route": "/",
+      "note": "Escape discarded staged dates and restored trigger focus",
+      "screenshot": false,
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 303.59375,
+            "height": 44,
+            "left": 531.421875,
+            "right": 733.515625,
+            "top": 259.59375,
+            "width": 202.09375,
+            "x": 531.421875,
+            "y": 259.59375
+          },
+          "value": ""
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 303.59375,
+            "height": 44,
+            "left": 745.515625,
+            "right": 947.609375,
+            "top": 259.59375,
+            "width": 202.09375,
+            "x": 745.515625,
+            "y": 259.59375
+          },
+          "value": ""
+        }
+      ],
+      "focused": "날짜 달력 열기",
+      "root": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "summary": [
+        "숙박 기간 미선택 · 최소 1박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "dayButtons": {
+        "count": 0,
+        "minWidth": null,
+        "minHeight": null,
+        "tabStops": []
+      }
+    },
+    {
+      "id": "home-applied-mobile",
+      "route": "/",
+      "note": "Apply updates both fields; focus returns; no query yet",
+      "screenshot": true,
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 255.546875,
+            "height": 44,
+            "left": 56,
+            "right": 319,
+            "top": 211.546875,
+            "width": 263,
+            "x": 56,
+            "y": 211.546875
+          },
+          "value": "2026-10-27"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 343.546875,
+            "height": 44,
+            "left": 56,
+            "right": 319,
+            "top": 299.546875,
+            "width": 263,
+            "x": 56,
+            "y": 299.546875
+          },
+          "value": "2026-10-29"
+        }
+      ],
+      "focused": "날짜 달력 열기",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2026-10-27 ~ 체크아웃 2026-10-29 · 2박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 0,
+        "minWidth": null,
+        "minHeight": null,
+        "tabStops": []
+      }
+    },
+    {
+      "id": "search-calendar-mobile",
+      "route": "/accommodations?checkInDate=2026-10-27&checkOutDate=2026-10-29&guestCount=1",
+      "note": "Draft checkout 28 is staged, URL/applied fields and old search remain 27–29",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 580.921875,
+        "height": 762.4375,
+        "left": 41,
+        "right": 334,
+        "top": -181.515625,
+        "width": 293,
+        "x": 41,
+        "y": -181.515625
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -510.109375,
+            "height": 44,
+            "left": 41,
+            "right": 334,
+            "top": -554.109375,
+            "width": 293,
+            "x": 41,
+            "y": -554.109375
+          },
+          "value": "2026-10-27"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -422.109375,
+            "height": 44,
+            "left": 41,
+            "right": 334,
+            "top": -466.109375,
+            "width": 293,
+            "x": 41,
+            "y": -466.109375
+          },
+          "value": "2026-10-29"
+        }
+      ],
+      "focused": "2026-10-28 체크아웃",
+      "notice": "숙박 범위를 확인한 뒤 날짜 적용을 누르세요. 아직 조회나 예약 요청은 보내지 않았습니다.",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2026-10-27 ~ 체크아웃 2026-10-29 · 2박",
+        "선택 중: 체크인 2026-10-27 ~ 체크아웃 2026-10-28 · 1박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 41.84375,
+        "minHeight": 44,
+        "tabStops": [
+          "2026-10-28 체크아웃"
+        ]
+      }
+    },
+    {
+      "id": "detail-calendar-mobile",
+      "route": "/accommodations/7?checkInDate=2026-10-27&checkOutDate=2026-10-29&guestCount=1",
+      "note": "Space selects Oct30; checkout auto-corrects to Oct31; existing selected room/price kept until Apply",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 580.921875,
+        "height": 784.1875,
+        "left": 50,
+        "right": 325,
+        "top": -203.265625,
+        "width": 275,
+        "x": 50,
+        "y": -203.265625
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -531.859375,
+            "height": 44,
+            "left": 50,
+            "right": 325,
+            "top": -575.859375,
+            "width": 275,
+            "x": 50,
+            "y": -575.859375
+          },
+          "value": "2026-10-27"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -443.859375,
+            "height": 44,
+            "left": 50,
+            "right": 325,
+            "top": -487.859375,
+            "width": 275,
+            "x": 50,
+            "y": -487.859375
+          },
+          "value": "2026-10-29"
+        }
+      ],
+      "focused": "2026-10-30 체크인",
+      "notice": "최소 1박을 위해 체크아웃을 2026-10-31로 보정했습니다. 체크아웃을 선택하세요.",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2026-10-27 ~ 체크아웃 2026-10-29 · 2박",
+        "선택 중: 체크인 2026-10-30 ~ 체크아웃 2026-10-31 · 1박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 39.28125,
+        "minHeight": 44,
+        "tabStops": [
+          "2026-10-30 체크인"
+        ]
+      }
+    },
+    {
+      "id": "detail-applied-mobile",
+      "route": "/accommodations/7?checkInDate=2026-10-27&checkOutDate=2026-10-29&guestCount=1",
+      "note": "Apply changes local form to Oct30–31; old selected room/price removed; explicit GET required",
+      "screenshot": true,
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 232.140625,
+            "height": 44,
+            "left": 50,
+            "right": 325,
+            "top": 188.140625,
+            "width": 275,
+            "x": 50,
+            "y": 188.140625
+          },
+          "value": "2026-10-30"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 320.140625,
+            "height": 44,
+            "left": 50,
+            "right": 325,
+            "top": 276.140625,
+            "width": 275,
+            "x": 50,
+            "y": 276.140625
+          },
+          "value": "2026-10-31"
+        }
+      ],
+      "focused": "날짜 달력 열기",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2026-10-30 ~ 체크아웃 2026-10-31 · 1박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 0,
+        "minWidth": null,
+        "minHeight": null,
+        "tabStops": []
+      }
+    },
+    {
+      "id": "detail-calendar-desktop",
+      "route": "/accommodations/7?checkInDate=2026-10-27&checkOutDate=2026-10-29&guestCount=1",
+      "note": "Desktop calendar with local applied Oct30–31, no booking mutation",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 635.1875,
+        "height": 616.6875,
+        "left": 692.296875,
+        "right": 1222.5,
+        "top": 18.5,
+        "width": 530.203125,
+        "x": 692.296875,
+        "y": 18.5
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -197,
+            "height": 44,
+            "left": 692.296875,
+            "right": 951.390625,
+            "top": -241,
+            "width": 259.09375,
+            "x": 692.296875,
+            "y": -241
+          },
+          "value": "2026-10-30"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -197,
+            "height": 44,
+            "left": 963.390625,
+            "right": 1222.5,
+            "top": -241,
+            "width": 259.109375,
+            "x": 963.390625,
+            "y": -241
+          },
+          "value": "2026-10-31"
+        }
+      ],
+      "focused": "2026-10-30 체크인",
+      "notice": "체크인을 먼저 선택하세요. 달력 선택은 적용 전까지 반영되지 않습니다.",
+      "root": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "summary": [
+        "체크인 2026-10-30 ~ 체크아웃 2026-10-31 · 1박",
+        "선택 중: 체크인 2026-10-30 ~ 체크아웃 2026-10-31 · 1박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 75.734375,
+        "minHeight": 44,
+        "tabStops": [
+          "2026-10-30 체크인"
+        ]
+      }
+    },
+    {
+      "id": "change-calendar-desktop",
+      "route": "/reservations/42",
+      "note": "Rejected same-day checkout without reversal; then explicitly selected Jan2–4; original reservation unchanged",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 811.453125,
+        "height": 640.6875,
+        "left": 290.5,
+        "right": 847.828125,
+        "top": 170.765625,
+        "width": 557.328125,
+        "x": 290.5,
+        "y": 170.765625
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -2.328125,
+            "height": 44,
+            "left": 290.5,
+            "right": 563.15625,
+            "top": -46.328125,
+            "width": 272.65625,
+            "x": 290.5,
+            "y": -46.328125
+          },
+          "value": "2030-01-01"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -2.328125,
+            "height": 44,
+            "left": 575.15625,
+            "right": 847.828125,
+            "top": -46.328125,
+            "width": 272.671875,
+            "x": 575.15625,
+            "y": -46.328125
+          },
+          "value": "2030-01-03"
+        }
+      ],
+      "focused": "2030-01-04 체크아웃",
+      "notice": "숙박 범위를 확인한 뒤 날짜 적용을 누르세요. 아직 조회나 예약 요청은 보내지 않았습니다.",
+      "root": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "summary": [
+        "체크인 2030-01-01 ~ 체크아웃 2030-01-03 · 2박",
+        "선택 중: 체크인 2030-01-02 ~ 체크아웃 2030-01-04 · 2박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 79.609375,
+        "minHeight": 44,
+        "tabStops": [
+          "2030-01-04 체크아웃"
+        ]
+      }
+    },
+    {
+      "id": "change-calendar-mobile",
+      "route": "/reservations/42",
+      "note": "ArrowDown moved focus from Jan4 to Jan11 without selecting or changing the original reservation",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 757.484375,
+        "height": 784.1875,
+        "left": 58,
+        "right": 317,
+        "top": -26.703125,
+        "width": 259,
+        "x": 58,
+        "y": -26.703125
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -355.296875,
+            "height": 44,
+            "left": 58,
+            "right": 317,
+            "top": -399.296875,
+            "width": 259,
+            "x": 58,
+            "y": -399.296875
+          },
+          "value": "2030-01-01"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -267.296875,
+            "height": 44,
+            "left": 58,
+            "right": 317,
+            "top": -311.296875,
+            "width": 259,
+            "x": 58,
+            "y": -311.296875
+          },
+          "value": "2030-01-03"
+        }
+      ],
+      "focused": "2030-01-11",
+      "notice": "숙박 범위를 확인한 뒤 날짜 적용을 누르세요. 아직 조회나 예약 요청은 보내지 않았습니다.",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2030-01-01 ~ 체크아웃 2030-01-03 · 2박",
+        "선택 중: 체크인 2030-01-02 ~ 체크아웃 2030-01-04 · 2박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 37,
+        "minHeight": 44,
+        "tabStops": [
+          "2030-01-11"
+        ]
+      }
+    },
+    {
+      "id": "change-query-mobile",
+      "route": "/reservations/42",
+      "note": "Applied Jan2–4, explicit reference availability GET; no change PATCH",
+      "screenshot": true,
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -8.296875,
+            "height": 44,
+            "left": 58,
+            "right": 317,
+            "top": -52.296875,
+            "width": 259,
+            "x": 58,
+            "y": -52.296875
+          },
+          "value": "2030-01-02"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 79.703125,
+            "height": 44,
+            "left": 58,
+            "right": 317,
+            "top": 35.703125,
+            "width": 259,
+            "x": 58,
+            "y": 35.703125
+          },
+          "value": "2030-01-04"
+        }
+      ],
+      "focused": "변경 날짜 가용성 조회",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "체크인 2030-01-02 ~ 체크아웃 2030-01-04 · 2박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 0,
+        "minWidth": null,
+        "minHeight": null,
+        "tabStops": []
+      }
+    },
+    {
+      "id": "home-calendar-mobile",
+      "route": "/",
+      "note": "Final 390px month header and nested Home button scoping; staged Oct27–29",
+      "screenshot": true,
+      "calendar": {
+        "bottom": 581.328125,
+        "height": 784.1875,
+        "left": 56,
+        "right": 319,
+        "top": -202.859375,
+        "width": 263,
+        "x": 56,
+        "y": -202.859375
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": -507.453125,
+            "height": 44,
+            "left": 56,
+            "right": 319,
+            "top": -551.453125,
+            "width": 263,
+            "x": 56,
+            "y": -551.453125
+          },
+          "value": ""
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": -419.453125,
+            "height": 44,
+            "left": 56,
+            "right": 319,
+            "top": -463.453125,
+            "width": 263,
+            "x": 56,
+            "y": -463.453125
+          },
+          "value": ""
+        }
+      ],
+      "focused": "2026-10-29 체크아웃",
+      "notice": "숙박 범위를 확인한 뒤 날짜 적용을 누르세요. 아직 조회나 예약 요청은 보내지 않았습니다.",
+      "root": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "summary": [
+        "숙박 기간 미선택 · 최소 1박",
+        "선택 중: 체크인 2026-10-27 ~ 체크아웃 2026-10-29 · 2박"
+      ],
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 37.5625,
+        "minHeight": 44,
+        "tabStops": [
+          "2026-10-29 체크아웃"
+        ]
+      }
+    },
+    {
+      "id": "detail-960",
+      "route": "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=1",
+      "note": "960px split-layout boundary; no document overflow",
+      "screenshot": false,
+      "calendar": {
+        "bottom": 1303.078125,
+        "height": 686.4375,
+        "left": 465.8125,
+        "right": 874.203125,
+        "top": 616.640625,
+        "width": 408.390625,
+        "x": 465.8125,
+        "y": 616.640625
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 421.796875,
+            "height": 44,
+            "left": 465.8125,
+            "right": 664,
+            "top": 377.796875,
+            "width": 198.1875,
+            "x": 465.8125,
+            "y": 377.796875
+          },
+          "value": "2030-01-01"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 421.796875,
+            "height": 44,
+            "left": 676,
+            "right": 874.203125,
+            "top": 377.796875,
+            "width": 198.203125,
+            "x": 676,
+            "y": 377.796875
+          },
+          "value": "2030-01-03"
+        }
+      ],
+      "focused": "2030-01-01 체크인",
+      "notice": "체크인을 먼저 선택하세요. 달력 선택은 적용 전까지 반영되지 않습니다.",
+      "root": {
+        "clientWidth": 945,
+        "scrollWidth": 945
+      },
+      "summary": [
+        "체크인 2030-01-01 ~ 체크아웃 2030-01-03 · 2박",
+        "선택 중: 체크인 2030-01-01 ~ 체크아웃 2030-01-03 · 2박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 960
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 58.328125,
+        "minHeight": 44,
+        "tabStops": [
+          "2030-01-01 체크인"
+        ]
+      }
+    },
+    {
+      "id": "native-date-input",
+      "route": "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=1",
+      "note": "Native ArrowUp changed the year; invalid previous checkout normalized; no GET automatically",
+      "screenshot": false,
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 421.796875,
+            "height": 44,
+            "left": 465.8125,
+            "right": 664,
+            "top": 377.796875,
+            "width": 198.1875,
+            "x": 465.8125,
+            "y": 377.796875
+          },
+          "value": "2031-01-01"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 421.796875,
+            "height": 44,
+            "left": 676,
+            "right": 874.203125,
+            "top": 377.796875,
+            "width": 198.203125,
+            "x": 676,
+            "y": 377.796875
+          },
+          "value": "2031-01-02"
+        }
+      ],
+      "focused": "",
+      "root": {
+        "clientWidth": 945,
+        "scrollWidth": 945
+      },
+      "summary": [
+        "체크인 2031-01-01 ~ 체크아웃 2031-01-02 · 1박"
+      ],
+      "viewport": {
+        "height": 1000,
+        "width": 960
+      },
+      "dayButtons": {
+        "count": 0,
+        "minWidth": null,
+        "minHeight": null,
+        "tabStops": []
+      }
+    },
+    {
+      "id": "detail-tablet",
+      "route": "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=1",
+      "note": "768px calendar and manual inputs, no document overflow",
+      "screenshot": false,
+      "calendar": {
+        "bottom": 1266.03125,
+        "height": 616.6875,
+        "left": 65.03125,
+        "right": 687.96875,
+        "top": 649.34375,
+        "width": 622.9375,
+        "x": 65.03125,
+        "y": 649.34375
+      },
+      "fields": [
+        {
+          "name": "checkInDate",
+          "rect": {
+            "bottom": 433.84375,
+            "height": 44,
+            "left": 65.03125,
+            "right": 370.5,
+            "top": 389.84375,
+            "width": 305.46875,
+            "x": 65.03125,
+            "y": 389.84375
+          },
+          "value": "2031-01-01"
+        },
+        {
+          "name": "checkOutDate",
+          "rect": {
+            "bottom": 433.84375,
+            "height": 44,
+            "left": 382.5,
+            "right": 687.96875,
+            "top": 389.84375,
+            "width": 305.46875,
+            "x": 382.5,
+            "y": 389.84375
+          },
+          "value": "2031-01-02"
+        }
+      ],
+      "focused": "2031-01-01 체크인",
+      "notice": "체크인을 먼저 선택하세요. 달력 선택은 적용 전까지 반영되지 않습니다.",
+      "root": {
+        "clientWidth": 753,
+        "scrollWidth": 753
+      },
+      "summary": [
+        "체크인 2031-01-01 ~ 체크아웃 2031-01-02 · 1박",
+        "선택 중: 체크인 2031-01-01 ~ 체크아웃 2031-01-02 · 1박"
+      ],
+      "viewport": {
+        "height": 1024,
+        "width": 768
+      },
+      "dayButtons": {
+        "count": 31,
+        "minWidth": 88.984375,
+        "minHeight": 44,
+        "tabStops": [
+          "2031-01-01 체크인"
+        ]
+      }
+    }
+  ]
+}
