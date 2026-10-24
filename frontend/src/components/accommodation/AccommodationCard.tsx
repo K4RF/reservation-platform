@@ -1,14 +1,12 @@
 import { Link, useLocation } from 'react-router'
-import { routePaths } from '../../app/routePaths'
 import type { AccommodationCardModel } from './accommodationView'
-import { bookingContextPath, readBookingContext } from '../../app/bookingContext'
+import { explorationDetailPath } from '../../app/bookingContext'
+import { canonicalSearchQuery } from './searchQuery'
+import { rememberSearchPosition } from '../../app/explorationPosition'
 
 export function AccommodationCard({ accommodation }: { accommodation: AccommodationCardModel }) {
   const { search } = useLocation()
-  const context = readBookingContext(search)
-  const detailPath = context
-    ? bookingContextPath(accommodation.id, { stay: context.stay, roomPage: 0 })
-    : `${routePaths.accommodations}/${accommodation.id}`
+  const detailPath = explorationDetailPath(accommodation.id, search)
   return (
     <article className="accommodation-card catalog-stay-card">
       <div className="catalog-card-visual" aria-hidden="true">
@@ -16,7 +14,24 @@ export function AccommodationCard({ accommodation }: { accommodation: Accommodat
         <small>사진 정보 미제공</small>
       </div>
       <h2>
-        <Link to={detailPath}>{accommodation.name}</Link>
+        <Link
+          id={`accommodation-link-${accommodation.id}`}
+          to={detailPath}
+          onClick={(event) => {
+            if (
+              event.button === 0 &&
+              !event.ctrlKey &&
+              !event.metaKey &&
+              !event.shiftKey &&
+              !event.altKey
+            ) {
+              const query = canonicalSearchQuery(search)
+              if (query !== null) rememberSearchPosition(query, event.currentTarget)
+            }
+          }}
+        >
+          {accommodation.name}
+        </Link>
       </h2>
       <p className="catalog-location">{accommodation.location}</p>
       <p className="catalog-description">{accommodation.description}</p>
