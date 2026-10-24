@@ -374,8 +374,19 @@ Before completing a change:
   original search Query, never representative guest data or tokens. Detail's `search`
   parameter retains original filters/sort/page independently of edited booking conditions.
   Scroll/Trigger position is document-lifetime UI memory, not URL/Auth/persistent storage.
-  See `docs/testing/frontend-exploration-return-context.md` for return and future Room
-  disclosure contracts. Always reload availability before restoring a selected room after login.
+  See `docs/testing/frontend-exploration-return-context.md` for return contracts.
+  Public Room cards open a native modal (Mobile bottom Sheet) using a fresh public
+  Room detail GET and validate both Room and Accommodation IDs. Same-URL Router
+  state holds only a scope and IDs; Back/close/Escape dismiss without changing
+  stay/page/selection. Forward reloads detail, never replays selection or a write.
+  Only a verified available-result context offers explicit selection; changed
+  detail fields, INACTIVE status or insufficient capacity disable that action
+  and instruct an availability refresh. Catalog-only detail is read-only. Detail
+  base price is not a daily-price sum or reservation snapshot; do not invent
+  currency, photos, bed, size, view or descriptions absent from RoomResponse.
+  See `docs/testing/frontend-room-detail-selection.md` for focus/scroll/history
+  behavior, design differences and Browser/HTTP verification boundaries.
+  Always reload availability before restoring a selected room after login.
   See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
   non-destructive local demo preparation. `/reservations` now loads the owner's
   offset-paginated history; `/reservations/:reservationId` provides an owner-only

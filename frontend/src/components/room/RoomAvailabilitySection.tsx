@@ -52,7 +52,9 @@ function AvailabilityForm({
   )
   return (
     <section className="room-availability" aria-labelledby="availability-title">
-      <h2 id="availability-title">예약 가능한 객실 조회</h2>
+      <h2 id="availability-title" tabIndex={-1}>
+        예약 가능한 객실 조회
+      </h2>
       <p>조회 시점의 가용성입니다. 최종 예약 시 Backend가 재고와 가격을 다시 검증합니다.</p>
       <form className="accommodation-search-form" onSubmit={submit} aria-label="객실 가용성 조건">
         <StayDateFields prefix="availability" draft={draft} onChange={change} />
@@ -132,7 +134,15 @@ function AvailabilityResults({
               className={`availability-room-item${selected?.roomId === room.roomId ? ' availability-room-selected' : ''}`}
               key={room.roomId}
             >
-              <RoomCard room={room} />
+              <RoomCard
+                room={room}
+                detail={{
+                  scope: `available:${accommodationId}:${request.checkInDate}:${request.checkOutDate}:${request.guestCount}:${page}`,
+                  fallbackId: 'availability-title',
+                  request,
+                  onSelect: (chosen) => setSelectedId(chosen.roomId),
+                }}
+              />
               {selected?.roomId === room.roomId && (
                 <p className="room-selection-label">선택된 객실</p>
               )}

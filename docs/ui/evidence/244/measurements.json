@@ -1,0 +1,35 @@
+{
+  "issue": 244,
+  "date": "2026-10-25",
+  "scope": "Actual App UI, read-only HTTP fixtures and MemoryRouter. No real Backend/auth/writes or native Browser history proof.",
+  "measurements": [
+    {
+      "name": "room-detail-1440",
+      "viewport": { "width": 1440, "height": 1000 },
+      "dialog": { "x": 368, "y": 114.9375, "width": 704, "height": 770.125, "clientWidth": 702, "scrollWidth": 702 },
+      "initialFocus": "객실 상세 닫기",
+      "bodyOverflow": "hidden",
+      "rootOverflow": "hidden",
+      "shiftTabFocus": "이 객실 선택",
+      "tabWrapFocus": "객실 상세 닫기",
+      "escapeRestoredScrollY": 597,
+      "escapeRestoredTrigger": "room-detail-available%3A7%3A2030-01-01%3A2030-01-03%3A2%3A0-3"
+    },
+    {
+      "name": "room-detail-390",
+      "viewport": { "width": 390, "height": 844 },
+      "dialog": { "x": 0, "y": 84.40625, "width": 390, "height": 759.59375, "clientWidth": 373, "scrollWidth": 373, "clientHeight": 758, "scrollHeight": 871 },
+      "headerTopBeforeAndAfterInternalScroll": 85.40625,
+      "keyboardSelectFocus": { "dialogScrollTop": 113, "top": 774.90625, "bottom": 818.90625 },
+      "backgroundScrollAttempt": { "pageScrollBefore": 1694, "pageScrollAfter": 1694 },
+      "readOnlyCloseWithExistingSelection": {
+        "pageScrollBeforeTriggerClick": 1742,
+        "pageScrollAfterClose": 1742,
+        "selectedRoomId": 3,
+        "checkInDate": "2030-01-01",
+        "guestCount": 2,
+        "restoredTrigger": "room-detail-available%3A7%3A2030-01-01%3A2030-01-03%3A2%3A0-3"
+      }
+    }
+  ]
+}
