@@ -9,6 +9,8 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 Home·숙소 검색·상세의 전체 인원은 공통 −/+ Stepper와 숫자 직접 입력을 지원합니다.
 기존 `guestCount`와 객실 정원·가용성 검증을 유지하며, 상세에서 인원 편집 시 선택 객실/예상 요금은 초기화됩니다.
 입력 경계·접근성·승인 시안과의 차이·Browser 증거는 [#242 검증 기록](../docs/testing/frontend-guest-count-stepper.md)을 참고하세요.
+검색 필터·정렬·페이지를 상세/로그인 복귀에도 유지하며, 같은 문서에서 검색으로 돌아오면 새 GET 후 위치·Focus를 복원합니다.
+URL·UI-only Scroll·Auth의 분리와 Room 상세 후속 계약은 [#243 검증 기록](../docs/testing/frontend-exploration-return-context.md)을 참고하세요.
 
 `f0.1.0 — Frontend Foundation`과 `f0.2.0 — Authentication & User Flow`는
 완료했습니다. f0.2.0은 Issue #161–#168 / PR #169–#176을 통해 Signup,

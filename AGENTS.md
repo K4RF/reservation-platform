@@ -370,8 +370,12 @@ Before completing a change:
   field details; malformed or unbindable requests use `COMMON_002`.
 - Frontend uses React, TypeScript, Vite, and pnpm. Public accommodation exploration
   requires no token; booking creation/result and admin areas remain authenticated.
-  Login return URLs carry only stay conditions and catalog IDs, never guest data or
-  tokens. Always reload availability before restoring a selected room after login.
+  Catalog Login return URLs carry only stay conditions, catalog IDs and a validated
+  original search Query, never representative guest data or tokens. Detail's `search`
+  parameter retains original filters/sort/page independently of edited booking conditions.
+  Scroll/Trigger position is document-lifetime UI memory, not URL/Auth/persistent storage.
+  See `docs/testing/frontend-exploration-return-context.md` for return and future Room
+  disclosure contracts. Always reload availability before restoring a selected room after login.
   See `docs/testing/public-exploration-booking-flow.md` for access boundaries and
   non-destructive local demo preparation. `/reservations` now loads the owner's
   offset-paginated history; `/reservations/:reservationId` provides an owner-only
