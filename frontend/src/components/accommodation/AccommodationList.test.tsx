@@ -12,9 +12,12 @@ describe('AccommodationList', () => {
         <AccommodationList accommodations={[toAccommodationCard(accommodation)]} />
       </MemoryRouter>,
     )
-    expect(screen.getByRole('link', { name: '서울 호텔' }).getAttribute('href')).toBe(
-      '/accommodations/7',
+    const detail = new URL(
+      screen.getByRole('link', { name: '서울 호텔' }).getAttribute('href')!,
+      'http://localhost',
     )
+    expect(detail.pathname).toBe('/accommodations/7')
+    expect(new URLSearchParams(detail.searchParams.get('search')!).get('page')).toBe('0')
     expect(screen.getByText('대한민국 서울특별시 강남구 테헤란로 1')).toBeTruthy()
     expect(screen.getByText('편안한 숙소')).toBeTruthy()
     expect(screen.getByText('주차')).toBeTruthy()

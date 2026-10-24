@@ -1,0 +1,478 @@
+{
+  "issue": 243,
+  "scope": "Actual App UI, read-only HTTP fixtures; MemoryRouter, no real Backend/auth/writes or native Browser history proof",
+  "measurements": [
+    {
+      "name": "search-1440-before",
+      "document": {
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "fields": [
+        {
+          "id": "search-city",
+          "value": "서울특별시"
+        },
+        {
+          "id": "search-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "search-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "search-guests",
+          "value": "2"
+        },
+        {
+          "id": "search-name",
+          "value": ""
+        },
+        {
+          "id": "search-region",
+          "value": ""
+        },
+        {
+          "id": "search-minPrice",
+          "value": ""
+        },
+        {
+          "id": "search-maxPrice",
+          "value": ""
+        },
+        {
+          "id": "search-sort",
+          "value": "NAME"
+        },
+        {
+          "id": "search-direction",
+          "value": "DESC"
+        },
+        {
+          "id": "search-status",
+          "value": "ACTIVE"
+        },
+        {
+          "id": "search-available",
+          "value": ""
+        },
+        {
+          "id": "search-size",
+          "value": "10"
+        }
+      ],
+      "focus": {
+        "id": "accommodation-link-7",
+        "text": "서울 호텔"
+      },
+      "links": [
+        {
+          "href": "/accommodations/7?checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2&search=checkInDate%3D2030-07-20%26checkOutDate%3D2030-07-22%26city%3D%25EC%2584%259C%25EC%259A%25B8%25ED%258A%25B9%25EB%25B3%2584%25EC%258B%259C%26direction%3DDESC%26guestCount%3D2%26page%3D0%26size%3D10%26sortBy%3DNAME%26status%3DACTIVE",
+          "text": "서울 호텔"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 406
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "name": "detail-1440-context",
+      "document": {
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "fields": [
+        {
+          "id": "availability-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "availability-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "availability-guests",
+          "value": "2"
+        }
+      ],
+      "focus": {
+        "id": "",
+        "text": "(document body)"
+      },
+      "links": [
+        {
+          "href": "/accommodations?checkInDate=2030-07-20&checkOutDate=2030-07-22&city=%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C&direction=DESC&guestCount=2&page=0&size=10&sortBy=NAME&status=ACTIVE",
+          "text": "숙소 검색으로 돌아가기"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "name": "search-1440-restored",
+      "document": {
+        "scrollWidth": 1425,
+        "width": 1425
+      },
+      "fields": [
+        {
+          "id": "search-city",
+          "value": "서울특별시"
+        },
+        {
+          "id": "search-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "search-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "search-guests",
+          "value": "2"
+        },
+        {
+          "id": "search-name",
+          "value": ""
+        },
+        {
+          "id": "search-region",
+          "value": ""
+        },
+        {
+          "id": "search-minPrice",
+          "value": ""
+        },
+        {
+          "id": "search-maxPrice",
+          "value": ""
+        },
+        {
+          "id": "search-sort",
+          "value": "NAME"
+        },
+        {
+          "id": "search-direction",
+          "value": "DESC"
+        },
+        {
+          "id": "search-status",
+          "value": "ACTIVE"
+        },
+        {
+          "id": "search-available",
+          "value": ""
+        },
+        {
+          "id": "search-size",
+          "value": "10"
+        }
+      ],
+      "focus": {
+        "id": "accommodation-link-7",
+        "text": "서울 호텔"
+      },
+      "links": [
+        {
+          "href": "/accommodations/7?checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2&search=checkInDate%3D2030-07-20%26checkOutDate%3D2030-07-22%26city%3D%25EC%2584%259C%25EC%259A%25B8%25ED%258A%25B9%25EB%25B3%2584%25EC%258B%259C%26direction%3DDESC%26guestCount%3D2%26page%3D0%26size%3D10%26sortBy%3DNAME%26status%3DACTIVE",
+          "text": "서울 호텔"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 406
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "name": "search-390-before",
+      "document": {
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "fields": [
+        {
+          "id": "search-city",
+          "value": "서울특별시"
+        },
+        {
+          "id": "search-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "search-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "search-guests",
+          "value": "2"
+        },
+        {
+          "id": "search-name",
+          "value": ""
+        },
+        {
+          "id": "search-region",
+          "value": ""
+        },
+        {
+          "id": "search-minPrice",
+          "value": ""
+        },
+        {
+          "id": "search-maxPrice",
+          "value": ""
+        },
+        {
+          "id": "search-sort",
+          "value": "NAME"
+        },
+        {
+          "id": "search-direction",
+          "value": "DESC"
+        },
+        {
+          "id": "search-status",
+          "value": "ACTIVE"
+        },
+        {
+          "id": "search-available",
+          "value": ""
+        },
+        {
+          "id": "search-size",
+          "value": "10"
+        }
+      ],
+      "focus": {
+        "id": "accommodation-link-7",
+        "text": "서울 호텔"
+      },
+      "links": [
+        {
+          "href": "/accommodations/7?checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2&search=checkInDate%3D2030-07-20%26checkOutDate%3D2030-07-22%26city%3D%25EC%2584%259C%25EC%259A%25B8%25ED%258A%25B9%25EB%25B3%2584%25EC%258B%259C%26direction%3DDESC%26guestCount%3D2%26page%3D0%26size%3D10%26sortBy%3DNAME%26status%3DACTIVE",
+          "text": "서울 호텔"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 1038
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-context",
+      "document": {
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "fields": [
+        {
+          "id": "availability-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "availability-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "availability-guests",
+          "value": "2"
+        }
+      ],
+      "focus": {
+        "id": "",
+        "text": "(document body)"
+      },
+      "links": [
+        {
+          "href": "/accommodations?checkInDate=2030-07-20&checkOutDate=2030-07-22&city=%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C&direction=DESC&guestCount=2&page=0&size=10&sortBy=NAME&status=ACTIVE",
+          "text": "숙소 검색으로 돌아가기"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "search-390-restored",
+      "document": {
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "fields": [
+        {
+          "id": "search-city",
+          "value": "서울특별시"
+        },
+        {
+          "id": "search-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "search-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "search-guests",
+          "value": "2"
+        },
+        {
+          "id": "search-name",
+          "value": ""
+        },
+        {
+          "id": "search-region",
+          "value": ""
+        },
+        {
+          "id": "search-minPrice",
+          "value": ""
+        },
+        {
+          "id": "search-maxPrice",
+          "value": ""
+        },
+        {
+          "id": "search-sort",
+          "value": "NAME"
+        },
+        {
+          "id": "search-direction",
+          "value": "DESC"
+        },
+        {
+          "id": "search-status",
+          "value": "ACTIVE"
+        },
+        {
+          "id": "search-available",
+          "value": ""
+        },
+        {
+          "id": "search-size",
+          "value": "10"
+        }
+      ],
+      "focus": {
+        "id": "accommodation-link-7",
+        "text": "서울 호텔"
+      },
+      "links": [
+        {
+          "href": "/accommodations/7?checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2&search=checkInDate%3D2030-07-20%26checkOutDate%3D2030-07-22%26city%3D%25EC%2584%259C%25EC%259A%25B8%25ED%258A%25B9%25EB%25B3%2584%25EC%258B%259C%26direction%3DDESC%26guestCount%3D2%26page%3D0%26size%3D10%26sortBy%3DNAME%26status%3DACTIVE",
+          "text": "서울 호텔"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 1037
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-reloaded",
+      "document": {
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "fields": [
+        {
+          "id": "availability-checkInDate",
+          "value": "2030-07-20"
+        },
+        {
+          "id": "availability-checkOutDate",
+          "value": "2030-07-22"
+        },
+        {
+          "id": "availability-guests",
+          "value": "2"
+        }
+      ],
+      "focus": {
+        "id": "",
+        "text": "(document body)"
+      },
+      "links": [
+        {
+          "href": "/accommodations?checkInDate=2030-07-20&checkOutDate=2030-07-22&city=%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C&direction=DESC&guestCount=2&page=0&size=10&sortBy=NAME&status=ACTIVE",
+          "text": "숙소 검색으로 돌아가기"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-invalid-query",
+      "document": {
+        "scrollWidth": 375,
+        "width": 375
+      },
+      "fields": [
+        {
+          "id": "availability-checkInDate",
+          "value": ""
+        },
+        {
+          "id": "availability-checkOutDate",
+          "value": ""
+        },
+        {
+          "id": "availability-guests",
+          "value": "1"
+        }
+      ],
+      "focus": {
+        "id": "",
+        "text": "(document body)"
+      },
+      "links": [
+        {
+          "href": "/accommodations",
+          "text": "숙소 검색으로 돌아가기"
+        }
+      ],
+      "scroll": {
+        "x": 0,
+        "y": 0
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    }
+  ]
+}

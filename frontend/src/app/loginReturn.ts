@@ -1,4 +1,6 @@
 import { routePaths } from './routePaths'
+import { canonicalSearchQuery } from '../components/accommodation/searchQuery'
+import { bookingContextPath, isExplorationQuery, readBookingContext } from './bookingContext'
 
 const GOOGLE_RETURN_KEY = 'reservation:google-return-path'
 
@@ -15,6 +17,29 @@ export function safeLoginReturn(value: unknown): string {
       )
     ) {
       return routePaths.home
+    }
+    if (url.pathname === routePaths.accommodations) {
+      const query = canonicalSearchQuery(url.search)
+      return query === null ? routePaths.home : `${url.pathname}?${query}`
+    }
+    if (url.pathname.startsWith(routePaths.accommodations + '/')) {
+      const id = url.pathname.slice(routePaths.accommodations.length + 1)
+      if (
+        !/^\d+$/.test(id) ||
+        !Number.isSafeInteger(Number(id)) ||
+        Number(id) < 1 ||
+        !isExplorationQuery(url.search)
+      )
+        return routePaths.home
+      const context = readBookingContext(url.search)
+      if (context) return bookingContextPath(Number(id), context)
+      const query = new URLSearchParams(url.search)
+      if ([...query.keys()].some((key) => key !== 'search')) return routePaths.home
+      const saved = query.get('search')
+      return (
+        url.pathname +
+        (saved === null ? '' : `?${new URLSearchParams({ search: canonicalSearchQuery(saved)! })}`)
+      )
     }
     return url.pathname + url.search + url.hash
   } catch {

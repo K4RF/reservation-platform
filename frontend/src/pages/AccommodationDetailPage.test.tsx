@@ -39,6 +39,25 @@ function mockApi() {
 }
 
 describe('AccommodationDetailPage with the real API client', () => {
+  it.each([
+    'checkInDate=2030-01-01&checkInDate=2030-01-02&checkOutDate=2030-01-03',
+    'checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=0',
+    'checkInDate=2030-01-01&checkOutDate=2030-01-03&accessToken=secret',
+    'search=page%3D1&search=page%3D2',
+  ])(
+    'rejects invalid detail context %s without an automatic availability request',
+    async (query) => {
+      const mock = mockApi()
+      renderAt('/accommodations/7?' + query)
+      await screen.findByRole('heading', { name: '서울 호텔' })
+      expect(screen.getByRole('alert').textContent).toContain('올바르지 않은 탐색 조건')
+      expect(screen.getByLabelText('숙박 체크인')).toHaveProperty('value', '')
+      expect(mock.mock.calls.every(([url]) => !url.includes('/rooms/available'))).toBe(true)
+      expect(
+        screen.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href'),
+      ).toBe('/accommodations')
+    },
+  )
   it('connects the availability query and room selection to the detail page', async () => {
     const mock = mockApi()
     mock.mockImplementation((url: string) =>
