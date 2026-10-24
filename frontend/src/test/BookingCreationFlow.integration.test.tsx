@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '../app/routes'
@@ -6,9 +6,12 @@ import { AuthProvider } from '../state/AuthProvider'
 import { setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from './jwt'
 import { accommodation, accommodationPage } from './accommodation'
-import { roomPage } from './room'
+import { room, roomPage } from './room'
+import { mockDialog } from './dialog'
 import { bookingRequest, reservationResult } from './reservation'
 import { selectBookingRoom as selectRoom, reviewBooking as reachReview } from './bookingFlow'
+
+mockDialog()
 
 function Location() {
   const location = useLocation()
@@ -70,6 +73,7 @@ function mockApi(
     }
     if (init.method !== 'GET') throw new Error(`Unexpected method: ${init.method} ${path}`)
     if (path === '/api/v1/reservations/42') return Promise.resolve(Response.json(reservationResult))
+    if (path === '/api/v1/rooms/3') return Promise.resolve(Response.json(room))
     if (path.startsWith('/api/v1/rooms/3/prices/')) {
       const daily = options.mixedPrices && path.endsWith('2030-01-01')
       return Promise.resolve(
@@ -143,6 +147,15 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     await searchToDetail()
     await selectRoom()
     await screen.findByText('총 예상 금액: 200.00')
+    const available = screen.getByRole('list', { name: '예약 가능한 객실 목록' })
+    fireEvent.click(within(available).getByRole('button', { name: '스탠다드 상세 보기' }))
+    await screen.findByRole('button', { name: '이 객실 선택' })
+    fireEvent.click(screen.getByRole('button', { name: '객실 상세 닫기' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    fireEvent.click(within(available).getByRole('button', { name: '스탠다드 상세 보기' }))
+    fireEvent.click(await screen.findByRole('button', { name: '이 객실 선택' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
     expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
     expect(

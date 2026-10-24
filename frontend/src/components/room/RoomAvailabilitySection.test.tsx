@@ -1,7 +1,13 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { RoomAvailabilitySection } from './RoomAvailabilitySection'
 import { room, roomPage } from '../../test/room'
+import { mockDialog } from '../../test/dialog'
+
+const render = (ui: ReactNode) => renderUi(ui, { wrapper: MemoryRouter })
+mockDialog()
 
 const submit = () => fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
 function dates() {
@@ -28,6 +34,53 @@ function mockApi() {
   return mock
 }
 describe('availability and selection lifecycle with real API client', () => {
+  it('preserves the nonzero availability page and stay on detail close; explicit detail selection uses the existing booking path and guest edits invalidate it', async () => {
+    const mock = vi.fn((url: string) =>
+      Promise.resolve(
+        Response.json(
+          url === '/api/v1/rooms/3'
+            ? room
+            : url.includes('/prices/')
+              ? {
+                  roomDailyPriceId: null,
+                  roomId: 3,
+                  stayDate: url.slice(-10),
+                  nightlyPrice: room.nightlyPrice,
+                  source: 'DEFAULT',
+                }
+              : roomPage({ page: 1, totalPages: 2, totalElements: 21, first: false }),
+        ),
+      ),
+    )
+    vi.stubGlobal('fetch', mock)
+    render(
+      <RoomAvailabilitySection
+        accommodationId={7}
+        initialContext={{
+          stay: { checkInDate: '2030-01-01', checkOutDate: '2030-01-03', guestCount: 2 },
+          roomPage: 1,
+        }}
+        onLoginRequired={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 상세 보기' }))
+    await screen.findByRole('button', { name: '이 객실 선택' })
+    fireEvent.click(screen.getByRole('button', { name: '객실 상세 닫기' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(screen.getByRole('navigation', { name: '예약 가능 객실 페이지' }).textContent).toContain(
+      '2 / 2',
+    )
+    expect(screen.getByLabelText('숙박 체크인')).toHaveProperty('value', '2030-01-01')
+    expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '스탠다드 상세 보기' }))
+    fireEvent.click(await screen.findByRole('button', { name: '이 객실 선택' }))
+    await screen.findByRole('button', { name: '예약하려면 로그인' })
+    expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(1)
+    expect(mock.mock.calls[0][0]).toContain('page=1')
+    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+    expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
   it.each(['stepper', 'direct input'])(
     'clears selected room and price on guest %s and requires an explicit fresh query',
     async (edit) => {
