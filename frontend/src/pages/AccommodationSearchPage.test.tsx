@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { AccommodationSearchPage } from './AccommodationSearchPage'
 import { accommodationPage } from '../test/accommodation'
 
-function renderPage() {
+function renderPage(path = '/') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[path]}>
       <AccommodationSearchPage />
     </MemoryRouter>,
   )
@@ -16,6 +16,36 @@ function submit() {
 }
 
 describe('AccommodationSearchPage with the real API client', () => {
+  it('restores URL guests, steps without querying, and submits the existing numeric guestCount contract', async () => {
+    const mock = vi.fn().mockImplementation(() => Response.json(accommodationPage()))
+    vi.stubGlobal('fetch', mock)
+    renderPage('/?guestCount=2&checkInDate=2030-01-10&checkOutDate=2030-01-12')
+    await screen.findByRole('link', { name: '서울 호텔' })
+    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
+    fireEvent.click(screen.getByRole('button', { name: '인원 1명 줄이기' }))
+    expect(mock).toHaveBeenCalledTimes(1)
+    submit()
+    await waitFor(() => expect(mock).toHaveBeenCalledTimes(2))
+    const query = new URL(mock.mock.calls[1][0], 'http://localhost').searchParams
+    expect(query.get('guestCount')).toBe('1')
+    expect(query.get('checkInDate')).toBe('2030-01-10')
+    expect(query.get('checkOutDate')).toBe('2030-01-12')
+    expect(query.get('page')).toBe('0')
+  })
+  it('preserves omitted optional guests and rejects invalid direct input before another GET', async () => {
+    const mock = vi.fn().mockImplementation(() => Response.json(accommodationPage()))
+    vi.stubGlobal('fetch', mock)
+    renderPage()
+    await screen.findByRole('link', { name: '서울 호텔' })
+    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '')
+    expect(new URL(mock.mock.calls[0][0], 'http://localhost').searchParams.has('guestCount')).toBe(
+      false,
+    )
+    fireEvent.change(screen.getByLabelText('인원', { exact: true }), { target: { value: '1.5' } })
+    submit()
+    expect(screen.getByRole('alert').textContent).toContain('양의 정수')
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
   it('shows loading, lists results, pages with preserved filters and resets a new search to page zero', async () => {
     const fetchMock = vi
       .fn()
