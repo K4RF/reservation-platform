@@ -4,6 +4,7 @@ import { accommodationAmenities, roomAmenities } from '../../api/accommodation'
 import { amenityLabels } from './accommodationView'
 import { parseSearchQuery, type AccommodationSearchQuery } from './searchQuery'
 import { StayDateFields } from '../room/StayDateFields'
+import { GuestCountField } from '../room/GuestCountField'
 
 export function AccommodationSearchForm({
   onSearch,
@@ -13,6 +14,7 @@ export function AccommodationSearchForm({
   initialQuery: AccommodationSearchQuery
 }) {
   const [error, setError] = useState('')
+  const [guestCount, setGuestCount] = useState(String(initialQuery.guestCount ?? ''))
   const [dates, setDates] = useState({
     checkInDate: initialQuery.checkInDate ?? '',
     checkOutDate: initialQuery.checkOutDate ?? '',
@@ -57,18 +59,16 @@ export function AccommodationSearchForm({
           setError('')
         }}
       />
-      <div className="form-field">
-        <label htmlFor="search-guests">인원</label>
-        <input
-          id="search-guests"
-          name="guestCount"
-          type="number"
-          min="1"
-          max="2147483647"
-          step="1"
-          defaultValue={initialQuery.guestCount}
-        />
-      </div>
+      <GuestCountField
+        id="search-guests"
+        label="인원"
+        value={guestCount}
+        required={false}
+        onChange={(value) => {
+          setGuestCount(value)
+          setError('')
+        }}
+      />
       <details
         className="search-filters"
         open={Boolean(
