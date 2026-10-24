@@ -140,3 +140,12 @@ export function toSearchParams(query: AccommodationSearchRequest): URLSearchPara
   }
   return params
 }
+
+// Existing parser owns validation/defaults/amenity ordering; serialization owns public fields.
+export function canonicalSearchQuery(search: string): string | null {
+  const parsed = parseSearchQuery(new URLSearchParams(search))
+  if (!parsed.valid) return null
+  const params = toSearchParams(parsed.query)
+  params.sort()
+  return params.toString()
+}
