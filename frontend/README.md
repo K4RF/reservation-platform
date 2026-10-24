@@ -20,7 +20,8 @@ Issue #177–#185·#195 10건과 PR #186–#194·#196 10건이 종료됐습니�
 `f0.5.0 — Admin Management`도 완료했습니다. Milestone #16의 Issue #211–#216 6건과
 PR #218–#223 6건이 종료됐습니다. 공통 Layout, 숙소, 객실, 단일 날짜 가격,
 재고 Calendar, 통합 Mock 검증과 중복 상태 Form 정리를 구현했습니다.
-`f0.5.1` UI Audit/스타일 정돈 후 `f0.6.0 — Frontend Integration & UX Completion`을 진행할 계획입니다.
+`f0.5.1` UI 정돈·Booking/객실 탐색 UX 이후, `v0.4.1`의 미디어·객실 데이터 확장과
+`f0.5.3`의 승인 디자인 적용을 거쳐 `f0.6.0 — Frontend Integration & UX Completion`을 진행합니다.
 f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·전체 Flow를 수동 검수하는 Issue를
 두는 계획을 유지합니다. 이번 작업에서 새 GitHub Issue를 만들지는 않았습니다.
 전체 새로고침 후 지속 인증 복원, Current User/Profile 조회, 전체 사용자 예약 Admin UI는 아직 없습니다.
@@ -28,8 +29,13 @@ f0.6.0 마지막에는 사용자 직접 색상·시각·반응형·접근성·�
 브라우저 E2E는 미검증이며
 자동화 검증 경계는 [인증 검증 문서](../docs/testing/frontend-authentication-flow.md)를 따릅니다.
 
-UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#232 스타일 정돈/회귀 검증이며,
+UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#230 화면 정돈 → #241–#244 UX → #231/#232 검증이며,
 실제 전체 연동과 사용자 최종 UI/UX 승인은 `f0.6.0`에 남깁니다.
+[승인 디자인 기준](../docs/ui/approved-design.md)을 UI 작업 전에 읽고,
+[독립 시안](../docs/ui/prototypes/premium-travel/index.html)과
+[Desktop/Mobile 참조](../docs/ui/prototypes/premium-travel/review.html)를 함께 확인합니다.
+Home A1·Navy & Ivory는 승인 목표이며 현재 녹색 Production 스타일에 이미 적용된 상태는 아닙니다.
+날짜 UX #241은 기능 개선이며 전체 Palette/Home 리디자인 완료를 의미하지 않습니다.
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.
 

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+<title>Reservation Platform — Design studies</title>
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="studio" aria-label="시안 비교 도구">
+ <div class="studio-name">DESIGN STUDIES <span>A1·Navy 방향 승인 · 가상 데이터 / AI 이미지</span></div>
+ <nav aria-label="시안 화면"><button data-view="a1">Home A1</button><button data-view="a2">A2 (비교안)</button><button data-view="search">Search</button><button data-view="detail">Detail</button></nav>
+ <label class="palette-label">Palette <select id="palette"><option value="navy">Navy & Ivory</option><option value="blue">Blue & Porcelain</option><option value="charcoal">Charcoal & Sand</option></select></label>
+</div>
+<a href="#page" class="skip">본문으로 이동</a>
+<main id="page" tabindex="-1"></main>
+<dialog id="dates" aria-labelledby="dates-title"></dialog>
+<dialog id="guests" aria-labelledby="guests-title"></dialog>
+<dialog id="room" aria-labelledby="room-title" class="room-dialog"></dialog>
+<dialog id="booking" aria-labelledby="booking-title"></dialog>
+<dialog id="filters" aria-labelledby="filters-title"></dialog>
+<div id="announcer" class="sr" aria-live="polite"></div>
+</body></html>
