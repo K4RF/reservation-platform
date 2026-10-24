@@ -158,32 +158,44 @@ describe('reservation change date preparation', () => {
     dates('2030-01-03', '2030-01-05')
     expect(screen.queryByRole('alert')).toBeNull()
   })
-  it('aborts and ignores an old response after date editing', async () => {
-    let finish!: (response: Response) => void
-    const mock = vi
-      .fn()
-      .mockImplementationOnce(
-        () =>
-          new Promise<Response>((resolve) => {
-            finish = resolve
-          }),
-      )
-      .mockResolvedValue(Response.json(roomPage({ content: [], totalElements: 0, totalPages: 0 })))
-    vi.stubGlobal('fetch', mock)
-    renderPreparation()
-    open()
-    dates()
-    submit()
-    await waitFor(() => expect(finish).toBeTypeOf('function'))
-    const signal = mock.mock.calls[0][1].signal as AbortSignal
-    dates('2030-01-03', '2030-01-05')
-    expect(signal.aborted).toBe(true)
-    submit()
-    await screen.findByText(missing)
-    await act(async () => finish(Response.json(roomPage())))
-    expect(screen.queryByText(found)).toBeNull()
-    expect(screen.getByText('조회한 새 일정: 2030-01-03 ~ 2030-01-05 · 2명')).toBeTruthy()
-  })
+  it.each(['direct input', 'calendar apply'])(
+    'aborts and ignores an old response after %s',
+    async (edit) => {
+      let finish!: (response: Response) => void
+      const mock = vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise<Response>((resolve) => {
+              finish = resolve
+            }),
+        )
+        .mockResolvedValue(
+          Response.json(roomPage({ content: [], totalElements: 0, totalPages: 0 })),
+        )
+      vi.stubGlobal('fetch', mock)
+      renderPreparation()
+      open()
+      dates()
+      submit()
+      await waitFor(() => expect(finish).toBeTypeOf('function'))
+      const signal = mock.mock.calls[0][1].signal as AbortSignal
+      if (edit === 'direct input') {
+        dates('2030-01-03', '2030-01-05')
+      } else {
+        fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+        fireEvent.click(screen.getByRole('button', { name: '2030-01-03' }))
+        fireEvent.click(screen.getByRole('button', { name: '2030-01-05' }))
+        fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
+      }
+      expect(signal.aborted).toBe(true)
+      submit()
+      await screen.findByText(missing)
+      await act(async () => finish(Response.json(roomPage())))
+      expect(screen.queryByText(found)).toBeNull()
+      expect(screen.getByText('조회한 새 일정: 2030-01-03 ~ 2030-01-05 · 2명')).toBeTruthy()
+    },
+  )
   it('closing the preparation clears the draft and cancels in-flight requests', async () => {
     const mock = vi.fn().mockReturnValue(new Promise<Response>(() => {}))
     vi.stubGlobal('fetch', mock)
