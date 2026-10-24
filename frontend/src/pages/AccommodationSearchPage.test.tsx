@@ -73,6 +73,8 @@ describe('AccommodationSearchPage with the real API client', () => {
     renderPage()
     await screen.findByRole('link', { name: '서울 호텔' })
     fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-02' } })
+    expect(screen.getByLabelText('체크아웃')).toHaveProperty('value', '2030-01-03')
+    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '' } })
     submit()
     expect(screen.getByRole('alert').textContent).toContain('함께 입력')
     fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-01' } })

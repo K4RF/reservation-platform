@@ -48,6 +48,8 @@ describe('AppRoutes', () => {
     vi.stubGlobal('fetch', mock)
     renderAt('/')
     fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-10' } })
+    expect(screen.getByLabelText('체크아웃')).toHaveProperty('value', '2030-01-11')
+    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '' } })
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     expect(screen.getByRole('alert')).toBeTruthy()
     expect(mock).not.toHaveBeenCalled()

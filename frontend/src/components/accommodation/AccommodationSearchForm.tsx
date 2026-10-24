@@ -3,6 +3,7 @@ import type { AccommodationSearchRequest } from '../../api/accommodation'
 import { accommodationAmenities, roomAmenities } from '../../api/accommodation'
 import { amenityLabels } from './accommodationView'
 import { parseSearchQuery, type AccommodationSearchQuery } from './searchQuery'
+import { StayDateFields } from '../room/StayDateFields'
 
 export function AccommodationSearchForm({
   onSearch,
@@ -12,6 +13,10 @@ export function AccommodationSearchForm({
   initialQuery: AccommodationSearchQuery
 }) {
   const [error, setError] = useState('')
+  const [dates, setDates] = useState({
+    checkInDate: initialQuery.checkInDate ?? '',
+    checkOutDate: initialQuery.checkOutDate ?? '',
+  })
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
@@ -42,12 +47,16 @@ export function AccommodationSearchForm({
           />
         </div>
       ))}
-      {(['checkInDate', 'checkOutDate'] as const).map((name, index) => (
-        <div className="form-field" key={name}>
-          <label htmlFor={`search-${name}`}>{['체크인', '체크아웃'][index]}</label>
-          <input id={`search-${name}`} name={name} type="date" defaultValue={initialQuery[name]} />
-        </div>
-      ))}
+      <StayDateFields
+        prefix="search"
+        labelPrefix=""
+        required={false}
+        draft={dates}
+        onChange={(field, value) => {
+          setDates((current) => ({ ...current, [field]: value }))
+          setError('')
+        }}
+      />
       <div className="form-field">
         <label htmlFor="search-guests">인원</label>
         <input
