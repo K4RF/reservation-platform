@@ -1,6 +1,7 @@
 import type { RoomResponse } from '../../api/room'
+import { RoomDetailTrigger, type RoomDetailContext } from './RoomDetailTrigger'
 
-export function RoomCard({ room }: { room: RoomResponse }) {
+export function RoomCard({ room, detail }: { room: RoomResponse; detail?: RoomDetailContext }) {
   return (
     <article className="accommodation-card catalog-room-card">
       <h3>{room.name}</h3>
@@ -16,6 +17,7 @@ export function RoomCard({ room }: { room: RoomResponse }) {
           ))}
         </ul>
       )}
+      {detail && <RoomDetailTrigger room={room} context={detail} />}
     </article>
   )
 }
