@@ -82,6 +82,9 @@ Trigger가 사라지면 해당 객실 목록 제목을 fallback으로 제공한�
 Modal 여부, Focus Trap/Scroll Lock, 내부 Gallery/선택 CTA는 #244에서 실제 UI와 함께 검증해야 한다.
 Helper 단위 테스트는 이 계약을 검증하는 것이며 실제 Room Modal의 Browser 검증이 아니다.
 
+후속 #244에서 실제 Modal/Mobile Sheet를 구현했다. 위 문단은 #243 당시의 Handoff 계약이며,
+현재 구현·시각 증거와 History/Browser 검증 경계는 [객실 상세·선택 검증](frontend-room-detail-selection.md)을 따른다.
+
 ## 검증과 한계
 
 기존 검색 Navigation/Detail/Booking Creation Suite를 보강했다. 새 중복 Lifecycle Suite는 만들지 않았다.

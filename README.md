@@ -31,6 +31,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - 회원가입, 이메일/비밀번호 로그인, Google OAuth2 로그인
 - JWT 인증, Redis 기반 Refresh Token 재발급, 로그아웃
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
+- 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회
 - 본인 예약 목록·상세 조회, 일정 변경, 저장 취소 정책 확인 및 취소
 
@@ -348,6 +349,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [통합 숙박 날짜 범위 UX·키보드·적용/취소 계약 (#241)](docs/testing/frontend-stay-date-range.md)
 - [전체 인원 Stepper·직접 입력·가용성 초기화와 검증 (#242)](docs/testing/frontend-guest-count-stepper.md)
 - [검색·Booking 복귀 Query와 Scroll/Focus 계약 (#243)](docs/testing/frontend-exploration-return-context.md)
+- [Room DTO 기반 상세·선택·키보드 및 반응형 검증 (#244)](docs/testing/frontend-room-detail-selection.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
