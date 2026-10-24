@@ -4,6 +4,7 @@ import {
   type AccommodationSearchRequest,
 } from '../../api/accommodation'
 import { isCalendarDate } from '../../utils/calendarDate'
+import { MAX_GUEST_COUNT } from '../../api/availabilityValidation'
 
 export type AccommodationSearchQuery = AccommodationSearchRequest & {
   page: number
@@ -67,7 +68,7 @@ export function parseSearchQuery(params: URLSearchParams): SearchQueryResult {
     const value = params.get(key) ?? ''
     const number = Number(value)
     const min = key === 'page' ? 0 : 1
-    const max = key === 'size' ? 100 : 2147483647
+    const max = key === 'size' ? 100 : MAX_GUEST_COUNT
     if (!/^\d+$/.test(value) || !Number.isSafeInteger(number) || number < min || number > max)
       return invalid('페이지는 0 이상, 크기는 1~100, 인원은 양의 정수여야 합니다.')
     query[key] = number

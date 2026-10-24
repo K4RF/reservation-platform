@@ -1,0 +1,656 @@
+{
+  "issue": 242,
+  "scope": "Read-only actual App UI with HTTP fixtures; no Backend, authentication or writes verified",
+  "measurements": [
+    {
+      "name": "home-1440",
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 840.859375,
+                "y": 552.59375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "home-guests",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 136,
+                "x": 892.859375,
+                "y": 552.59375
+              },
+              "tag": "INPUT",
+              "value": "1"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 1036.859375,
+                "y": 552.59375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "인원−+전체 1명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "",
+        "name": null,
+        "tag": "BODY"
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "name": "home-390-keyboard",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 56,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "home-guests",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 159,
+                "x": 108,
+                "y": 398.734375
+              },
+              "tag": "INPUT",
+              "value": "2"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 늘리기",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 275,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "인원−+전체 2명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "",
+        "name": "인원 1명 늘리기",
+        "tag": "BUTTON"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "home-390-max",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 56,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "home-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 159,
+                "x": 108,
+                "y": 398.734375
+              },
+              "tag": "INPUT",
+              "value": "2147483647"
+            },
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 275,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "인원−+전체 2147483647명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "home-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "home-390-invalid",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 56,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "true",
+              "name": "home-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 159,
+                "x": 108,
+                "y": 398.734375
+              },
+              "tag": "INPUT",
+              "value": "1.5"
+            },
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 275,
+                "y": 398.734375
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "인원−+1~2,147,483,647 사이의 정수를 입력하세요.성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "home-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "search-390",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 41,
+                "y": 399.078125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "search-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 189,
+                "x": 93,
+                "y": 399.078125
+              },
+              "tag": "INPUT",
+              "value": "2"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 290,
+                "y": 399.078125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "인원−+전체 2명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "search-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-1440",
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 692.296875,
+                "y": 476.6875
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "availability-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 153.09375,
+                "x": 744.296875,
+                "y": 476.6875
+              },
+              "tag": "INPUT",
+              "value": "2"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 905.390625,
+                "y": 476.6875
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "숙박 인원−+전체 2명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "availability-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    {
+      "name": "detail-390-selected",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 50,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "availability-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 171,
+                "x": 102,
+                "y": 398.328125
+              },
+              "tag": "INPUT",
+              "value": "2"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 281,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "숙박 인원−+전체 2명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "availability-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-invalidated-min",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "숙박 인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 50,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "availability-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 171,
+                "x": 102,
+                "y": 398.328125
+              },
+              "tag": "INPUT",
+              "value": "1"
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 281,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "숙박 인원−+전체 1명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "availability-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-max-focus",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 50,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "false",
+              "name": "availability-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 171,
+                "x": 102,
+                "y": 398.328125
+              },
+              "tag": "INPUT",
+              "value": "2147483647"
+            },
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "숙박 인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 281,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "숙박 인원−+전체 2147483647명성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "availability-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    },
+    {
+      "name": "detail-390-empty",
+      "document": {
+        "clientWidth": 375,
+        "scrollWidth": 375
+      },
+      "field": [
+        {
+          "controls": [
+            {
+              "disabled": true,
+              "invalid": null,
+              "name": "숙박 인원 1명 줄이기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 50,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": "true",
+              "name": "availability-guests",
+              "outline": "rgb(23, 103, 95) solid 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 171,
+                "x": 102,
+                "y": 398.328125
+              },
+              "tag": "INPUT",
+              "value": ""
+            },
+            {
+              "disabled": false,
+              "invalid": null,
+              "name": "숙박 인원 1명 늘리기",
+              "outline": "rgb(23, 58, 57) none 3px",
+              "rect": {
+                "height": 46.796875,
+                "width": 44,
+                "x": 281,
+                "y": 398.328125
+              },
+              "tag": "BUTTON",
+              "value": ""
+            }
+          ],
+          "text": "숙박 인원−+1~2,147,483,647 사이의 정수를 입력하세요.성인·아동을 합한 전체 인원입니다. 숫자 직접 입력이 가능하며 정원은 객실별로 확인하세요."
+        }
+      ],
+      "focus": {
+        "id": "availability-guests",
+        "name": null,
+        "tag": "INPUT"
+      },
+      "viewport": {
+        "height": 844,
+        "width": 390
+      }
+    }
+  ]
+}

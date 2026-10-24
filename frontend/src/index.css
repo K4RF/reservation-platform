@@ -491,6 +491,33 @@ legend {
   gap: var(--space-2);
 }
 
+.guest-count-field {
+  min-width: 0;
+  text-align: left;
+}
+.guest-count-controls {
+  display: grid;
+  grid-template-columns: var(--control-min-height) minmax(0, 1fr) var(--control-min-height);
+  gap: var(--space-2);
+}
+.guest-count-controls button {
+  padding-inline: 0;
+  font-size: var(--font-size-lg);
+}
+.guest-count-controls input {
+  text-align: center;
+  padding-inline: var(--space-1);
+}
+.guest-count-summary,
+.guest-count-help {
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.guest-count-help {
+  color: var(--color-text-muted);
+}
+
 /* Range editing is an inline disclosure, not a modal or an API availability promise. */
 .stay-date-range {
   grid-column: span 2;
@@ -808,7 +835,7 @@ legend {
   border-top: 1px solid var(--color-border);
 }
 form[aria-label='숙소 검색 조건'] {
-  grid-template-columns: 1.4fr 1fr 1fr 0.65fr auto;
+  grid-template-columns: 1.4fr 1fr 1fr minmax(15rem, 1fr) auto;
 }
 form[aria-label='숙소 검색 조건'] > button {
   order: 1;
@@ -984,7 +1011,7 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .home-search {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 0.6fr auto;
+  grid-template-columns: 1.4fr 1fr 1fr minmax(15rem, 1fr) auto;
   align-items: end;
   gap: var(--space-3);
   background: var(--color-surface);

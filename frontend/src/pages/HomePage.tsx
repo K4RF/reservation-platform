@@ -4,6 +4,7 @@ import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
 import { StayDateFields } from '../components/room/StayDateFields'
+import { GuestCountField } from '../components/room/GuestCountField'
 
 export function HomePage() {
   const location = useLocation()
@@ -12,6 +13,7 @@ export function HomePage() {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [dates, setDates] = useState({ checkInDate: '', checkOutDate: '' })
+  const [guestCount, setGuestCount] = useState('1')
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = new URLSearchParams()
@@ -56,18 +58,16 @@ export function HomePage() {
               setError('')
             }}
           />
-          <div className="form-field">
-            <label htmlFor="home-guests">인원</label>
-            <input
-              id="home-guests"
-              name="guestCount"
-              type="number"
-              min={1}
-              max={2147483647}
-              step={1}
-              defaultValue={1}
-            />
-          </div>
+          <GuestCountField
+            id="home-guests"
+            label="인원"
+            value={guestCount}
+            required={false}
+            onChange={(value) => {
+              setGuestCount(value)
+              setError('')
+            }}
+          />
           <button type="submit">숙소 찾기</button>
           {error && <p role="alert">{error}</p>}
         </form>

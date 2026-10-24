@@ -33,7 +33,8 @@ describe('AppRoutes', () => {
     fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
     fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-10' } })
     fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-12' } })
-    fireEvent.change(screen.getByLabelText('인원'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    expect(mock).not.toHaveBeenCalled()
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
     const query = new URL(mock.mock.calls[0][0], 'http://localhost').searchParams
@@ -41,6 +42,7 @@ describe('AppRoutes', () => {
     expect(query.get('checkInDate')).toBe('2030-01-10')
     expect(query.get('checkOutDate')).toBe('2030-01-12')
     expect(query.get('guestCount')).toBe('2')
+    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
     expect(new Headers(mock.mock.calls[0][1].headers).has('Authorization')).toBe(false)
   })
   it('rejects incomplete dates in home search before making any request', () => {

@@ -3,6 +3,7 @@ import { getAvailableRooms } from '../../api/room'
 import type { AvailabilityRequest } from '../../api/availabilityValidation'
 import { useAvailabilityForm } from './useAvailabilityForm'
 import { StayDateFields } from './StayDateFields'
+import { GuestCountField } from './GuestCountField'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
@@ -55,19 +56,11 @@ function AvailabilityForm({
       <p>조회 시점의 가용성입니다. 최종 예약 시 Backend가 재고와 가격을 다시 검증합니다.</p>
       <form className="accommodation-search-form" onSubmit={submit} aria-label="객실 가용성 조건">
         <StayDateFields prefix="availability" draft={draft} onChange={change} />
-        <div className="form-field">
-          <label htmlFor="availability-guests">숙박 인원</label>
-          <input
-            id="availability-guests"
-            type="number"
-            min="1"
-            max="2147483647"
-            step="1"
-            required
-            value={draft.guestCount}
-            onChange={(event) => change('guestCount', event.target.value)}
-          />
-        </div>
+        <GuestCountField
+          id="availability-guests"
+          value={draft.guestCount}
+          onChange={(value) => change('guestCount', value)}
+        />
         <button type="submit">예약 가능 객실 조회</button>
       </form>
       {error && <ErrorState message={error} />}

@@ -28,6 +28,76 @@ function mockApi() {
   return mock
 }
 describe('availability and selection lifecycle with real API client', () => {
+  it.each(['stepper', 'direct input'])(
+    'clears selected room and price on guest %s and requires an explicit fresh query',
+    async (edit) => {
+      const mock = mockApi()
+      render(<RoomAvailabilitySection accommodationId={7} />)
+      dates()
+      submit()
+      fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+      await screen.findByText('총 예상 금액: 246,913.56')
+      const calls = mock.mock.calls.length
+      if (edit === 'stepper')
+        fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+      else
+        fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
+          target: { value: '2' },
+        })
+      expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+      expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
+      expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
+      expect(mock).toHaveBeenCalledTimes(calls)
+      submit()
+      await screen.findByRole('button', { name: '스탠다드 선택' })
+      expect(mock.mock.calls.at(-1)![0]).toContain('guestCount=2')
+    },
+  )
+  it('does not clamp guests to one room capacity and shows a server-filtered empty result above capacity', async () => {
+    const mock = vi
+      .fn()
+      .mockImplementation((url: string) =>
+        Promise.resolve(
+          Response.json(
+            Number(new URL(url, 'http://localhost').searchParams.get('guestCount')) > room.capacity
+              ? roomPage({ content: [], totalElements: 0, totalPages: 0 })
+              : roomPage(),
+          ),
+        ),
+      )
+    vi.stubGlobal('fetch', mock)
+    render(<RoomAvailabilitySection accommodationId={7} />)
+    dates()
+    fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
+      target: { value: String(room.capacity) },
+    })
+    submit()
+    await screen.findByRole('button', { name: '스탠다드 선택' })
+    expect(screen.getByText(`최대 ${room.capacity}명`)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+    expect(screen.getByLabelText('숙박 인원', { exact: true })).toHaveProperty(
+      'value',
+      String(room.capacity + 1),
+    )
+    expect(mock).toHaveBeenCalledTimes(1)
+    submit()
+    await screen.findByText('선택한 조건에 예약 가능한 객실이 없습니다.')
+    expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
+  })
+  it.each(['', '0', '-1', '1.5', '2147483648'])(
+    'rejects invalid guest draft %s without querying',
+    (guestCount) => {
+      const mock = mockApi()
+      render(<RoomAvailabilitySection accommodationId={7} />)
+      dates()
+      fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
+        target: { value: guestCount },
+      })
+      submit()
+      expect(screen.getByRole('alert').textContent).toContain('1명 이상의 정수')
+      expect(mock).not.toHaveBeenCalled()
+    },
+  )
   it('keeps selected rooms/prices during calendar preview/cancel, then invalidates them on apply before a fresh GET', async () => {
     const mock = mockApi()
     render(<RoomAvailabilitySection accommodationId={7} />)
@@ -178,7 +248,7 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     await screen.findByRole('button', { name: '스탠다드 선택' })
   })
-  it.each(['direct input', 'calendar apply'])(
+  it.each(['direct input', 'calendar apply', 'guest stepper', 'guest direct input'])(
     'ignores old availability responses after %s',
     async (edit) => {
       let resolveOld!: (response: Response) => void
@@ -200,11 +270,17 @@ describe('availability and selection lifecycle with real API client', () => {
         fireEvent.change(screen.getByLabelText('숙박 체크아웃'), {
           target: { value: '2030-01-04' },
         })
-      } else {
+      } else if (edit === 'calendar apply') {
         fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
         fireEvent.click(screen.getByRole('button', { name: '체크아웃 선택' }))
         fireEvent.click(screen.getByRole('button', { name: '2030-01-04' }))
         fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
+      } else if (edit === 'guest stepper') {
+        fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+      } else {
+        fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
+          target: { value: '2' },
+        })
       }
       submit()
       await screen.findByRole('button', { name: '새 객실 선택' })
