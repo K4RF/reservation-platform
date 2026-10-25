@@ -5,6 +5,7 @@ import type { AccommodationSearchRequest } from '../../api/accommodation'
 import { toAccommodationCard } from '../../components/accommodation/accommodationView'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { adminErrorMessage } from '../../components/admin/useAdminMutation'
 import { useDetailQuery } from '../useDetailQuery'
 import { adminRoomListPath } from './adminRoomQuery'
@@ -137,7 +138,7 @@ function AccommodationResults({
           <p role="status">총 {state.data.totalElements}개 숙소</p>
           <button onClick={retry}>숙소 목록 새로 조회</button>
           {!state.data.content.length ? (
-            <p className="admin-empty-state">검색 조건에 맞는 숙소가 없습니다.</p>
+            <EmptyState message="검색 조건에 맞는 숙소가 없습니다." />
           ) : (
             <ul className="admin-catalog-list">
               {state.data.content.map((row) => {

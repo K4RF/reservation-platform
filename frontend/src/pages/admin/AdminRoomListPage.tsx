@@ -7,6 +7,7 @@ import { RoomCard } from '../../components/room/RoomCard'
 import { adminErrorMessage } from '../../components/admin/useAdminMutation'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { ErrorState } from '../../components/ui/ErrorState'
+import { EmptyState } from '../../components/ui/EmptyState'
 import { useDetailQuery } from '../useDetailQuery'
 import { adminRoomSearchFields, readAdminRoomQuery, roomSortFields } from './adminRoomQuery'
 import { adminDailyPricePath } from './adminDailyPriceQuery'
@@ -193,7 +194,7 @@ function RoomManagementList({
           <p role="status">총 {state.data.rooms.totalElements}개 객실</p>
           <button onClick={retry}>객실 목록 새로 조회</button>
           {!state.data.rooms.content.length ? (
-            <p className="admin-empty-state">검색 조건에 맞는 객실이 없습니다.</p>
+            <EmptyState message="검색 조건에 맞는 객실이 없습니다." />
           ) : (
             <ul className="admin-catalog-list">
               {state.data.rooms.content.map((room) => (
