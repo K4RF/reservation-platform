@@ -83,7 +83,9 @@ describe('design token and global stylesheet contracts', () => {
       expect(tokens.has(`--${name}`)).toBe(true)
     }
     expect(globalCss.match(/:focus-visible/g)).toHaveLength(1)
-    expect(globalCss).toContain(':is(a, button, input, select, textarea, summary):focus-visible')
+    expect(globalCss).toContain(
+      ':is(a, button, input, select, textarea, summary, [tabindex]):focus-visible',
+    )
     expect(globalCss).toContain('outline: var(--focus-ring-width) solid var(--color-focus)')
   })
 
@@ -149,5 +151,57 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(
       /\.admin-content \.admin-save-success\s*\{[^}]*border-color: var\(--color-success\);/,
     )
+  })
+
+  it('allows scrollbar-width reflow, wraps long text and keeps focus on scroll regions visible', () => {
+    expect(globalCss).toMatch(/body\s*\{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/)
+    expect(globalCss).not.toMatch(/min-width:\s*320px/)
+    expect(globalCss).toMatch(/\.site-main\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
+    expect(globalCss).toMatch(/\.skip-link\s*\{[^}]*z-index: 3;/)
+    expect(globalCss).toMatch(/\.form-field\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
+    expect(globalCss).toMatch(/\.guest-count-controls\s*\{[^}]*flex-wrap: wrap;/)
+    expect(globalCss).toMatch(/\.room-detail-header\s*\{[^}]*flex-wrap: wrap;/)
+    expect(globalCss).toMatch(
+      /:is\(\.confirmation-check, \.admin-check, \.amenity-option\)\s*\{[^}]*min-height: var\(--control-min-height\);/,
+    )
+  })
+
+  it('meets measured semantic text/control contrast thresholds without changing the brand palette', () => {
+    function resolve(name: string): string {
+      const value = tokens.get(`--color-${name}`)!
+      const variable = references(value)[0]
+      return variable ? resolve(variable.slice('--color-'.length)) : value
+    }
+    function luminance(value: string) {
+      const hex = value.slice(1)
+      const full =
+        hex.length === 3
+          ? hex
+              .split('')
+              .map((c) => c + c)
+              .join('')
+          : hex
+      const [r, g, b] = [0, 2, 4]
+        .map((i) => parseInt(full.slice(i, i + 2), 16) / 255)
+        .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4))
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+    function contrast(foreground: string, background: string) {
+      const a = luminance(resolve(foreground)),
+        b = luminance(resolve(background))
+      return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05)
+    }
+    for (const surface of ['surface', 'background', 'secondary']) {
+      for (const text of ['text', 'text-muted', 'text-subtle', 'primary']) {
+        expect(contrast(text, surface), `${text}/${surface}`).toBeGreaterThanOrEqual(4.5)
+      }
+      expect(contrast('border-control', surface), `border/${surface}`).toBeGreaterThanOrEqual(3)
+      expect(contrast('focus', surface), `focus/${surface}`).toBeGreaterThanOrEqual(3)
+    }
+    for (const state of ['success', 'error', 'warning', 'cancelled']) {
+      expect(contrast(state, `${state}-surface`), state).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(contrast('on-primary', 'primary')).toBeGreaterThanOrEqual(4.5)
+    expect(contrast('on-primary', 'primary-hover')).toBeGreaterThanOrEqual(4.5)
   })
 })
