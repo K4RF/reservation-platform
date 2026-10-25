@@ -135,6 +135,9 @@ Backend configuration and behavior are implemented and verified.
   document overflow to mask a layout error. Common Loading/Error/Empty components
   own presentation only, never availability, retry or mutation gates. See
   `docs/ui/frontend-responsive-accessibility-231.md` for verified widths and limits.
+- The f0.5.1 regression baseline and style responsibilities are recorded in
+  `docs/ui/frontend-ui-regression-232.md`. Trace dynamic status class generation
+  before removing apparently unused styles; reuse the existing lifecycle suites.
 
 ## Working Rules
 
