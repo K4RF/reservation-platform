@@ -351,6 +351,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [검색·Booking 복귀 Query와 Scroll/Focus 계약 (#243)](docs/testing/frontend-exploration-return-context.md)
 - [Room DTO 기반 상세·선택·키보드 및 반응형 검증 (#244)](docs/testing/frontend-room-detail-selection.md)
 - [횡단 Responsive·접근성·공통 UI State 개선과 검증 (#231)](docs/ui/frontend-responsive-accessibility-231.md)
+- [f0.5.1 UI 회귀·스타일 구조 정리·검증 경계 및 인계 (#232)](docs/ui/frontend-ui-regression-232.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위

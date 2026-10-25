@@ -1,0 +1,93 @@
+{
+  "issue": 232,
+  "verificationDate": "2026-10-26",
+  "base": "develop@34b8b2c",
+  "environment": "Windows / ChatGPT in-app browser / read-only UI audit with HTTP fixtures",
+  "source": "frontend/scripts/ui-audit (unchanged); actual App components and CSS, not a live backend",
+  "beforeAfter": {
+    "viewports": [
+      { "width": 390, "height": 844 },
+      { "width": 1440, "height": 1000 }
+    ],
+    "casesPerViewport": { "ready": 15, "error": 6, "empty": 3 },
+    "routeStateComparisons": 48,
+    "additionalLoginSignupFieldErrorComparisons": 4,
+    "totalComparisons": 52,
+    "differences": 0,
+    "comparison": "Header/Main element geometry (rounded to 0.01px), computed color/background/border/radius/padding/margin/font/display/gap/overflow and document widths",
+    "readyRoutes": [
+      "/",
+      "/login",
+      "/signup",
+      "/accommodations",
+      "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2",
+      "/reservations",
+      "/reservations/42",
+      "/reservations/42/complete",
+      "/admin",
+      "/admin/accommodations",
+      "/admin/accommodations/7",
+      "/admin/rooms?accommodationId=7",
+      "/admin/rooms/3?accommodationId=7",
+      "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22"
+    ],
+    "errorReadyRouteIndices": [3, 4, 5, 6, 9, 14],
+    "emptyReadyRouteIndices": [3, 5, 9],
+    "guards": "Ready content loaded without ui-loading; error alert and empty ui-empty present",
+    "rawNodeSnapshotsPersisted": false,
+    "pixelDiffPerformed": false
+  },
+  "additionalResponsive": {
+    "widths": [320, 768],
+    "readyRouteIndices": [0, 3, 4, 6, 9, 14],
+    "cases": 12,
+    "documentHorizontalOverflowCases": 0
+  },
+  "loading": {
+    "widths": [390, 1440],
+    "readyRouteIndices": [3, 5, 11],
+    "cases": 6,
+    "statusPresentCases": 6,
+    "documentHorizontalOverflowCases": 0
+  },
+  "browserJourney": {
+    "width": 390,
+    "path": "Home city/calendar/guest stepper -> Search -> Detail -> Room Sheet -> explicit room selection -> Login",
+    "checkInDate": "2026-10-28",
+    "checkOutDate": "2026-10-30",
+    "guestCount": 2,
+    "conditionsRetained": true,
+    "sheetClientWidth": 373,
+    "sheetScrollWidth": 373,
+    "keyboard": "Shift+Tab/Tab wrap; Escape closes; original trigger focus restored",
+    "liveLoginOrMutationPerformed": false
+  },
+  "auditConsole": { "errorAndWarnEntries": 0, "queryLimit": 100 },
+  "automated": {
+    "targetedFiles": 10,
+    "targetedTests": 98,
+    "fullFiles": 76,
+    "fullTests": 1081,
+    "lint": "passed",
+    "format": "passed",
+    "typecheck": "passed",
+    "test": "passed",
+    "build": "passed",
+    "auditTypecheck": "passed",
+    "offlineFrozenInstall": "passed"
+  },
+  "remoteCI": {
+    "predecessorPR": 249,
+    "predecessorHead": "f54d972787e5d616abb8dca9144075990a65fa14",
+    "predecessorFrontend": "success",
+    "predecessorBackend": "success",
+    "issue232": "not run; no push or PR requested"
+  },
+  "limits": [
+    "No live Backend, Google, database, real mutation, real inventory race or external side-effect verification",
+    "Native Browser history, real Browser zoom, screen reader and touch-device testing not rerun",
+    "Direct date input and mutation safety verified in existing DOM/HTTP-mock tests, not a full live Browser flow",
+    "Not full A1/Navy implementation or final user UI approval"
+  ]
+}

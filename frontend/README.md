@@ -75,6 +75,19 @@ Home·검색·숙소 상세·예약 일정 변경은 같은 숙박 날짜 범위
 체크인 변경 시 최소 1박 보정, 키보드 조작과 조회 초기화 경계는
 [숙박 날짜 범위 UX (#241)](../docs/testing/frontend-stay-date-range.md)를 참고하세요.
 
+### Styling 구조와 회귀 기준
+
+- `src/styles/tokens.css`: 색상·서체·간격·상태 의미·역할별 폭의 단일 원본입니다.
+- `src/index.css`: 전역 Control/Layout과 화면별 배치, 공통 오류 Skin/상태 표시, Room Modal을 구분합니다.
+  오류 색·경계는 하나의 scoped 규칙을 사용하고 인증/예약/Admin의 여백·성공/복구 표현은 따로 유지합니다.
+- `LoadingState`/`ErrorState`/`EmptyState`는 표시만 담당합니다. 조회 수명·Submit Gate·재시도 정책을 옮기지 않습니다.
+- 상태 Class는 템플릿 문자열로도 생성됩니다. 문자열 검색 결과만으로 미사용 CSS를 지우지 않습니다.
+- 기존 네 통합 Flow와 세부 Suite를 재사용합니다. DOM/CSS Source 테스트와 실제 Browser 렌더 검증은 별도입니다.
+
+스타일 정리 전후 비교·회귀 Coverage·CI와 f0.6.0 인계는
+[#232 최종 회귀 기록](../docs/ui/frontend-ui-regression-232.md)을 따릅니다.
+이 기록은 승인 A1/Navy 전면 적용이나 사용자 최종 디자인 승인이 아닙니다.
+
 ## 요구 환경
 
 - Node.js 20.19 이상 또는 22.12 이상 (Vite 8 요구사항)
