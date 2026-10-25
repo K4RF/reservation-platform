@@ -99,6 +99,36 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toContain('var(--accent)')
   })
 
+  it('shares a single scoped alert skin and removes only the retired empty-state selector', () => {
+    const skins = [...globalCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
+      ([, selector, body]) =>
+        selector.includes("[role='alert']") &&
+        body.includes('background: var(--color-error-surface)'),
+    )
+    expect(skins).toHaveLength(1)
+    for (const scope of [
+      'auth-page',
+      'home-page',
+      'accommodation-search-page',
+      'booking-complete-page',
+      'my-reservations-page',
+      'reservation-detail-page',
+      'admin-content',
+    ]) {
+      expect(skins[0][1]).toContain(`.${scope}`)
+    }
+    expect(globalCss).not.toContain('.admin-empty-state')
+    // These are rendered via dynamic status class names, not unused literal selectors.
+    for (const state of [
+      'booking-result-cancelled',
+      'reservation-status-confirmed',
+      'reservation-status-cancelled',
+      'reservation-summary-cancelled',
+    ]) {
+      expect(globalCss).toContain(`.${state}`)
+    }
+  })
+
   it('shares controls without suppressing native disabled or confirmation semantics', () => {
     expect(globalCss).toContain(".nav-link[aria-current='page']")
     expect(globalCss).toContain("button[aria-busy='true']")

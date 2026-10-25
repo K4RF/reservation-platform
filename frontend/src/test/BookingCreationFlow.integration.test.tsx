@@ -141,11 +141,44 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
   })
-  it('lets an anonymous visitor explore and restores a fresh selection after login before creating a reservation', async () => {
+  it('connects Home search, filter/page navigation, room detail and a fresh selection after login before creating one reservation', async () => {
     const mock = mockApi()
-    renderAt('/accommodations?city=서울특별시&page=1&size=10&sortBy=NAME&direction=DESC')
+    renderAt('/')
+    fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
+    fireEvent.change(screen.getByLabelText('체크인', { exact: true }), {
+      target: { value: '2030-01-01' },
+    })
+    fireEvent.change(screen.getByLabelText('체크아웃', { exact: true }), {
+      target: { value: '2030-01-03' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    expect(mock).not.toHaveBeenCalled()
+    fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
+    await screen.findByRole('link', { name: '서울 호텔' })
+    const homeQuery = new URL(mock.mock.calls[0][0], 'http://localhost').searchParams
+    expect(homeQuery.get('checkInDate')).toBe('2030-01-01')
+    expect(homeQuery.get('checkOutDate')).toBe('2030-01-03')
+    expect(homeQuery.get('guestCount')).toBe('2')
+    fireEvent.click(screen.getByText('편의시설 · 가격 · 정렬 필터'))
+    fireEvent.change(screen.getByLabelText('정렬', { exact: true }), { target: { value: 'NAME' } })
+    fireEvent.change(screen.getByLabelText('정렬 방향'), { target: { value: 'DESC' } })
+    fireEvent.change(screen.getByLabelText('페이지 크기'), { target: { value: '10' } })
+    fireEvent.submit(screen.getByRole('form', { name: '숙소 검색 조건' }))
+    await screen.findByRole('link', { name: '서울 호텔' })
+    fireEvent.click(
+      within(screen.getByRole('navigation', { name: '숙소 페이지' })).getByRole('button', {
+        name: '다음',
+      }),
+    )
+    await waitFor(() =>
+      expect(
+        new URL(screen.getByTestId('location').textContent!, 'http://localhost').searchParams.get(
+          'page',
+        ),
+      ).toBe('1'),
+    )
     await searchToDetail()
-    await selectRoom()
+    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     await screen.findByText('총 예상 금액: 200.00')
     const available = screen.getByRole('list', { name: '예약 가능한 객실 목록' })
     fireEvent.click(within(available).getByRole('button', { name: '스탠다드 상세 보기' }))
