@@ -18,8 +18,9 @@
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   font-size: var(--font-size-base);
+  overflow-wrap: anywhere;
 }
 
 h1,
@@ -61,7 +62,7 @@ a {
   color: var(--color-primary);
 }
 
-:is(a, button, input, select, textarea, summary):focus-visible {
+:is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
 }
@@ -208,6 +209,12 @@ legend {
   line-height: var(--leading-body);
 }
 
+/* The complete label is a pointer target; native checkbox size and disabling are unchanged. */
+:is(.confirmation-check, .admin-check, .amenity-option) {
+  min-height: var(--control-min-height);
+  padding-block: var(--space-2);
+}
+
 .action-group {
   display: flex;
   flex-wrap: wrap;
@@ -268,6 +275,7 @@ legend {
 
 .skip-link {
   position: absolute;
+  z-index: 3;
   left: var(--space-4);
   top: calc(-1 * var(--space-16));
   padding: var(--space-2) var(--space-3);
@@ -347,7 +355,9 @@ legend {
 
 .site-main {
   flex: 1;
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   align-content: start;
   padding: var(--space-12) var(--space-6);
@@ -488,6 +498,8 @@ legend {
 
 .form-field {
   display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
 }
 
@@ -496,15 +508,17 @@ legend {
   text-align: left;
 }
 .guest-count-controls {
-  display: grid;
-  grid-template-columns: var(--control-min-height) minmax(0, 1fr) var(--control-min-height);
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 .guest-count-controls button {
+  flex: 0 1 var(--control-min-height);
   padding-inline: 0;
   font-size: var(--font-size-lg);
 }
 .guest-count-controls input {
+  flex: 1 1 5rem;
   text-align: center;
   padding-inline: var(--space-1);
 }
@@ -1678,6 +1692,53 @@ form[aria-label='대표 투숙객 정보'] {
   color: var(--color-text-subtle);
 }
 
+/* Common presentation only: callers still own query, empty and recovery decisions. */
+.ui-state {
+  min-width: 0;
+  margin-block: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-control);
+  overflow-wrap: anywhere;
+}
+.ui-state.ui-loading {
+  background: var(--color-secondary);
+  color: var(--color-text);
+}
+.ui-state.ui-error {
+  display: grid;
+  gap: var(--space-3);
+  border-inline-start: var(--focus-ring-width) solid var(--color-error);
+  background: var(--color-error-surface);
+  color: var(--color-error);
+}
+.ui-state.ui-error > button {
+  justify-self: start;
+}
+.ui-state > p {
+  margin: 0;
+  color: inherit;
+}
+.ui-state.ui-empty {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+.ui-state.ui-empty > :not(:first-child) {
+  margin-top: var(--space-3);
+}
+.ui-state.ui-empty > [role='status'] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.ui-state.ui-empty > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+}
+
 /* Native modal supplies inert background, focus containment and Escape cancellation. */
 .room-detail-dialog {
   width: min(44rem, calc(100% - var(--space-8)));
@@ -1701,6 +1762,7 @@ form[aria-label='대표 투숙객 정보'] {
   top: 0;
   z-index: 1;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);

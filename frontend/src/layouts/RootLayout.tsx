@@ -99,7 +99,7 @@ export function RootLayout() {
           {state.status === 'loading' && <span role="status">인증 확인 중…</span>}
         </nav>
       </header>
-      <main className="site-main" id="main-content">
+      <main className="site-main" id="main-content" tabIndex={-1}>
         {state.status === 'reauth_required' && (
           <p role="status">
             로그인이 만료되었습니다. 숙소는 계속 둘러볼 수 있으며 예약 시 다시 로그인해 주세요.

@@ -63,6 +63,11 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('navigation', { name: '주요 탐색' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: '주요 탐색' }).className).toBe('site-nav')
     expect(screen.getByRole('main')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '본문으로 건너뛰기' }).getAttribute('href')).toBe(
+      '#main-content',
+    )
+    expect(screen.getByRole('main').id).toBe('main-content')
+    expect(screen.getByRole('main').tabIndex).toBe(-1)
     expect(screen.getByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
     expect(screen.getByRole('link', { name: '홈' }).getAttribute('aria-current')).toBe('page')
     expect(screen.queryByRole('link', { name: '내 예약' })).toBeNull()

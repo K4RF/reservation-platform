@@ -7,6 +7,7 @@ import { GuestCountField } from './GuestCountField'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
+import { EmptyState } from '../ui/EmptyState'
 import { RoomCard } from './RoomCard'
 import { BookingFlow } from '../booking/BookingFlow'
 import { BookingSummary } from '../booking/BookingSummary'
@@ -120,13 +121,12 @@ function AvailabilityResults({
   return (
     <>
       {!state.data.content.length ? (
-        <div className="empty-state">
-          <p role="status">선택한 조건에 예약 가능한 객실이 없습니다.</p>
+        <EmptyState message="선택한 조건에 예약 가능한 객실이 없습니다.">
           <p>
             다른 날짜나 인원으로 다시 조회해 보세요. 객실 운영 상태, 날짜별 잔여 재고와 숙소 예약
             정책에 따라 결과가 달라집니다.
           </p>
-        </div>
+        </EmptyState>
       ) : (
         <ul className="accommodation-list" aria-label="예약 가능한 객실 목록">
           {state.data.content.map((room) => (

@@ -1,9 +1,10 @@
 import type { RoomResponse } from '../../api/room'
 import { RoomCard } from './RoomCard'
 import type { RoomDetailContext } from './RoomDetailTrigger'
+import { EmptyState } from '../ui/EmptyState'
 
 export function RoomList({ rooms, detail }: { rooms: RoomResponse[]; detail?: RoomDetailContext }) {
-  if (!rooms.length) return <p role="status">등록된 객실이 없습니다.</p>
+  if (!rooms.length) return <EmptyState message="등록된 객실이 없습니다." />
   return (
     <ul className="accommodation-list" aria-label="객실 목록">
       {rooms.map((room) => (

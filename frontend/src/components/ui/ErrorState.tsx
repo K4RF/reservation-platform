@@ -5,7 +5,7 @@ interface ErrorStateProps {
 
 export function ErrorState({ message = '문제가 발생했습니다.', onRetry }: ErrorStateProps) {
   return (
-    <div role="alert">
+    <div className="ui-state ui-error" role="alert" aria-atomic="true">
       <p>{message}</p>
       {onRetry && (
         <button type="button" onClick={onRetry}>

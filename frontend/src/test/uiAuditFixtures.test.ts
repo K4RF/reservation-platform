@@ -24,6 +24,28 @@ describe('isolated read-only UI audit fixtures', () => {
     )
     expect(auditResponse('/api/v1/accommodations', 'GET', 'error').status).toBe(500)
   })
+  it('keeps long text and large price probes consistent and strictly read-only', async () => {
+    const catalog = await auditResponse('/api/v1/accommodations/7', 'GET', 'stress').json()
+    const room = await auditResponse('/api/v1/rooms/3', 'GET', 'stress').json()
+    const list = await auditResponse(
+      '/api/v1/accommodations/7/rooms/available',
+      'GET',
+      'stress',
+    ).json()
+    const detail = await auditResponse('/api/v1/reservations/42', 'GET', 'stress').json()
+    expect(catalog.name).toHaveLength(100)
+    expect(catalog.description).toContain('\n')
+    expect(list.content[0]).toEqual(room)
+    expect(room.nightlyPrice).toBe(9999999999.99)
+    expect(
+      detail.nights.every(
+        (night: { priceSnapshot: number }) => night.priceSnapshot === room.nightlyPrice,
+      ),
+    ).toBe(true)
+    expect(detail.totalAmount).toBe(19999999999.98)
+    expect(detail.representativeGuest.email).toMatch(/@example.com$/)
+    expect(auditResponse('/api/v1/reservations', 'POST', 'stress').status).toBe(405)
+  })
   it('retains occupied inventory and omits uncreated days', async () => {
     const result = await auditResponse(
       '/api/v1/rooms/3/inventories?startDate=2030-07-20&endDate=2030-07-22',

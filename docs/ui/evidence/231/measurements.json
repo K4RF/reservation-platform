@@ -1,0 +1,30 @@
+{
+  "issue": 231,
+  "date": "2026-10-26",
+  "baseCommit": "c6b6f96",
+  "scope": "Actual App UI with read-only HTTP fixtures and MemoryRouter. No real Backend/auth/writes, native history or real browser zoom proof.",
+  "routes": ["/", "/login", "/signup", "/accommodations", "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2", "/reservations", "/reservations/42", "/reservations/42/complete", "/admin", "/admin/accommodations", "/admin/accommodations/7", "/admin/rooms?accommodationId=7", "/admin/rooms/3?accommodationId=7", "/admin/prices?roomId=3&stayDate=2030-07-20", "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22"],
+  "before": {"viewport": 320, "clientWidth": 305, "scrollWidth": 320, "overflowRouteCount": 13},
+  "after": {"viewport": 320, "clientWidth": 305, "scrollWidth": 305},
+  "checks": [
+    {"name": "main routes", "widths": [320,390,768,1440], "count": 60, "blankRenderCount": 0, "overflowCount": 0, "missingFormNames": 0, "emptyButtonNames": 0, "brokenAriaReferences": 0},
+    {"name": "breakpoint boundaries, five routes", "widths": [639,640,641,767,768,769,959,960,961], "count": 45, "overflowCount": 0},
+    {"name": "stress fixtures, four routes", "widths": [320,390,768,1440], "count": 16, "overflowCount": 0, "missingStressRenderCount": 0},
+    {"name": "200 percent root text/rem, five routes", "widths": [320,390,1440], "count": 15, "fontSize": "32px", "overflowCount": 0, "note": "Not native browser zoom"},
+    {"name": "loading/error/empty, four routes", "widths": [390], "count": 12, "overflowCount": 0}
+  ],
+  "keyboard": {
+    "dateArrowDown": "2030-01-01 to 2030-01-08",
+    "minimumNightCorrection": "2030-01-09 check-out",
+    "appliedDates": ["2030-01-08", "2030-01-10"],
+    "date390Button": {"width": 41.84375, "height": 44},
+    "stepper390Button": {"width": 44, "height": 46.796875},
+    "stepperAtOne": {"decrementDisabled": true, "focus": "search-guests"},
+    "skipFocus": "main-content",
+    "outlineWidth": "3px",
+    "inventory390": {"documentClientWidth": 375, "documentScrollWidth": 375, "regionClientWidth": 309, "regionScrollWidth": 576, "keyboardScrollLeft": 40},
+    "roomSheet390": {"clientWidth": 373, "scrollWidth": 373, "tabWrap": true, "escapeRestoredTrigger": true},
+    "roomSheet320Text200": {"clientWidthBefore": 303, "scrollWidthBefore": 343, "clientWidthAfter": 303, "scrollWidthAfter": 303, "closeButtonRight": 272}
+  },
+  "contrast": {"oldBorderOnSurface": 2.4150917821033575, "newBorderOnSurface": 3.649220870181153, "newBorderOnBackground": 3.4212527852634342}
+}
