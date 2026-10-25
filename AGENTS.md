@@ -130,6 +130,11 @@ Backend configuration and behavior are implemented and verified.
   verification limits. Preserve API/domain/Auth/mutation safety contracts.
 - Prototype images/prices/metadata are fictional; do not use them as real catalog
   data or invent unsupported fields. Final user UI/UX approval stays in f0.6.0.
+- Keep narrow/expanded layouts free of document overflow; price/inventory tables
+  deliberately scroll inside labelled, keyboard-focusable regions. Do not hide
+  document overflow to mask a layout error. Common Loading/Error/Empty components
+  own presentation only, never availability, retry or mutation gates. See
+  `docs/ui/frontend-responsive-accessibility-231.md` for verified widths and limits.
 
 ## Working Rules
 

@@ -350,6 +350,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [전체 인원 Stepper·직접 입력·가용성 초기화와 검증 (#242)](docs/testing/frontend-guest-count-stepper.md)
 - [검색·Booking 복귀 Query와 Scroll/Focus 계약 (#243)](docs/testing/frontend-exploration-return-context.md)
 - [Room DTO 기반 상세·선택·키보드 및 반응형 검증 (#244)](docs/testing/frontend-room-detail-selection.md)
+- [횡단 Responsive·접근성·공통 UI State 개선과 검증 (#231)](docs/ui/frontend-responsive-accessibility-231.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
