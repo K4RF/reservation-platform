@@ -407,12 +407,6 @@ legend {
 
 .auth-page [role='alert'] {
   margin-block: 0 var(--space-4);
-  padding: var(--space-3);
-  border-inline-start: var(--focus-ring-width) solid var(--color-error);
-  border-radius: var(--radius-sm);
-  background: var(--color-error-surface);
-  color: var(--color-error);
-  overflow-wrap: anywhere;
 }
 
 .auth-page .form-field [role='alert'] {
@@ -421,7 +415,6 @@ legend {
 
 .auth-page [role='alert'] p {
   margin: 0;
-  color: inherit;
 }
 
 .auth-page [role='status'] {
@@ -657,18 +650,6 @@ legend {
   font-weight: var(--font-weight-bold);
 }
 
-/* Discovery feedback only; reservation/admin recovery semantics stay in their pages. */
-:is(.home-page, .accommodation-search-page, .booking-complete-page) [role='alert'] {
-  padding: var(--space-3);
-  border-inline-start: var(--focus-ring-width) solid var(--color-error);
-  border-radius: var(--radius-sm);
-  background: var(--color-error-surface);
-  color: var(--color-error);
-  overflow-wrap: anywhere;
-}
-:is(.home-page, .accommodation-search-page, .booking-complete-page) [role='alert'] p {
-  color: inherit;
-}
 .accommodation-search-page > p[role='status']:not(.search-result-count, .empty-state),
 .room-availability > p[role='status'],
 .booking-summary > p[role='status']:not(.booking-total),
@@ -1258,17 +1239,6 @@ form[aria-label='대표 투숙객 정보'] {
   background: var(--color-success-surface);
   color: var(--color-success);
 }
-:is(.my-reservations-page, .reservation-detail-page) [role='alert'] {
-  padding: var(--space-3);
-  border-inline-start: var(--focus-ring-width) solid var(--color-error);
-  border-radius: var(--radius-sm);
-  background: var(--color-error-surface);
-  color: var(--color-error);
-  overflow-wrap: anywhere;
-}
-:is(.my-reservations-page, .reservation-detail-page) [role='alert'] p {
-  color: inherit;
-}
 .reservation-change-preparation,
 .reservation-cancel-submit {
   margin-top: var(--space-5);
@@ -1579,7 +1549,7 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-recovery-panel > :is(button, a) {
   justify-self: start;
 }
-.admin-content :is([role='alert'], [role='status'], .admin-empty-state) {
+.admin-content :is([role='alert'], [role='status']) {
   margin-block: var(--space-4);
   padding: var(--space-3);
   border-inline-start: var(--focus-ring-width) solid var(--color-border-control);
@@ -1588,11 +1558,8 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .admin-content [role='alert'] {
   border-color: var(--color-error);
-  background: var(--color-error-surface);
-  color: var(--color-error);
 }
 .admin-content [role='alert'] p {
-  color: inherit;
   margin-block: 0 var(--space-2);
 }
 .admin-content .admin-save-success {
@@ -1690,6 +1657,38 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .inventory-uncreated {
   color: var(--color-text-subtle);
+}
+
+/* Shared error skin, including inline field errors. Page spacing and recovery stay separate. */
+:is(
+    .auth-page,
+    .home-page,
+    .accommodation-search-page,
+    .booking-complete-page,
+    .my-reservations-page,
+    .reservation-detail-page,
+    .admin-content
+  )
+  [role='alert'] {
+  padding: var(--space-3);
+  border-inline-start: var(--focus-ring-width) solid var(--color-error);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-surface);
+  color: var(--color-error);
+  overflow-wrap: anywhere;
+}
+:is(
+    .auth-page,
+    .home-page,
+    .accommodation-search-page,
+    .booking-complete-page,
+    .my-reservations-page,
+    .reservation-detail-page,
+    .admin-content
+  )
+  [role='alert']
+  p {
+  color: inherit;
 }
 
 /* Common presentation only: callers still own query, empty and recovery decisions. */
