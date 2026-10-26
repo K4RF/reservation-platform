@@ -167,65 +167,67 @@ export function StayDateCalendar({
         방향키: 날짜 이동 · Home/End: 주 처음/끝 · PageUp/PageDown: 월 이동 · Enter/Space: 선택 ·
         Escape: 취소. 직접 날짜 입력도 가능합니다.
       </p>
-      <table
-        ref={grid}
-        role="grid"
-        aria-multiselectable="true"
-        aria-label={`${month} 숙박 날짜`}
-        aria-describedby={`${id}-keys`}
-        className="stay-calendar-grid"
-      >
-        <thead>
-          <tr>
-            {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
-              <th key={day} scope="col">
-                {day}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {monthDays(month).map((week, i) => (
-            <tr key={i}>
-              {week.map((date, j) => {
-                const boundary =
-                  date === dates.checkInDate
-                    ? '체크인'
-                    : date === dates.checkOutDate
-                      ? '체크아웃'
-                      : ''
-                const selected =
-                  date !== null &&
-                  nights !== null &&
-                  date >= dates.checkInDate &&
-                  date <= dates.checkOutDate
-                return (
-                  <td
-                    key={j}
-                    role="gridcell"
-                    aria-selected={date === null ? undefined : Boolean(selected)}
-                    className={boundary ? 'stay-date-boundary' : undefined}
-                  >
-                    {date && (
-                      <button
-                        type="button"
-                        data-date={date}
-                        aria-label={`${date}${boundary ? ` ${boundary}` : ''}`}
-                        tabIndex={date === focusDate ? 0 : -1}
-                        onFocus={() => setFocusDate(date)}
-                        onKeyDown={(event) => key(event, date)}
-                        onClick={() => choose(date)}
-                      >
-                        {Number(date.slice(-2))}
-                      </button>
-                    )}
-                  </td>
-                )
-              })}
+      <div className="stay-calendar-scroll" role="region" aria-label="숙박 날짜 표" tabIndex={0}>
+        <table
+          ref={grid}
+          role="grid"
+          aria-multiselectable="true"
+          aria-label={`${month} 숙박 날짜`}
+          aria-describedby={`${id}-keys`}
+          className="stay-calendar-grid"
+        >
+          <thead>
+            <tr>
+              {['일', '월', '화', '수', '목', '금', '토'].map((day) => (
+                <th key={day} scope="col">
+                  {day}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {monthDays(month).map((week, i) => (
+              <tr key={i}>
+                {week.map((date, j) => {
+                  const boundary =
+                    date === dates.checkInDate
+                      ? '체크인'
+                      : date === dates.checkOutDate
+                        ? '체크아웃'
+                        : ''
+                  const selected =
+                    date !== null &&
+                    nights !== null &&
+                    date >= dates.checkInDate &&
+                    date <= dates.checkOutDate
+                  return (
+                    <td
+                      key={j}
+                      role="gridcell"
+                      aria-selected={date === null ? undefined : Boolean(selected)}
+                      className={boundary ? 'stay-date-boundary' : undefined}
+                    >
+                      {date && (
+                        <button
+                          type="button"
+                          data-date={date}
+                          aria-label={`${date}${boundary ? ` ${boundary}` : ''}`}
+                          tabIndex={date === focusDate ? 0 : -1}
+                          onFocus={() => setFocusDate(date)}
+                          onKeyDown={(event) => key(event, date)}
+                          onClick={() => choose(date)}
+                        >
+                          {Number(date.slice(-2))}
+                        </button>
+                      )}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <p className="stay-date-summary">
         선택 중: 체크인 {dates.checkInDate || '미선택'} ~ 체크아웃 {dates.checkOutDate || '미선택'}
         {nights !== null ? ` · ${nights}박` : ' · 최소 1박 필요'}

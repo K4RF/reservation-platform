@@ -45,8 +45,13 @@ export function RootLayout() {
         본문으로 건너뛰기
       </a>
       <header className="site-header">
-        <Link className="site-brand" to={routePaths.home}>
-          Reservation Platform
+        <Link className="site-brand" to={routePaths.home} aria-label="Reservation Platform">
+          <span className="site-brand-mark" aria-hidden="true">
+            R
+          </span>
+          <span className="site-brand-name">
+            Reservation <span>Platform</span>
+          </span>
         </Link>
         <nav className="site-nav" aria-label="주요 탐색">
           <NavLink
@@ -107,7 +112,10 @@ export function RootLayout() {
         )}
         {loggingOut ? <LoadingState message="로그아웃을 처리하고 있습니다." /> : <Outlet />}
       </main>
-      <footer className="site-footer">Reservation Platform · 나에게 맞는 숙소, 편안한 여정</footer>
+      <footer className="site-footer">
+        <span className="site-footer-brand">Reservation Platform</span>
+        <span>나에게 맞는 숙소, 편안한 여정</span>
+      </footer>
     </div>
   )
 }

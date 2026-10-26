@@ -61,6 +61,7 @@ p {
 
 a {
   color: var(--color-primary);
+  text-underline-offset: var(--space-1);
 }
 
 :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
@@ -75,11 +76,11 @@ button {
   gap: var(--space-2);
   min-height: var(--control-min-height);
   max-width: 100%;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-5);
   border: 1px solid var(--color-border-control);
   border-radius: var(--radius-control);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-primary);
   font: inherit;
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-body);
@@ -95,13 +96,24 @@ button:hover:enabled {
 
 button[type='submit'],
 .primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-min-height);
+  max-width: 100%;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-control);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  text-decoration: none;
   background: var(--color-primary);
-  border-color: var(--color-primary);
   color: var(--color-on-primary);
 }
 
 button[type='submit']:hover:enabled,
-.primary-action:hover:enabled {
+.primary-action:hover:enabled,
+.primary-action[href]:hover {
   background: var(--color-primary-hover);
 }
 
@@ -119,7 +131,10 @@ button[type='submit']:hover:enabled,
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 1;
+  border-style: dashed;
+  background: var(--color-secondary);
+  color: var(--color-text-muted);
 }
 
 button[aria-busy='true'],
@@ -143,6 +158,13 @@ form[aria-busy='true'] button[type='submit'] {
 
 :where(input, select, textarea)[aria-invalid='true'] {
   border-color: var(--color-error);
+}
+
+:where(input:not([type='checkbox'], [type='radio']), select, textarea):hover:enabled:not(
+    [readonly],
+    [aria-invalid='true']
+  ) {
+  border-color: var(--color-primary);
 }
 
 :where(input, select, textarea):disabled,
@@ -192,8 +214,9 @@ legend {
 
 .confirmation-panel {
   margin-block: var(--space-4);
-  padding: var(--space-4);
+  padding: clamp(var(--space-4), 3vw, var(--space-6));
   border: 1px solid var(--color-border-control);
+  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
   border-radius: var(--radius-card);
   background: var(--color-secondary);
   overflow-wrap: anywhere;
@@ -238,7 +261,7 @@ legend {
 ) {
   min-width: 0;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-control);
   background: var(--color-surface);
 }
 
@@ -293,12 +316,15 @@ legend {
   justify-content: space-between;
   gap: var(--space-2) var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-5) max(var(--space-6), calc((100vw - var(--content-wide)) / 2));
+  padding: var(--space-6) max(var(--space-6), calc((100vw - var(--content-wide)) / 2));
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
 .site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
   color: var(--color-primary);
   font-family: var(--font-family-display);
   font-weight: var(--font-weight-semibold);
@@ -307,6 +333,30 @@ legend {
   font-size: var(--font-size-brand);
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+.site-brand-mark {
+  display: inline-flex;
+  flex: 0 0 var(--control-min-height);
+  align-items: center;
+  justify-content: center;
+  width: var(--control-min-height);
+  min-height: var(--control-min-height);
+  border: 1px solid currentColor;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-regular);
+  line-height: 1;
+}
+.site-brand-name {
+  min-width: 0;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--leading-description);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.site-brand-name > span {
+  display: block;
 }
 
 .site-nav {
@@ -325,7 +375,9 @@ legend {
   justify-content: center;
   min-height: var(--control-min-height);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  border-block-end-width: var(--focus-ring-width);
+  border-radius: var(--radius-control);
   color: var(--color-text-muted);
   font: inherit;
   line-height: var(--leading-body);
@@ -342,10 +394,16 @@ legend {
   background: var(--color-secondary);
   color: var(--color-primary);
   font-weight: var(--font-weight-bold);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+.site-nav :is(.nav-link-active, [aria-current='page']) {
+  border-block-end-color: var(--color-primary);
+  background: transparent;
 }
 
 .nav-action {
-  border: 0;
+  border: 1px solid var(--color-border-control);
   background: transparent;
   font: inherit;
   cursor: pointer;
@@ -511,6 +569,10 @@ legend {
   flex: 0 1 var(--control-min-height);
   padding-inline: 0;
   font-size: var(--font-size-lg);
+  background: var(--color-secondary);
+}
+.guest-count-controls button:hover:enabled {
+  background: var(--color-secondary-hover);
 }
 .guest-count-controls input {
   flex: 1 1 5rem;
@@ -553,8 +615,10 @@ legend {
 }
 .stay-calendar {
   margin-top: var(--space-4);
-  padding-block: var(--space-3);
-  border-block: 1px solid var(--color-border-control);
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
   overflow-wrap: anywhere;
 }
 .stay-calendar-month {
@@ -563,8 +627,13 @@ legend {
   align-items: end;
   gap: var(--space-2);
 }
+.stay-calendar-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
 .stay-calendar-grid {
   width: 100%;
+  min-width: 14rem;
   table-layout: fixed;
   border-collapse: collapse;
   margin-block: var(--space-3);
@@ -582,6 +651,9 @@ legend {
 .stay-calendar-grid [aria-selected='true'] {
   background: var(--color-secondary);
 }
+.stay-calendar-grid .stay-date-boundary {
+  box-shadow: inset 0 -3px var(--color-primary);
+}
 .stay-calendar-grid .stay-date-boundary button,
 .stay-calendar .action-group button[aria-pressed='true'] {
   color: var(--color-on-primary);
@@ -595,15 +667,23 @@ legend {
     grid-template-columns: minmax(0, 1fr);
   }
   .stay-calendar-month {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
   }
   .stay-calendar-month > .form-field {
     grid-column: 1 / -1;
     grid-row: 1;
   }
+  .stay-calendar {
+    padding-inline: var(--space-1);
+  }
+  .stay-calendar > .action-group button,
+  .stay-calendar-month button {
+    padding-inline: var(--space-2);
+  }
 }
 
 .form-field label {
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
   line-height: var(--leading-body);
 }
@@ -652,10 +732,10 @@ legend {
   font-weight: var(--font-weight-bold);
 }
 
-.accommodation-search-page > p[role='status']:not(.search-result-count, .empty-state),
-.room-availability > p[role='status'],
-.booking-summary > p[role='status']:not(.booking-total),
-.booking-complete-page > p[role='status'] {
+.accommodation-search-page > p[role='status']:not(.search-result-count, .empty-state, .ui-state),
+.room-availability > p[role='status']:not(.ui-state),
+.booking-summary > p[role='status']:not(.booking-total, .ui-state),
+.booking-complete-page > p[role='status']:not(.ui-state) {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -858,11 +938,32 @@ form[aria-label='숙소 검색 조건'] > button {
   margin: 0;
 }
 .site-footer {
-  padding: var(--space-8) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-8) max(var(--space-6), calc((100vw - var(--content-wide)) / 2));
   border-top: 1px solid var(--color-border);
-  text-align: center;
+  text-align: left;
   color: var(--color-text-subtle);
   font-size: var(--font-size-sm);
+}
+.site-footer-brand {
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Section hierarchy is shared; heading levels, copy and domain state stay with callers. */
+:where(.search-page-header, .reservation-page-header, .reservation-detail-header, .admin-header) {
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+:where(.admin-status-badge, .reservation-status, .booking-result-status) {
+  border: 1px solid currentColor;
 }
 
 .booking-complete-page {
@@ -1229,11 +1330,11 @@ form[aria-label='대표 투숙객 정보'] {
   line-height: var(--leading-description);
 }
 .reservation-feedback,
-.my-reservations-page > p[role='status']:not(.reservation-result-count),
-.reservation-detail-page > p[role='status'],
-.reservation-cancel-submit > p[role='status'],
-.reservation-change-confirmation > p[role='status'],
-.reservation-change-preparation > div > p[role='status'] {
+.my-reservations-page > p[role='status']:not(.reservation-result-count, .ui-state),
+.reservation-detail-page > p[role='status']:not(.ui-state),
+.reservation-cancel-submit > p[role='status']:not(.ui-state),
+.reservation-change-confirmation > p[role='status']:not(.ui-state),
+.reservation-change-preparation > div > p[role='status']:not(.ui-state) {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
@@ -1396,7 +1497,16 @@ form[aria-label='대표 투숙객 정보'] {
   justify-content: flex-start;
 }
 .admin-sidebar .nav-link-active {
-  background: var(--color-secondary);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.admin-menu-title {
+  margin-block: 0 var(--space-4);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.08em;
 }
 .admin-sidebar-note {
   margin-block: var(--space-3) 0;
@@ -1599,6 +1709,8 @@ form[aria-label='대표 투숙객 정보'] {
 }
 @media (max-width: 40rem) {
   .site-nav {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
     width: 100%;
     justify-content: flex-start;
   }
@@ -1610,6 +1722,15 @@ form[aria-label='대표 투숙객 정보'] {
   }
   .site-header {
     padding: var(--space-4);
+  }
+  /* Avoid stacked card/form gutters consuming the enlarged date controls' width. */
+  .accommodation-detail-page > .room-availability {
+    padding-inline: var(--space-2);
+  }
+  .room-availability > .accommodation-search-form {
+    padding-inline: 0;
+    border-inline: 0;
+    border-radius: 0;
   }
   .home-guide {
     grid-template-columns: 1fr;
@@ -1706,6 +1827,7 @@ form[aria-label='대표 투숙객 정보'] {
   overflow-wrap: anywhere;
 }
 .ui-state.ui-loading {
+  border-inline-start: var(--focus-ring-width) dashed var(--color-primary);
   background: var(--color-secondary);
   color: var(--color-text);
 }
@@ -1724,6 +1846,7 @@ form[aria-label='대표 투숙객 정보'] {
   color: inherit;
 }
 .ui-state.ui-empty {
+  border-style: dashed;
   background: var(--color-surface);
   color: var(--color-text-muted);
 }
@@ -1758,7 +1881,7 @@ form[aria-label='대표 투숙객 정보'] {
   overflow-wrap: anywhere;
 }
 .room-detail-dialog::backdrop {
-  background: var(--color-text);
+  background: var(--color-primary);
   opacity: 0.45;
 }
 .room-detail-header {
@@ -1772,7 +1895,7 @@ form[aria-label='대표 투숙객 정보'] {
   gap: var(--space-3);
   padding: var(--space-4) var(--space-6);
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-secondary);
 }
 .room-detail-header h2 {
   margin: 0;
