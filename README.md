@@ -356,6 +356,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [공통 UI·Header/Navigation·달력/Sheet 외형과 회귀 검증 (#252)](docs/ui/frontend-shared-navigation-252.md)
 - [Home A1 Hero·브랜드 이미지 출처·검색 진입과 검증 (#253)](docs/ui/frontend-home-a1-253.md)
 - [숙소 Search 비교 화면·필터·Summary와 검증 (#254)](docs/ui/frontend-search-comparison-254.md)
+- [숙소 Detail·객실 비교/선택 패널·Modal과 검증 (#255)](docs/ui/frontend-detail-room-selection-255.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -377,7 +378,8 @@ UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#230 화면 정�
 `f0.5.2 — Frontend Visual Redesign`의 #251에서 Navy·Ivory 전역 토큰과 기본 서체를 적용했습니다.
 #253은 Home A1 Hero·하단 검색 진입과 별도 AI 브랜드 풍경을 적용했습니다. 실제 숙소 사진이 아니며,
 #254는 Search 2열/1열 비교 배치·필터·적용 조건 Summary를 정리했습니다. 사진 영역은 미제공 상태이며,
-Detail 전체 배치·실매물 Media 연동은 후속 작업입니다. 과거 f0.5.3은 같은 Milestone #19의 이전 명칭입니다.
+#255는 Detail 소개·이용 안내·객실 비교·선택 확인 패널을 정리했습니다. 실제 Gallery/Media 연동은 후속 범위입니다.
+과거 f0.5.3은 같은 Milestone #19의 이전 명칭입니다.
 실제 사진·객실 추가 데이터는 `v0.4.1 — Accommodation Media & Room Metadata`에서 준비합니다.
 현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.
 이후 `f0.6.0 — Frontend Integration & UX Completion`에서 실제 연동·Edge Case·최종 UX 검수를 진행할 계획입니다.
