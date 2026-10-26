@@ -55,7 +55,8 @@ Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 
 
 공통 Button/Input/Card/Badge·Navigation과 기존 인라인 확인 UI는 같은 CSS 표현을 재사용합니다.
 새 범용 Form/Modal Library를 추가한 것은 아닙니다. Action 역할·Native disabled·도메인 제출 잠금 경계는
-[Shared UI / Navigation (#226)](../docs/ui/frontend-shared-ui-226.md)을 따릅니다.
+[공통 UI / Header·Navigation 리디자인 (#252)](../docs/ui/frontend-shared-navigation-252.md)을 따릅니다.
+기존 [#226](../docs/ui/frontend-shared-ui-226.md)은 녹색 baseline 기록으로 보존합니다.
 
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은

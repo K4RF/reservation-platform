@@ -353,6 +353,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [횡단 Responsive·접근성·공통 UI State 개선과 검증 (#231)](docs/ui/frontend-responsive-accessibility-231.md)
 - [f0.5.1 UI 회귀·스타일 구조 정리·검증 경계 및 인계 (#232)](docs/ui/frontend-ui-regression-232.md)
 - [Navy & Ivory 전역 토큰·서체·대비 및 시안 적용 범위 (#251)](docs/ui/frontend-navy-ivory-tokens-251.md)
+- [공통 UI·Header/Navigation·달력/Sheet 외형과 회귀 검증 (#252)](docs/ui/frontend-shared-navigation-252.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
