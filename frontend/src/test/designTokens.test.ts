@@ -190,6 +190,7 @@ describe('design token and global stylesheet contracts', () => {
       'auth-page',
       'home-page',
       'accommodation-search-page',
+      'accommodation-detail-page',
       'booking-complete-page',
       'my-reservations-page',
       'reservation-detail-page',
@@ -259,6 +260,27 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toContain(
       '.availability-room-item.availability-room-selected .accommodation-card',
     )
+    expect(globalCss).not.toContain('overflow-x: hidden')
+  })
+  it('keeps Detail introduction, selection panels and media scoped without overlaying mobile or keyboard content', () => {
+    expect(globalCss).toMatch(/\.accommodation-detail-page\s*\{[^}]*var\(--content-catalog\)/)
+    expect(globalCss).toMatch(
+      /\.accommodation-overview-grid\s*\{[^}]*minmax\(0, 1\.5fr\) minmax\(0, 1fr\)/,
+    )
+    expect(globalCss).toMatch(
+      /\.availability-results-layout\s*\{[^}]*minmax\(0, 1\.7fr\) minmax\(0, 1fr\)/,
+    )
+    expect(globalCss).toMatch(/\.room-selection-panel\s*\{[^}]*position: static;/)
+    expect(globalCss).toMatch(/\.detail-section-nav\s*\{[^}]*position: static;/)
+    expect(globalCss).toMatch(/\.catalog-media-accommodation\s*\{[^}]*aspect-ratio: 16 \/ 5;/)
+    expect(globalCss).toMatch(
+      /\.catalog-media-placeholder\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);[^}]*width: 100%;[^}]*max-width: 100%;/,
+    )
+    expect(globalCss).toContain('@media (max-width: 24rem), (max-height: 36rem)')
+    expect(globalCss).toContain(
+      '.catalog-room-card-exploration .room-card-content > :is(h3, p, ul)',
+    )
+    expect(globalCss).toContain('.catalog-room-card-exploration > .catalog-media-room')
     expect(globalCss).not.toContain('overflow-x: hidden')
   })
 

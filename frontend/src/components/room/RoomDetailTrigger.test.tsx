@@ -102,6 +102,11 @@ describe('public room detail and history boundary', () => {
     expect(within(dialog).getByText('123,456.78')).toBeTruthy()
     expect(within(dialog).getByText(/사진·설명·침대·면적·전망을 제공하지 않습니다/)).toBeTruthy()
     expect(within(dialog).queryByRole('img')).toBeNull()
+    expect(within(dialog).getByText('객실 사진 미제공')).toBeTruthy()
+    expect(dialog.querySelector('img')).toBeNull()
+    expect(
+      dialog.querySelector('.catalog-media-placeholder svg')?.getAttribute('aria-hidden'),
+    ).toBe('true')
     expect(within(dialog).queryByText(/KRW|₩|\d[\d,.]*\s?원/)).toBeNull()
     expect(within(dialog).queryByRole('button', { name: '이 객실 선택' })).toBeNull()
     expect(screen.getByTestId('path').textContent).toBe(path)

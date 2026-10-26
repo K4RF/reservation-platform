@@ -44,7 +44,7 @@ UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#230 화면 정돈 → #24
 Home A1·Navy & Ivory는 승인 목표입니다. #251은 Navy·Ivory 전역 토큰·기본 서체를 적용했으며,
 #253은 Home의 큰 사진 Hero·하단 검색 진입을 적용했습니다. 별도 생성한 AI 브랜드 풍경이며
 실제 숙소 사진이 아닙니다. #254는 Search 비교 배치·필터·Summary를 적용했으며,
-실매물 사진/Gallery·Detail 전체 배치는 후속 범위입니다.
+#255는 Detail 소개·객실 비교·선택 확인 패널을 적용했습니다. 실매물 사진/Gallery는 후속 범위입니다.
 날짜 UX #241은 기능 개선이며 전체 Palette/Home 리디자인 완료를 의미하지 않습니다.
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.
@@ -69,6 +69,12 @@ Home의 이미지 출처·정확한 생성 Prompt·WebP 크기는
 입력은 하나의 검색 Form에 보관하며 정렬도 명시적으로 적용합니다. Summary는 편집 Draft가 아닌 제출된 URL 조건입니다.
 사진·최저가·총액이 없는 현재 DTO에 맞춰 미제공 슬롯만 표시합니다. 실제 Media 연동 완료가 아닙니다.
 [Search 비교 화면 (#254)](../docs/ui/frontend-search-comparison-254.md)에 시안 대비 차이·검증 경계를 기록했습니다.
+
+Detail은 큰 사진 미제공 영역과 소개/이용 안내, 가용성 조건, 객실 비교와 선택 확인 패널을 제공합니다.
+Desktop은 객실 목록 옆 확인 패널, Mobile은 1열과 명시적 확인 이동 CTA를 사용합니다.
+고정 CTA로 긴 요금표·입력/오류·Focus를 가리지 않도록 본문 흐름에 배치했습니다.
+기존 Modal/Sheet·새 가용성 조회·선택 초기화·가격/정책 의미는 유지합니다.
+[Detail·객실 선택 (#255)](../docs/ui/frontend-detail-room-selection-255.md)에 실제 화면과 미완료 Media·검증 한계를 기록했습니다.
 
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은

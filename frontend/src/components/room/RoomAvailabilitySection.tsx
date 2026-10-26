@@ -119,99 +119,119 @@ function AvailabilityResults({
   // URL selection is a hint, not authority. Restore only a room in the freshly fetched result.
   const selected = state.data.content.find((room) => room.roomId === selectedId)
   return (
-    <>
-      {!state.data.content.length ? (
-        <EmptyState message="선택한 조건에 예약 가능한 객실이 없습니다.">
-          <p>
-            다른 날짜나 인원으로 다시 조회해 보세요. 객실 운영 상태, 날짜별 잔여 재고와 숙소 예약
-            정책에 따라 결과가 달라집니다.
+    <div className="availability-results-layout">
+      <div className="availability-room-results">
+        {!state.data.content.length ? (
+          <EmptyState message="선택한 조건에 예약 가능한 객실이 없습니다.">
+            <p>
+              다른 날짜나 인원으로 다시 조회해 보세요. 객실 운영 상태, 날짜별 잔여 재고와 숙소 예약
+              정책에 따라 결과가 달라집니다.
+            </p>
+          </EmptyState>
+        ) : (
+          <ul className="accommodation-list" aria-label="예약 가능한 객실 목록">
+            {state.data.content.map((room) => (
+              <li
+                className={`availability-room-item${selected?.roomId === room.roomId ? ' availability-room-selected' : ''}`}
+                key={room.roomId}
+              >
+                <RoomCard
+                  room={room}
+                  detail={{
+                    scope: `available:${accommodationId}:${request.checkInDate}:${request.checkOutDate}:${request.guestCount}:${page}`,
+                    fallbackId: 'availability-title',
+                    request,
+                    onSelect: (chosen) => setSelectedId(chosen.roomId),
+                  }}
+                />
+                {selected?.roomId === room.roomId && (
+                  <>
+                    <p className="room-selection-label">선택된 객실</p>
+                    <a className="selection-review-jump" href="#room-selection-panel-title">
+                      선택한 객실 확인하기 ↓
+                    </a>
+                  </>
+                )}
+                <button
+                  className="primary-action"
+                  type="button"
+                  aria-pressed={selected?.roomId === room.roomId}
+                  onClick={() => setSelectedId(room.roomId)}
+                >
+                  {room.name} 선택
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <nav className="accommodation-pagination" aria-label="예약 가능 객실 페이지">
+          <button disabled={state.data.first} onClick={() => move(state.data.page - 1)}>
+            이전 가용 객실
+          </button>
+          <span>
+            {state.data.totalPages ? state.data.page + 1 : 0} / {state.data.totalPages} 페이지
+          </span>
+          <button disabled={state.data.last} onClick={() => move(state.data.page + 1)}>
+            다음 가용 객실
+          </button>
+        </nav>
+        {selectedId && !selected && (
+          <p role="status">
+            이전에 선택한 객실은 현재 조건에서 이용할 수 없습니다. 다른 객실을 선택하세요.
           </p>
-        </EmptyState>
-      ) : (
-        <ul className="accommodation-list" aria-label="예약 가능한 객실 목록">
-          {state.data.content.map((room) => (
-            <li
-              className={`availability-room-item${selected?.roomId === room.roomId ? ' availability-room-selected' : ''}`}
-              key={room.roomId}
-            >
-              <RoomCard
-                room={room}
-                detail={{
-                  scope: `available:${accommodationId}:${request.checkInDate}:${request.checkOutDate}:${request.guestCount}:${page}`,
-                  fallbackId: 'availability-title',
-                  request,
-                  onSelect: (chosen) => setSelectedId(chosen.roomId),
+        )}
+      </div>
+      <aside className="room-selection-panel" aria-labelledby="room-selection-panel-title">
+        <h3 id="room-selection-panel-title" tabIndex={-1}>
+          선택한 객실 확인
+        </h3>
+        <p className="selection-panel-notice">
+          선택은 예약 확정이 아닙니다. 날짜별 요금과 최종 가용성은 Backend가 다시 확인합니다.
+        </p>
+        {!selected && (
+          <p className="selection-panel-empty">
+            가용 객실을 비교한 후 객실을 선택해 주세요. 아직 예약은 생성되지 않았습니다.
+          </p>
+        )}
+        {selected && (
+          <div className="selected-room" role="status" aria-label="선택한 객실">
+            <p className="selected-room-title">선택한 객실: {selected.name}</p>
+            <p>
+              {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
+            </p>
+            {onLoginRequired ? (
+              <>
+                <BookingSummary room={selected} request={request} />
+                <p>
+                  객실과 요금은 로그인 없이 확인할 수 있습니다. 예약자 정보 입력은 로그인 후
+                  진행합니다.
+                </p>
+                <button
+                  className="primary-action"
+                  type="button"
+                  onClick={() =>
+                    onLoginRequired({ stay: request, roomId: selected.roomId, roomPage: page })
+                  }
+                >
+                  예약하려면 로그인
+                </button>
+              </>
+            ) : (
+              <BookingFlow
+                onComplete={onComplete}
+                selection={{
+                  accommodation: { accommodationId, name: accommodationName },
+                  room: selected,
+                  stay: request,
                 }}
               />
-              {selected?.roomId === room.roomId && (
-                <p className="room-selection-label">선택된 객실</p>
-              )}
-              <button
-                className="primary-action"
-                type="button"
-                aria-pressed={selected?.roomId === room.roomId}
-                onClick={() => setSelectedId(room.roomId)}
-              >
-                {room.name} 선택
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <nav className="accommodation-pagination" aria-label="예약 가능 객실 페이지">
-        <button disabled={state.data.first} onClick={() => move(state.data.page - 1)}>
-          이전 가용 객실
-        </button>
-        <span>
-          {state.data.totalPages ? state.data.page + 1 : 0} / {state.data.totalPages} 페이지
-        </span>
-        <button disabled={state.data.last} onClick={() => move(state.data.page + 1)}>
-          다음 가용 객실
-        </button>
-      </nav>
-      {selectedId && !selected && (
-        <p role="status">
-          이전에 선택한 객실은 현재 조건에서 이용할 수 없습니다. 다른 객실을 선택하세요.
-        </p>
-      )}
-      {selected && (
-        <div className="selected-room" role="status" aria-label="선택한 객실">
-          <p className="selected-room-title">선택한 객실: {selected.name}</p>
-          <p>
-            {request.checkInDate} ~ {request.checkOutDate} · {request.guestCount}명
-          </p>
-          {onLoginRequired ? (
-            <>
-              <BookingSummary room={selected} request={request} />
-              <p>
-                객실과 요금은 로그인 없이 확인할 수 있습니다. 예약자 정보 입력은 로그인 후
-                진행합니다.
-              </p>
-              <button
-                className="primary-action"
-                type="button"
-                onClick={() =>
-                  onLoginRequired({ stay: request, roomId: selected.roomId, roomPage: page })
-                }
-              >
-                예약하려면 로그인
-              </button>
-            </>
-          ) : (
-            <BookingFlow
-              onComplete={onComplete}
-              selection={{
-                accommodation: { accommodationId, name: accommodationName },
-                room: selected,
-                stay: request,
-              }}
-            />
-          )}
-          <button type="button" onClick={() => setSelectedId(null)}>
-            객실 선택 해제
-          </button>
-        </div>
-      )}
-    </>
+            )}
+            <button type="button" onClick={() => setSelectedId(null)}>
+              객실 선택 해제
+            </button>
+          </div>
+        )}
+      </aside>
+    </div>
   )
 }

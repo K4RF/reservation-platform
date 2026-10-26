@@ -2,8 +2,24 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { RoomList } from './RoomList'
 import { room } from '../../test/room'
+import { MemoryRouter } from 'react-router'
 
 describe('RoomList', () => {
+  it('adds a truthful media slot and detail entry only in public exploration context', () => {
+    const view = render(
+      <RoomList rooms={[room]} detail={{ scope: 'catalog:7:0', fallbackId: 'room-list-title' }} />,
+      { wrapper: MemoryRouter },
+    )
+    expect(screen.getByText('객실 사진 미제공')).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: '스탠다드 상세 보기' }).getAttribute('aria-haspopup'),
+    ).toBe('dialog')
+    expect(view.container.querySelector('img')).toBeNull()
+    view.rerender(<RoomList rooms={[room]} />)
+    expect(screen.queryByText('객실 사진 미제공')).toBeNull()
+    expect(screen.queryByRole('button', { name: '스탠다드 상세 보기' })).toBeNull()
+    expect(screen.getByText('기본 1박 가격: 123,456.78')).toBeTruthy()
+  })
   it('displays capacity, base nightly price and only supported amenities without claiming availability/currency', () => {
     render(
       <RoomList

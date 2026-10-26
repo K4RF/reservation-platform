@@ -85,6 +85,21 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.getByText('11:00:00')).toBeTruthy()
     expect(screen.getByText('Asia/Seoul')).toBeTruthy()
     expect(screen.getByText(/정책 조회를 제공하지 않아/)).toBeTruthy()
+    expect(screen.getByText('숙소 사진 미제공')).toBeTruthy()
+    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.queryByRole('button', { name: /사진.*보기/ })).toBeNull()
+    for (const [name, id] of [
+      ['숙소 소개', 'accommodation-introduction'],
+      ['일정·객실 선택 ↓', 'availability-title'],
+      ['이용 안내', 'accommodation-operating-info'],
+      ['객실 기본 정보', 'room-list-title'],
+    ]) {
+      expect(screen.getByRole('link', { name }).getAttribute('href')).toBe('#' + id)
+      expect(document.getElementById(id)?.tabIndex).toBe(-1)
+    }
+    fireEvent.click(screen.getByRole('link', { name: '일정·객실 선택 ↓' }))
+    // An in-page CTA only moves to the existing query controls; it never queries/selects/writes.
+    expect(fetchMock.mock.calls.every(([url]) => !url.includes('/rooms/available'))).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
   it('does not guess legacy location or missing check-in/out times', async () => {
