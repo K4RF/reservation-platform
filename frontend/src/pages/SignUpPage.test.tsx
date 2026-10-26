@@ -74,7 +74,9 @@ describe('signup flow', () => {
     expect(screen.getByRole('status').textContent).toContain('처리하고 있습니다')
 
     complete({ memberId: 7, email: 'member@example.com', role: 'USER' })
-    expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
+    expect(
+      await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
+    ).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain('회원가입이 완료되었습니다')
   })
 

@@ -108,6 +108,28 @@ describe('design token and global stylesheet contracts', () => {
     }
   })
 
+  it('keeps cinematic imagery local and bounded while isolating the Home layout and inverse focus', () => {
+    expect(globalCss).toMatch(/\.site-main:has\(> \.home-page\)\s*\{[^}]*padding: 0;/)
+    expect(globalCss).toMatch(/\.home-hero\s*\{[^}]*min-height: 40rem;/)
+    expect(globalCss).toMatch(/\.home-hero-image\s*\{[^}]*object-fit: cover;/)
+    expect(globalCss).toContain('var(--color-hero-scrim) 60%')
+    expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(42rem, 60%\);/)
+    expect(globalCss).toContain('background: var(--color-hero-scrim-mobile)')
+    // Provenance/failure text must grow in flow rather than overlap the copy at 200% text scale.
+    expect(globalCss).toMatch(/\.home-image-note\s*\{[^}]*order: -1;/)
+    expect(globalCss).not.toMatch(/\.home-image-note\s*\{[^}]*position: absolute;/)
+    for (const [size, maxBytes] of [
+      [800, 80 * 1024],
+      [1600, 256 * 1024],
+    ]) {
+      const assetPath = `../assets/brand/coast-hero-${size}.webp`
+      const bytes = readFileSync(fileURLToPath(new URL(assetPath, import.meta.url).href))
+      expect(bytes.subarray(0, 4).toString()).toBe('RIFF')
+      expect(bytes.subarray(8, 12).toString()).toBe('WEBP')
+      expect(bytes.length).toBeLessThanOrEqual(maxBytes)
+    }
+  })
+
   it('defines shared typography, spacing, radius, shadow and focus roles', () => {
     for (const name of [
       'font-family-body',
@@ -122,7 +144,10 @@ describe('design token and global stylesheet contracts', () => {
     ]) {
       expect(tokens.has(`--${name}`)).toBe(true)
     }
-    expect(globalCss.match(/:focus-visible/g)).toHaveLength(1)
+    expect(globalCss.match(/:focus-visible/g)).toHaveLength(2)
+    expect(globalCss).toMatch(
+      /\.home-search-jump:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
+    )
     expect(globalCss).toContain(
       ':is(a, button, input, select, textarea, summary, [tabindex]):focus-visible',
     )
@@ -305,6 +330,24 @@ describe('design token and global stylesheet contracts', () => {
     expect(contrast('on-primary', 'primary-hover')).toBeGreaterThanOrEqual(4.5)
     for (const surface of ['surface', 'background', 'secondary']) {
       expect(contrast('accent', surface), `decorative accent/${surface}`).toBeGreaterThanOrEqual(3)
+    }
+    // Worst-case opaque white photo beneath the copy's minimum scrim alpha.
+    for (const scrim of ['hero-scrim', 'hero-scrim-mobile']) {
+      const hex = resolve(scrim).slice(1)
+      const alpha = parseInt(hex.slice(6, 8), 16) / 255
+      const composite =
+        '#' +
+        [0, 2, 4]
+          .map((i) =>
+            Math.round(parseInt(hex.slice(i, i + 2), 16) * alpha + 255 * (1 - alpha))
+              .toString(16)
+              .padStart(2, '0'),
+          )
+          .join('')
+      expect(
+        (luminance(resolve('on-primary')) + 0.05) / (luminance(composite) + 0.05),
+        scrim,
+      ).toBeGreaterThanOrEqual(4.5)
     }
   })
 })
