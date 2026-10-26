@@ -42,7 +42,8 @@ UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#230 화면 정돈 → #24
 [독립 시안](../docs/ui/prototypes/premium-travel/index.html)과
 [Desktop/Mobile 참조](../docs/ui/prototypes/premium-travel/review.html)를 함께 확인합니다.
 Home A1·Navy & Ivory는 승인 목표입니다. #251은 Navy·Ivory 전역 토큰·기본 서체를 적용했으며,
-Hero·사진 Gallery·Search/Detail 전체 배치를 적용한 것은 아닙니다.
+#253은 Home의 큰 사진 Hero·하단 검색 진입을 적용했습니다. 별도 생성한 AI 브랜드 풍경이며
+실제 숙소 사진이 아닙니다. 사진 Gallery·Search/Detail 전체 배치는 후속 범위입니다.
 날짜 UX #241은 기능 개선이며 전체 Palette/Home 리디자인 완료를 의미하지 않습니다.
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.
@@ -57,6 +58,11 @@ Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 
 새 범용 Form/Modal Library를 추가한 것은 아닙니다. Action 역할·Native disabled·도메인 제출 잠금 경계는
 [공통 UI / Header·Navigation 리디자인 (#252)](../docs/ui/frontend-shared-navigation-252.md)을 따릅니다.
 기존 [#226](../docs/ui/frontend-shared-ui-226.md)은 녹색 baseline 기록으로 보존합니다.
+
+Home의 이미지 출처·정확한 생성 Prompt·WebP 크기는
+[브랜드 자산 기록](src/assets/brand/README.md), 시안 대비 차이와 검색/반응형 검증은
+[Home A1 적용 (#253)](../docs/ui/frontend-home-a1-253.md)을 따릅니다.
+이미지는 장식이며 실패해도 검색 입력/검증을 유지합니다. 실제 listing Media와 혼용하지 않습니다.
 
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은
@@ -265,7 +271,8 @@ Login/Signup은 기존 최대 `28rem` 폭과 Form Gap을 공유하며 Label/Inpu
 브라우저에서는 데스크톱 Login/Signup, 320px Login의 가로 넘침 없음,
 Google 버튼의 키보드 Focus Outline을 확인했습니다. jsdom 테스트는 CSS 렌더링 검증을
 대체하지 않으며 원격 CI 결과는 Push/PR 후 따로 확인해야 합니다.
-Home 개발용 Placeholder와 전체 Color Palette는 변경하지 않았습니다.
+위 인증 UI 작업 당시에는 Home 개발용 Placeholder와 전체 Color Palette를 변경하지 않았습니다.
+현재 Palette/Home 변경은 앞의 #251/#253 기록과 구분해서 읽습니다.
 최종 디자인·세부 UX·전체 시각적 일관성 검수는 f0.6.0의 수동 검수 범위입니다.
 
 ## 회원가입
