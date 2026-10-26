@@ -256,7 +256,6 @@ legend {
   .admin-sidebar,
   .admin-content,
   .empty-state,
-  .accommodation-detail-page > section,
   .accommodation-detail-page [aria-label='선택한 객실']
 ) {
   min-width: 0;
@@ -797,14 +796,14 @@ legend {
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
-.accommodation-search-page .catalog-amenities {
+:is(.accommodation-search-page, .accommodation-detail-page) .catalog-amenities {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   padding: 0;
   list-style: none;
 }
-.accommodation-search-page .catalog-amenities li {
+:is(.accommodation-search-page, .accommodation-detail-page) .catalog-amenities li {
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -859,7 +858,7 @@ legend {
   border-top: 1px solid var(--color-border);
   font-size: var(--font-size-lg);
 }
-.accommodation-search-page .room-base-price {
+:is(.accommodation-search-page, .accommodation-detail-page) .room-base-price {
   color: var(--color-text);
   font-weight: var(--font-weight-bold);
   font-variant-numeric: tabular-nums;
@@ -886,6 +885,184 @@ legend {
 .accommodation-detail-page section {
   margin: var(--space-8) 0;
   overflow-wrap: anywhere;
+}
+.accommodation-detail-page {
+  width: min(100%, var(--content-catalog));
+  min-width: 0;
+}
+.accommodation-detail-page > section {
+  padding: 0;
+  margin-block: var(--space-8) var(--space-12);
+}
+.accommodation-detail-header {
+  margin-bottom: var(--space-6);
+}
+.accommodation-detail-header h1 {
+  font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-display-max));
+  margin-block: var(--space-4);
+}
+.catalog-media-placeholder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 10rem;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary);
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+.catalog-media-placeholder svg {
+  width: var(--space-12);
+  height: auto;
+}
+.catalog-media-accommodation {
+  aspect-ratio: 16 / 5;
+  min-height: 18rem;
+}
+.detail-section-nav {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  margin-block: var(--space-6);
+  padding-block: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.detail-section-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+}
+.detail-section-nav .detail-booking-entry {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-control);
+}
+.accommodation-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--space-12);
+}
+.accommodation-overview-grid > section {
+  margin: 0;
+  min-width: 0;
+}
+.accommodation-overview-grid h2:first-child {
+  margin-top: 0;
+}
+.accommodation-overview-grid .accommodation-operating-facts {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.accommodation-operating-facts dt {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.accommodation-detail-page :is(h2[tabindex], h3[tabindex]) {
+  scroll-margin-top: var(--space-6);
+}
+.detail-policy-note,
+.selection-panel-notice {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.availability-results-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-8);
+}
+.availability-room-results,
+.room-selection-panel {
+  min-width: 0;
+}
+.room-selection-panel {
+  position: static;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.room-selection-panel > h3 {
+  margin-top: 0;
+  font-size: var(--font-size-xl);
+}
+.selection-panel-empty {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.selection-review-jump {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  font-weight: var(--font-weight-semibold);
+}
+.accommodation-detail-page .room-selection-panel .selected-room {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.accommodation-detail-page .accommodation-list {
+  grid-template-columns: minmax(0, 1fr);
+}
+.accommodation-detail-page .catalog-room-card-exploration {
+  display: grid;
+  grid-template-columns: minmax(0, 12rem) minmax(0, 1fr);
+  padding: 0;
+  border-radius: 0;
+}
+.catalog-room-card-exploration .room-card-content {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-6);
+}
+.catalog-room-card-exploration .room-card-content > :is(h3, p, ul) {
+  margin: 0;
+}
+.catalog-room-card-exploration .room-card-content > h3 {
+  font-size: var(--font-size-xl);
+}
+.catalog-room-card-exploration .room-card-content > .catalog-status {
+  justify-self: start;
+}
+.availability-room-results .accommodation-list {
+  margin-top: 0;
+}
+@media (max-width: 64rem) {
+  .accommodation-overview-grid,
+  .availability-results-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+@media (max-width: 40rem) {
+  .accommodation-overview-grid .accommodation-operating-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-media-accommodation {
+    aspect-ratio: 16 / 10;
+    min-height: 12rem;
+  }
+  .accommodation-detail-page .catalog-room-card-exploration {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-room-card-exploration > .catalog-media-room {
+    aspect-ratio: 16 / 10;
+  }
+  .room-selection-panel,
+  .catalog-room-card-exploration .room-card-content {
+    padding: var(--space-4);
+  }
 }
 .accommodation-detail-page dl {
   display: grid;
@@ -1239,21 +1416,6 @@ form[aria-label='대표 투숙객 정보'] {
 .booking-price-table th {
   background: var(--color-secondary);
 }
-@media (min-width: 60rem) {
-  .accommodation-detail-page {
-    display: grid;
-    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-    gap: var(--space-6);
-    align-items: start;
-  }
-  .accommodation-detail-page > a,
-  .accommodation-detail-page > section[aria-labelledby='room-list-title'] {
-    grid-column: 1 / -1;
-  }
-  .accommodation-detail-page > section {
-    margin: 0;
-  }
-}
 .home-page {
   width: 100%;
   min-width: 0;
@@ -1442,8 +1604,6 @@ form[aria-label='대표 투숙객 정보'] {
 .accommodation-card p {
   line-height: var(--leading-description);
 }
-.accommodation-detail-page > section,
-.accommodation-detail-page [aria-label='선택한 객실'],
 .empty-state {
   padding: clamp(var(--space-4), 3vw, var(--space-8));
 }
@@ -1986,9 +2146,6 @@ form[aria-label='대표 투숙객 정보'] {
     padding: var(--space-4);
   }
   /* Avoid stacked card/form gutters consuming the enlarged date controls' width. */
-  .accommodation-detail-page > .room-availability {
-    padding-inline: var(--space-2);
-  }
   .room-availability > .accommodation-search-form {
     padding-inline: 0;
     border-inline: 0;
@@ -2064,6 +2221,7 @@ form[aria-label='대표 투숙객 정보'] {
     .auth-page,
     .home-page,
     .accommodation-search-page,
+    .accommodation-detail-page,
     .booking-complete-page,
     .my-reservations-page,
     .reservation-detail-page,
@@ -2081,6 +2239,7 @@ form[aria-label='대표 투숙객 정보'] {
     .auth-page,
     .home-page,
     .accommodation-search-page,
+    .accommodation-detail-page,
     .booking-complete-page,
     .my-reservations-page,
     .reservation-detail-page,
@@ -2176,10 +2335,15 @@ form[aria-label='대표 투숙객 정보'] {
   font-size: var(--font-size-xl);
 }
 .room-detail-header button {
-  flex-shrink: 0;
+  max-width: 100%;
+  white-space: normal;
 }
 .room-detail-dialog > :not(.room-detail-header) {
   margin-inline: var(--space-6);
+}
+.room-detail-dialog > .catalog-media-placeholder {
+  width: auto;
+  aspect-ratio: auto;
 }
 .room-detail-dialog > :last-child {
   margin-bottom: var(--space-6);
@@ -2208,6 +2372,12 @@ form[aria-label='대표 투숙객 정보'] {
   border: 1px dashed var(--color-border-control);
   border-radius: var(--radius-control);
   color: var(--color-text-subtle);
+}
+/* A tall sticky header must not consume a narrow/short modal's scroll viewport. */
+@media (max-width: 24rem), (max-height: 36rem) {
+  .room-detail-header {
+    position: static;
+  }
 }
 @media (max-width: 40rem) {
   .room-detail-dialog {

@@ -46,7 +46,7 @@ function AccommodationDetail({ id }: { id: number }) {
     !isExplorationQuery(location.search) ||
     ([...params.keys()].some((key) => key !== 'search') && !initialContext)
   return (
-    <div className="accommodation-search-page accommodation-detail-page">
+    <div className="accommodation-detail-page">
       <Link to={searchReturnPath(location.search)} state={{ restoreSearchPosition: true }}>
         숙소 검색으로 돌아가기
       </Link>

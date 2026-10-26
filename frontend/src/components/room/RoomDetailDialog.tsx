@@ -5,6 +5,7 @@ import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import type { RoomDetailContext } from './RoomDetailTrigger'
+import { CatalogMediaPlaceholder } from '../accommodation/CatalogMediaPlaceholder'
 
 function sameRoom(left: RoomResponse, right: RoomResponse) {
   return (
@@ -113,6 +114,7 @@ export function RoomDetailDialog({
       )}
       {room && (
         <>
+          <CatalogMediaPlaceholder kind="room" />
           <h3 className="room-detail-name">{room.name}</h3>
           <dl className="room-detail-facts">
             <div>

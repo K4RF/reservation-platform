@@ -13,7 +13,7 @@ export function RoomListSection({ accommodationId }: { accommodationId: number }
   )
   const { state, retry } = useDetailQuery(load)
   return (
-    <section aria-labelledby="room-list-title">
+    <section className="room-catalog-section" aria-labelledby="room-list-title">
       <h2 id="room-list-title" tabIndex={-1}>
         객실 정보
       </h2>
