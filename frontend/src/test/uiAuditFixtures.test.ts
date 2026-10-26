@@ -62,4 +62,31 @@ describe('isolated read-only UI audit fixtures', () => {
       availableQuantity: 3,
     })
   })
+  it('pages synthetic comparison cards without introducing media/price contracts or allowing writes', async () => {
+    const first = await auditResponse('/api/v1/accommodations?size=2', 'GET', 'comparison').json()
+    const second = await auditResponse(
+      '/api/v1/accommodations?size=2&page=1',
+      'GET',
+      'comparison',
+    ).json()
+    expect(first).toMatchObject({
+      page: 0,
+      size: 2,
+      totalElements: 4,
+      totalPages: 2,
+      first: true,
+      last: false,
+    })
+    expect(first.content.map((row: { accommodationId: number }) => row.accommodationId)).toEqual([
+      7, 8,
+    ])
+    expect(second.content.map((row: { accommodationId: number }) => row.accommodationId)).toEqual([
+      9, 10,
+    ])
+    expect(second).toMatchObject({ page: 1, first: false, last: true })
+    expect(Object.keys(first.content[0])).toEqual(
+      Object.keys(await auditResponse('/api/v1/accommodations/7', 'GET', 'ready').json()),
+    )
+    expect(auditResponse('/api/v1/accommodations', 'POST', 'comparison').status).toBe(405)
+  })
 })
