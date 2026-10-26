@@ -1,0 +1,154 @@
+{
+  "issue": 251,
+  "verificationDate": "2026-10-26",
+  "base": "develop@64d5b7b",
+  "environment": "Windows / ChatGPT in-app browser / actual App components in read-only UI audit / fixture HTTP only",
+  "beforeLogin390": {
+    "documentClientWidth": 375,
+    "documentScrollWidth": 375,
+    "bodyFont": "system-ui, sans-serif",
+    "bodyLineHeight": "24px",
+    "background": "rgb(247, 248, 244)"
+  },
+  "afterLogin390": {
+    "documentClientWidth": 375,
+    "documentScrollWidth": 375,
+    "bodyFont": "Segoe UI, Malgun Gothic, Apple SD Gothic Neo, system-ui, sans-serif",
+    "bodyLineHeight": "25.6px",
+    "background": "rgb(247, 244, 238)",
+    "primaryToken": "#253b59",
+    "h1Size": "32px",
+    "rootSize": "16px"
+  },
+  "ready": {
+    "viewports": [
+      { "width": 390, "height": 844 },
+      { "width": 1440, "height": 1000 }
+    ],
+    "routes": [
+      "/",
+      "/login",
+      "/signup",
+      "/accommodations",
+      "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2",
+      "/reservations",
+      "/reservations/42",
+      "/reservations/42/complete",
+      "/admin",
+      "/admin/accommodations",
+      "/admin/accommodations/7",
+      "/admin/rooms?accommodationId=7",
+      "/admin/rooms/3?accommodationId=7",
+      "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22"
+    ],
+    "cases": 30,
+    "loadedContentPresent": 30,
+    "documentHorizontalOverflowCases": 0,
+    "guard": "Main text nonempty and ui-loading absent; computed font/background/primary checked"
+  },
+  "narrow": {
+    "width": 320,
+    "height": 844,
+    "readyRouteIndices": [0, 1, 3, 6, 14],
+    "cases": 5,
+    "documentHorizontalOverflowCases": 0
+  },
+  "textScale": {
+    "percent": 200,
+    "rootFontSize": "32px",
+    "widths": [320, 390, 1440],
+    "readyRouteIndices": [0, 3, 4, 6, 14],
+    "cases": 15,
+    "documentHorizontalOverflowCases": 0,
+    "isRealBrowserZoom": false
+  },
+  "states": {
+    "widths": [390, 1440],
+    "casesPerWidth": [
+      "Search error",
+      "Search empty",
+      "Reservation detail cancelled",
+      "Reservation completion cancelled"
+    ],
+    "cases": 8,
+    "documentHorizontalOverflowCases": 0,
+    "error": { "text": "rgb(180, 35, 24)", "background": "rgb(255, 241, 239)" },
+    "cancelled": {
+      "text": "rgb(101, 80, 68)",
+      "background": "rgb(242, 236, 231)"
+    },
+    "additionalConfirmedBadge": {
+      "text": "rgb(32, 92, 77)",
+      "background": "rgb(226, 243, 237)"
+    }
+  },
+  "totalRouteStateSizeChecks": 58,
+  "keyboard": {
+    "login": {
+      "action": "Email click then Tab to password",
+      "outline": "rgb(37, 59, 89) solid 3px",
+      "offset": "3px",
+      "submitHeight": 44
+    },
+    "inventory390": {
+      "regionClientWidth": 309,
+      "regionScrollWidth": 576,
+      "arrowRightScrollBefore": 0,
+      "arrowRightScrollAfter": 40,
+      "focused": true,
+      "outline": "rgb(37, 59, 89) solid 3px"
+    },
+    "roomSheet390": {
+      "clientWidth": 373,
+      "scrollWidth": 373,
+      "shiftTabToSelect": true,
+      "tabWrapToClose": true,
+      "escapeClosed": true,
+      "triggerFocusRestored": true
+    }
+  },
+  "contrast": {
+    "method": "sRGB relative luminance on declared opaque token pairs, rounded to three decimals",
+    "onPrimary_primary": 11.361,
+    "onPrimary_primaryHover": 13.715,
+    "text_background": 12.054,
+    "textMuted_secondary": 4.689,
+    "controlBorder_secondary": 3.248,
+    "focusNavy_secondary": 9.39,
+    "decorativeCoral_secondary": 3.174,
+    "success_ownSurface": 6.771,
+    "error_ownSurface": 5.973,
+    "warning_ownSurface": 6.153,
+    "cancelled_ownSurface": 6.439,
+    "coralUsedForNormalText": false
+  },
+  "console": { "errorAndWarnEntries": 0, "queryLimit": 100 },
+  "automated": {
+    "tokenTests": 15,
+    "fullFiles": 76,
+    "fullTests": 1083,
+    "offlineFrozenInstall": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "typecheck": "passed",
+    "test": "passed",
+    "build": "passed",
+    "backendTestBuild": "not rerun; no backend changes"
+  },
+  "remoteCI": {
+    "referencePR": 250,
+    "referenceHead": "7038e16afed54bf64ef588f9de786daaaac09339",
+    "referenceFrontend": "success",
+    "referenceBackend": "success",
+    "issue251": "not run; local commits only, no push or PR requested"
+  },
+  "limits": [
+    "Not full A1/Home/Search/Detail redesign or final user approval",
+    "No live Backend, Google, database or mutation verification",
+    "Computed font-family is not proof of every actual glyph font on other systems",
+    "No real Browser zoom, screen reader, touch-device or cross-OS font verification",
+    "Token contrast is not whole-application WCAG conformance or gradient/photo/disabled/UA contrast proof",
+    "Aggregate DOM measurements, not persisted raw node snapshots or pixel diffs"
+  ]
+}

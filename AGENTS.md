@@ -125,7 +125,9 @@ Backend configuration and behavior are implemented and verified.
   accommodation/room exploration. A2 and other palettes are archived alternatives.
 - The design is a target, not implementation evidence. Historical green-token
   documents describe the old baseline. f0.5.1 date/guest/room UX stays scoped;
-  full visual rollout belongs to f0.5.3. State the reference and intended differences.
+  full visual rollout belongs to f0.5.2 (formerly named f0.5.3, the same milestone).
+  Navy & Ivory global tokens are applied in #251; full A1 layouts are not implied.
+  State the reference and intended differences.
 - For visual changes, compare real 1440px/390px renders and report deviations and
   verification limits. Preserve API/domain/Auth/mutation safety contracts.
 - Prototype images/prices/metadata are fictional; do not use them as real catalog
