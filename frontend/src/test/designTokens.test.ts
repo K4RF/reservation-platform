@@ -169,6 +169,36 @@ describe('design token and global stylesheet contracts', () => {
     }
   })
 
+  it('styles the shared brand and navigation without hiding role-dependent menus', () => {
+    expect(globalCss).toMatch(/\.site-brand-mark\s*\{[^}]*border: 1px solid currentColor;/)
+    expect(globalCss).toMatch(/\.site-brand-name\s*\{[^}]*font-family: var\(--font-family-body\);/)
+    expect(globalCss).toMatch(
+      /\.nav-link\[aria-current='page'\]\s*\{[^}]*text-decoration: underline;/,
+    )
+    expect(globalCss).toMatch(
+      /\.admin-sidebar \.nav-link-active\s*\{[^}]*color: var\(--color-on-primary\);/,
+    )
+    expect(globalCss).toContain(
+      'grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr))',
+    )
+    expect(globalCss).not.toMatch(/\.site-nav\s*\{[^}]*display: none/)
+    expect(globalCss).toMatch(/\.site-footer\s*\{[^}]*flex-wrap: wrap;/)
+  })
+
+  it('makes disabled, loading and empty presentation distinct without opacity-only signalling', () => {
+    expect(globalCss).toMatch(/button:disabled\s*\{[^}]*opacity: 1;[^}]*border-style: dashed;/)
+    expect(globalCss).toMatch(/\.ui-state\.ui-loading\s*\{[^}]*border-inline-start:[^;]*dashed/)
+    expect(globalCss).toMatch(/\.ui-state\.ui-empty\s*\{[^}]*border-style: dashed;/)
+    expect(globalCss).toContain(".room-availability > p[role='status']:not(.ui-state)")
+    expect(globalCss).toContain(".reservation-detail-page > p[role='status']:not(.ui-state)")
+    expect(globalCss).toContain(':hover:enabled:not(')
+    expect(globalCss).toMatch(/\.stay-calendar\s*\{[^}]*background: var\(--color-surface\);/)
+    expect(globalCss).toMatch(/\.stay-calendar-grid \.stay-date-boundary\s*\{[^}]*box-shadow:/)
+    expect(globalCss).toMatch(/\.stay-calendar-scroll\s*\{[^}]*overflow-x: auto;/)
+    expect(globalCss).toMatch(/\.stay-calendar-grid\s*\{[^}]*min-width: 14rem;/)
+    expect(globalCss).toMatch(/\.room-detail-header\s*\{[^}]*background: var\(--color-secondary\);/)
+  })
+
   it('shares controls without suppressing native disabled or confirmation semantics', () => {
     expect(globalCss).toContain(".nav-link[aria-current='page']")
     expect(globalCss).toContain("button[aria-busy='true']")

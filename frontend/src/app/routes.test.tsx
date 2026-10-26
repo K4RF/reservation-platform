@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from './routes'
@@ -60,6 +60,13 @@ describe('AppRoutes', () => {
     renderAt('/')
 
     expect(screen.getByRole('banner')).toBeTruthy()
+    const brand = within(screen.getByRole('banner')).getByRole('link', {
+      name: 'Reservation Platform',
+    })
+    expect(brand.getAttribute('href')).toBe('/')
+    expect(brand.querySelector('.site-brand-mark')?.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.getByRole('contentinfo').textContent).toContain('Reservation Platform')
+    expect(screen.getByRole('contentinfo').textContent).toContain('나에게 맞는 숙소, 편안한 여정')
     expect(screen.getByRole('navigation', { name: '주요 탐색' })).toBeTruthy()
     expect(screen.getByRole('navigation', { name: '주요 탐색' }).className).toBe('site-nav')
     expect(screen.getByRole('main')).toBeTruthy()

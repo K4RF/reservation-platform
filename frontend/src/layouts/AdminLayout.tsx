@@ -12,6 +12,7 @@ export function AdminLayout() {
       </header>
       <div className="admin-workspace">
         <aside className="admin-sidebar">
+          <p className="admin-menu-title">관리 메뉴</p>
           <nav aria-label="관리 메뉴">
             <ul>
               <li>

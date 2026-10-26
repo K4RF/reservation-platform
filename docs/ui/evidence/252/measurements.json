@@ -1,0 +1,175 @@
+{
+  "issue": 252,
+  "verificationDate": "2026-10-27",
+  "base": "develop@76b6891",
+  "environment": "Windows / in-app browser / actual App components and CSS in read-only UI audit / synthetic auth and fixture HTTP",
+  "ready": {
+    "widths": [320, 390, 768, 1440],
+    "height": "844; 1440px width uses 1000px height",
+    "routes": [
+      "/",
+      "/login",
+      "/signup",
+      "/accommodations",
+      "/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2",
+      "/reservations",
+      "/reservations/42",
+      "/reservations/42/complete",
+      "/admin",
+      "/admin/accommodations",
+      "/admin/accommodations/7",
+      "/admin/rooms?accommodationId=7",
+      "/admin/rooms/3?accommodationId=7",
+      "/admin/prices?roomId=3&stayDate=2030-07-20",
+      "/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22"
+    ],
+    "cases": 60,
+    "documentHorizontalOverflowCases": 0,
+    "headerNavItemsBelow44pxHeightCases": 0,
+    "guards": "Loaded Main text; ui-loading absent; current links and role-dependent visible nav inspected"
+  },
+  "expanded": {
+    "textScalePercent": 200,
+    "rootFontSize": "32px",
+    "widths": [320, 390, 1440],
+    "readyRouteIndices": [0, 3, 4, 6, 14],
+    "cases": 15,
+    "documentHorizontalOverflowCases": 0,
+    "isActualBrowserZoom": false
+  },
+  "stress": {
+    "scenario": "Long fixture names, descriptions, email and large monetary values",
+    "widths": [320, 390, 1440],
+    "readyRouteIndices": [3, 4, 6, 12],
+    "cases": 12,
+    "documentHorizontalOverflowCases": 0
+  },
+  "states": {
+    "widths": [390, 1440],
+    "casesPerWidth": [
+      "Search loading",
+      "Search error",
+      "Search empty",
+      "Reservation completion cancelled"
+    ],
+    "cases": 8,
+    "documentHorizontalOverflowCases": 0,
+    "loading": {
+      "role": "status",
+      "atomic": true,
+      "borderInlineStartStyle": "dashed",
+      "color": "rgb(44, 48, 56)"
+    },
+    "error": {
+      "role": "alert",
+      "atomic": true,
+      "borderInlineStartStyle": "solid",
+      "color": "rgb(180, 35, 24)"
+    },
+    "empty": { "borderStyle": "dashed", "messageHasOwnStatusRegion": true },
+    "cancelled": {
+      "dynamicClass": "booking-result-cancelled",
+      "color": "rgb(101, 80, 68)"
+    },
+    "correctedCascade": "Generic page status selectors now exclude ui-state instead of overriding common Loading presentation"
+  },
+  "totalRouteStateSizeCases": 95,
+  "interactions": {
+    "login390": {
+      "errors": ["이메일을 입력해 주세요.", "비밀번호를 입력해 주세요."],
+      "tabTarget": "login-password",
+      "outline": "rgb(37, 59, 89) solid 3px"
+    },
+    "calendar390": {
+      "arrowDown": "2030-01-01 -> 2030-01-08 focus only",
+      "unappliedDates": ["2030-01-01", "2030-01-03"],
+      "escapeRestoredTrigger": true,
+      "clientWidth": 323,
+      "scrollWidth": 323,
+      "tableRegionClientWidth": 315,
+      "tableRegionScrollWidth": 315
+    },
+    "calendar320Expanded": {
+      "rootFontSize": "32px",
+      "before": { "calendarClientWidth": 107, "calendarScrollWidth": 144 },
+      "after": {
+        "documentClientWidth": 305,
+        "documentScrollWidth": 305,
+        "calendarClientWidth": 205,
+        "calendarScrollWidth": 205,
+        "monthClientWidth": 189,
+        "monthScrollWidth": 189,
+        "tableRegionClientWidth": 189,
+        "tableRegionScrollWidth": 448
+      },
+      "keyboardRegionLabel": "숙박 날짜 표",
+      "keyboardRegionTabIndex": 0,
+      "arrowRightScroll": "0 -> 40px",
+      "outline": "rgb(37, 59, 89) solid 3px"
+    },
+    "guestCount390": {
+      "change": "2 -> 1",
+      "decrementDisabled": true,
+      "decrementBorder": "dashed",
+      "focusRestoredTo": "availability-guests"
+    },
+    "roomSheet": {
+      "width390": { "clientWidth": 373, "scrollWidth": 373 },
+      "width320Expanded": {
+        "clientWidth": 303,
+        "scrollWidth": 303,
+        "closeButtonRight": 272
+      },
+      "shiftTabToSelect": true,
+      "tabWrapToClose": true,
+      "escapeRestoredTrigger": true,
+      "headerBackground": "rgb(238, 233, 223)"
+    },
+    "cancelConfirmation390": {
+      "previewReadOnly": true,
+      "openDialogs": 0,
+      "border": "rgb(180, 35, 24)",
+      "unacknowledgedSubmitDisabled": true,
+      "disabledBorder": "dashed",
+      "disabledOpacity": "1",
+      "tabSkipsDisabledButton": true,
+      "cancelPatchPerformed": false
+    },
+    "inventory390": {
+      "regionClientWidth": 309,
+      "regionScrollWidth": 576,
+      "arrowRightScroll": "0 -> 40px",
+      "outline": "rgb(37, 59, 89) solid 3px",
+      "documentClientWidth": 375,
+      "documentScrollWidth": 375
+    }
+  },
+  "console": { "errorAndWarnEntries": 0, "queryLimit": 100 },
+  "automated": {
+    "focusedFiles": 7,
+    "focusedTests": 99,
+    "fullFiles": 76,
+    "fullTests": 1085,
+    "offlineFrozenInstall": "passed",
+    "lint": "passed",
+    "format": "passed",
+    "typecheck": "passed after removing an unsupported test locator option",
+    "test": "passed",
+    "build": "passed",
+    "backendTestBuild": "not run; no backend changes"
+  },
+  "remoteCI": {
+    "referencePR": 261,
+    "referenceHead": "8418c4b65873802894f8289790c34c4a08da42fc",
+    "referenceFrontend": "success",
+    "referenceBackend": "success",
+    "issue252": "not run; no push or PR requested"
+  },
+  "limits": [
+    "No live Backend/Google/database/reservation or admin writes; no inventory race proof",
+    "No actual Browser Zoom, screen reader, physical mobile or cross-browser/OS font verification",
+    "Computed/source Hover rules are not exhaustive actual pointer/UA/contrast verification",
+    "Aggregate measurements and representative screenshots, not raw node snapshots or pixel diffs",
+    "Common UI only; not full A1 Home/Search/Detail redesign or f0.6.0 user approval"
+  ]
+}

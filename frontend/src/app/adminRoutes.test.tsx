@@ -72,6 +72,8 @@ describe('Admin shared layout and existing role guard', () => {
         within(navigation()).getByRole('link', { name: '관리 홈' }).getAttribute('aria-current'),
       ).toBeNull()
       expect(within(navigation()).getAllByRole('link')).toHaveLength(5)
+      expect(screen.getByText('관리 메뉴').className).toBe('admin-menu-title')
+      expect(navigation().querySelectorAll('[aria-current="page"]')).toHaveLength(1)
       expect(fetch).not.toHaveBeenCalled()
     },
   )
