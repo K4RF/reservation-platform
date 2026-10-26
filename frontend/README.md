@@ -43,7 +43,8 @@ UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#230 화면 정돈 → #24
 [Desktop/Mobile 참조](../docs/ui/prototypes/premium-travel/review.html)를 함께 확인합니다.
 Home A1·Navy & Ivory는 승인 목표입니다. #251은 Navy·Ivory 전역 토큰·기본 서체를 적용했으며,
 #253은 Home의 큰 사진 Hero·하단 검색 진입을 적용했습니다. 별도 생성한 AI 브랜드 풍경이며
-실제 숙소 사진이 아닙니다. 사진 Gallery·Search/Detail 전체 배치는 후속 범위입니다.
+실제 숙소 사진이 아닙니다. #254는 Search 비교 배치·필터·Summary를 적용했으며,
+실매물 사진/Gallery·Detail 전체 배치는 후속 범위입니다.
 날짜 UX #241은 기능 개선이며 전체 Palette/Home 리디자인 완료를 의미하지 않습니다.
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.
@@ -63,6 +64,11 @@ Home의 이미지 출처·정확한 생성 Prompt·WebP 크기는
 [브랜드 자산 기록](src/assets/brand/README.md), 시안 대비 차이와 검색/반응형 검증은
 [Home A1 적용 (#253)](../docs/ui/frontend-home-a1-253.md)을 따릅니다.
 이미지는 장식이며 실패해도 검색 입력/검증을 유지합니다. 실제 listing Media와 혼용하지 않습니다.
+
+숙소 Search는 Desktop 2열/Mobile 1열 카드, 넓은 화면 필터 사이드바와 좁은 화면 네이티브 접이식 필터를 사용합니다.
+입력은 하나의 검색 Form에 보관하며 정렬도 명시적으로 적용합니다. Summary는 편집 Draft가 아닌 제출된 URL 조건입니다.
+사진·최저가·총액이 없는 현재 DTO에 맞춰 미제공 슬롯만 표시합니다. 실제 Media 연동 완료가 아닙니다.
+[Search 비교 화면 (#254)](../docs/ui/frontend-search-comparison-254.md)에 시안 대비 차이·검증 경계를 기록했습니다.
 
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은

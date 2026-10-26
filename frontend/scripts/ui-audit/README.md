@@ -17,12 +17,12 @@ node scripts/ui-audit/server.mjs
 실제 Backend Proxy는 없고 앱의 fetch는 Fixture 읽기로 대체된다. 쓰기는 405 AUDIT_READ_ONLY,
 미지원 API는 404를 반환하며 실제 서버로 전달하지 않는다. Google 버튼의 외부 이동/실제 OAuth2는 점검하지 않는다.
 
-| Query     | 값                                                     |
-| --------- | ------------------------------------------------------ |
-| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`      |
-| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture |
-| scenario  | ready / empty / error / loading / cancelled / stress   |
-| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대     |
+| Query     | 값                                                                |
+| --------- | ----------------------------------------------------------------- |
+| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`                 |
+| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture            |
+| scenario  | ready / empty / error / loading / cancelled / stress / comparison |
+| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                |
 
 예:
 
@@ -40,6 +40,9 @@ loading은 기존 apiClient의 약 10초 Timeout 이전 구간을 관찰한다. 
 객실 정보와 예약 per-night/총액을 일치시킨다. 실제 데이터·Backend 최대값 전체 검증이 아니다.
 `textScale=200`은 root font-size를 200%로 키워 글자/rem Reflow를 점검한다. Browser Zoom,
 OS 배율이나 실기기의 글자 확대와 동일한 검증으로 보고하지 않는다. 운영 앱에는 추가하지 않는다.
+`comparison`은 #254의 2열/1열 카드와 Pagination을 검증하는 숙소 4개짜리 가상 Fixture다.
+검색에 `size=2`를 주면 2개씩 2페이지다. 실제 필터 동작/정렬을 수행하지 않으므로 API 의미의 증거가 아니다.
+7번만 기존 상세/객실 Fixture에 연결된다. 다른 ID의 상세 연동이나 실제 매물 사진을 제공하지 않는다.
 Entry/Fixture 변경 뒤 신규 시나리오를 인식하지 못하면 서버를 재시작하고 새로고침한다.
 측정 시 제목/실제 Fixture 콘텐츠와 확대 글자 크기를 확인한다. 빈 페이지의 Overflow=0을 성공으로 세지 않는다.
 대표 투숙객 입력은 가짜 값만 쓰고 제출 전 확인까지만 진행한다. 예약 생성/변경/취소/관리 저장은 실행하지 않는다.
