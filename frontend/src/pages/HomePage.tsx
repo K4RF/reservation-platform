@@ -5,6 +5,8 @@ import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
 import { StayDateFields } from '../components/room/StayDateFields'
 import { GuestCountField } from '../components/room/GuestCountField'
+import heroLarge from '../assets/brand/coast-hero-1600.webp'
+import heroSmall from '../assets/brand/coast-hero-800.webp'
 
 export function HomePage() {
   const location = useLocation()
@@ -14,6 +16,7 @@ export function HomePage() {
   const [error, setError] = useState('')
   const [dates, setDates] = useState({ checkInDate: '', checkOutDate: '' })
   const [guestCount, setGuestCount] = useState('1')
+  const [imageFailed, setImageFailed] = useState(false)
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const query = new URLSearchParams()
@@ -31,18 +34,47 @@ export function HomePage() {
   return (
     <section className="home-page">
       <div className="home-hero">
-        <p className="eyebrow">FIND YOUR NEXT STAY</p>
-        <h1>Reservation Platform</h1>
-        <p className="hero-heading">
-          잠시 머물 곳에서,
-          <br />
-          새로운 여정이 시작됩니다.
+        {!imageFailed && (
+          <img
+            className="home-hero-image"
+            src={heroLarge}
+            srcSet={`${heroSmall} 800w, ${heroLarge} 1600w`}
+            sizes="100vw"
+            width={1600}
+            height={900}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            onError={() => setImageFailed(true)}
+          />
+        )}
+        <div className="home-hero-copy">
+          <p className="home-hero-eyebrow">A JOURNEY WORTH STAYING FOR</p>
+          <h1>
+            Somewhere you can <em>slow down.</em>
+          </h1>
+          <p className="home-hero-description">
+            일상에서 한 걸음, 당신만의 머무름.
+            <br />
+            마음이 먼저 도착하는 곳을 찾아보세요.
+          </p>
+          <a className="home-search-jump" href="#home-search-title">
+            여행 검색으로 이동 ↓
+          </a>
+        </div>
+        <p className="home-image-note" role={imageFailed ? 'status' : undefined}>
+          {imageFailed
+            ? '브랜드 이미지를 불러오지 못했습니다. 검색은 계속 이용할 수 있습니다.'
+            : 'AI 생성 브랜드 이미지 · 실제 숙소 사진이 아닙니다.'}
         </p>
-        <p>
-          숙소를 둘러보고 날짜와 인원에 맞는 객실을 찾아보세요.
-          <br />
-          로그인 없이 탐색하고, 마음에 드는 객실을 예약할 때 로그인하세요.
-        </p>
+      </div>
+      <section className="home-search-section" aria-labelledby="home-search-title">
+        <div className="home-search-header">
+          <h2 id="home-search-title" tabIndex={-1}>
+            어디로 떠나고 싶으세요?
+          </h2>
+          <p>도시와 숙박 날짜, 전체 인원을 선택해 보세요.</p>
+        </div>
         <form className="home-search" aria-label="여행 검색" onSubmit={search}>
           <div className="form-field">
             <label htmlFor="home-city">어디로 떠나세요?</label>
@@ -71,27 +103,35 @@ export function HomePage() {
           <button type="submit">숙소 찾기</button>
           {error && <p role="alert">{error}</p>}
         </form>
-      </div>
-      <div className="home-guide">
-        <div>
-          <span className="eyebrow">01 / EXPLORE</span>
-          <h2>나에게 맞는 숙소</h2>
-          <p>지역과 편의시설로 원하는 공간을 좁혀보세요.</p>
+      </section>
+      <section className="home-discovery" aria-labelledby="home-discovery-title">
+        <div className="home-discovery-header">
+          <div>
+            <p className="eyebrow">A DIFFERENT PACE</p>
+            <h2 id="home-discovery-title">나에게 맞는 머무름.</h2>
+          </div>
+          <Link className="home-catalog-link" to={routePaths.accommodations}>
+            전체 숙소 둘러보기 →
+          </Link>
         </div>
-        <div>
-          <span className="eyebrow">02 / CHECK</span>
-          <h2>실제 가능한 객실</h2>
-          <p>날짜별 재고와 숙박 인원으로 예약 가능 여부를 확인합니다.</p>
+        <div className="home-guide">
+          <div>
+            <span className="eyebrow">01 / EXPLORE</span>
+            <h3>나에게 맞는 숙소</h3>
+            <p>지역과 편의시설로 원하는 공간을 좁혀보세요.</p>
+          </div>
+          <div>
+            <span className="eyebrow">02 / CHECK</span>
+            <h3>실제 가능한 객실</h3>
+            <p>날짜별 재고와 숙박 인원으로 예약 가능 여부를 확인합니다.</p>
+          </div>
+          <div>
+            <span className="eyebrow">03 / BOOK</span>
+            <h3>확인하고 예약하기</h3>
+            <p>숙박일별 요금을 확인하고, 로그인 후 예약자 정보를 입력하세요.</p>
+          </div>
         </div>
-        <div>
-          <span className="eyebrow">03 / BOOK</span>
-          <h2>확인하고 예약하기</h2>
-          <p>숙박일별 요금을 확인하고, 로그인 후 예약자 정보를 입력하세요.</p>
-        </div>
-      </div>
-      <Link className="home-link" to={routePaths.accommodations}>
-        전체 숙소 둘러보기 →
-      </Link>
+      </section>
       {signupCompleted && (
         <p role="status">회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.</p>
       )}

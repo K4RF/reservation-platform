@@ -1079,14 +1079,53 @@ form[aria-label='대표 투숙객 정보'] {
   }
 }
 .home-page {
-  width: min(100%, var(--content-wide));
+  width: 100%;
+  min-width: 0;
+}
+.site-main:has(> .home-page) {
+  padding: 0;
 }
 .home-hero {
-  padding: clamp(var(--space-6), 5vw, var(--space-16));
-  border-radius: var(--radius-hero);
-  background:
-    radial-gradient(ellipse at top right, var(--color-hero-highlight) 0, transparent 65%),
-    var(--color-secondary);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  row-gap: var(--space-6);
+  align-items: center;
+  min-height: 40rem;
+  padding: var(--space-4) max(var(--space-6), calc((100% - var(--content-wide)) / 2)) 8rem;
+  background: var(--color-hero-fallback);
+  color: var(--color-on-primary);
+}
+.home-hero-image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 65% 45%;
+}
+.home-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    var(--color-hero-scrim) 0%,
+    var(--color-hero-scrim) 60%,
+    var(--color-hero-scrim-end) 100%
+  );
+}
+.home-hero-copy {
+  max-width: min(42rem, 60%);
+}
+.home-hero-eyebrow {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.18em;
+  color: inherit;
 }
 .eyebrow {
   font-size: var(--font-size-xs);
@@ -1096,19 +1135,52 @@ form[aria-label='대표 투숙객 정보'] {
   border-inline-start: var(--focus-ring-width) solid var(--color-accent);
   padding-inline-start: var(--space-2);
 }
-.home-hero h1 {
-  font-size: var(--font-size-base);
-  color: var(--color-text-subtle);
-}
-.hero-heading {
+.home-hero-copy h1 {
   font-family: var(--font-family-display);
-  font-size: clamp(var(--font-size-display-min), 4vw, var(--font-size-display-max));
-  color: var(--color-text);
+  font-size: clamp(var(--font-size-cinematic-min), 6vw, var(--font-size-cinematic-max));
+  color: inherit;
   font-weight: var(--font-weight-display);
-  line-height: var(--leading-display);
-  letter-spacing: -0.05em;
-  margin: var(--space-4) 0;
-  word-break: keep-all;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  margin: var(--space-5) 0 var(--space-6);
+}
+.home-hero-description {
+  color: inherit;
+  line-height: var(--leading-guide);
+}
+.home-search-jump {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  color: inherit;
+  font-size: var(--font-size-sm);
+}
+.home-search-jump:focus-visible {
+  outline-color: var(--color-on-primary);
+}
+.home-image-note {
+  order: -1;
+  justify-self: end;
+  max-width: 100%;
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: var(--font-size-xs);
+}
+.home-search-section {
+  position: relative;
+  z-index: 1;
+  width: min(calc(100% - var(--space-12)), var(--content-wide));
+  margin: calc(-1 * var(--space-16)) auto 0;
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+}
+.home-search-header p {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
 }
 .home-search {
   display: grid;
@@ -1116,10 +1188,8 @@ form[aria-label='대표 투숙객 정보'] {
   align-items: end;
   gap: var(--space-3);
   background: var(--color-surface);
-  padding: var(--space-5);
-  border-radius: var(--radius-card);
-  margin-top: var(--space-8);
-  box-shadow: var(--shadow-raised);
+  padding: 0;
+  margin-top: var(--space-5);
 }
 .home-search .form-field {
   min-width: 0;
@@ -1129,13 +1199,35 @@ form[aria-label='대표 투숙객 정보'] {
   color: var(--color-error);
 }
 
+.home-discovery {
+  width: min(calc(100% - var(--space-12)), var(--content-wide));
+  margin: var(--space-16) auto;
+}
+.home-page > [role='status'] {
+  width: min(calc(100% - var(--space-12)), var(--content-wide));
+  margin: var(--space-6) auto;
+}
+.home-discovery-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-4);
+}
+.home-catalog-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  font-weight: var(--font-weight-strong);
+  margin: 0;
+}
 .home-guide {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-8);
   margin: var(--space-12) 0 var(--space-4);
 }
-.home-guide h2 {
+.home-guide h3 {
   font-size: var(--font-size-lg);
   letter-spacing: -0.035em;
 }
@@ -1145,6 +1237,14 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .home-guide p {
   line-height: var(--leading-guide);
+}
+@media (max-width: 75rem) {
+  .home-hero-copy {
+    max-width: 42rem;
+  }
+  .home-hero::before {
+    background: var(--color-hero-scrim-mobile);
+  }
 }
 .catalog-card-visual {
   display: flex;
@@ -1738,8 +1838,20 @@ form[aria-label='대표 투숙객 정보'] {
     margin-top: var(--space-8);
   }
   .home-search {
-    padding: var(--space-4);
+    padding: 0;
     grid-template-columns: minmax(0, 1fr);
+  }
+  .home-hero {
+    min-height: 36rem;
+    padding: var(--space-4) var(--space-6) 7rem;
+  }
+  .home-search-section {
+    width: calc(100% - var(--space-8));
+    padding: var(--space-4);
+    margin-top: calc(-1 * var(--space-8));
+  }
+  .home-discovery {
+    width: calc(100% - var(--space-8));
   }
   .home-search > button {
     grid-column: 1 / -1;
