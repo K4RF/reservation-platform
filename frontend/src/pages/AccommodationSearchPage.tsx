@@ -9,6 +9,7 @@ import {
 import { ApiError } from '../api/errors'
 import { AccommodationList } from '../components/accommodation/AccommodationList'
 import { AccommodationSearchForm } from '../components/accommodation/AccommodationSearchForm'
+import { AccommodationSearchSummary } from '../components/accommodation/AccommodationSearchSummary'
 import { toAccommodationCard } from '../components/accommodation/accommodationView'
 import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
@@ -72,53 +73,61 @@ export function AccommodationSearchPage() {
   return (
     <section className="accommodation-search-page" aria-labelledby="accommodation-search-title">
       <header className="search-page-header">
-        <p className="eyebrow">EXPLORE STAYS</p>
+        <p className="eyebrow">FIND YOUR OWN PACE</p>
         <h1 ref={heading} tabIndex={-1} id="accommodation-search-title">
           숙소 검색
         </h1>
-        <p>숙소를 검색합니다. 날짜 입력 시 모든 숙박일의 예약 가능 여부를 확인합니다.</p>
+        <p>머물고 싶은 곳을, 당신의 속도로 찾아보세요.</p>
       </header>
-      <p className="search-price-note">
-        가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다.
-      </p>
       <AccommodationSearchForm
         key={queryKey}
         initialQuery={parsed.valid ? parsed.query : defaultSearchQuery}
         onSearch={search}
-      />
-      {!parsed.valid && <ErrorState message={parsed.message} />}
-      {parsed.valid && state.status === 'loading' && (
-        <LoadingState message="숙소를 불러오고 있습니다." />
-      )}
-      {parsed.valid && state.status === 'error' && (
-        <ErrorState message={state.message} onRetry={() => setRetry((value) => value + 1)} />
-      )}
-      {parsed.valid && state.status === 'success' && (
-        <>
-          <p className="search-result-count" role="status">
-            총 {state.result.totalElements}개 숙소
+        summary={parsed.valid ? <AccommodationSearchSummary query={parsed.query} /> : null}
+      >
+        <section className="search-results" aria-label="숙소 검색 결과">
+          <p className="search-price-note">
+            가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다. 날짜
+            입력 시 모든 숙박일의 예약 가능 여부를 확인합니다. 사진·최저가·숙박 총액은 검색 응답에
+            제공되지 않습니다.
           </p>
-          <AccommodationList accommodations={state.result.content.map(toAccommodationCard)} />
-          <nav className="accommodation-pagination" aria-label="숙소 페이지">
-            <button
-              disabled={state.result.first}
-              onClick={() => search({ ...parsed.query, page: state.result.page - 1 })}
-            >
-              이전
-            </button>
-            <span>
-              {state.result.totalPages ? state.result.page + 1 : 0} / {state.result.totalPages}{' '}
-              페이지
-            </span>
-            <button
-              disabled={state.result.last}
-              onClick={() => search({ ...parsed.query, page: state.result.page + 1 })}
-            >
-              다음
-            </button>
-          </nav>
-        </>
-      )}
+          {!parsed.valid && <ErrorState message={parsed.message} />}
+          {parsed.valid && state.status === 'loading' && (
+            <LoadingState message="숙소를 불러오고 있습니다." />
+          )}
+          {parsed.valid && state.status === 'error' && (
+            <ErrorState message={state.message} onRetry={() => setRetry((value) => value + 1)} />
+          )}
+          {parsed.valid && state.status === 'success' && (
+            <>
+              <p className="search-result-count" role="status">
+                총 {state.result.totalElements}개 숙소
+              </p>
+              <AccommodationList accommodations={state.result.content.map(toAccommodationCard)} />
+              <nav className="accommodation-pagination" aria-label="숙소 페이지">
+                <button
+                  type="button"
+                  disabled={state.result.first}
+                  onClick={() => search({ ...parsed.query, page: state.result.page - 1 })}
+                >
+                  이전
+                </button>
+                <span>
+                  {state.result.totalPages ? state.result.page + 1 : 0} / {state.result.totalPages}{' '}
+                  페이지
+                </span>
+                <button
+                  type="button"
+                  disabled={state.result.last}
+                  onClick={() => search({ ...parsed.query, page: state.result.page + 1 })}
+                >
+                  다음
+                </button>
+              </nav>
+            </>
+          )}
+        </section>
+      </AccommodationSearchForm>
     </section>
   )
 }
