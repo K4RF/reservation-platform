@@ -90,7 +90,9 @@ describe('login flow', () => {
     expect(screen.getByRole('status').textContent).toContain('처리하고 있습니다')
 
     complete(tokens)
-    expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
+    expect(
+      await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
+    ).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain('로그인 상태입니다')
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeTruthy()
     expect(getAccessToken()).toBe(tokens.accessToken)
@@ -175,7 +177,7 @@ describe('login flow', () => {
       await expect(apiClient.request('/reservations')).rejects.toMatchObject({ status: 401 })
     })
 
-    expect(screen.getByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Somewhere you can slow down.' })).toBeTruthy()
     expect(
       screen.getByText(
         '로그인이 만료되었습니다. 숙소는 계속 둘러볼 수 있으며 예약 시 다시 로그인해 주세요.',

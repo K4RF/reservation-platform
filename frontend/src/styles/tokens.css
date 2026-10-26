@@ -28,6 +28,10 @@
   --color-cancelled: #655044;
   --color-cancelled-surface: #f2ece7;
   --color-hero-highlight: #e8dfd1;
+  --color-hero-fallback: #11263b;
+  --color-hero-scrim: #11263bc7;
+  --color-hero-scrim-end: #11263b14;
+  --color-hero-scrim-mobile: #11263bb3;
   --color-catalog-pattern: #253b5908;
 
   --font-family-body: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, sans-serif;
@@ -42,6 +46,8 @@
   --font-size-2xl: 2rem;
   --font-size-display-min: 1.7rem;
   --font-size-display-max: 3rem;
+  --font-size-cinematic-min: 2.75rem;
+  --font-size-cinematic-max: 5rem;
   --font-weight-regular: 400;
   --font-weight-semibold: 600;
   --font-weight-strong: 650;

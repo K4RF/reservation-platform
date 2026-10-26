@@ -76,7 +76,9 @@ describe('Google callback page', () => {
 
     renderCallback(callbackEntry(`code=${code}`))
 
-    expect(await screen.findByRole('heading', { name: 'Reservation Platform' })).toBeTruthy()
+    expect(
+      await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
+    ).toBeTruthy()
     expect(exchangeGoogleLoginCode).toHaveBeenCalledWith(code)
     expect(getAccessToken()).toBe(accessToken)
     expect(getRefreshToken()).toBe('google-refresh')
