@@ -102,10 +102,25 @@ describe('design token and global stylesheet contracts', () => {
       '--content-result': '45rem',
       '--content-reservation': '60rem',
       '--content-wide': '70rem',
+      '--content-catalog': '80rem',
     })
-    for (const name of ['auth', 'form', 'result', 'reservation', 'wide']) {
+    for (const name of ['auth', 'form', 'result', 'reservation', 'wide', 'catalog']) {
       expect(globalCss).toContain(`var(--content-${name})`)
     }
+  })
+
+  it('scopes the Search comparison layout with two-column cards, a native filter disclosure and bounded media slots', () => {
+    expect(globalCss).toMatch(/\.accommodation-search-page\s*\{[^}]*var\(--content-catalog\)/)
+    expect(globalCss).toMatch(/\.accommodation-list\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
+    expect(globalCss).toMatch(
+      /\.search-comparison-layout\s*\{[^}]*minmax\(0, 15rem\) minmax\(0, 1fr\)/,
+    )
+    expect(globalCss).toMatch(/\.catalog-card-visual\s*\{[^}]*aspect-ratio: 16 \/ 10;/)
+    expect(globalCss).toContain('.accommodation-search-form.catalog-search-form')
+    expect(globalCss).toMatch(
+      /@media \(max-width: 48rem\)\s*\{\s*\.accommodation-list\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,
+    )
+    expect(globalCss).not.toContain('overflow-x: hidden')
   })
 
   it('keeps cinematic imagery local and bounded while isolating the Home layout and inverse focus', () => {

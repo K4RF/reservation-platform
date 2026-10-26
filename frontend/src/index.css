@@ -704,7 +704,7 @@ legend {
 }
 
 .accommodation-search-page {
-  width: min(100%, var(--content-wide));
+  width: min(100%, var(--content-catalog));
   min-width: 0;
   align-self: start;
 }
@@ -717,6 +717,11 @@ legend {
 .search-page-header p {
   margin: 0;
 }
+.accommodation-search-page .search-page-header h1 {
+  font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-display-max));
+  font-weight: var(--font-weight-display);
+  margin: 0;
+}
 .search-price-note,
 .availability-guidance {
   padding: var(--space-3) var(--space-4);
@@ -727,7 +732,7 @@ legend {
   line-height: var(--leading-description);
 }
 .search-result-count {
-  margin-block: var(--space-8) var(--space-4);
+  margin-block: var(--space-4);
   color: var(--color-text);
   font-weight: var(--font-weight-bold);
 }
@@ -756,16 +761,20 @@ legend {
 
 .accommodation-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
   list-style: none;
   padding: 0;
+  margin-block: var(--space-5) var(--space-8);
 }
 
 .accommodation-card {
   height: 100%;
   padding: var(--space-6);
   overflow-wrap: anywhere;
+}
+.accommodation-list > li {
+  min-width: 0;
 }
 .accommodation-card h2 {
   margin-top: 0;
@@ -808,6 +817,41 @@ legend {
 }
 .catalog-stay-card .catalog-description {
   white-space: pre-wrap;
+}
+.catalog-stay-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border-radius: 0;
+}
+.catalog-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  flex: 1;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  min-width: 0;
+}
+.catalog-card-content :is(p, h2, ul) {
+  margin: 0;
+}
+.catalog-card-content h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+.catalog-card-content h2 a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+}
+.catalog-card-content .catalog-card-guidance {
+  width: 100%;
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 .accommodation-info > h2 {
   margin-top: var(--space-6);
@@ -905,18 +949,6 @@ legend {
   overflow-wrap: anywhere;
 }
 
-.search-filters {
-  grid-column: 1 / -1;
-  order: 2;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
-}
-form[aria-label='숙소 검색 조건'] {
-  grid-template-columns: 1.4fr 1fr 1fr minmax(15rem, 1fr) auto;
-}
-form[aria-label='숙소 검색 조건'] > button {
-  order: 1;
-}
 .search-filters summary {
   cursor: pointer;
   padding: var(--space-2) 0;
@@ -931,6 +963,150 @@ form[aria-label='숙소 검색 조건'] > button {
 }
 .search-filter-grid fieldset {
   margin: 0;
+}
+/* One native form owns every search input; result actions are explicitly non-submit. */
+.accommodation-search-form.catalog-search-form {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  margin-block: var(--space-6);
+}
+.search-main-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.search-main-fields > .stay-date-range {
+  grid-column: auto;
+}
+.search-main-fields > button {
+  align-self: start;
+  margin-top: var(--space-8);
+}
+.search-main-fields > [role='alert'] {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.search-comparison-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-8);
+  margin-top: var(--space-6);
+}
+.catalog-search-form .search-filters {
+  grid-column: auto;
+  order: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.catalog-search-form .search-filters summary {
+  min-height: var(--control-min-height);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-control);
+  background: var(--color-surface);
+}
+.catalog-search-form .search-filter-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+.search-filter-help {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.search-filter-apply {
+  width: 100%;
+  margin-top: var(--space-5);
+}
+.search-results-column {
+  min-width: 0;
+}
+.search-applied-summary {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.search-applied-summary p,
+.search-applied-summary dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.search-applied-summary p {
+  margin-top: 0;
+}
+.search-applied-summary dl {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+}
+.search-applied-summary dd {
+  margin: var(--space-1) 0 0;
+  font-weight: var(--font-weight-semibold);
+}
+.search-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+}
+.search-sort-controls .form-field {
+  flex: 1 1 8rem;
+}
+.search-sort-controls button {
+  flex: 0 1 auto;
+}
+.search-results {
+  min-width: 0;
+}
+.search-results > .search-price-note {
+  margin-block: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+@media (max-width: 64rem) {
+  .search-applied-summary dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .search-comparison-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .catalog-search-form .search-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .search-main-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .search-main-fields > .stay-date-range {
+    grid-column: span 2;
+  }
+  .search-main-fields > button {
+    margin-top: 0;
+  }
+}
+@media (max-width: 48rem) {
+  .accommodation-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 40rem) {
+  .search-main-fields {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--space-3);
+  }
+  .search-main-fields > .stay-date-range {
+    grid-column: auto;
+  }
+  .catalog-search-form .search-filter-grid,
+  .search-applied-summary dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .accommodation-search-form > [role='alert'] {
   grid-column: 1 / -1;
@@ -1247,29 +1423,21 @@ form[aria-label='대표 투숙객 정보'] {
   }
 }
 .catalog-card-visual {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 8rem;
-  padding: var(--space-4);
-  margin: calc(-1 * var(--space-6)) calc(-1 * var(--space-6)) var(--space-5);
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      transparent,
-      transparent 18px,
-      var(--color-catalog-pattern) 18px,
-      var(--color-catalog-pattern) 19px
-    ),
-    var(--color-secondary);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  aspect-ratio: 16 / 10;
+  min-height: 12rem;
+  padding: var(--space-5);
+  background: var(--color-secondary);
   color: var(--color-text-subtle);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   letter-spacing: 0.05em;
 }
-.catalog-card-visual small {
-  align-self: end;
-  letter-spacing: 0;
+.catalog-card-visual svg {
+  width: var(--space-12);
+  height: auto;
 }
 .accommodation-card p {
   line-height: var(--leading-description);
@@ -1283,9 +1451,6 @@ form[aria-label='대표 투숙객 정보'] {
   margin: var(--space-2) var(--space-2) var(--space-2) 0;
 }
 @media (max-width: 60rem) {
-  form[aria-label='숙소 검색 조건'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .home-search {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1813,9 +1978,6 @@ form[aria-label='대표 투숙객 정보'] {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
     width: 100%;
     justify-content: flex-start;
-  }
-  form[aria-label='숙소 검색 조건'] {
-    grid-template-columns: minmax(0, 1fr);
   }
   .site-main {
     padding: var(--space-6) var(--space-4);

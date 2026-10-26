@@ -1,4 +1,5 @@
 import { accommodation, accommodationPage } from '../../src/test/accommodation'
+import type { AccommodationResponse } from '../../src/api/accommodation'
 import { room, roomPage } from '../../src/test/room'
 import {
   reservationDetail,
@@ -7,7 +8,8 @@ import {
 } from '../../src/test/reservation'
 import { inventoryCalendar } from '../../src/test/inventory'
 
-export type AuditScenario = 'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress'
+export type AuditScenario =
+  'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress' | 'comparison'
 
 // Render fixtures only. Never forwards a request or mutates an actual reservation/catalog.
 export function auditResponse(url: string, method: string, scenario: AuditScenario): Response {
@@ -62,6 +64,33 @@ export function auditResponse(url: string, method: string, scenario: AuditScenar
         })),
       }
     : reservationDetail
+  // Synthetic layout-only rows; no photographs, prices, popularity or new DTO fields.
+  if (scenario === 'comparison' && path === '/api/v1/accommodations') {
+    const rows: AccommodationResponse[] = Array.from({ length: 4 }, (_, index) => ({
+      ...accommodation,
+      accommodationId: 7 + index,
+      name: index === 0 ? accommodation.name : `UI 비교 점검 숙소 ${index + 1}`,
+      description:
+        index === 0
+          ? accommodation.description
+          : '화면 비교 검증용 가상 Fixture입니다. 실제 숙소가 아닙니다.',
+      status: index === 3 ? 'INACTIVE' : 'ACTIVE',
+    }))
+    const size = Number(query.get('size') ?? 20)
+    const page = Number(query.get('page') ?? 0)
+    const totalPages = Math.ceil(rows.length / size)
+    return Response.json(
+      accommodationPage({
+        content: rows.slice(page * size, (page + 1) * size),
+        page,
+        size,
+        totalElements: rows.length,
+        totalPages,
+        first: page === 0,
+        last: page >= totalPages - 1,
+      }),
+    )
+  }
   if (path === '/api/v1/accommodations')
     return Response.json(
       accommodationPage(

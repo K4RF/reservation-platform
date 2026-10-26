@@ -15,7 +15,7 @@ const textScale = params.get('textScale') ?? '100'
 if (!['100', '200'].includes(textScale)) throw new Error('Unknown audit text scale')
 // Text/rem enlargement probe only, not browser zoom or a production preference.
 document.documentElement.style.fontSize = `${textScale}%`
-if (!['ready', 'empty', 'error', 'loading', 'cancelled', 'stress'].includes(scenario))
+if (!['ready', 'empty', 'error', 'loading', 'cancelled', 'stress', 'comparison'].includes(scenario))
   throw new Error('Unknown audit scenario')
 if (role === 'USER' || role === 'ADMIN')
   setTokenPair(

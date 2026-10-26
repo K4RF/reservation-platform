@@ -159,7 +159,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(homeQuery.get('checkInDate')).toBe('2030-01-01')
     expect(homeQuery.get('checkOutDate')).toBe('2030-01-03')
     expect(homeQuery.get('guestCount')).toBe('2')
-    fireEvent.click(screen.getByText('편의시설 · 가격 · 정렬 필터'))
+    fireEvent.click(screen.getByText('상세 검색 필터'))
     fireEvent.change(screen.getByLabelText('정렬', { exact: true }), { target: { value: 'NAME' } })
     fireEvent.change(screen.getByLabelText('정렬 방향'), { target: { value: 'DESC' } })
     fireEvent.change(screen.getByLabelText('페이지 크기'), { target: { value: '10' } })
