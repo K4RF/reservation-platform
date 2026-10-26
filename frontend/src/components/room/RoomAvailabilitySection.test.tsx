@@ -100,6 +100,7 @@ describe('availability and selection lifecycle with real API client', () => {
       expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
       expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
       expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
+      expect(screen.queryByRole('complementary', { name: '선택한 객실 확인' })).toBeNull()
       expect(mock).toHaveBeenCalledTimes(calls)
       submit()
       await screen.findByRole('button', { name: '스탠다드 선택' })
@@ -185,7 +186,15 @@ describe('availability and selection lifecycle with real API client', () => {
     dates()
     submit()
     expect(screen.getByText('예약 가능한 객실을 확인하고 있습니다.')).toBeTruthy()
+    await screen.findByRole('complementary', { name: '선택한 객실 확인' })
+    expect(screen.getByText(/가용 객실을 비교한 후 객실을 선택해 주세요/)).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: '예약 요약' })).toBeNull()
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    expect(
+      within(screen.getByRole('complementary', { name: '선택한 객실 확인' })).getByRole('status', {
+        name: '선택한 객실',
+      }),
+    ).toBeTruthy()
     expect(screen.getByRole('status', { name: '선택한 객실' }).textContent).toContain(
       '2030-01-01 ~ 2030-01-03',
     )
@@ -194,6 +203,12 @@ describe('availability and selection lifecycle with real API client', () => {
     )
     await screen.findByText('총 예상 금액: 246,913.56')
     expect(screen.getByText('선택된 객실')).toBeTruthy()
+    const callsBeforeReview = mock.mock.calls.length
+    const review = screen.getByRole('link', { name: '선택한 객실 확인하기 ↓' })
+    expect(review.getAttribute('href')).toBe('#room-selection-panel-title')
+    expect(screen.getByRole('heading', { name: '선택한 객실 확인' }).tabIndex).toBe(-1)
+    fireEvent.click(review)
+    expect(mock).toHaveBeenCalledTimes(callsBeforeReview)
     expect(
       screen
         .getByRole('button', { name: '스탠다드 선택' })
@@ -203,6 +218,7 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '객실 선택 해제' }))
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     expect(screen.queryByText('선택된 객실')).toBeNull()
+    expect(screen.queryByRole('link', { name: '선택한 객실 확인하기 ↓' })).toBeNull()
     expect(screen.getByRole('button', { name: '스탠다드 선택' }).getAttribute('aria-pressed')).toBe(
       'false',
     )
