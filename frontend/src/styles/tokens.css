@@ -1,20 +1,23 @@
 /* Single light-theme source. Keep geometry/state-specific rules in index.css. */
 :root {
-  --color-primary: #17675f;
-  --color-primary-hover: #124e48;
+  --color-primary: #253b59;
+  --color-primary-hover: #1c2e47;
   --color-on-primary: #fff;
-  --color-secondary: #edf2eb;
-  --color-secondary-hover: #dce5df;
-  --color-on-secondary: #173a39;
-  --color-background: #f7f8f4;
-  --color-surface: #fff;
-  --color-surface-hover: #f3f6f1;
-  --color-text: #173a39;
-  --color-text-muted: #4b5563;
-  --color-text-subtle: #536760;
-  --color-border: #dce5df;
-  --color-border-control: #7b8797;
+  --color-secondary: #eee9df;
+  --color-secondary-hover: #e2dacd;
+  --color-on-secondary: #2c3038;
+  --color-background: #f7f4ee;
+  --color-surface: #fffefa;
+  --color-surface-hover: #f2eee6;
+  --color-text: #2c3038;
+  --color-text-muted: #65676a;
+  --color-text-subtle: #62666c;
+  --color-border: #ddd9d1;
+  /* Decorative separators are deliberately lighter than interactive boundaries. */
+  --color-border-control: #7b8189;
   --color-focus: var(--color-primary);
+  /* Coral is non-text decoration, never a primary action or semantic status. */
+  --color-accent: #b96f55;
   --color-success: #205c4d;
   --color-success-surface: #e2f3ed;
   --color-error: #b42318;
@@ -24,14 +27,16 @@
   /* CANCELLED is a stored state, not an error or a completed refund. */
   --color-cancelled: #655044;
   --color-cancelled-surface: #f2ece7;
-  --color-hero-highlight: #d3e6dc;
-  --color-catalog-pattern: #17675f08;
+  --color-hero-highlight: #e8dfd1;
+  --color-catalog-pattern: #253b5908;
 
-  --font-family-body: system-ui, sans-serif;
+  --font-family-body: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, sans-serif;
+  /* Latin display glyphs use a local serif; Korean falls back to the UI sans stack. */
+  --font-family-display: Georgia, 'Times New Roman', var(--font-family-body);
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.85rem;
   --font-size-base: 1rem;
-  --font-size-brand: 1.1rem;
+  --font-size-brand: 1.25rem;
   --font-size-lg: 1.2rem;
   --font-size-xl: 1.5rem;
   --font-size-2xl: 2rem;
@@ -41,10 +46,10 @@
   --font-weight-semibold: 600;
   --font-weight-strong: 650;
   --font-weight-bold: 700;
-  --font-weight-display: 750;
+  --font-weight-display: 400;
   --leading-heading: 1.25;
   --leading-display: 1.35;
-  --leading-body: 1.5;
+  --leading-body: 1.6;
   --leading-description: 1.6;
   --leading-long: 1.7;
   --leading-guide: 1.8;
@@ -60,11 +65,11 @@
   --space-16: 4rem;
   --inset-badge: 0.4rem;
   --radius-sm: 0.35rem;
-  --radius-control: 0.6rem;
-  --radius-card: 1rem;
-  --radius-hero: 1.5rem;
+  --radius-control: 0.35rem;
+  --radius-card: 0.75rem;
+  --radius-hero: 1rem;
   --shadow-none: none;
-  --shadow-raised: 0 12px 35px #173a3910;
+  --shadow-raised: 0 12px 35px #253b5912;
   --focus-ring-width: 3px;
   --focus-ring-offset: 3px;
   --control-min-height: 2.75rem;

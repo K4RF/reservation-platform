@@ -57,9 +57,9 @@ HTML 파일 직접 열기 또는 해당 폴더에서 `node serve.cjs` 후
 | Accent | `#B96F55` |
 | Border | `#DDD9D1` |
 
-현재 녹색 Token은 기존 구현 상태다. #225 등의 녹색 유지 결정은 과거 기준이며
-이번 승인 이후의 최종 목표로 해석하지 않는다. f0.5.3에서 기존 semantic Token 구조를
-활용해 새 팔레트로 연결한다. 성공/오류/취소 등의 의미 색은 브랜드 색과 별도 검증한다.
+#225 등의 녹색 유지 결정은 과거 baseline이며 승인 이후의 최종 목표로 해석하지 않는다.
+`f0.5.2`의 #251에서 기존 semantic Token 구조에 Navy & Ivory 전역 팔레트를 연결했다.
+성공/오류/취소 의미 색은 브랜드 색과 분리해 유지한다. 이는 A1·Search/Detail 전체 배치 적용이 아니다.
 Coral은 포인트에 제한하며 주요 CTA는 Navy를 사용한다.
 
 Typography는 영문 Display Serif + 한글/UI Sans 초안이다. 시안은 설치된
@@ -77,8 +77,13 @@ Georgia/Segoe UI/Malgun Gothic/system fallback을 사용하며 외부 폰트를 
 | #244 | 기존 Room DTO 필드의 상세 표현·선택. 사진·Metadata 확장과 분리 |
 | #231 / #232 | 현재 화면과 새 UX의 횡단 접근성·회귀 검증. A1 전체 적용 완료라고 보고하지 않음 |
 | v0.4.1 | 실제 Media/Room Metadata·정책 읽기 계약 및 Admin 입력 |
-| f0.5.3 | A1·Navy & Ivory·Search/Detail을 실제 적용하고 Booking/Auth/내예약/Admin 통일 |
+| f0.5.2 | A1·Navy & Ivory·Search/Detail을 실제 적용하고 Booking/Auth/내예약/Admin 통일. #251은 전역 Token·기본 Style만 적용 |
 | f0.6.0 | 실제 Backend 전체 연동·오류·반응형·접근성 및 사용자 직접 최종 승인 |
+
+GitHub Milestone #19의 현재 명칭은 **f0.5.2 — Frontend Visual Redesign**이다.
+과거 기록의 f0.5.3은 같은 단계의 이전 명칭이지 별도 후속 단계가 아니다.
+현재 토큰·대비·서체·시안과의 차이는 [#251 구현/검증 기록](frontend-navy-ivory-tokens-251.md)을 따른다.
+과거 #225/#232의 수치·관찰·캡처는 당시 기준으로 보존한다.
 
 2026-10-24 확인 시 #241은 로컬 `feature/#241-stay-date-range`에 구현과 검증 문서가
 있지만 GitHub는 Open이고 관련 PR은 확인되지 않았다. 이 관찰로 이슈를 닫거나 병합 완료로
