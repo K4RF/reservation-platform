@@ -49,8 +49,48 @@ describe('design token and global stylesheet contracts', () => {
     ]) {
       expect(tokens.has(`--color-${role}`)).toBe(true)
     }
-    expect(tokens.get('--color-primary')).toBe('#17675f')
+    expect(tokens.get('--color-primary')).toBe('#253b59')
     expect(tokens.get('--color-cancelled')).not.toBe(tokens.get('--color-error'))
+  })
+
+  it('maps the approved Navy and Ivory palette without turning Coral into text, CTA or status', () => {
+    for (const [role, value] of Object.entries({
+      primary: '#253b59',
+      background: '#f7f4ee',
+      surface: '#fffefa',
+      text: '#2c3038',
+      'text-muted': '#65676a',
+      border: '#ddd9d1',
+      accent: '#b96f55',
+      focus: 'var(--color-primary)',
+    })) {
+      expect(tokens.get(`--color-${role}`)).toBe(value)
+    }
+    expect(globalCss.match(/var\(--color-accent\)/g)).toHaveLength(1)
+    expect(globalCss).toMatch(/\.eyebrow\s*\{[^}]*border-inline-start:[^;]*var\(--color-accent\);/)
+    for (const [role, color] of Object.entries({
+      success: '#205c4d',
+      error: '#b42318',
+      warning: '#854d0e',
+      cancelled: '#655044',
+    })) {
+      expect(tokens.get(`--color-${role}`)).toBe(color)
+      expect(tokens.get(`--color-${role}`)).not.toBe(tokens.get('--color-primary'))
+      expect(tokens.get(`--color-${role}`)).not.toBe(tokens.get('--color-accent'))
+    }
+  })
+
+  it('uses local display serif with Korean UI sans fallback without loading a remote font', () => {
+    expect(tokens.get('--font-family-display')).toBe(
+      "Georgia, 'Times New Roman', var(--font-family-body)",
+    )
+    expect(tokens.get('--font-family-body')).toContain("'Malgun Gothic'")
+    expect(tokens.get('--font-family-body')).toContain('sans-serif')
+    expect(globalCss.match(/font-family: var\(--font-family-display\)/g)).toHaveLength(3)
+    expect(tokensCss + globalCss).not.toMatch(/@font-face|https?:\/\/|url\(/)
+    expect(tokens.get('--leading-body')).toBe('1.6')
+    expect(tokens.get('--control-min-height')).toBe('2.75rem')
+    expect(tokens.get('--space-4')).toBe('1rem')
   })
 
   it('preserves role-based content widths rather than forcing a single page width', () => {
@@ -196,7 +236,7 @@ describe('design token and global stylesheet contracts', () => {
     )
   })
 
-  it('meets measured semantic text/control contrast thresholds without changing the brand palette', () => {
+  it('meets semantic text/control contrast thresholds with Navy focus and decorative Coral', () => {
     function resolve(name: string): string {
       const value = tokens.get(`--color-${name}`)!
       const variable = references(value)[0]
@@ -233,5 +273,8 @@ describe('design token and global stylesheet contracts', () => {
     }
     expect(contrast('on-primary', 'primary')).toBeGreaterThanOrEqual(4.5)
     expect(contrast('on-primary', 'primary-hover')).toBeGreaterThanOrEqual(4.5)
+    for (const surface of ['surface', 'background', 'secondary']) {
+      expect(contrast('accent', surface), `decorative accent/${surface}`).toBeGreaterThanOrEqual(3)
+    }
   })
 })
