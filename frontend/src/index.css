@@ -33,6 +33,7 @@ h4 {
 
 h1 {
   margin: 0;
+  font-family: var(--font-family-display);
   font-size: var(--font-size-2xl);
 }
 
@@ -299,7 +300,8 @@ legend {
 
 .site-brand {
   color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-semibold);
   text-decoration: none;
   letter-spacing: -0.035em;
   font-size: var(--font-size-brand);
@@ -990,12 +992,15 @@ form[aria-label='대표 투숙객 정보'] {
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.14em;
   color: var(--color-primary);
+  border-inline-start: var(--focus-ring-width) solid var(--color-accent);
+  padding-inline-start: var(--space-2);
 }
 .home-hero h1 {
   font-size: var(--font-size-base);
   color: var(--color-text-subtle);
 }
 .hero-heading {
+  font-family: var(--font-family-display);
   font-size: clamp(var(--font-size-display-min), 4vw, var(--font-size-display-max));
   color: var(--color-text);
   font-weight: var(--font-weight-display);
