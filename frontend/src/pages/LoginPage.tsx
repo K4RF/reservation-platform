@@ -5,6 +5,7 @@ import { routePaths } from '../app/routePaths'
 import { LoginForm } from '../components/login/LoginForm'
 import { useAuth } from '../state/useAuth'
 import { safeLoginReturn, saveGoogleReturn } from '../app/loginReturn'
+import { AuthPageLayout } from '../components/ui/AuthPageLayout'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -24,11 +25,13 @@ export function LoginPage() {
   }
 
   return (
-    <section className="page-content auth-page login-page" aria-labelledby="login-title">
-      <header className="auth-header">
-        <h1 id="login-title">로그인</h1>
-        <p>이메일과 비밀번호로 로그인하세요.</p>
-      </header>
+    <AuthPageLayout
+      className="login-page"
+      headingId="login-title"
+      eyebrow="WELCOME BACK"
+      title="로그인"
+      description="이메일과 비밀번호로 로그인하세요."
+    >
       {state.status === 'reauth_required' && (
         <p role="alert">인증이 만료되었습니다. 다시 로그인해 주세요.</p>
       )}
@@ -48,13 +51,24 @@ export function LoginPage() {
       <div className="auth-divider" aria-hidden="true">
         또는
       </div>
-      <button className="google-login-button" type="button" onClick={startGoogleLogin}>
+      <button
+        className="google-login-button"
+        type="button"
+        aria-describedby="google-login-hint"
+        onClick={startGoogleLogin}
+      >
         Google로 로그인
       </button>
+      <p className="auth-note" id="google-login-hint">
+        Google 인증 화면으로 이동합니다.
+      </p>
       {googleError && <p role="alert">{googleError}</p>}
       <p className="auth-switch">
         계정이 없나요? <Link to={routePaths.signup}>회원가입</Link>
       </p>
-    </section>
+      <p className="auth-note auth-session-note">
+        인증 정보는 브라우저 메모리에만 유지됩니다. 새로고침 후에는 다시 로그인해야 합니다.
+      </p>
+    </AuthPageLayout>
   )
 }

@@ -6,6 +6,7 @@ import { routePaths } from '../app/routePaths'
 import { LoadingState } from '../components/ui/LoadingState'
 import { useAuth } from '../state/useAuth'
 import { consumeGoogleReturn } from '../app/loginReturn'
+import { AuthPageLayout } from '../components/ui/AuthPageLayout'
 
 type CallbackStatus = 'working' | 'cancelled' | 'failed' | 'invalid' | 'exchange_failed'
 
@@ -57,11 +58,13 @@ export function OAuth2CallbackPage() {
   } as const
 
   return (
-    <section className="page-content auth-page oauth-callback-page" aria-labelledby="oauth-title">
-      <header className="auth-header">
-        <h1 id="oauth-title">Google 로그인</h1>
-        <p>인증 결과를 확인합니다.</p>
-      </header>
+    <AuthPageLayout
+      className="oauth-callback-page"
+      headingId="oauth-title"
+      eyebrow="SIGN IN WITH GOOGLE"
+      title="Google 로그인"
+      description="인증 결과를 확인합니다."
+    >
       {status === 'working' ? (
         <LoadingState message="Google 로그인을 완료하고 있습니다." />
       ) : (
@@ -72,6 +75,6 @@ export function OAuth2CallbackPage() {
           </Link>
         </>
       )}
-    </section>
+    </AuthPageLayout>
   )
 }
