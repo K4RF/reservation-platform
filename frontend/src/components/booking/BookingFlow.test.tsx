@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingFlow } from './BookingFlow'
 import { room } from '../../test/room'
@@ -37,11 +37,17 @@ describe('BookingFlow', () => {
   it('validates fields, preserves edits, and reviews real selection and guest info without creating a reservation', async () => {
     const mock = mockPrices()
     render(<BookingFlow selection={selection} />)
+    const steps = within(screen.getByRole('list', { name: '예약 입력 진행 단계' }))
+    expect(steps.getByText('1. 투숙객 입력').getAttribute('aria-current')).toBe('step')
+    expect(steps.getByText('2. 최종 확인').hasAttribute('aria-current')).toBe(false)
     expect((screen.getByLabelText('대표 투숙객 이메일') as HTMLInputElement).value).toBe('')
     review()
     expect(screen.getAllByRole('alert')).toHaveLength(3)
     fill()
     review()
+    expect(steps.getByText('2. 최종 확인').getAttribute('aria-current')).toBe('step')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '제출 전 최종 확인' }))
+    expect(steps.getByText('1. 투숙객 입력').hasAttribute('aria-current')).toBe(false)
     await screen.findByText('총 예상 금액: 200.00')
     expect(screen.getByText('숙소: 서울 호텔')).toBeTruthy()
     expect(screen.getByText('대표 투숙객: 홍길동')).toBeTruthy()
@@ -51,6 +57,8 @@ describe('BookingFlow', () => {
       false,
     )
     fireEvent.click(screen.getByRole('button', { name: '투숙객 정보 수정' }))
+    expect(steps.getByText('1. 투숙객 입력').getAttribute('aria-current')).toBe('step')
+    expect(document.activeElement).toBe(screen.getByLabelText('대표 투숙객 이름'))
     expect((screen.getByLabelText('대표 투숙객 이름') as HTMLInputElement).value).toBe('홍길동')
     fireEvent.change(screen.getByLabelText('대표 투숙객 이름'), { target: { value: '김민수' } })
     review()

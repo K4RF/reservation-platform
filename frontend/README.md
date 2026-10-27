@@ -76,6 +76,11 @@ Desktop은 객실 목록 옆 확인 패널, Mobile은 1열과 명시적 확인 �
 기존 Modal/Sheet·새 가용성 조회·선택 초기화·가격/정책 의미는 유지합니다.
 [Detail·객실 선택 (#255)](../docs/ui/frontend-detail-room-selection-255.md)에 실제 화면과 미완료 Media·검증 한계를 기록했습니다.
 
+Booking은 입력/최종 확인 단계와 예상 요금 표시를 구분하고, 로그인 후에는 객실 비교 아래 넓은 요약/입력 영역을 사용합니다.
+완료 화면은 서버 GET의 ID/Number·저장 금액·대표 투숙객을 표시하며 결제 완료를 의미하지 않습니다.
+기존 단일 POST·실패 잠금·로그인 복귀는 유지합니다. 반응형·Focus와 검증 경계는
+[Booking 리디자인 (#256)](../docs/ui/frontend-booking-redesign-256.md)을 참고하세요.
+
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은
 [Authentication UI (#227)](../docs/ui/frontend-authentication-ui-227.md)에 정리했습니다.

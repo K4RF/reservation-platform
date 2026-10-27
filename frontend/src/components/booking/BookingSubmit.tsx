@@ -56,7 +56,7 @@ export function BookingSubmit({
           예약 생성 완료: ID {completedId}. 입력 내용은 더 이상 제출할 수 없습니다.
         </p>
       ) : (
-        <div className="action-group">
+        <div className="action-group booking-submit-actions">
           <button
             type="button"
             disabled={state === 'pending' || (state === 'error' && !failure?.retryable)}
@@ -75,7 +75,9 @@ export function BookingSubmit({
           </button>
         </div>
       )}
-      <p>중복 클릭 방지는 이 화면에만 적용됩니다. 실제 재고 검증은 Backend가 수행합니다.</p>
+      <p className="booking-note">
+        중복 클릭 방지는 이 화면에만 적용됩니다. 실제 재고 검증은 Backend가 수행합니다.
+      </p>
     </>
   )
 }

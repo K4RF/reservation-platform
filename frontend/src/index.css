@@ -1320,8 +1320,9 @@ legend {
 }
 
 .booking-complete-page {
-  width: min(100%, var(--content-result));
+  width: min(100%, var(--content-wide));
   padding: clamp(var(--space-5), 4vw, var(--space-12));
+  border-radius: 0;
   text-align: left;
   overflow-wrap: anywhere;
 }
@@ -1354,6 +1355,154 @@ legend {
 }
 .booking-result-actions a:hover {
   background: var(--color-surface-hover);
+}
+.booking-result-actions a.primary-action:hover {
+  background: var(--color-primary-hover);
+}
+.booking-eyebrow {
+  margin: 0 0 var(--space-3);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+}
+.booking-flow-header,
+.booking-complete-header {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.availability-results-layout:has(.booking-flow) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.booking-input-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-8);
+}
+.booking-input-content {
+  min-width: 0;
+}
+.booking-flow .booking-review > h3 {
+  scroll-margin-top: var(--space-6);
+}
+.booking-flow-header > h3 {
+  font-size: var(--font-size-xl);
+}
+.booking-complete-header {
+  max-width: var(--content-result);
+}
+.booking-steps {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-block: var(--space-5);
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.booking-steps > li {
+  padding-block: var(--space-3);
+  border-bottom: 1px solid var(--color-border-control);
+}
+.booking-steps > [aria-current='step'] {
+  border-bottom: var(--focus-ring-width) solid var(--color-primary);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+.booking-accommodation,
+.booking-result-number {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+}
+.booking-summary-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.booking-summary-header > h3 {
+  margin: 0;
+}
+.booking-price-basis {
+  display: inline-block;
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-secondary);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+}
+.booking-stay-details,
+.booking-guest-details {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+.booking-stay-details > p,
+.booking-guest-details > p {
+  margin: 0;
+}
+.booking-cta,
+.booking-submit-actions {
+  position: static;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.booking-cta > button,
+.booking-submit-actions > button {
+  width: 100%;
+  padding-inline: var(--space-2);
+  scroll-margin-block: var(--space-4);
+}
+.booking-review-notice {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+.booking-flow .booking-review {
+  padding: var(--space-4);
+  border-radius: 0;
+}
+.booking-result-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--space-6);
+}
+.booking-result-grid > section {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+}
+.booking-result-grid .booking-result-amount {
+  background: var(--color-background);
+}
+.booking-result-guest {
+  grid-column: 1 / -1;
+}
+@media (max-width: 64rem) {
+  .booking-input-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+@media (max-width: 48rem) {
+  .booking-result-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .booking-result-grid > section {
+    padding: var(--space-4);
+  }
+  .booking-result-actions > a {
+    width: 100%;
+  }
+}
+@media (max-width: 24rem) {
+  .booking-flow .booking-review {
+    padding: var(--space-2);
+  }
 }
 .booking-total {
   padding: var(--space-4);
@@ -1404,12 +1553,14 @@ legend {
   text-align: right;
 }
 .booking-guest-form {
+  min-width: 0;
   margin-block: var(--space-5);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
 form[aria-label='대표 투숙객 정보'] {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   max-width: var(--content-form);
 }

@@ -22,17 +22,22 @@ export function BookingSummary({
   const { state, retry } = useDetailQuery(load)
   return (
     <section className="booking-summary" aria-labelledby="booking-summary-title">
-      <h3 id="booking-summary-title">예약 요약</h3>
-      <p>
-        객실: {room.name} · 최대 {room.capacity}명 · 요청 {request.guestCount}명
-      </p>
-      <p>
-        {request.checkInDate} ~ {request.checkOutDate} (체크아웃 날짜 제외)
-      </p>
-      <p>
-        객실 기본 1박 가격:{' '}
-        {room.nightlyPrice.toLocaleString('ko-KR', { maximumFractionDigits: 20 })}
-      </p>
+      <header className="booking-summary-header">
+        <h3 id="booking-summary-title">예약 요약</h3>
+        <span className="booking-price-basis">조회 시점 예상 요금</span>
+      </header>
+      <div className="booking-stay-details">
+        <p>
+          객실: {room.name} · 최대 {room.capacity}명 · 요청 {request.guestCount}명
+        </p>
+        <p>
+          {request.checkInDate} ~ {request.checkOutDate} (체크아웃 날짜 제외)
+        </p>
+        <p className="booking-note">
+          객실 기본 1박 가격:{' '}
+          {room.nightlyPrice.toLocaleString('ko-KR', { maximumFractionDigits: 20 })}
+        </p>
+      </div>
       {state.status === 'loading' && <LoadingState message="숙박일별 요금을 확인하고 있습니다." />}
       {state.status === 'error' && (
         <ErrorState

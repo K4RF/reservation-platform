@@ -284,6 +284,18 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toContain('overflow-x: hidden')
   })
 
+  it('separates Booking steps, expected prices and saved result panels with normal-flow CTAs', () => {
+    expect(globalCss).toMatch(/\.booking-input-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/)
+    expect(globalCss).toContain('.availability-results-layout:has(.booking-flow)')
+    expect(globalCss).toMatch(/\.booking-steps\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
+    expect(globalCss).toContain(".booking-steps > [aria-current='step']")
+    expect(globalCss).toMatch(/\.booking-submit-actions\s*\{[^}]*position: static;/)
+    expect(globalCss).toMatch(/\.booking-result-grid\s*\{[^}]*minmax\(0, 1\.2fr\) minmax\(0, 1fr\)/)
+    expect(globalCss).toMatch(/\.booking-result-grid > section\s*\{[^}]*min-width: 0;/)
+    expect(globalCss).toContain('@media (max-width: 48rem)')
+    expect(globalCss).not.toContain('overflow-x: hidden')
+  })
+
   it('keeps reservation money tables scrollable and cancellation warnings separate from saved results', () => {
     expect(globalCss).toMatch(/\.reservation-price-scroll\s*\{[^}]*overflow-x: auto;/)
     expect(globalCss).toMatch(
