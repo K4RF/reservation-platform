@@ -77,7 +77,7 @@ export function ReservationCancellationSubmit({
       {pending && <LoadingState message="예약을 취소하고 있습니다. 중복 제출하지 마세요." />}
       {failure && <ErrorState message={failure} />}
       {result && !onCancelled && <ReservationCancellationFeedback result={result} />}
-      <div className="action-group">
+      <div className="action-group reservation-mutation-actions">
         <button
           type="button"
           className="danger-action"

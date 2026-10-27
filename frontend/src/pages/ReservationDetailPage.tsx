@@ -46,6 +46,7 @@ function ReservationDetail({ id }: { id: number }) {
   return (
     <section className="page-content reservation-detail-page">
       <header className="reservation-page-header">
+        <p className="reservation-eyebrow">YOUR RESERVATION</p>
         <h1>예약 상세</h1>
         <p>저장된 예약 정보와 일정 변경·취소 결과를 확인하세요.</p>
       </header>

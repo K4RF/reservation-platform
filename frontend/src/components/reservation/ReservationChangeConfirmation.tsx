@@ -35,7 +35,11 @@ export function ReservationChangeConfirmation({
   const [result, setResult] = useState<ReservationDetail>()
   const locked = useRef(false)
   const controller = useRef<AbortController | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
   useEffect(() => () => controller.current?.abort(), [])
+  useEffect(() => {
+    heading.current?.focus()
+  }, [])
 
   async function submit() {
     if (locked.current || price.status !== 'success' || !acknowledged) return
@@ -67,14 +71,25 @@ export function ReservationChangeConfirmation({
       className="confirmation-panel reservation-change-confirmation"
       aria-labelledby="reservation-change-confirm-heading"
     >
-      <h4 id="reservation-change-confirm-heading">일정 변경 전 확인</h4>
-      <p className="reservation-stay-line">
-        기존 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
-      </p>
-      <p className="reservation-stay-line reservation-new-stay">
-        새 일정: {request.checkInDate} ~ {request.checkOutDate} (체크아웃 제외)
-      </p>
-      <p>기존 확정 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}</p>
+      <h4 id="reservation-change-confirm-heading" ref={heading} tabIndex={-1}>
+        일정 변경 전 확인
+      </h4>
+      <div className="reservation-schedule-comparison">
+        <section aria-label="변경 전 저장 기록">
+          <p className="reservation-source-label">변경 전 · 서버 저장 Snapshot</p>
+          <p className="reservation-stay-line">
+            기존 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
+          </p>
+          <p>기존 확정 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}</p>
+        </section>
+        <section aria-label="변경 요청 일정">
+          <p className="reservation-source-label">변경 요청 · 아직 반영되지 않음</p>
+          <p className="reservation-stay-line reservation-new-stay">
+            새 일정: {request.checkInDate} ~ {request.checkOutDate} (체크아웃 제외)
+          </p>
+          <p className="reservation-note">아래 참고 예상액은 변경 응답의 확정 금액이 아닙니다.</p>
+        </section>
+      </div>
       <p>객실·인원·대표 투숙객·취소 정책 Snapshot은 변경하지 않습니다.</p>
       {price.status === 'loading' && <LoadingState message="변경 참고 요금을 조회하고 있습니다." />}
       {price.status === 'error' && (
@@ -137,7 +152,7 @@ export function ReservationChangeConfirmation({
           일정 변경 완료. 서버 확정 총액: {formatMinorUnits(toMinorUnits(result.totalAmount, 19))}
         </p>
       )}
-      <div className="action-group">
+      <div className="action-group reservation-mutation-actions">
         <button
           type="button"
           disabled={disabled || price.status !== 'success' || !acknowledged}
