@@ -434,11 +434,89 @@ legend {
 }
 
 .auth-page {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
+  grid-template-areas: 'introduction form';
+  width: min(100%, var(--content-wide));
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: var(--color-surface);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.auth-panel {
+  grid-area: form;
+  justify-self: center;
   width: min(100%, var(--content-auth));
   min-width: 0;
   padding: var(--space-8);
-  text-align: left;
-  overflow-wrap: anywhere;
+}
+.auth-introduction {
+  grid-area: introduction;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: center;
+  gap: var(--space-5);
+  min-width: 0;
+  padding: clamp(var(--space-6), 4vw, var(--space-12));
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+.auth-introduction > p {
+  margin: 0;
+  color: var(--color-on-primary);
+}
+.auth-brand-title {
+  font-family: var(--font-family-display);
+  font-size: clamp(var(--font-size-2xl), 3vw, 3rem);
+  line-height: var(--leading-heading);
+}
+.auth-eyebrow {
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.1em;
+}
+.auth-introduction a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+  padding-block: var(--space-2);
+  color: var(--color-on-primary);
+  font-weight: var(--font-weight-semibold);
+}
+.auth-introduction a:focus-visible {
+  outline-color: var(--color-on-primary);
+}
+.auth-public-note,
+.auth-note {
+  font-size: var(--font-size-sm);
+  line-height: var(--leading-description);
+}
+.auth-note {
+  margin-block: var(--space-3) 0;
+}
+.auth-session-note {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.auth-panel > .auth-return-link {
+  width: 100%;
+}
+@media (max-width: 48rem) {
+  .auth-page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'form' 'introduction';
+  }
+  .auth-panel {
+    padding: var(--space-5);
+  }
+  .auth-introduction {
+    padding: var(--space-5);
+    gap: var(--space-3);
+  }
 }
 
 .auth-header {
@@ -447,6 +525,15 @@ legend {
   margin-bottom: var(--space-5);
   padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--color-border);
+}
+
+@media (max-width: 24rem) {
+  .auth-panel {
+    padding: var(--space-3);
+  }
+  .auth-panel button {
+    padding-inline: var(--space-2);
+  }
 }
 
 .auth-header p {
@@ -2434,7 +2521,7 @@ form[aria-label='대표 투숙객 정보'] {
     grid-column: 1 / -1;
   }
   .auth-page {
-    padding: var(--space-5);
+    padding: 0;
   }
 }
 

@@ -45,10 +45,17 @@ describe('login flow', () => {
       true,
     )
     expect(screen.getByRole('form', { name: '이메일 로그인' })).toBeTruthy()
+    expect(
+      screen.getByRole('link', { name: '로그인 없이 숙소 둘러보기' }).getAttribute('href'),
+    ).toBe('/accommodations')
+    expect(screen.getByText(/새로고침 후에는 다시 로그인해야 합니다/)).toBeTruthy()
     expect(screen.getByLabelText('이메일').getAttribute('inputmode')).toBe('email')
     expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
     expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('current-password')
     expect(screen.getByRole('button', { name: 'Google로 로그인' })).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: 'Google로 로그인' }).getAttribute('aria-describedby'),
+    ).toBe('google-login-hint')
     expect(screen.getByRole('button', { name: 'Google로 로그인' }).className).toBe(
       'google-login-button',
     )

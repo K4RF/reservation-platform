@@ -33,6 +33,10 @@ describe('signup flow', () => {
       true,
     )
     expect(screen.getByRole('form', { name: '이메일 회원가입' })).toBeTruthy()
+    expect(
+      screen.getByText('회원가입만으로 로그인되지는 않습니다. 가입 후 로그인해 주세요.'),
+    ).toBeTruthy()
+    expect(screen.getByRole('complementary', { name: '공개 탐색 안내' })).toBeTruthy()
     expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
     expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('new-password')
     expect(screen.getByText('비밀번호는 8자 이상 72자 이하로 입력하세요.')).toHaveProperty(
