@@ -23,6 +23,8 @@ describe('BookingSummary', () => {
   it('renders the stay, base information, backend nightly breakdown and expected total', async () => {
     mockPrices()
     render(<BookingSummary room={room} request={request} />)
+    expect(screen.getByText('조회 시점 예상 요금')).toBeTruthy()
+    expect(screen.queryByText('서버 저장 금액')).toBeNull()
     expect(screen.getByText('숙박일별 요금을 확인하고 있습니다.')).toBeTruthy()
     await screen.findByText('총 예상 금액: 280,000.65')
     expect(screen.getByText('2박')).toBeTruthy()

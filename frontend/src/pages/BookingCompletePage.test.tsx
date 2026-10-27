@@ -21,6 +21,11 @@ describe('completion owner lookup', () => {
     await screen.findByText('예약이 확정되었습니다.')
     expect(screen.getByText(`예약 번호: ${reservationResult.reservationNumber}`)).toBeTruthy()
     expect(screen.getByText('예약 금액 Snapshot: 350.25')).toBeTruthy()
+    const saved = within(screen.getByRole('region', { name: '서버 저장 금액' }))
+    expect(saved.getByText('예약 금액 Snapshot: 350.25')).toBeTruthy()
+    expect(screen.getByRole('region', { name: '저장된 예약 정보' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: '저장된 대표 투숙객' })).toBeTruthy()
+    expect(screen.queryByText(/총 예상 금액:/)).toBeNull()
     const actions = within(screen.getByRole('navigation', { name: '예약 결과 다음 단계' }))
     expect(actions.getAllByRole('link')).toHaveLength(2)
     expect(actions.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href')).toBe(
@@ -31,6 +36,7 @@ describe('completion owner lookup', () => {
     )
     expect(screen.getByText(/결제 완료를 의미하지 않습니다/)).toBeTruthy()
     expect(mock.mock.calls[0][1].method).toBe('GET')
+    expect(mock).toHaveBeenCalledTimes(1)
   })
   it.each(['abc', '0', '9007199254740992'])('blocks invalid %s without fetch', (id) => {
     const mock = vi.fn()
@@ -68,5 +74,18 @@ describe('completion owner lookup', () => {
         .classList.contains('booking-result-cancelled'),
     ).toBe(true)
     expect(screen.queryByText('예약이 확정되었습니다.')).toBeNull()
+  })
+  it('keeps unknown legacy guest and number explicit without inventing saved values', async () => {
+    const mock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ ...reservationResult, reservationNumber: null, representativeGuest: null }),
+      )
+    vi.stubGlobal('fetch', mock)
+    renderAt()
+    await screen.findByText('예약 번호: 미등록')
+    expect(screen.getByText('과거 예약의 대표 투숙객 정보가 없습니다.')).toBeTruthy()
+    expect(screen.queryByText(/안내 이메일:/)).toBeNull()
+    expect(mock).toHaveBeenCalledTimes(1)
   })
 })
