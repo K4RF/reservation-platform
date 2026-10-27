@@ -14,7 +14,13 @@ export function ReservationCard({
       aria-label={`예약 ${reservation.id}`}
     >
       <div className="reservation-card-header">
-        <h2>{reservation.accommodationName}</h2>
+        <div className="reservation-card-title">
+          <p className="reservation-source-label">
+            예약 ID: {reservation.id} ·{' '}
+            {reservation.catalogUnavailable ? '현재 카탈로그 일부 미조회' : '현재 카탈로그 이름'}
+          </p>
+          <h2>{reservation.accommodationName}</h2>
+        </div>
         <span
           className={`reservation-status reservation-status-${reservation.status.toLowerCase()}`}
         >

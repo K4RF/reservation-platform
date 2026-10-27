@@ -310,6 +310,19 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toContain('.reservation-quote-unavailable')
   })
 
+  it('scopes owner reservation snapshots and schedule comparisons without moving mutation CTAs over content', () => {
+    expect(globalCss).toMatch(
+      /\.reservation-snapshot-grid\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
+    )
+    expect(globalCss).toMatch(/\.reservation-snapshot-wide\s*\{[^}]*grid-column: 1 \/ -1;/)
+    expect(globalCss).toMatch(
+      /\.reservation-schedule-comparison\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
+    )
+    expect(globalCss).toMatch(/\.reservation-mutation-actions\s*\{[^}]*position: static;/)
+    expect(globalCss).toContain('.reservation-result-disclaimer')
+    expect(globalCss).not.toContain('overflow-x: hidden')
+  })
+
   it('keeps Admin layout, status, recovery and Calendar styles scoped without clipping tables', () => {
     expect(globalCss).toMatch(/\.admin-sidebar ul\s*\{[^}]*grid-template-columns: repeat\(3,/)
     expect(globalCss).toMatch(/\.admin-query-form\s*\{[^}]*align-items: end;/)

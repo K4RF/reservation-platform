@@ -81,6 +81,11 @@ Booking은 입력/최종 확인 단계와 예상 요금 표시를 구분하고, 
 기존 단일 POST·실패 잠금·로그인 복귀는 유지합니다. 반응형·Focus와 검증 경계는
 [Booking 리디자인 (#256)](../docs/ui/frontend-booking-redesign-256.md)을 참고하세요.
 
+내 예약 목록/상세는 현재 카탈로그 이름과 저장된 투숙객·가격·정책·취소 결과를 구분합니다.
+일정 변경은 저장 일정/새 요청/참고 요금을, 취소는 사전 금액 미제공과 저장 결과를 분리해 표시합니다.
+기존 상호 제출 잠금·재확인 규칙은 유지합니다. 실제 화면과 검증 한계는
+[Reservation Management 리디자인 (#257)](../docs/ui/frontend-reservation-redesign-257.md)을 참고하세요.
+
 Login/Signup/Google Callback은 같은 인증 카드와 오류·로딩 표현을 사용합니다.
 비밀번호 안내·자동완성/마스킹·Mock/실제 OAuth2 구분은
 [Authentication UI (#227)](../docs/ui/frontend-authentication-ui-227.md)에 정리했습니다.

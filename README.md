@@ -358,6 +358,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [숙소 Search 비교 화면·필터·Summary와 검증 (#254)](docs/ui/frontend-search-comparison-254.md)
 - [숙소 Detail·객실 비교/선택 패널·Modal과 검증 (#255)](docs/ui/frontend-detail-room-selection-255.md)
 - [Booking 입력·예상 요금·서버 결과 화면과 검증 (#256)](docs/ui/frontend-booking-redesign-256.md)
+- [내 예약 목록·상세·변경·취소 화면 리디자인과 검증 (#257)](docs/ui/frontend-reservation-redesign-257.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -381,6 +382,7 @@ UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#230 화면 정�
 #254는 Search 2열/1열 비교 배치·필터·적용 조건 Summary를 정리했습니다. 사진 영역은 미제공 상태이며,
 #255는 Detail 소개·이용 안내·객실 비교·선택 확인 패널을 정리했습니다. 실제 Gallery/Media 연동은 후속 범위입니다.
 #256은 Booking 요약/입력·최종 확인과 완료 화면을 정리하고, 예상 요금과 서버 저장 금액을 구분했습니다.
+#257은 내 예약 목록·상세·변경/취소 확인의 정보 출처와 표현을 통일했습니다. 실제 Backend 전체 연동 검증은 별도입니다.
 과거 f0.5.3은 같은 Milestone #19의 이전 명칭입니다.
 실제 사진·객실 추가 데이터는 `v0.4.1 — Accommodation Media & Room Metadata`에서 준비합니다.
 현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.

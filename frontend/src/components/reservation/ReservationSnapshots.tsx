@@ -29,8 +29,9 @@ export function ReservationSnapshots({
   const [cancelLocked, setCancelLocked] = useState(false)
   const { representativeGuest: guest } = reservation
   return (
-    <>
+    <div className="reservation-snapshot-grid">
       <section className="reservation-card" aria-labelledby="guest-snapshot-heading">
+        <p className="reservation-source-label">서버 저장 Snapshot</p>
         <h2 id="guest-snapshot-heading">대표 투숙객</h2>
         {guest ? (
           <dl className="reservation-facts">
@@ -52,6 +53,7 @@ export function ReservationSnapshots({
         )}
       </section>
       <section className="reservation-card" aria-labelledby="price-snapshot-heading">
+        <p className="reservation-source-label">현재 객실 가격과 구분되는 저장 기록</p>
         <h2 id="price-snapshot-heading">저장된 숙박 요금</h2>
         <p>첫 숙박일 요금 Snapshot: {amountLabel(reservation.nightlyPriceSnapshot)}</p>
         <p>확정 예약 금액은 위 예약 기록의 총액입니다. 현재 객실 요금으로 재계산하지 않습니다.</p>
@@ -94,18 +96,31 @@ export function ReservationSnapshots({
           <p>숙박일별 요금이 저장되지 않은 과거 예약입니다. 일별 금액을 추정하지 않습니다.</p>
         )}
       </section>
-      <section className="reservation-card" aria-labelledby="policy-snapshot-heading">
+      <section
+        className="reservation-card reservation-snapshot-wide"
+        aria-labelledby="policy-snapshot-heading"
+      >
         <h2 id="policy-snapshot-heading">예약에 저장된 취소 정책</h2>
         <ReservationCancellationPolicy policy={reservation.cancellationPolicySnapshot} />
       </section>
       {reservation.status === 'CANCELLED' ? (
-        <section className="reservation-card" aria-labelledby="cancellation-result-heading">
+        <section
+          className="reservation-card reservation-snapshot-wide"
+          aria-labelledby="cancellation-result-heading"
+        >
           <h2 id="cancellation-result-heading">저장된 취소 결과</h2>
           <ReservationCancellationResult reservation={reservation} />
         </section>
       ) : (
-        <section className="reservation-card" aria-labelledby="reservation-actions-heading">
+        <section
+          className="reservation-card reservation-snapshot-wide"
+          aria-labelledby="reservation-actions-heading"
+        >
+          <p className="reservation-eyebrow">MANAGE YOUR STAY</p>
           <h2 id="reservation-actions-heading">예약 관리</h2>
+          <p className="reservation-note">
+            일정 변경과 취소는 별도 작업입니다. 실행 전 안내를 각각 확인하세요.
+          </p>
           <fieldset
             className="reservation-change-fields reservation-change-action"
             disabled={cancelLocked}
@@ -136,6 +151,6 @@ export function ReservationSnapshots({
           </p>
         </section>
       )}
-    </>
+    </div>
   )
 }

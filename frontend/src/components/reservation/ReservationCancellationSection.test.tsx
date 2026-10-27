@@ -23,6 +23,8 @@ describe('stored cancellation policy and confirmation', () => {
     open()
     expect(screen.getByText('저장된 취소 정책과 예약 상태를 다시 조회하고 있습니다.')).toBeTruthy()
     await review()
+    expect(screen.getByText('취소 확인을 위해 새로 읽은 저장 기록')).toBeTruthy()
+    expect(screen.getByText('저장 정책 · 체크인 기준 상대 경계')).toBeTruthy()
     expect(screen.getByText('취소 전 예상 환불 금액: 제공되지 않음')).toBeTruthy()
     expect(screen.getByText('저장된 예약 총액: 350.25')).toBeTruthy()
     expect(screen.getByText('취소 마감: 체크인 1일 전까지')).toBeTruthy()

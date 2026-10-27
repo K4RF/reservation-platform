@@ -5,6 +5,7 @@ import { formatMinorUnits, toMinorUnits } from '../../utils/money'
 export function ReservationCancellationPolicy({ policy }: { policy: CancellationPolicySnapshot }) {
   return (
     <div className="reservation-policy">
+      <p className="reservation-source-label">저장 정책 · 체크인 기준 상대 경계</p>
       <p>체크인 {policy.freeCancellationDaysBeforeCheckIn}일 전 이상: 무료 취소</p>
       <ul className="reservation-policy-tiers">
         {policy.feeRules.map((rule, index) => {
@@ -44,6 +45,7 @@ export function ReservationCancellationResult({
     value === null ? '저장된 정보 없음' : formatMinorUnits(toMinorUnits(value, 19))
   return (
     <>
+      <p className="reservation-source-label">서버 저장 취소 결과</p>
       <dl className="reservation-facts">
         <div>
           <dt>취소 시각 (UTC)</dt>
@@ -64,7 +66,9 @@ export function ReservationCancellationResult({
           <dd>{amount(reservation.refundAmount)}</dd>
         </div>
       </dl>
-      <p>저장된 취소 결과이며 결제 취소·환불 완료를 의미하지 않습니다.</p>
+      <p className="reservation-result-disclaimer">
+        저장된 취소 결과이며 결제 취소·환불 완료를 의미하지 않습니다.
+      </p>
       <p>취소된 예약은 일정 변경하거나 다시 취소할 수 없습니다.</p>
     </>
   )
@@ -77,14 +81,17 @@ export function ReservationCancellationSummary({
 }) {
   return (
     <>
-      <p>확인 시 다시 조회한 서버 예약 정보입니다.</p>
-      <p>예약 번호: {reservation.reservationNumber ?? '미등록 (과거 예약)'}</p>
-      <p>
-        예약 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
-      </p>
-      <p className="reservation-saved-total">
-        저장된 예약 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}
-      </p>
+      <div className="reservation-cancel-record">
+        <p className="reservation-source-label">취소 확인을 위해 새로 읽은 저장 기록</p>
+        <p>확인 시 다시 조회한 서버 예약 정보입니다.</p>
+        <p>예약 번호: {reservation.reservationNumber ?? '미등록 (과거 예약)'}</p>
+        <p>
+          예약 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
+        </p>
+        <p className="reservation-saved-total">
+          저장된 예약 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}
+        </p>
+      </div>
       <h4>확인할 저장 취소 정책</h4>
       <ReservationCancellationPolicy policy={reservation.cancellationPolicySnapshot} />
       {reservation.status === 'CANCELLED' ? (

@@ -35,6 +35,12 @@ describe('ReservationList and card mapping', () => {
     ).toBe(true)
     expect(card.getByRole('heading', { name: '현재 숙소 이름' })).toBeTruthy()
     expect(card.getByText('객실: 현재 객실 이름')).toBeTruthy()
+    expect(card.getByText('예약 ID: 42 · 현재 카탈로그 이름')).toBeTruthy()
+    expect(
+      within(screen.getByRole('article', { name: '예약 43' })).getByText(
+        '예약 ID: 43 · 현재 카탈로그 일부 미조회',
+      ),
+    ).toBeTruthy()
     expect(card.getByText(`예약 번호: ${reservationResult.reservationNumber}`)).toBeTruthy()
     expect(card.getByText('2030-01-01')).toBeTruthy()
     expect(card.getByText('2030-01-03')).toBeTruthy()

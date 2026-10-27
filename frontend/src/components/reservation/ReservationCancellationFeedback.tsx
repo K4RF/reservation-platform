@@ -12,6 +12,7 @@ export function ReservationCancellationFeedback({
       className="reservation-card reservation-operation-result"
       aria-labelledby="cancel-success-heading"
     >
+      <p className="reservation-source-label">취소 API 응답 · 서버 처리 결과</p>
       <h2 id="cancel-success-heading">예약 취소 완료</h2>
       <p role="status">
         서버에서 예약을 CANCELLED로 처리했습니다. 최신 예약 상세를 다시 조회합니다.
@@ -48,7 +49,9 @@ export function ReservationCancellationFeedback({
           <dd>{amount(result.estimatedRefundAmount)}</dd>
         </div>
       </dl>
-      <p>결제 취소·환불 완료가 아닙니다. 재고 복구와 수수료 계산은 서버가 수행합니다.</p>
+      <p className="reservation-result-disclaimer">
+        결제 취소·환불 완료가 아닙니다. 재고 복구와 수수료 계산은 서버가 수행합니다.
+      </p>
     </section>
   )
 }
