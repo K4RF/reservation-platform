@@ -52,6 +52,9 @@ describe('Google callback page', () => {
       screen.getByRole('region', { name: 'Google 로그인' }).classList.contains('auth-page'),
     ).toBe(true)
     expect(exchangeGoogleLoginCode).toHaveBeenCalledOnce()
+    expect(
+      screen.getByRole('link', { name: '로그인 없이 숙소 둘러보기' }).getAttribute('href'),
+    ).toBe('/accommodations')
     expect(getAccessToken()).toBeNull()
   })
   it('returns to the protected destination after the full-page Google flow', async () => {

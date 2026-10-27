@@ -86,7 +86,7 @@ describe('design token and global stylesheet contracts', () => {
     )
     expect(tokens.get('--font-family-body')).toContain("'Malgun Gothic'")
     expect(tokens.get('--font-family-body')).toContain('sans-serif')
-    expect(globalCss.match(/font-family: var\(--font-family-display\)/g)).toHaveLength(3)
+    expect(globalCss.match(/font-family: var\(--font-family-display\)/g)).toHaveLength(4)
     expect(tokensCss + globalCss).not.toMatch(/@font-face|https?:\/\/|url\(/)
     expect(tokens.get('--leading-body')).toBe('1.6')
     expect(tokens.get('--control-min-height')).toBe('2.75rem')
@@ -159,7 +159,7 @@ describe('design token and global stylesheet contracts', () => {
     ]) {
       expect(tokens.has(`--${name}`)).toBe(true)
     }
-    expect(globalCss.match(/:focus-visible/g)).toHaveLength(2)
+    expect(globalCss.match(/:focus-visible/g)).toHaveLength(3)
     expect(globalCss).toMatch(
       /\.home-search-jump:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
     )
@@ -177,6 +177,16 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toContain('.signup-form button:hover')
     expect(globalCss.match(/button\[type='submit'\]:hover:enabled/g)).toHaveLength(1)
     expect(globalCss).not.toContain('var(--accent)')
+  })
+
+  it('scopes Auth branding and content panels with form-first mobile reflow and visible inverse focus', () => {
+    expect(globalCss).toMatch(/\.auth-page\s*\{[^}]*grid-template-areas: 'introduction form';/)
+    expect(globalCss).toMatch(/\.auth-panel\s*\{[^}]*var\(--content-auth\)/)
+    expect(globalCss).toContain("grid-template-areas: 'form' 'introduction'")
+    expect(globalCss).toMatch(
+      /\.auth-introduction a:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
+    )
+    expect(globalCss).not.toContain('overflow-x: hidden')
   })
 
   it('shares a single scoped alert skin and removes only the retired empty-state selector', () => {
