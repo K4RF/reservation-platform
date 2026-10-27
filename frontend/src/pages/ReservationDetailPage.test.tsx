@@ -81,6 +81,15 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     renderDetail()
     expect(screen.getByText('예약을 불러오고 있습니다.')).toBeTruthy()
     await screen.findByText('guest@example.com')
+    expect(
+      within(screen.getByRole('region', { name: '대표 투숙객' })).getByText('서버 저장 Snapshot'),
+    ).toBeTruthy()
+    expect(
+      within(screen.getByRole('region', { name: '저장된 숙박 요금' })).getByText(
+        '현재 객실 가격과 구분되는 저장 기록',
+      ),
+    ).toBeTruthy()
+    expect(screen.getByText('저장 정책 · 체크인 기준 상대 경계')).toBeTruthy()
     expect(screen.getByRole('heading', { name: accommodation.name })).toBeTruthy()
     expect(screen.getByText(`객실: ${room.name}`)).toBeTruthy()
     expect(screen.getByText('예약 확정')).toBeTruthy()

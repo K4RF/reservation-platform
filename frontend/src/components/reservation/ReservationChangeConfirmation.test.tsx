@@ -47,8 +47,20 @@ describe('reservation change confirmation', () => {
     const refresh = vi.fn(),
       lock = vi.fn()
     prepare(refresh, lock)
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '일정 변경 전 확인' }))
+    expect(
+      within(screen.getByRole('region', { name: '변경 전 저장 기록' })).getByText(
+        '기존 확정 총액: 350.25',
+      ),
+    ).toBeTruthy()
+    expect(
+      within(screen.getByRole('region', { name: '변경 요청 일정' })).getByText(
+        '변경 요청 · 아직 반영되지 않음',
+      ),
+    ).toBeTruthy()
     expect(screen.getByText('기존 확정 총액: 350.25')).toBeTruthy()
     await screen.findByText('새 일정 참고 예상 총액: 200.20')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '일정 변경 전 확인' }))
     const priceScroll = screen.getByRole('region', { name: '변경 참고 요금 표' })
     expect(priceScroll.tabIndex).toBe(0)
     expect(priceScroll.getAttribute('aria-describedby')).toBe('change-price-scroll-hint')
