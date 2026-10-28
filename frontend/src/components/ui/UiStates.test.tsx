@@ -19,6 +19,7 @@ describe('common UI states', () => {
 
     expect(screen.getByRole('alert').textContent).toContain('숙소를 불러오지 못했습니다.')
     expect(screen.getByRole('alert').classList.contains('ui-error')).toBe(true)
+    expect(screen.getByRole('alert').getAttribute('aria-atomic')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     expect(onRetry).toHaveBeenCalledOnce()
   })

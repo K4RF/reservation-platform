@@ -18,6 +18,12 @@ const references = (value: string) => [...value.matchAll(/var\((--[\w-]+)\)/g)].
 
 // Source contracts only: jsdom does not prove actual CSS variable layout or focus rendering.
 describe('design token and global stylesheet contracts', () => {
+  it('keeps the current redesign free of authored animation and smooth scrolling, including reduced-motion users', () => {
+    // There is no animation to turn off today. If motion is introduced, replace this with
+    // explicit prefers-reduced-motion coverage rather than silently weakening the guard.
+    expect(globalCss).not.toMatch(/(?:^|[;{\s])(?:animation|transition)(?:-[\w-]+)?\s*:/)
+    expect(globalCss).not.toMatch(/scroll-behavior\s*:\s*smooth/)
+  })
   it('scopes Admin work areas, read panels and write/status forms without hiding overflow', () => {
     expect(globalCss).toMatch(/\.admin-layout\s*\{[^}]*var\(--content-catalog\)/)
     expect(globalCss).toMatch(/\.admin-header\s*\{[^}]*background: var\(--color-primary\)/)

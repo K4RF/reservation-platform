@@ -11,6 +11,7 @@ import { useAuth } from '../state/useAuth'
 import { getAccessToken, getRefreshToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from './jwt'
 import { reservationPage } from './reservation'
+import { expectUiSemantics } from './uiSemantics'
 
 // Mock only the HTTP boundary: real forms, API functions/client, token store, Provider and Router.
 function Probe() {
@@ -102,12 +103,14 @@ describe('authentication user lifecycle (HTTP boundary integration)', () => {
       return path === '/auth/logout' ? new Response(null, { status: 204 }) : json({ content: [] })
     })
     const first = renderFlow('/signup')
+    expectUiSemantics()
     submit('회원가입')
     expect(
       await screen.findByText('회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.'),
     ).toBeTruthy()
     expect(screen.getByTestId('auth').textContent).toBe('anonymous')
     fireEvent.click(screen.getByRole('link', { name: '로그인' }))
+    expectUiSemantics()
     submit('로그인')
     await waitFor(() => expect(screen.getByTestId('auth').textContent).toBe('authenticated:USER'))
     fireEvent.click(screen.getByRole('link', { name: '내 예약' }))
@@ -145,6 +148,7 @@ describe('authentication user lifecycle (HTTP boundary integration)', () => {
         }),
       ).toBeTruthy()
       expect(screen.getByTestId('location').textContent).toBe('/admin')
+      expectUiSemantics()
       expect(Boolean(screen.queryByRole('link', { name: '관리자' }))).toBe(role === 'ADMIN')
     },
   )

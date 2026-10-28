@@ -8,6 +8,7 @@ import { accessTokenWithExpiry } from './jwt'
 import { accommodation, accommodationPage } from './accommodation'
 import { room, roomPage } from './room'
 import { mockDialog } from './dialog'
+import { expectUiSemantics } from './uiSemantics'
 import { bookingRequest, reservationResult } from './reservation'
 import { selectBookingRoom as selectRoom, reviewBooking as reachReview } from './bookingFlow'
 
@@ -144,6 +145,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
   it('connects Home search, filter/page navigation, room detail and a fresh selection after login before creating one reservation', async () => {
     const mock = mockApi()
     renderAt('/')
+    expectUiSemantics()
     fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
     fireEvent.change(screen.getByLabelText('체크인', { exact: true }), {
       target: { value: '2030-01-01' },
@@ -155,6 +157,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(mock).not.toHaveBeenCalled()
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
+    expectUiSemantics()
     const homeQuery = new URL(mock.mock.calls[0][0], 'http://localhost').searchParams
     expect(homeQuery.get('checkInDate')).toBe('2030-01-01')
     expect(homeQuery.get('checkOutDate')).toBe('2030-01-03')
@@ -200,6 +203,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123!' } })
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
     await screen.findByRole('form', { name: '대표 투숙객 정보' })
+    expectUiSemantics()
     const returned = new URL(screen.getByTestId('location').textContent!, 'http://localhost')
     expect(returned.pathname).toBe('/accommodations/7')
     expect([...returned.searchParams.keys()].sort()).toEqual(
@@ -230,6 +234,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     await screen.findByText('총 예상 금액: 200.00')
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     await screen.findByText('예약이 확정되었습니다.')
+    expectUiSemantics()
     const creates = mock.mock.calls.filter(
       ([url, init]) => url.endsWith('/reservations') && init.method === 'POST',
     )
