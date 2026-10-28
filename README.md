@@ -361,6 +361,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [내 예약 목록·상세·변경·취소 화면 리디자인과 검증 (#257)](docs/ui/frontend-reservation-redesign-257.md)
 - [인증·접근 거절·없는 경로 화면 리디자인과 검증 (#258)](docs/ui/frontend-authentication-redesign-258.md)
 - [관리자 작업 영역·조회/입력 구분·재고 표 리디자인과 검증 (#259)](docs/ui/frontend-admin-redesign-259.md)
+- [Visual Redesign 통합 회귀·접근성·시각 검증 및 f0.6.0 인계 (#260)](docs/ui/frontend-visual-regression-260.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -388,6 +389,8 @@ UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#230 화면 정�
 #258은 Login/Signup/Google Callback·접근 거절/없는 경로 화면을 공통 디자인으로 정리했습니다. 인증 Lifecycle은 유지합니다.
 #259는 관리자 작업 영역과 숙소·정책·객실·가격·재고의 조회/입력 표현을 정리했습니다.
 기존 저장/복구 규칙은 유지하며 실제 Admin HTTP와 최종 사용자 검수는 별도입니다.
+#260에서 변경 화면의 통합 회귀·반응형·접근성과 로컬 이미지 성능 관찰을 정리했습니다.
+실제 사진/Metadata 연결, 전체 Backend 실연동과 최종 사용자 승인을 완료한 것은 아닙니다.
 과거 f0.5.3은 같은 Milestone #19의 이전 명칭입니다.
 실제 사진·객실 추가 데이터는 `v0.4.1 — Accommodation Media & Room Metadata`에서 준비합니다.
 현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.
