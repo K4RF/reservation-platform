@@ -2230,18 +2230,38 @@ form[aria-label='대표 투숙객 정보'] {
 }
 
 .admin-layout {
-  width: min(100%, var(--content-wide));
+  width: min(100%, var(--content-catalog));
   min-width: 0;
   text-align: left;
 }
 .admin-header {
   margin-bottom: var(--space-6);
+  padding: clamp(var(--space-5), 4vw, var(--space-8));
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  overflow-wrap: anywhere;
+}
+.admin-workspace-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.12em;
+}
+.admin-header .admin-workspace-label {
+  margin-bottom: var(--space-3);
+}
+.admin-header-note {
+  display: block;
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid currentColor;
+  font-size: var(--font-size-sm);
 }
 .admin-header h1 {
   margin-block: 0 var(--space-2);
 }
 .admin-header p {
   margin: 0;
+  color: inherit;
 }
 .admin-workspace {
   display: grid;
@@ -2254,6 +2274,44 @@ form[aria-label='대표 투숙객 정보'] {
   min-width: 0;
   padding: clamp(var(--space-4), 3vw, var(--space-6));
   overflow-wrap: anywhere;
+}
+.admin-sidebar {
+  border-radius: 0;
+}
+.admin-content {
+  border-radius: 0;
+  padding: clamp(var(--space-4), 3vw, var(--space-8));
+}
+.admin-page-heading {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.admin-page-heading .eyebrow {
+  margin-top: 0;
+}
+.admin-page-heading h2 {
+  margin-bottom: 0;
+}
+.admin-area-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+.admin-area-list > li {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+.admin-area-list h3 {
+  margin-top: 0;
+  font-size: var(--font-size-lg);
+}
+.admin-area-list p {
+  margin-bottom: 0;
+  font-size: var(--font-size-sm);
 }
 .admin-sidebar ul {
   display: grid;
@@ -2307,10 +2365,26 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-content :is(h3, h4) {
   line-height: var(--leading-heading);
 }
-.admin-content :is(.admin-read-panel, .admin-policy-section) {
+.admin-content :is(.admin-read-panel, .admin-context-panel, .admin-policy-section) {
   margin-top: var(--space-6);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+}
+.admin-content .admin-policy-section {
+  background: var(--color-surface);
+  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
+}
+.admin-panel-label {
+  margin-block: 0 var(--space-3);
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+}
+.admin-context-panel .accommodation-card {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 .admin-content :is(.admin-read-panel, .admin-policy-section) > h3 {
   margin-top: 0;
@@ -2343,9 +2417,17 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-form > fieldset {
   padding: var(--space-4);
   border-radius: var(--radius-card);
+  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
+}
+.admin-form legend {
+  font-weight: var(--font-weight-semibold);
+}
+.admin-form > fieldset > legend {
+  color: var(--color-primary);
 }
 .admin-status-form > fieldset {
-  background: var(--color-background);
+  background: var(--color-warning-surface);
+  border-inline-start-color: var(--color-warning);
 }
 .admin-status-form button[data-status='INACTIVE'],
 .admin-status-form button[data-status='INACTIVE']:hover:enabled {
@@ -2358,6 +2440,7 @@ form[aria-label='대표 투숙객 정보'] {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
+  background: var(--color-surface);
 }
 .admin-catalog-list > li > a {
   display: inline-flex;
@@ -2395,6 +2478,16 @@ form[aria-label='대표 투숙객 정보'] {
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: var(--space-2) var(--space-3);
   align-items: baseline;
+}
+.admin-key-values {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.admin-column-note {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-subtle);
 }
 .admin-facts > div {
   padding-block: var(--space-2);
@@ -2460,6 +2553,9 @@ form[aria-label='대표 투숙객 정보'] {
   font-size: var(--font-size-sm);
 }
 @media (max-width: 48rem) {
+  .admin-area-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .admin-workspace {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2471,8 +2567,32 @@ form[aria-label='대표 투숙객 정보'] {
     justify-content: center;
     padding-inline: var(--space-1);
   }
+  .admin-content :is(.admin-read-panel, .admin-context-panel, .admin-policy-section) {
+    padding: var(--space-3);
+  }
+  .admin-form > fieldset {
+    padding: var(--space-3);
+  }
 }
 @media (max-width: 24rem) {
+  /* Keep enlarged native date/time controls usable without stacked panel gutters. */
+  .site-main:has(> .admin-layout) {
+    padding-inline: var(--space-2);
+  }
+  .admin-content {
+    padding: var(--space-2);
+  }
+  .admin-content .admin-query-form {
+    padding-inline: 0;
+    border-inline: 0;
+  }
+  .admin-content input:is([type='date'], [type='time']) {
+    padding-inline: var(--space-1);
+  }
+  .admin-content :is(.admin-read-panel, .admin-context-panel, .admin-policy-section),
+  .admin-form fieldset {
+    padding-inline: var(--space-1);
+  }
   .admin-sidebar ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

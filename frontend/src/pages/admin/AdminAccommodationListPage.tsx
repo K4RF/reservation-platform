@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { searchAccommodations } from '../../api/accommodation'
@@ -19,7 +20,11 @@ export function AdminAccommodationListPage() {
   const query = readAdminAccommodationQuery(params)
   return (
     <section aria-labelledby="admin-accommodations-heading">
-      <h2 id="admin-accommodations-heading">숙소 관리</h2>
+      <AdminPageHeading
+        id="admin-accommodations-heading"
+        title="숙소 관리"
+        context="카탈로그 · 조회 및 관리"
+      />
       <p>
         공개 목록 API를 관리 조건으로 조회합니다. 기본값은 모든 운영 상태이며 삭제 기능은 없습니다.
       </p>

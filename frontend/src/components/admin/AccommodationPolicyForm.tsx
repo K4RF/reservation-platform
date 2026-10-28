@@ -54,6 +54,7 @@ export function AccommodationPolicyForm({
   }
   return (
     <section className="admin-policy-section" aria-label={`${label} 관리`}>
+      <p className="admin-panel-label">명시적 작업 선택 · 전체 값 입력</p>
       <h3>{label}</h3>
       <p>
         현재 정책 GET/DELETE API가 없어 기존 값·존재 여부를 불러올 수 없습니다.
@@ -193,6 +194,7 @@ export function AccommodationPolicyForm({
       </form>
       {result && (
         <section className="admin-last-write-result" aria-label={`${label} 성공 응답`}>
+          <p className="admin-panel-label">마지막 쓰기 결과 · 정책 조회 아님</p>
           <h4>직전 성공 응답 — 현재 정책 재조회 결과가 아닙니다.</h4>
           <dl>
             <dt>숙소 ID</dt>

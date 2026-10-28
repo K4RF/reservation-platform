@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { getRoom } from '../../api/room'
@@ -21,7 +22,11 @@ export function AdminDailyPricePage() {
   const query = readAdminDailyPriceQuery(params)
   return (
     <section aria-labelledby="admin-prices-heading">
-      <h2 id="admin-prices-heading">가격 관리</h2>
+      <AdminPageHeading
+        id="admin-prices-heading"
+        title="가격 관리"
+        context="단일 객실 · 단일 숙박일"
+      />
       <p>
         객실 하나와 숙박 날짜 하나의 적용 가격을 조회하고 날짜별 Override를 생성·수정합니다. 기간
         Calendar·일괄 설정·삭제·기본값 복원 기능은 제공하지 않습니다.
@@ -117,7 +122,8 @@ function DailyPriceManager({ roomId, stayDate }: { roomId: number; stayDate: str
       )}
       {state.status === 'success' && (
         <>
-          <section aria-label="가격 관리 대상 객실">
+          <section className="admin-context-panel" aria-label="가격 관리 대상 객실">
+            <p className="admin-panel-label">조회 대상 · 객실</p>
             <RoomCard room={state.data.room} />
             <p>
               객실 ID {roomId} · 숙소 ID {state.data.room.accommodationId}
@@ -127,6 +133,7 @@ function DailyPriceManager({ roomId, stayDate }: { roomId: number; stayDate: str
             </Link>
           </section>
           <section className="admin-read-panel" aria-label="현재 적용 가격">
+            <p className="admin-panel-label">읽기 전용 · 직전 서버 조회</p>
             <h3>서버 적용 가격</h3>
             <dl className="admin-key-values">
               <dt>숙박 날짜</dt>
