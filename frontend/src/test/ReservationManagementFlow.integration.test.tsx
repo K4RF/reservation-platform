@@ -6,6 +6,7 @@ import { AuthProvider } from '../state/AuthProvider'
 import { setTokenPair, clearAccessToken } from '../state/accessToken'
 import { accessTokenWithExpiry } from './jwt'
 import { reviewBooking } from './bookingFlow'
+import { expectUiSemantics } from './uiSemantics'
 import { accommodation } from './accommodation'
 import { room, roomPage } from './room'
 import {
@@ -185,9 +186,11 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
     renderAt()
     await createAndOpenDetail()
     expect(screen.getByText('예약 확정')).toBeTruthy()
+    expectUiSemantics()
     expect(screen.getByText('350.25')).toBeTruthy()
     expect(screen.getByRole('heading', { name: accommodation.name })).toBeTruthy()
     const cancel = await changeAndReviewCancel()
+    expectUiSemantics()
     expect(
       within(screen.getByRole('region', { name: '취소 전 확인' })).getByText(
         '체크인 7일 전 이상: 무료 취소',
@@ -198,6 +201,7 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
     fireEvent.click(cancel)
     await screen.findByRole('heading', { name: '저장된 취소 결과' })
     expect(screen.getByText('예약 취소')).toBeTruthy()
+    expectUiSemantics()
     expect(api.saved?.refundAmount).toBe(385.1)
     const feedback = screen.getByRole('region', { name: '예약 취소 완료' })
     expect(within(feedback).getByText('30%')).toBeTruthy()
@@ -207,6 +211,7 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
     expect(screen.queryByRole('button', { name: '취소 정책 및 수수료 확인' })).toBeNull()
     fireEvent.click(screen.getByRole('link', { name: '내 예약 목록으로' }))
     await screen.findByRole('link', { name: '예약 42 상세 보기' })
+    expectUiSemantics()
     expect(screen.getByText('예약 취소')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
     await screen.findByRole('heading', { name: '저장된 취소 결과' })

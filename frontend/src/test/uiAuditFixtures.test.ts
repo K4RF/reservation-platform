@@ -1,7 +1,64 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { auditResponse } from '../../scripts/ui-audit/responses'
+import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('observes only supported buffered metrics, omits resource URLs and unrelated data, and disconnects', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    const instances: FakeObserver[] = []
+    class FakeObserver {
+      static supportedEntryTypes = ['layout-shift', 'resource']
+      observe = vi.fn()
+      disconnect = vi.fn()
+      callback: PerformanceObserverCallback
+      constructor(callback: PerformanceObserverCallback) {
+        this.callback = callback
+        instances.push(this)
+      }
+    }
+    vi.stubGlobal('PerformanceObserver', FakeObserver)
+    const stop = startPerformanceProbe()
+    expect(instances.map((observer) => observer.observe.mock.calls[0][0])).toEqual([
+      { type: 'layout-shift', buffered: true },
+      { type: 'resource', buffered: true },
+    ])
+    const entries = (data: Record<string, unknown>[]) =>
+      ({
+        getEntries: () => data.map((value) => ({ toJSON: () => value })),
+      }) as unknown as PerformanceObserverEntryList
+    instances[0].callback(
+      entries([{ startTime: 20, value: 0.01, hadRecentInput: false, sources: ['private'] }]),
+      {} as PerformanceObserver,
+    )
+    instances[1].callback(
+      entries([
+        {
+          startTime: 10,
+          duration: 3,
+          transferSize: 100,
+          initiatorType: 'img',
+          name: 'private-url',
+        },
+        { initiatorType: 'fetch', name: 'private-api' },
+      ]),
+      {} as PerformanceObserver,
+    )
+    expect(log.mock.calls.map(([, json]) => JSON.parse(json as string))).toEqual([
+      { supported: ['layout-shift', 'resource'] },
+      { type: 'layout-shift', entries: [{ startTime: 20, value: 0.01, hadRecentInput: false }] },
+      { type: 'resource', entries: [{ startTime: 10, duration: 3, transferSize: 100 }] },
+    ])
+    stop()
+    expect(instances.every((observer) => observer.disconnect.mock.calls.length === 1)).toBe(true)
+    log.mockRestore()
+  })
+  it('reports unavailable performance observation without making page rendering depend on it', () => {
+    const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
+    vi.stubGlobal('PerformanceObserver', undefined)
+    expect(startPerformanceProbe()).toBeTypeOf('function')
+    expect(JSON.parse(log.mock.calls[0][1] as string)).toEqual({ supported: [] })
+    log.mockRestore()
+  })
   it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
     'blocks %s instead of forwarding or changing data',
     async (method) => {

@@ -6,9 +6,15 @@ import { setTokenPair } from '../../src/state/accessToken'
 import { accessTokenWithExpiry } from '../../src/test/jwt'
 import { auditResponse } from './responses'
 import type { AuditScenario } from './responses'
+import { startPerformanceProbe } from './performanceProbe'
 import '../../src/index.css'
 
 const params = new URLSearchParams(location.search)
+if (params.get('metrics') === '1') {
+  const stop = startPerformanceProbe()
+  window.addEventListener('pagehide', stop, { once: true })
+  if (import.meta.hot) import.meta.hot.dispose(stop)
+}
 const role = params.get('role')
 const scenario = params.get('scenario') ?? 'ready'
 const textScale = params.get('textScale') ?? '100'

@@ -23,6 +23,7 @@ node scripts/ui-audit/server.mjs
 | role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture            |
 | scenario  | ready / empty / error / loading / cancelled / stress / comparison |
 | textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                |
+| metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록       |
 
 예:
 
@@ -57,6 +58,23 @@ pnpm test src/test/uiAuditFixtures.test.ts
 
 기존 Frontend lint/format:check/typecheck/test/build도 유지한다. Browser 캡처는 CI 필수 단계가 아니다.
 도구를 끌 때 실행 터미널에서 Ctrl+C를 사용한다.
+
+## 선택형 성능 관찰 (#260)
+
+Home URL에 `&metrics=1`을 붙이면 `UI_AUDIT_PERFORMANCE` Console 로그를 출력한다.
+PerformanceObserver가 지원하는 layout-shift, largest-contentful-paint 및 img Resource만
+buffered 관찰한다. `pagehide`/HMR dispose에서 Observer를 해제한다.
+미지원 Browser는 supported 목록이 비어 있을 수 있으며 측정 성공/0점으로 해석하지 않는다.
+
+로그는 시간·크기·이동값·hadRecentInput 등 수치만 포함한다. URL/ID/Element/Shift Source,
+API 응답/투숙객/Token을 기록하지 않으며 요청·Storage·DOM 변경·외부 전송은 없다.
+이 모듈은 Audit Entry에서만 사용하고 Production main/빌드에는 포함하지 않는다.
+
+각 Entry는 관찰 샘플이지 표준 CLS Session Window 집계, 확정된 최종 LCP, Lighthouse 점수나
+API SLO가 아니다. 경로/Viewport/캐시/개발 서버/관찰 구간을 함께 기록한다.
+Resize와 입력 직후의 이동을 초기 로딩 이동으로 합산하지 말고 hadRecentInput을 구분한다.
+Resource body size=0은 실제 파일이 0바이트라는 뜻이 아니다. 캐시/재검증 영향을 구분하고
+전송량을 파일 크기와 혼동하지 않는다. 관찰 없는 항목은 미관측으로 남긴다.
 
 결과·전체 Route·미확인 범위·개선 제안은 [Audit 보고서](../../../docs/ui/frontend-ui-audit-224.md),
 실제 측정과 대표 이미지는 [증거 원본](../../../docs/ui/evidence/224/measurements.json)을 따른다.

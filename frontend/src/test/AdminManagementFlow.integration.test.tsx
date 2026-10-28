@@ -8,6 +8,7 @@ import { adminManagementApi } from './adminManagementApi'
 import { accommodationWrite, bookingPolicy } from './adminAccommodation'
 import { inventory } from './inventory'
 import { reservationDetail } from './reservation'
+import { expectUiSemantics } from './uiSemantics'
 
 function History() {
   const navigate = useNavigate(),
@@ -74,6 +75,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     const api = adminManagementApi()
     open()
     await login()
+    expectUiSemantics()
     const nav = screen.getByRole('navigation', { name: '관리 메뉴' })
     expect(
       within(nav)
@@ -98,6 +100,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     fireEvent.submit(form('숙소 생성'))
     await screen.findByRole('heading', { name: '숙소 관리 #7' })
     await screen.findByRole('form', { name: '숙소 정보 수정' })
+    expectUiSemantics()
     change('숙소 이름', '관리 호텔')
     fireEvent.submit(form('숙소 정보 수정'))
     await waitFor(() =>
@@ -175,6 +178,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     change('기본 1박 가격', '100')
     fireEvent.submit(form('객실 생성'))
     await screen.findByRole('form', { name: '객실 정보 수정' })
+    expectUiSemantics()
     expect(screen.getByTestId('location').textContent).toBe('/admin/rooms/3?accommodationId=7')
     change('기본 1박 가격', '120')
     fireEvent.submit(form('객실 정보 수정'))
@@ -238,6 +242,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     change('판매 상태', 'CLOSED')
     inventorySubmit('2')
     await screen.findByRole('cell', { name: 'CLOSED' })
+    expectUiSemantics()
     expect(api.state.inventories[0]).toMatchObject({
       totalQuantity: 2,
       reservedQuantity: 0,
