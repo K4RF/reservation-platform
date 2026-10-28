@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
@@ -18,7 +19,11 @@ export function AdminRoomListPage() {
   const query = readAdminRoomQuery(params)
   return (
     <section aria-labelledby="admin-rooms-heading">
-      <h2 id="admin-rooms-heading">객실 관리</h2>
+      <AdminPageHeading
+        id="admin-rooms-heading"
+        title="객실 관리"
+        context="부모 숙소 선택 · 객실 조회 및 관리"
+      />
       <p>
         숙소별 모든 운영 상태의 객실을 조회합니다. 삭제 기능은 없으며 기본 가격과 날짜별 가격은
         별도입니다.

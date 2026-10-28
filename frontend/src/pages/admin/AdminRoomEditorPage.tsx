@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
@@ -81,7 +82,10 @@ function RoomEditor({
   const listPath = accommodationId === null ? '/admin/rooms' : adminRoomListPath(accommodationId)
   return (
     <section aria-label="객실 관리 편집">
-      <h2>{id === null ? '객실 생성' : `객실 관리 #${id}`}</h2>
+      <AdminPageHeading
+        title={id === null ? '객실 생성' : `객실 관리 #${id}`}
+        context="숙소별 객실 · 기본 정보 및 운영 상태"
+      />
       <Link to={listPath}>객실 관리 목록으로</Link>
       <p>
         저장 요청은 자동 재전송하지 않습니다. 화면 이동·요청 중단은 서버 Rollback을 의미하지
@@ -109,7 +113,8 @@ function RoomEditor({
             대상 숙소 상세
           </Link>
           {state.data.room && (
-            <section aria-label="현재 객실 정보">
+            <section className="admin-context-panel" aria-label="현재 객실 정보">
+              <p className="admin-panel-label">읽기 전용 · 직전 서버 조회</p>
               <RoomCard room={state.data.room} />
               <Link to={adminDailyPricePath(state.data.room.roomId)}>
                 이 객실의 날짜별 가격 관리

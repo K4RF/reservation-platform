@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
@@ -39,7 +40,10 @@ function AccommodationEditor({ id }: { id: number | null }) {
   const navigate = useNavigate()
   return (
     <section aria-label="숙소 관리 편집">
-      <h2>{id === null ? '숙소 생성' : `숙소 관리 #${id}`}</h2>
+      <AdminPageHeading
+        title={id === null ? '숙소 생성' : `숙소 관리 #${id}`}
+        context="숙소 정보 · 운영 상태 · 정책 입력"
+      />
       <Link to="/admin/accommodations">관리 목록으로</Link>
       <p>저장 요청은 자동 재전송하지 않습니다. 서버가 권한·유효성·저장 결과를 최종 판단합니다.</p>
       <AdminMutationFeedback mutation={mutation} />
@@ -78,6 +82,7 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
         <>
           <Link to={adminRoomListPath(id)}>이 숙소의 객실 관리</Link>
           <section className="admin-read-panel" aria-label="현재 숙소 정보">
+            <p className="admin-panel-label">읽기 전용 · 직전 서버 조회</p>
             <h3>{state.data.name}</h3>
             <p>{state.data.description}</p>
             <p>

@@ -1,3 +1,4 @@
+import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
 import { useCallback, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { getRoom } from '../../api/room'
@@ -26,7 +27,11 @@ export function AdminInventoryPage() {
   const query = readAdminInventoryQuery(params)
   return (
     <section aria-labelledby="admin-inventories-heading">
-      <h2 id="admin-inventories-heading">재고 관리</h2>
+      <AdminPageHeading
+        id="admin-inventories-heading"
+        title="재고 관리"
+        context="날짜 범위 조회 · 단일 날짜 입력"
+      />
       <p>
         객실의 날짜별 총수량과 OPEN/CLOSED 판매 상태를 관리합니다. 예약·가용 수량은 서버 조회 값이며
         수정하지 않습니다.
@@ -150,7 +155,8 @@ function InventoryManager({
       )}
       {state.status === 'success' && (
         <>
-          <section aria-label="재고 관리 대상 객실">
+          <section className="admin-context-panel" aria-label="재고 관리 대상 객실">
+            <p className="admin-panel-label">조회 대상 · 객실</p>
             <RoomCard room={state.data.room} />
             <p>
               객실 ID {roomId} · 숙소 ID {state.data.room.accommodationId}
@@ -278,8 +284,12 @@ function InventoryCalendar({
             <tr>
               <th scope="col">날짜 선택</th>
               <th scope="col">총수량</th>
-              <th scope="col">예약 수량</th>
-              <th scope="col">가용 수량</th>
+              <th scope="col">
+                예약 수량 <span className="admin-column-note">읽기 전용</span>
+              </th>
+              <th scope="col">
+                가용 수량 <span className="admin-column-note">읽기 전용</span>
+              </th>
               <th scope="col">판매 상태</th>
             </tr>
           </thead>

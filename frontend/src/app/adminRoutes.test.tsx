@@ -50,6 +50,23 @@ const submitLogin = () => {
 }
 
 describe('Admin shared layout and existing role guard', () => {
+  it('shows supported work areas without dashboard data or new requests', () => {
+    signIn()
+    const fetch = vi.fn()
+    vi.stubGlobal('fetch', fetch)
+    renderAt()
+    const areas = screen.getByRole('list', { name: '지원하는 관리 작업' })
+    expect(
+      within(areas)
+        .getAllByRole('link')
+        .map((link) => link.getAttribute('href')),
+    ).toEqual(sections.map(([path]) => path))
+    expect(screen.getByText('조회로 확인하고, 변경은 명시적으로 저장합니다.')).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { name: '관리 홈', level: 2 }).closest('header')?.className,
+    ).toBe('admin-page-heading')
+    expect(fetch).not.toHaveBeenCalled()
+  })
   it.each(sections.filter(([path]) => path !== '/admin/accommodations'))(
     'supports direct ADMIN entry at %s without sending management requests',
     (path, label) => {
