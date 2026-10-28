@@ -18,6 +18,25 @@ const references = (value: string) => [...value.matchAll(/var\((--[\w-]+)\)/g)].
 
 // Source contracts only: jsdom does not prove actual CSS variable layout or focus rendering.
 describe('design token and global stylesheet contracts', () => {
+  it('scopes Admin work areas, read panels and write/status forms without hiding overflow', () => {
+    expect(globalCss).toMatch(/\.admin-layout\s*\{[^}]*var\(--content-catalog\)/)
+    expect(globalCss).toMatch(/\.admin-header\s*\{[^}]*background: var\(--color-primary\)/)
+    expect(globalCss).toMatch(/\.admin-header p\s*\{[^}]*color: inherit/)
+    expect(globalCss).toContain('.admin-page-heading')
+    expect(globalCss).toContain('.admin-context-panel')
+    expect(globalCss).toMatch(
+      /\.admin-form > fieldset\s*\{[^}]*border-inline-start:[^;]*var\(--color-primary\)/,
+    )
+    expect(globalCss).toMatch(
+      /\.admin-status-form > fieldset\s*\{[^}]*var\(--color-warning-surface\)/,
+    )
+    expect(globalCss).toMatch(/\.inventory-calendar\s*\{[^}]*overflow-x: auto/)
+    expect(globalCss).toContain('.site-main:has(> .admin-layout)')
+    expect(globalCss).toMatch(
+      /\.admin-content input:is\(\[type='date'\], \[type='time'\]\)\s*\{[^}]*padding-inline: var\(--space-1\)/,
+    )
+    expect(globalCss).not.toContain('overflow-x: hidden')
+  })
   it('loads a single token source before global rules without local redefinitions', () => {
     expect(globalCss.trimStart().startsWith("@import './styles/tokens.css';")).toBe(true)
     expect(tokensCss.match(/:root\s*\{/g)).toHaveLength(1)

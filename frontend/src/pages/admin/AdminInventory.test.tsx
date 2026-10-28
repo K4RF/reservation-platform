@@ -90,6 +90,12 @@ describe('Inventory Calendar reads and uncreated dates', () => {
     open()
     await screen.findByRole('table')
     expect(calendar().getAttribute('tabindex')).toBe('0')
+    expect(
+      within(calendar()).getByRole('columnheader', { name: '예약 수량 읽기 전용' }),
+    ).toBeTruthy()
+    expect(
+      within(calendar()).getByRole('columnheader', { name: '가용 수량 읽기 전용' }),
+    ).toBeTruthy()
     const help = document.getElementById(calendar().getAttribute('aria-describedby')!)!
     expect(help.textContent).toContain('가로로 스크롤')
     expect(help.textContent).toContain('미생성은 0이나 CLOSED를 뜻하지 않습니다')
