@@ -352,6 +352,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
 - [승인 디자인 기준·A1/Navy & Ivory·독립 시안 및 작업 범위](docs/ui/approved-design.md)
 - [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
+- [소비자 Header·Footer·페이지 프레임과 Browser 검증 범위 (#274)](docs/ui/frontend-consumer-frame-274.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)
