@@ -118,18 +118,41 @@ Backend configuration and behavior are implemented and verified.
 
 ## Frontend Design References
 
-- Before any Frontend UI/UX issue, read `docs/ui/approved-design.md` and its
-  prototype/screenshots under `docs/ui/prototypes/premium-travel/`. Do not rely on
-  another chat, a local `.codex` path, or the name "A1" alone.
+- Before any Frontend UI/UX issue, read the issue, `docs/ui/prototype-rebuild.md`,
+  `docs/ui/approved-design.md`, and the prototype/screenshots under
+  `docs/ui/prototypes/premium-travel/`. Open the prototype in a Browser and verify
+  predecessor results against current source/tests. Do not rely on another chat,
+  a local `.codex` path, or the name "A1" alone.
 - Approved target: Home A1, Navy & Ivory, Search for comparison and Detail for
   accommodation/room exploration. A2 and other palettes are archived alternatives.
-- The design is a target, not implementation evidence. Historical green-token
-  documents describe the old baseline. f0.5.1 date/guest/room UX stays scoped;
-  full visual rollout belongs to f0.5.2 (formerly named f0.5.3, the same milestone).
-  Navy & Ivory global tokens are applied in #251; full A1 layouts are not implied.
-  State the reference and intended differences.
-- For visual changes, compare real 1440px/390px renders and report deviations and
-  verification limits. Preserve API/domain/Auth/mutation safety contracts.
+- Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
+  #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
+  #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
+  #283 Admin, and #284 integrated verification. Actual Media requires
+  v0.4.1 (Milestone #20) #272 public contracts and #273 ADMIN/file lifecycle first.
+- f0.5.2 (Milestone #19, historically also named f0.5.3) and #253–#260 are
+  developer implementation/regression evidence, not user visual approval.
+  Preserve historical naming in context; do not confuse it with new #21 or
+  globally rename history. Reuse #251 Navy & Ivory semantic tokens.
+- Rebuild information architecture and interactions, not only colors. Preserve
+  API/domain/Auth/mutation contracts, not old JSX/DOM or every help paragraph.
+  Home needs overlay Header/Hero-contained search/photo exploration; Search needs
+  compact conditions/media cards/filter Sheet; Detail needs asymmetric Gallery,
+  body/reservation Rail and Mobile fixed CTA. Prior intentional differences are
+  not automatically approved exceptions. Booking/reservations/Auth/Admin use the
+  new product plans in #271, not directly approved original screens.
+- Compare real 1440px/390px full-page and same-position Viewport renders, excluding
+  prototype Studio/demo controls. Verify Media-present normal, missing and failed
+  states. Large empty slots/long forms are not a substitute for normal completion.
+  Sticky/fixed layouts must solve safe-area, keyboard, zoom, focus and error
+  occlusion; a blanket static-only exception is insufficient. Report deviations,
+  equivalent accessible alternatives and DOM/Mock/Browser/HTTP/CI limits.
+- Keep consumer copy centered on destination/stay/room/price/next action. Move
+  API/DTO/Mock explanations and redundant help to docs/contextual help; retain
+  concise price basis, total-guest, fee and ambiguous-outcome safety messages.
+  Extend existing lifecycle suites for the rebuilt UI instead of freezing old
+  markup or duplicating whole flows. Unresolved Media/layout dependencies mean
+  the corresponding complete-screen implementation is not finished.
 - Prototype images/prices/metadata are fictional; do not use them as real catalog
   data or invent unsupported fields. Final user UI/UX approval stays in f0.6.0.
 - Keep narrow/expanded layouts free of document overflow; price/inventory tables
