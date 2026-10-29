@@ -340,6 +340,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [관리자 전체 흐름·구조·권한 검증 경계](docs/testing/frontend-admin-management-flow.md)
 - [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
 - [승인 디자인 기준·A1/Navy & Ivory·독립 시안 및 작업 범위](docs/ui/approved-design.md)
+- [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
 - [Frontend Design Tokens·전역 스타일 기준 (#225)](docs/ui/frontend-design-tokens-225.md)
 - [공통 UI·Navigation 기준과 검증 (#226)](docs/ui/frontend-shared-ui-226.md)
 - [인증 화면 UI·Feedback과 검증 경계 (#227)](docs/ui/frontend-authentication-ui-227.md)
@@ -391,7 +392,10 @@ UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#230 화면 정�
 기존 저장/복구 규칙은 유지하며 실제 Admin HTTP와 최종 사용자 검수는 별도입니다.
 #260에서 변경 화면의 통합 회귀·반응형·접근성과 로컬 이미지 성능 관찰을 정리했습니다.
 실제 사진/Metadata 연결, 전체 Backend 실연동과 최종 사용자 승인을 완료한 것은 아닙니다.
-과거 f0.5.3은 같은 Milestone #19의 이전 명칭입니다.
+당시 문맥의 f0.5.3은 Milestone #19의 이전 명칭입니다. 2026-10-29의 **새 f0.5.3(#21)**과는 다릅니다.
+[#271 재구성 명세](docs/ui/prototype-rebuild.md)는 현재 작업 기준이며, 기존 DOM/긴 폼/빈 사진 슬롯을
+고정하지 않고 승인 시안의 구성·밀도·상호작용을 옮깁니다. #253–#260은 사용자 시각 승인이 아닙니다.
+#272/#273 실제 Media 선행 후 #274–#283 화면 재구성, #284 실제 화면/회귀 검증으로 이어집니다.
 실제 사진·객실 추가 데이터는 `v0.4.1 — Accommodation Media & Room Metadata`에서 준비합니다.
 현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.
 이후 `f0.6.0 — Frontend Integration & UX Completion`에서 실제 연동·Edge Case·최종 UX 검수를 진행할 계획입니다.
@@ -404,7 +408,7 @@ f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layo
 | 영역                 | 현재 범위                                                | 후속 개발                                         |
 | -------------------- | -------------------------------------------------------- | ------------------------------------------------- |
 | Backend `v0.1–v0.4`  | 예약 도메인·동시성·조회/캐시·이벤트 처리 및 구조 검증    | `v0.5` 부하 테스트, `v0.6` 관측성, `v1.0` 배포    |
-| Frontend `f0.1–f0.5` | 기반·인증·공개 탐색/예약·본인 예약관리·관리자 카탈로그/가격/재고 | `f0.5.1` UX → `f0.5.2` 승인 디자인 → `f0.6` 실제 연동·최종 UX 검수 |
+| Frontend `f0.1–f0.5` | 기반·인증·공개 탐색/예약·본인 예약관리·관리자 카탈로그/가격/재고 | `f0.5.2` 구현 기록 → 새 `f0.5.3(#21)` 재구성 → `f0.6` 실제 연동·최종 UX 검수 |
 
 아직 구현하지 않은 주요 범위:
 
