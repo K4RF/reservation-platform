@@ -32,6 +32,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - JWT 인증, Redis 기반 Refresh Token 재발급, 로그아웃
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
+- 숙소·객실 Media 메타데이터 및 공개 이미지 파일 읽기 API (Frontend 사진 연결/ADMIN 업로드는 후속)
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회
 - 본인 예약 목록·상세 조회, 일정 변경, 저장 취소 정책 확인 및 취소
 
@@ -93,6 +94,7 @@ PR #223의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/ru
 
 - MySQL을 원본 데이터로 사용하고 JPA Specifications로 검색·필터를 구성합니다.
 - 숙소·객실 **단건 응답만** Redis에 캐시합니다. 가용성·가격·재고·예약 조회는 캐시하지 않습니다.
+- Media는 목록 대표 1장/상세 최대20장을 페이지 단위로 조회합니다. 기존 행은 사진을 추측하지 않고 null/빈 배열을 반환합니다.
 - 예약 생성·변경·취소와 Outbox 이벤트를 같은 DB 트랜잭션에 저장합니다.
 - Outbox Publisher가 Kafka 발행을 처리하고, Consumer는 이벤트 ID로 중복을 방지합니다.
 - Consumer 실패에는 제한 재시도와 DLT 격리를 적용합니다. 현재 후처리는 Audit Log Stub입니다.
@@ -142,6 +144,11 @@ reservation-platform/
 Gradle 프로젝트 루트는 `backend/`입니다. 프론트엔드는 `frontend/`에서 별도로 실행합니다.
 
 ## 로컬 실행
+
+Media 파일은 `MEDIA_STORAGE_ROOT`(기본 Backend cwd의 `.local/media`)에 보관하며 Git에서 제외합니다.
+DB와 파일을 함께 영속 보관해야 합니다. 기존 DB의 [Media 테이블 추가 SQL](docs/erd/mysql-catalog-media-upgrade.sql)은
+대상/백업 검토 후 적용하세요. 이번 작업에서 개발 DB/Volume에 실행하지 않았습니다.
+공개 URL·용량/형식·캐시 v2·후속 업로드 범위는 [Media 읽기 계약](docs/architecture/catalog-media.md)을 참고하세요.
 
 ### 1. 준비
 
@@ -341,6 +348,8 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
 - [승인 디자인 기준·A1/Navy & Ivory·독립 시안 및 작업 범위](docs/ui/approved-design.md)
 - [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
+- [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
+- [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [Frontend Design Tokens·전역 스타일 기준 (#225)](docs/ui/frontend-design-tokens-225.md)
 - [공통 UI·Navigation 기준과 검증 (#226)](docs/ui/frontend-shared-ui-226.md)
 - [인증 화면 UI·Feedback과 검증 경계 (#227)](docs/ui/frontend-authentication-ui-227.md)

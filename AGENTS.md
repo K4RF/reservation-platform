@@ -218,6 +218,18 @@ Before completing a change:
 
 ## Current Limitations
 
+- Catalog Media read contracts are implemented in #272. Accommodation/Room responses
+  add representativeImage and immutable images (list/availability: at most one,
+  detail/update: at most 20), ordered by sortOrder then mediaId; first is representative.
+  Legacy rows return null/empty. Media belongs to exactly one accommodation or room.
+  Public `GET /api/v1/media/{id}/content` serves immutable UUID-named local files
+  under MEDIA_STORAGE_ROOT (default .local/media relative to backend cwd); no remote
+  URL fetching or BLOB JSON. Keep files ignored and persist/back up DB and storage together.
+  Detail cache prefix is reservation:cache:v2:. Media write transactions must call
+  CatalogMediaCacheEviction through its proxy; repository/SQL writes are not
+  automatically detected. ADMIN upload/management is #273 and Frontend integration
+  is #276, neither is implied by these read contracts. See
+  docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication
   are implemented.
@@ -416,7 +428,8 @@ Before completing a change:
   detail fields, INACTIVE status or insufficient capacity disable that action
   and instruct an availability refresh. Catalog-only detail is read-only. Detail
   base price is not a daily-price sum or reservation snapshot; do not invent
-  currency, photos, bed, size, view or descriptions absent from RoomResponse.
+  currency, bed, size, view or descriptions absent from RoomResponse. Backend Media
+  fields exist after #272 but Frontend photo rendering still requires #276.
   See `docs/testing/frontend-room-detail-selection.md` for focus/scroll/history
   behavior, design differences and Browser/HTTP verification boundaries.
   Always reload availability before restoring a selected room after login.
