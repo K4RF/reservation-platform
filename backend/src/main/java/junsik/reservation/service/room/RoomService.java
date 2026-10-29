@@ -1,5 +1,8 @@
 package junsik.reservation.service.room;
 
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -10,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.config.RedisCacheConfig;
 import junsik.reservation.dto.common.response.PageResponse;
+import junsik.reservation.dto.media.response.MediaResponse;
 import junsik.reservation.dto.room.request.AvailableRoomRequest;
 import junsik.reservation.dto.room.request.CreateRoomRequest;
 import junsik.reservation.dto.room.request.RoomSearchRequest;
@@ -29,6 +33,7 @@ import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.repository.RoomSpecifications;
 import junsik.reservation.service.accommodation.AccommodationBookingPolicyService;
+import junsik.reservation.service.media.CatalogMediaReadService;
 
 @Service
 public class RoomService {
@@ -36,15 +41,18 @@ public class RoomService {
 	private final RoomRepository roomRepository;
 	private final AccommodationRepository accommodationRepository;
 	private final AccommodationBookingPolicyService bookingPolicyService;
+	private final CatalogMediaReadService mediaService;
 
 	public RoomService(
 			RoomRepository roomRepository,
 			AccommodationRepository accommodationRepository,
-			AccommodationBookingPolicyService bookingPolicyService
+			AccommodationBookingPolicyService bookingPolicyService,
+			CatalogMediaReadService mediaService
 	) {
 		this.roomRepository = roomRepository;
 		this.accommodationRepository = accommodationRepository;
 		this.bookingPolicyService = bookingPolicyService;
+		this.mediaService = mediaService;
 	}
 
 	@Transactional
@@ -63,9 +71,7 @@ public class RoomService {
 	@Transactional(readOnly = true)
 	@Cacheable(cacheNames = RedisCacheConfig.ROOM_DETAIL_CACHE, key = "#p0", sync = true)
 	public RoomResponse getById(Long roomId) {
-		return roomRepository.findById(roomId)
-				.map(RoomResponse::from)
-				.orElseThrow(() -> new BusinessException(RoomErrorCode.NOT_FOUND));
+		return detailResponse(getRoom(roomId));
 	}
 
 	@Transactional(readOnly = true)
@@ -78,7 +84,7 @@ public class RoomService {
 		Sort sort = Sort.by(request.direction().toSpringDirection(), request.sortBy().getProperty())
 				.and(Sort.by(Sort.Direction.ASC, "id"));
 		PageRequest pageRequest = PageRequest.of(request.page(), request.size(), sort);
-		Page<RoomResponse> rooms = roomRepository
+		Page<Room> rooms = roomRepository
 				.findAll(RoomSpecifications.withFilters(
 						accommodationId,
 						request.minCapacity(),
@@ -86,9 +92,8 @@ public class RoomService {
 						request.maxPrice(),
 						request.status(),
 						request.amenities()
-				), pageRequest)
-				.map(RoomResponse::from);
-		return PageResponse.from(rooms);
+				), pageRequest);
+		return listResponse(rooms);
 	}
 
 	@Transactional(readOnly = true)
@@ -104,7 +109,7 @@ public class RoomService {
 		bookingPolicyService.validateReservationPeriod(accommodation, period);
 
 		PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
-		Page<RoomResponse> rooms = roomRepository.findAvailableRooms(
+		Page<Room> rooms = roomRepository.findAvailableRooms(
 				accommodationId,
 				AccommodationStatus.ACTIVE,
 				RoomStatus.ACTIVE,
@@ -114,8 +119,8 @@ public class RoomService {
 				request.guestCount(),
 				period.stayNights(),
 				pageRequest
-		).map(RoomResponse::from);
-		return PageResponse.from(rooms);
+		);
+		return listResponse(rooms);
 	}
 
 	@Transactional
@@ -132,7 +137,7 @@ public class RoomService {
 				request.nightlyPrice(),
 				request.amenities()
 		);
-		return RoomResponse.from(room);
+		return detailResponse(room);
 	}
 
 	@Transactional
@@ -144,7 +149,20 @@ public class RoomService {
 	public RoomResponse updateStatus(Long roomId, UpdateRoomStatusRequest request) {
 		Room room = getRoom(roomId);
 		room.changeStatus(request.status());
-		return RoomResponse.from(room);
+		return detailResponse(room);
+	}
+
+	private RoomResponse detailResponse(Room room) {
+		List<MediaResponse> images = mediaService.roomImages(
+				List.of(room.getId()), CatalogMediaReadService.GALLERY_LIMIT).getOrDefault(room.getId(), List.of());
+		return RoomResponse.from(room, images);
+	}
+
+	private PageResponse<RoomResponse> listResponse(Page<Room> rooms) {
+		Map<Long, List<MediaResponse>> images = mediaService.roomImages(
+				rooms.getContent().stream().map(Room::getId).toList(), 1);
+		return PageResponse.from(rooms.map(room -> RoomResponse.from(
+				room, images.getOrDefault(room.getId(), List.of()))));
 	}
 
 	private void validatePeriod(AvailableRoomRequest request) {

@@ -34,7 +34,8 @@ public class RedisCacheConfig implements CachingConfigurer {
 
 	public static final String ACCOMMODATION_DETAIL_CACHE = "accommodation-detail";
 	public static final String ROOM_DETAIL_CACHE = "room-detail";
-	public static final String KEY_PREFIX = "reservation:cache:";
+	// v2 adds bounded Media snapshots. Never serve a pre-Media cached response after deployment.
+	public static final String KEY_PREFIX = "reservation:cache:v2:";
 
 	@Bean
 	CacheManager cacheManager(

@@ -95,7 +95,7 @@ class CacheReadPerformanceComparisonIntegrationTest extends MySqlRedisIntegratio
 		CacheMeasurement cold = measure("cold-miss", this::evictAccommodationDetail);
 		CacheMeasurement warm = measure("warm-hit", () -> { });
 
-		assertThat(cold.preparedStatementCount()).isEqualTo(2L);
+		assertThat(cold.preparedStatementCount()).isEqualTo(3L); // catalog + amenities + bounded Media
 		assertThat(cold.databaseAccessReductionPercent()).isZero();
 		assertThat(warm.preparedStatementCount()).isZero();
 		assertThat(warm.databaseAccessReductionPercent()).isEqualTo(100.0);
@@ -123,7 +123,7 @@ class CacheReadPerformanceComparisonIntegrationTest extends MySqlRedisIntegratio
 		List<Long> sorted = elapsedNanos.stream().sorted().toList();
 		long averageNanos = Math.round(elapsedNanos.stream().mapToLong(Long::longValue).average().orElseThrow());
 		int p95Index = (int) Math.ceil(sorted.size() * 0.95) - 1;
-		long baselineStatements = 2L;
+		long baselineStatements = 3L;
 		double reduction = (baselineStatements - statementCounts.getFirst()) * 100.0
 				/ baselineStatements;
 		return new CacheMeasurement(

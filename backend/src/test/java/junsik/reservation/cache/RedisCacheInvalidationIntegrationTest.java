@@ -1,6 +1,7 @@
 package junsik.reservation.cache;
 
 import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.CatalogMediaFixture.image;
 import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,9 +28,11 @@ import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.CatalogMediaRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.service.accommodation.AccommodationService;
 import junsik.reservation.service.room.RoomService;
+import junsik.reservation.service.media.CatalogMediaCacheEviction;
 import junsik.reservation.support.RedisIntegrationTestSupport;
 
 @SpringBootTest(properties = {
@@ -61,6 +64,12 @@ class RedisCacheInvalidationIntegrationTest extends RedisIntegrationTestSupport 
 
 	@Autowired
 	private PlatformTransactionManager transactionManager;
+
+	@Autowired
+	private CatalogMediaRepository mediaRepository;
+
+	@Autowired
+	private CatalogMediaCacheEviction mediaEviction;
 
 	private TransactionTemplate transactionTemplate;
 
@@ -123,6 +132,33 @@ class RedisCacheInvalidationIntegrationTest extends RedisIntegrationTestSupport 
 				.isEqualTo(AccommodationStatus.ACTIVE);
 		assertThat(roomRepository.findById(fixture.roomId()).orElseThrow().getStatus())
 				.isEqualTo(RoomStatus.ACTIVE);
+	}
+
+	@Test
+	void mediaChangesEvictOnlyAfterCommitAndRollbackKeepsCachedSnapshot() {
+		CachedFixture fixture = createCachedFixture();
+		transactionTemplate.executeWithoutResult(status -> {
+			mediaRepository.save(image(
+					accommodationRepository.findById(fixture.accommodationId()).orElseThrow(), 0));
+			mediaEviction.accommodationChanged(fixture.accommodationId());
+			assertThat(redisTemplate.hasKey(fixture.accommodationCacheKey())).isTrue();
+			status.setRollbackOnly();
+		});
+		assertThat(accommodationService.getById(fixture.accommodationId()).images()).isEmpty();
+		assertThat(redisTemplate.hasKey(fixture.accommodationCacheKey())).isTrue();
+		transactionTemplate.executeWithoutResult(status -> {
+			mediaRepository.save(image(
+					accommodationRepository.findById(fixture.accommodationId()).orElseThrow(), 0));
+			mediaRepository.save(image(
+					roomRepository.findById(fixture.roomId()).orElseThrow(), 0));
+			mediaEviction.accommodationChanged(fixture.accommodationId());
+			mediaEviction.roomChanged(fixture.roomId());
+			assertThat(redisTemplate.hasKey(fixture.accommodationCacheKey())).isTrue();
+		});
+		assertKeyEventuallyAbsent(fixture.accommodationCacheKey());
+		assertKeyEventuallyAbsent(fixture.roomCacheKey());
+		assertThat(accommodationService.getById(fixture.accommodationId()).images()).hasSize(1);
+		assertThat(roomService.getById(fixture.roomId()).images()).hasSize(1);
 	}
 
 	private CachedFixture createCachedFixture() {

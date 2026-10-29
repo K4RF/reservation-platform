@@ -117,8 +117,9 @@ f0.5.3(#21)과는 별도이며, 당시 명칭만으로 현재 후속 단계가 �
 
 - 모든 사진·숙소명·금액·가용성은 가상이다. [ASSETS](prototypes/premium-travel/ASSETS.md)를 읽고
   시안 사진을 실매물에 연결하거나 업로드가 이미 구현됐다고 표현하지 않는다.
-- 숙소/객실 이미지, Room Description/Bed/Size/View는 현재 DTO에 없다. v0.4.1 계약 전에는
-  실제 정보처럼 채우지 않는다. 이미지 미제공/실패 상태를 설계한다.
+- #272에서 Backend 숙소/객실 DTO에 Media 읽기 계약을 추가했다. [실제 계약](../architecture/catalog-media.md)을
+  사용하고 #273 업로드/관리와 #276 Frontend 연결을 구분한다. Room Description/Bed/Size/View는
+  여전히 없으므로 실제 정보처럼 채우지 않는다. 이미지 미제공/실패 상태를 함께 설계한다.
 - 숙소 검색 DTO에 카드 최저가/총액이 없다. 별도 읽기·명시적 계약 없이 가격 집계나
   가격순 정렬을 발명하지 않는다. 통화·평점·리뷰·할인율도 발명하지 않는다.
 - 기존 Booking Policy·가격/재고 Source of Truth·소유권·Auth Lifecycle을 유지한다.
