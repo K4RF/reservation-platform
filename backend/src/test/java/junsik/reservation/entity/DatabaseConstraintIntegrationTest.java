@@ -528,8 +528,13 @@ class DatabaseConstraintIntegrationTest extends MySqlIntegrationTestSupport {
 		);
 
 		assertThat(plan)
-				.contains("Table scan on room")
-				.contains("Single-row index lookup on accommodation using PRIMARY")
+				// MySQL may reverse the join order as fixture cardinality/statistics change.
+				.satisfiesAnyOf(
+						value -> assertThat(value).contains("Table scan on room")
+								.contains("Single-row index lookup on accommodation using PRIMARY"),
+						value -> assertThat(value).contains("Table scan on accommodation")
+								.contains("Index lookup on room using idx_rooms_accommodation_status_id")
+				)
 				.contains("inventory")
 				.contains("uk_room_inventories_room_date");
 	}

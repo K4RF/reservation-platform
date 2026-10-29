@@ -205,11 +205,15 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 		);
 		assertThat(effectivePrice.result().roomId()).isEqualTo(roomId);
 		assertThat(effectivePrice.result().nightlyPrice()).isEqualByComparingTo("120000.00");
-		assertQueryBaseline(search, 4, 1);
-		assertQueryBaseline(detail, 2, 1);
-		assertQueryBaseline(rooms, 4, 1);
-		assertQueryBaseline(availableRooms, 5, 1);
+		// #272 adds exactly one bounded Media query, not one per card/image.
+		assertQueryBaseline(search, 5, 1);
+		assertQueryBaseline(detail, 3, 1);
+		assertQueryBaseline(rooms, 5, 1);
+		assertQueryBaseline(availableRooms, 6, 1);
 		assertQueryBaseline(effectivePrice, 2, 0);
+		List.of(search, detail, rooms, availableRooms).forEach(call ->
+				assertThat(call.measurement().sql().stream().filter(sql -> sql.contains("catalog_media")).count())
+						.isEqualTo(1));
 
 		List.of(search, detail, rooms, availableRooms, effectivePrice)
 				.forEach(call -> {

@@ -1,6 +1,7 @@
 package junsik.reservation.cache;
 
 import static junsik.reservation.support.AccommodationFixture.accommodation;
+import static junsik.reservation.support.CatalogMediaFixture.image;
 import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.clearInvocations;
@@ -33,6 +34,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import junsik.reservation.config.RedisCacheConfig;
+import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
 import junsik.reservation.dto.accommodation.response.AccommodationResponse;
@@ -46,6 +48,7 @@ import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
 import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.CatalogMediaRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.service.accommodation.AccommodationService;
 import junsik.reservation.service.room.RoomService;
@@ -66,6 +69,9 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 
 	@MockitoSpyBean
 	private AccommodationRepository accommodationRepository;
+
+	@Autowired
+	private CatalogMediaRepository mediaRepository;
 
 	@Autowired
 	private RoomRepository roomRepository;
@@ -96,10 +102,16 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 	void returnsAccommodationAndRoomFromRedisWithoutAnotherDatabaseQuery() {
 		Accommodation accommodation = accommodationRepository.saveAndFlush(accommodation());
 		Room room = roomRepository.saveAndFlush(room(accommodation));
+		mediaRepository.saveAllAndFlush(List.of(
+				image(accommodation, 0), image(room, 0)));
+		redisTemplate.opsForValue().set("reservation:cache:accommodation-detail::" + accommodation.getId(),
+				"{}", java.time.Duration.ofMinutes(1));
 		entityManager.clear();
 
 		AccommodationResponse firstAccommodation = accommodationService.getById(accommodation.getId());
 		RoomResponse firstRoom = roomService.getById(room.getId());
+		assertThat(firstAccommodation.images()).hasSize(1);
+		assertThat(firstRoom.images()).hasSize(1);
 		assertThat(statistics.getPrepareStatementCount()).isPositive();
 		assertThat(redisTemplate.hasKey(cacheKey(
 				RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE,
@@ -118,6 +130,20 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		assertThat(cachedAccommodation).isEqualTo(firstAccommodation);
 		assertThat(cachedRoom).isEqualTo(firstRoom);
 		assertThat(statistics.getPrepareStatementCount()).isZero();
+	}
+
+	@Test
+	void searchBypassesWarmDetailMediaSnapshot() {
+		Accommodation owner = accommodationRepository.saveAndFlush(accommodation());
+		assertThat(accommodationService.getById(owner.getId()).images()).isEmpty();
+		var image = mediaRepository.saveAndFlush(image(owner, 0));
+		var request = new AccommodationSearchRequest(
+				owner.getName(), null, null, null, null, null, null, null,
+				null, null, null, null, 0, 100, null, null);
+		assertThat(accommodationService.getAll(request).content()).filteredOn(item -> item.accommodationId().equals(owner.getId()))
+				.singleElement().satisfies(item -> assertThat(item.representativeImage().mediaId()).isEqualTo(image.getId()));
+		// This deliberate repository-level fixture mutation does not invoke #273's eviction hook.
+		assertThat(accommodationService.getById(owner.getId()).images()).isEmpty();
 	}
 
 	@Test
