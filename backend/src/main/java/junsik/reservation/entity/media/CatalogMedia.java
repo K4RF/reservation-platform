@@ -125,6 +125,12 @@ public class CatalogMedia {
 		this.sortOrder = order;
 	}
 
+	public void updateMetadata(String altText, String source, String rightsRecord) {
+		this.altText = requiredText(altText, 300);
+		this.source = requiredText(source, 500);
+		this.rightsRecord = requiredText(rightsRecord, 1000);
+	}
+
 	public static void validateStorageKey(String key, MediaFormat format) {
 		Objects.requireNonNull(key);
 		String suffix = "." + format.getExtension();

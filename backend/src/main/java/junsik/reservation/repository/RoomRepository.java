@@ -1,6 +1,9 @@
 package junsik.reservation.repository;
 
 import java.time.LocalDate;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +18,9 @@ import junsik.reservation.enums.RoomInventorySaleStatus;
 import junsik.reservation.enums.RoomStatus;
 
 public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificationExecutor<Room> {
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("select r from Room r where r.id = :id")
+	Optional<Room> lockForMedia(@Param("id") Long id);
 
 	@Query("""
 			select room

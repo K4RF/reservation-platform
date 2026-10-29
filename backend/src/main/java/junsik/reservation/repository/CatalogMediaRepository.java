@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import junsik.reservation.entity.media.CatalogMedia;
 
 public interface CatalogMediaRepository extends JpaRepository<CatalogMedia, Long> {
+	boolean existsByStorageKey(String key);
+
 
 	// Rank inside each owner before filtering: one bounded query per page, not per card.
 	@Query(value = """
