@@ -2,6 +2,7 @@ package junsik.reservation.service.accommodation;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -20,24 +21,29 @@ import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
 import junsik.reservation.dto.accommodation.response.AccommodationResponse;
 import junsik.reservation.dto.common.response.PageResponse;
+import junsik.reservation.dto.media.response.MediaResponse;
 import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.enums.AccommodationErrorCode;
 import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.AccommodationSpecifications;
+import junsik.reservation.service.media.CatalogMediaReadService;
 
 @Service
 public class AccommodationService {
 
 	private final AccommodationRepository accommodationRepository;
 	private final AccommodationBookingPolicyService bookingPolicyService;
+	private final CatalogMediaReadService mediaService;
 
 	public AccommodationService(
 			AccommodationRepository accommodationRepository,
-			AccommodationBookingPolicyService bookingPolicyService
+			AccommodationBookingPolicyService bookingPolicyService,
+			CatalogMediaReadService mediaService
 	) {
 		this.accommodationRepository = accommodationRepository;
 		this.bookingPolicyService = bookingPolicyService;
+		this.mediaService = mediaService;
 	}
 
 	@Transactional
@@ -60,9 +66,7 @@ public class AccommodationService {
 	@Transactional(readOnly = true)
 	@Cacheable(cacheNames = RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE, key = "#p0", sync = true)
 	public AccommodationResponse getById(Long accommodationId) {
-		return accommodationRepository.findById(accommodationId)
-				.map(AccommodationResponse::from)
-				.orElseThrow(() -> new BusinessException(AccommodationErrorCode.NOT_FOUND));
+		return detailResponse(getAccommodation(accommodationId));
 	}
 
 	@Transactional(readOnly = true)
@@ -77,13 +81,15 @@ public class AccommodationService {
 						timeZone -> timeZone,
 						timeZone -> bookingPolicyService.today(ZoneId.of(timeZone))
 				));
-		Page<AccommodationResponse> accommodations = accommodationRepository
+		Page<Accommodation> accommodations = accommodationRepository
 				.findAll(AccommodationSpecifications.withFilters(
 						request,
 						todayByTimeZone
-				), pageRequest)
-				.map(AccommodationResponse::from);
-		return PageResponse.from(accommodations);
+				), pageRequest);
+		Map<Long, List<MediaResponse>> images = mediaService.accommodationImages(
+				accommodations.getContent().stream().map(Accommodation::getId).toList(), 1);
+		return PageResponse.from(accommodations.map(accommodation -> AccommodationResponse.from(
+				accommodation, images.getOrDefault(accommodation.getId(), List.of()))));
 	}
 
 	@Transactional
@@ -106,7 +112,7 @@ public class AccommodationService {
 				request.checkOutTime(),
 				request.timeZone()
 		);
-		return AccommodationResponse.from(accommodation);
+		return detailResponse(accommodation);
 	}
 
 	@Transactional
@@ -121,7 +127,14 @@ public class AccommodationService {
 	) {
 		Accommodation accommodation = getAccommodation(accommodationId);
 		accommodation.changeStatus(request.status());
-		return AccommodationResponse.from(accommodation);
+		return detailResponse(accommodation);
+	}
+
+	private AccommodationResponse detailResponse(Accommodation accommodation) {
+		List<MediaResponse> images = mediaService.accommodationImages(
+				List.of(accommodation.getId()), CatalogMediaReadService.GALLERY_LIMIT)
+				.getOrDefault(accommodation.getId(), List.of());
+		return AccommodationResponse.from(accommodation, images);
 	}
 
 	private Accommodation getAccommodation(Long accommodationId) {
