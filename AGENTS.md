@@ -227,8 +227,15 @@ Before completing a change:
   URL fetching or BLOB JSON. Keep files ignored and persist/back up DB and storage together.
   Detail cache prefix is reservation:cache:v2:. Media write transactions must call
   CatalogMediaCacheEviction through its proxy; repository/SQL writes are not
-  automatically detected. ADMIN upload/management is #273 and Frontend integration
-  is #276, neither is implied by these read contracts. See
+  automatically detected. #273 implements ADMIN album GET/upload/metadata/order/
+  representative/replacement/deletion with owner-row locks and mandatory strong
+  If-Match from the latest ADMIN GET. JPEG/PNG uploads are decoded/re-encoded,
+  limited to 10MiB, 8192px per dimension, 16M pixels and 20 per owner. WebP is read-only.
+  A durable media_file_cleanup intent precedes file creation; commit claims the new
+  file, while rollback/crash and obsolete files are cleaned with PK locks and fresh
+  READ_COMMITTED reference checks. Never bulk-delete storage or replay Media writes.
+  See docs/architecture/media-management.md for cleanup settings/recovery and SQL.
+  Frontend integration is #276 and is not implied by these Backend APIs. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication
@@ -492,8 +499,9 @@ Before completing a change:
   See `docs/testing/frontend-admin-daily-prices.md` for price management.
   It reuses AuthProvider/ProtectedRoute and JWT role hints;
   it does not add persistent token storage or restore ADMIN after full reload.
-  Backend Spring Security remains the authorization boundary. No `/api/v1/admin`
-  production controller or reservation-wide Admin menu is implied by the UI.
+  Backend Spring Security remains the authorization boundary. #273 adds only an
+  explicit ADMIN Media cleanup POST under `/api/v1/admin/media/cleanup`; a
+  reservation-wide Admin controller/menu is not implied by the UI.
   See `docs/testing/frontend-admin-layout.md` for contracts and verification.
   `test/AdminManagementFlow.integration.test.tsx` connects email login, navigation,
   accommodation/policies, rooms, price and inventory at the HTTP-mock boundary,

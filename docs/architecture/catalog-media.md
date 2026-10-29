@@ -2,8 +2,8 @@
 
 2026-10-29, v0.4.1(Milestone #20). 선행 [재구성 명세 #271](../ui/prototype-rebuild.md).
 저장소 선택 근거는 [ADR-007](../adr/007-catalog-media-local-storage.md)에 기록했다.
-실제 모델·공개 메타데이터/파일 읽기를 구현한다. ADMIN 업로드/관리 쓰기는 #273,
-Frontend 이미지/Gallery 연결은 #276이며 이번에 완료하지 않았다.
+이 문서는 #272의 공개 읽기 계약을 기록한다. 현재 ADMIN 업로드/관리 쓰기는
+[#273 관리·파일 수명주기](media-management.md)에서 구현했으며 Frontend 연결은 #276 후속이다.
 시안 사진·가짜 매물을 실제 카탈로그에 넣지 않았다.
 
 ## 모델·대표·순서
@@ -22,10 +22,10 @@ Room 이미지는 해당 Room 소속이며 숙소 Gallery/대표로 자동 승�
 | source / rights_record | 필수 1–500 / 1–1000자. 실제 출처·사용권/동의 근거를 기록, 허가 자체를 자동 검증하는 기능은 아님 |
 
 **대표 = `(sort_order ASC, id ASC)` 첫 행**이다. 별도 boolean이 없어 대표 중복/부재 상태가 없다.
-대표 지정은 #273에서 해당 이미지를 첫 순서로 재정렬하는 명시적 쓰기로 구현해야 한다.
+대표 지정은 #273에서 해당 이미지를 첫 순서로 재정렬하는 명시적 쓰기로 구현했다.
 같은 순서는 ID tie-break, 대표 삭제 시 다음 행이 대표, 전부 삭제하면 null/빈 배열이다.
 이미지 bytes 교체는 새 key/새 행으로 처리하고 옛 ID/파일명을 다른 사진에 재사용하지 않는다.
-순서·대표 변경의 동시 쓰기 직렬화와 전체 결과 검토는 #273의 책임이다.
+순서·대표 변경은 #273의 owner 잠금/If-Match 검증을 사용한다.
 카탈로그 조회는 파일 존재를 매번 검사하지 않는다. 파일만 유실되면 메타데이터는 유지되고
 content GET이404가 되므로 #276이 실패 대체를 표시한다. 다른 대표로 자동 전환하지 않는다.
 
@@ -78,7 +78,7 @@ alt에는 토큰/연락처 등 비밀값을 넣지 않는다. 공개 이미지�
 
 페이지 크기 상한은 기존100이다. 목록의 images는 전체 Gallery가 아니라 **대표 1장 projection**이며,
 상세 역시 최대20장이다. 20장 초과의 별도 Gallery Pagination은 이번 범위가 아니다.
-#273에서는 소유자당 최대20장 등록을 검증해 관리 화면과 공개 상한을 일치시켜야 한다.
+#273은 소유자당 최대20장 등록을 검증한다. 관리 화면 구현은 #276 후속이다.
 Room Metadata/정책 GET/통화/후기/최저가/총액을 추가하지 않았다.
 
 ### 조회 비용·페이로드
@@ -91,7 +91,7 @@ Room Metadata/정책 GET/통화/후기/최저가/총액을 추가하지 않았�
 인덱스는 owner/sort_order/id에 두며, DB는 선택 owner의 Media 행을 순위 계산한다.
 반환 행 수가 제한된다는 뜻이지 DB가 모든 경우 딱 한 행만 읽는다는 성능 보장은 아니다.
 
-이미지 URL은 썸네일 변환물이 아니라 **제한된 원본 파일**이다. 새 rendition/srcset/resize는 없다.
+이미지 URL은 썸네일 변환물이 아니라 **제한된 저장 이미지**다(#273 업로드 시 재인코딩). 새 rendition/srcset/resize는 없다.
 따라서 카드 개수×최대10MiB의 실제 다운로드 비용은 남는다. #273의 적절한 원본 제한과
 #276의 lazy loading을 적용하고, 실제 측정 후 파생 썸네일 계약을 별도로 검토한다.
 
@@ -105,13 +105,12 @@ Room Metadata/정책 GET/통화/후기/최저가/총액을 추가하지 않았�
   `cd backend`로 실행하면 `backend/.local/media/`. IDE cwd가 다르면 절대 경로를 지정한다.
   `.env_sample`에 예시를 추가했고 `.local/`은 Git에서 제외했다. 실제 사진/비밀값은 커밋하지 않는다.
 - DB와 파일을 함께 보존/백업해야 한다. `bootJar`/build 산출물 내부나 임시 디렉터리에 저장하지 않는다.
-  앱 재시작으로 파일을 삭제하지 않으며, 읽기만 하는 이번 단계는 루트를 자동 생성하지 않는다.
+  읽기는 루트를 만들지 않으며 #273 업로드가 필요할 때 생성한다. 재시작 후에는 기록된 미귀속/삭제 대상만 정리한다.
 - 컨테이너로 앱을 배포하면 해당 디렉터리를 영속 Volume에 mount해야 한다. 현재 Compose는
   Backend 앱 컨테이너/Media Volume을 추가하지 않았다. 다중 인스턴스는 공유 디스크/객체 저장소가 필요하다.
   로컬 디스크도 운영 비용/백업/용량 제한이 없는 것은 아니다. 현재는 단일 파일 크기만 제한하며 총 디스크 quota는 후속이다.
-- 실제 저장·업로드는 #273에서 파일 decode/format·픽셀·개수·크기·안전 key·권한을 검증해야 한다.
-  #272 Entity 검증은 메타데이터 검증이고 실제 업로드 파일 decode 검증 완료가 아니다.
-  WEBP enum/읽기는 가능하지만 업로드 decoder 지원 여부도 #273에서 확정/검증한다.
+- #273 업로드는 JPEG/PNG decode/재인코딩·16M픽셀·10MiB·20장·안전 key·ADMIN 권한을 검증한다.
+  #272의 WEBP enum/읽기는 유지하지만 WebP 업로드는 지원하지 않는다. 세부 입력/제한은 관리 계약을 따른다.
 - 출처/권리 확인 없는 과거 사진/alt는 backfill하지 않는다. [Prototype ASSETS](../ui/prototypes/premium-travel/ASSETS.md)는 참조 전용이며 실제 숙소의 근거가 아니다.
 
 `GET /api/v1/media/{mediaId}/content`는 익명 접근 가능하다. DTO URL은 **API origin 기준 상대 URL**이며
@@ -130,14 +129,14 @@ DB 행을 확인하고 UUID key만 root 아래에서 읽는다. 경로 입력/�
 - 상세의 immutable MediaResponse 배열까지 같은 snapshot에 저장한다. 검색/목록/가용성/파일 bytes는 Redis 응답 캐시를 우회한다.
 - 기존 catalog 수정/status는 이전처럼 after-success eviction이다. 새 응답에서도 이미지가 누락되지 않도록 상세 projection을 사용한다.
 - `CatalogMediaCacheEviction.accommodationChanged(id)` / `roomChanged(id)`는 **기존 Media 쓰기 트랜잭션 안에서
-  별도 Spring Bean proxy를 통해** 호출하는 후속 #273용 hook이다. MANDATORY로 트랜잭션 누락을 거부한다.
+  별도 Spring Bean proxy를 통해** 호출하는 hook이다. #273의 모든 관리 쓰기에 연결했으며 MANDATORY로 트랜잭션 누락을 거부한다.
   transaction-aware CacheManager가 commit 뒤 evict하고 rollback에서는 원래 snapshot을 유지한다.
   Room Media는 Room detail만, 숙소 Media는 Accommodation detail만 무효화한다.
-- **Repository/직접 SQL 변경을 자동 감지하는 장치는 아니다.** #273의 생성/삭제/대표/정렬/alt 변경 모두 hook을 연결해야 한다.
+- **Repository/직접 SQL 변경을 자동 감지하는 장치는 아니다.** API 밖 쓰기는 이 일관성을 자동 보장하지 않는다.
   캐시 장애는 기존 Database fallback/TTL 정책을 따른다. DB와 Redis의 원자적 commit 또는 eviction 재시도 큐는 없으므로
   eviction 실패 때 stale 메타데이터가 TTL까지 남을 수 있다. 삭제된 Media URL의 content GET은 DB 재확인으로404가 된다.
-- 파일/DB commit의 원자성은 아직 제공하지 않는다. #273에서 새 파일 준비→DB 반영→commit 뒤 옛 파일 정리,
-  rollback/고아 파일/재시도/명시적 결과 검토를 구현하고 검증해야 한다.
+- 파일/DB commit의 원자성은 제공하지 않는다. #273은 durable intent로 미귀속/옛 파일 정리·실패 재시도를 구현했다.
+  [관리 계약](media-management.md)의 순서·실패 보정·명시적 결과 검토 경계를 따른다.
 
 ## 기존 DB 업그레이드
 
@@ -158,4 +157,5 @@ DB 행을 확인하고 UUID key만 root 아래에서 읽는다. 경로 입력/�
   commit/rollback 후 hook 무효화, 검색의 warm detail snapshot 우회. 기존 권한/캐시 회귀 Suite 재사용.
 
 전체 실행 결과·CI 경계는 [#272 검증 기록](../testing/catalog-media-272.md)에 남긴다.
-업로드/대표/정렬/alt/삭제 HTTP API·실제 시설 사진 준비·Frontend 연결/시안 재현·사용자 승인은 완료하지 않았다.
+#272 당시의 검증 기록과 구분해 현재 업로드/관리 API 검증은 [#273 기록](../testing/media-management-273.md)을 본다.
+실제 시설 사진 준비·Frontend 연결/시안 재현·사용자 승인은 완료하지 않았다.

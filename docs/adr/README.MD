@@ -16,6 +16,7 @@ ADR 문서 예시:
 - [ADR-005: 취소 정책을 예약 생성 시 값으로 복제해 Snapshot 저장](005-cancellation-policy-snapshot.md)
 - [ADR-006: Redis 직렬화와 Optimistic Lock을 예약 생성 전략으로 채택](006-reservation-concurrency-strategy.md)
 - [ADR-007: Catalog Media 메타데이터와 로컬 파일 읽기 분리](007-catalog-media-local-storage.md)
+- [ADR-008: Media 파일 작업에 durable intent와 소유자 잠금 사용](008-media-file-lifecycle.md)
 
 각 ADR은 다음 항목을 포함합니다.
 

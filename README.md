@@ -32,7 +32,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - JWT 인증, Redis 기반 Refresh Token 재발급, 로그아웃
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
-- 숙소·객실 Media 메타데이터 및 공개 이미지 파일 읽기 API (Frontend 사진 연결/ADMIN 업로드는 후속)
+- 숙소·객실 Media 메타데이터 및 공개 이미지 파일 읽기 API (Frontend 사진 연결은 후속)
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회
 - 본인 예약 목록·상세 조회, 일정 변경, 저장 취소 정책 확인 및 취소
 
@@ -45,6 +45,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - 숙소·객실 등록, 정보 수정, `ACTIVE/INACTIVE` 운영 상태 관리
 - 숙소별 예약 가능 조건과 취소 정책 관리
 - 객실별 날짜 재고·`OPEN/CLOSED` 판매 상태 및 날짜별 가격 관리
+- 숙소·객실 JPEG/PNG 업로드·출처/사용권·대표/순서·교체/삭제 및 내구성 있는 파일 정리
 
 숙소·객실 관리와 단일 날짜의 적용 가격 조회·Override 생성/수정 화면은 연결되어 있습니다.
 재고는 날짜 범위 Calendar 조회와 단일 날짜의 총수량·판매 상태 관리까지 연결되어 있습니다.
@@ -148,7 +149,10 @@ Gradle 프로젝트 루트는 `backend/`입니다. 프론트엔드는 `frontend/
 Media 파일은 `MEDIA_STORAGE_ROOT`(기본 Backend cwd의 `.local/media`)에 보관하며 Git에서 제외합니다.
 DB와 파일을 함께 영속 보관해야 합니다. 기존 DB의 [Media 테이블 추가 SQL](docs/erd/mysql-catalog-media-upgrade.sql)은
 대상/백업 검토 후 적용하세요. 이번 작업에서 개발 DB/Volume에 실행하지 않았습니다.
-공개 URL·용량/형식·캐시 v2·후속 업로드 범위는 [Media 읽기 계약](docs/architecture/catalog-media.md)을 참고하세요.
+공개 URL·용량/형식·캐시 v2는 [Media 읽기 계약](docs/architecture/catalog-media.md)을 참고하세요.
+ADMIN 관리 입력 예시·If-Match 재조회·정리 설정은 [Media 관리/파일 수명주기](docs/architecture/media-management.md)를 따릅니다.
+기존 DB의 [정리 테이블 추가 SQL](docs/erd/mysql-media-file-cleanup-upgrade.sql)도 대상/백업 검토 후 적용해야 합니다.
+이 작업은 테스트용 임시 DB/파일만 사용했으며 실제 시설 사진이나 개발 Compose 데이터는 변경하지 않았습니다.
 
 ### 1. 준비
 
@@ -350,6 +354,8 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
+- [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)
+- [ADMIN Media 실제 HTTP·MySQL/Redis·동시성 검증 (#273)](docs/testing/media-management-273.md)
 - [Frontend Design Tokens·전역 스타일 기준 (#225)](docs/ui/frontend-design-tokens-225.md)
 - [공통 UI·Navigation 기준과 검증 (#226)](docs/ui/frontend-shared-ui-226.md)
 - [인증 화면 UI·Feedback과 검증 경계 (#227)](docs/ui/frontend-authentication-ui-227.md)

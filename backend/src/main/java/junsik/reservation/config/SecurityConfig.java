@@ -63,6 +63,8 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/reissue").permitAll()
 						.requestMatchers(HttpMethod.GET, "/api/v1/auth/oauth2/google/start").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/auth/oauth2/exchange").permitAll()
+						.requestMatchers("/api/v1/accommodations/*/media", "/api/v1/accommodations/*/media/**",
+								"/api/v1/rooms/*/media", "/api/v1/rooms/*/media/**").hasRole("ADMIN")
 						.requestMatchers(HttpMethod.GET,
 								"/api/v1/media/*/content",
 								"/api/v1/accommodations", "/api/v1/accommodations/*",

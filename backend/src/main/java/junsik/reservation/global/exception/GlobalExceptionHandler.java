@@ -19,8 +19,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 
 import junsik.reservation.enums.ReservationErrorCode;
+import junsik.reservation.enums.MediaErrorCode;
 import junsik.reservation.enums.RoomInventoryErrorCode;
 import junsik.reservation.global.exception.ErrorResponse.ValidationError;
 
@@ -28,6 +32,12 @@ import junsik.reservation.global.exception.ErrorResponse.ValidationError;
 public class GlobalExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	public ResponseEntity<ErrorResponse> handleLargeUpload(MaxUploadSizeExceededException exception, HttpServletRequest request) {
+		ErrorCode errorCode = MediaErrorCode.INVALID_IMAGE;
+		return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.of(errorCode, request.getRequestURI()));
+	}
 
 	@ExceptionHandler(BusinessException.class)
 	public ResponseEntity<ErrorResponse> handleBusinessException(
@@ -107,6 +117,8 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler({
 			HttpMessageNotReadableException.class,
 			MethodArgumentTypeMismatchException.class,
+			MissingServletRequestPartException.class,
+			HttpMediaTypeNotSupportedException.class,
 			ServletRequestBindingException.class
 	})
 	public ResponseEntity<ErrorResponse> handleInvalidRequest(
