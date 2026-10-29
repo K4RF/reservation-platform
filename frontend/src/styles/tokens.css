@@ -32,6 +32,9 @@
   --color-hero-scrim: #11263bc7;
   --color-hero-scrim-end: #11263b14;
   --color-hero-scrim-mobile: #11263bb3;
+  --color-header-scrim: #11263bb3;
+  --color-overlay-border: #fffefa66;
+  --color-modal-backdrop: #11263b99;
   --color-catalog-pattern: #253b5908;
 
   --font-family-body: 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', system-ui, sans-serif;
@@ -86,4 +89,14 @@
   --content-reservation: 60rem;
   --content-wide: 70rem;
   --content-catalog: 80rem;
+  /* A1 page frames: percentage gutters are not one shared fixed-width container. */
+  --site-header-height: 5.875rem;
+  --site-header-mobile-height: 4.5rem;
+  --site-gutter: 5.5%;
+  --site-mobile-gutter: 1.375rem;
+  --search-gutter: 6%;
+  --detail-gutter: 4%;
+  --footer-gutter: 8%;
+  --content-menu: 28rem;
+  --section-anchor-offset: 2rem;
 }

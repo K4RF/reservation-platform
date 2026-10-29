@@ -125,6 +125,10 @@ Backend configuration and behavior are implemented and verified.
   a local `.codex` path, or the name "A1" alone.
 - Approved target: Home A1, Navy & Ivory, Search for comparison and Detail for
   accommodation/room exploration. A2 and other palettes are archived alternatives.
+- `SiteHeader` owns shared desktop/mobile navigation; `RootLayout` owns Auth/logout
+  and route-specific frames. Reuse these without moving mutation gates into the menu.
+  See `docs/ui/frontend-consumer-frame-274.md` for #274 evidence and capture limits;
+  the frame is not completed search, Media, Gallery, Booking or Auth redesign.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
