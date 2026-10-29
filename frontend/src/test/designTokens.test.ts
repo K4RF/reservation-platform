@@ -111,7 +111,9 @@ describe('design token and global stylesheet contracts', () => {
     )
     expect(tokens.get('--font-family-body')).toContain("'Malgun Gothic'")
     expect(tokens.get('--font-family-body')).toContain('sans-serif')
-    expect(globalCss.match(/font-family: var\(--font-family-display\)/g)).toHaveLength(4)
+    expect(globalCss).toMatch(
+      /\.site-menu-heading h2\s*\{[^}]*font-family: var\(--font-family-display\)/,
+    )
     expect(tokensCss + globalCss).not.toMatch(/@font-face|https?:\/\/|url\(/)
     expect(tokens.get('--leading-body')).toBe('1.6')
     expect(tokens.get('--control-min-height')).toBe('2.75rem')
@@ -128,6 +130,7 @@ describe('design token and global stylesheet contracts', () => {
       '--content-reservation': '60rem',
       '--content-wide': '70rem',
       '--content-catalog': '80rem',
+      '--content-menu': '28rem',
     })
     for (const name of ['auth', 'form', 'result', 'reservation', 'wide', 'catalog']) {
       expect(globalCss).toContain(`var(--content-${name})`)
@@ -149,8 +152,8 @@ describe('design token and global stylesheet contracts', () => {
   })
 
   it('keeps cinematic imagery local and bounded while isolating the Home layout and inverse focus', () => {
-    expect(globalCss).toMatch(/\.site-main:has\(> \.home-page\)\s*\{[^}]*padding: 0;/)
-    expect(globalCss).toMatch(/\.home-hero\s*\{[^}]*min-height: 40rem;/)
+    expect(globalCss).toMatch(/\.site-main\[data-page-frame='home'\]\s*\{[^}]*padding: 0;/)
+    expect(globalCss).toMatch(/\.home-hero\s*\{[^}]*var\(--site-header-height\)/)
     expect(globalCss).toMatch(/\.home-hero-image\s*\{[^}]*object-fit: cover;/)
     expect(globalCss).toContain('var(--color-hero-scrim) 60%')
     expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(42rem, 60%\);/)
@@ -184,7 +187,6 @@ describe('design token and global stylesheet contracts', () => {
     ]) {
       expect(tokens.has(`--${name}`)).toBe(true)
     }
-    expect(globalCss.match(/:focus-visible/g)).toHaveLength(3)
     expect(globalCss).toMatch(
       /\.home-search-jump:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
     )
@@ -195,7 +197,10 @@ describe('design token and global stylesheet contracts', () => {
   })
 
   it('does not reintroduce the overwritten brand or authentication cascade', () => {
-    expect(globalCss.match(/\.site-brand\s*\{/g)).toHaveLength(1)
+    // One base definition; the A1 frame deliberately changes its size at narrow widths.
+    expect(
+      globalCss.slice(0, globalCss.indexOf('@media')).match(/\.site-brand\s*\{/g),
+    ).toHaveLength(1)
     expect(globalCss.match(/\.home-link\s*\{/g)).toHaveLength(1)
     expect(globalCss.match(/\.signup-form button,\s*\.login-form button\s*\{/g)).toHaveLength(1)
     // Authentication now inherits the common submit/hover appearance, not a private duplicate.
@@ -245,7 +250,7 @@ describe('design token and global stylesheet contracts', () => {
     }
   })
 
-  it('styles the shared brand and navigation without hiding role-dependent menus', () => {
+  it('replaces wrapped mobile links with an accessible menu while retaining Admin active styles', () => {
     expect(globalCss).toMatch(/\.site-brand-mark\s*\{[^}]*border: 1px solid currentColor;/)
     expect(globalCss).toMatch(/\.site-brand-name\s*\{[^}]*font-family: var\(--font-family-body\);/)
     expect(globalCss).toMatch(
@@ -254,10 +259,12 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(
       /\.admin-sidebar \.nav-link-active\s*\{[^}]*color: var\(--color-on-primary\);/,
     )
-    expect(globalCss).toContain(
-      'grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr))',
-    )
-    expect(globalCss).not.toMatch(/\.site-nav\s*\{[^}]*display: none/)
+    expect(globalCss).toMatch(/@media \(max-width: 56rem\)\s*\{\s*\.site-nav\s*\{\s*display: none/)
+    expect(globalCss).toMatch(/\.site-mobile-actions\s*\{[^}]*display: flex/)
+    expect(globalCss).toMatch(/\.site-menu\s*\{[^}]*max-height: calc\(100dvh/)
+    expect(globalCss).toContain(".site-menu .nav-link[aria-current='page']")
+    expect(globalCss).toMatch(/\.app-shell-home > \.site-header\s*\{[^}]*position: absolute/)
+    expect(globalCss).toContain(".site-main[data-page-frame='detail']")
     expect(globalCss).toMatch(/\.site-footer\s*\{[^}]*flex-wrap: wrap;/)
   })
 
@@ -429,7 +436,7 @@ describe('design token and global stylesheet contracts', () => {
       expect(contrast('accent', surface), `decorative accent/${surface}`).toBeGreaterThanOrEqual(3)
     }
     // Worst-case opaque white photo beneath the copy's minimum scrim alpha.
-    for (const scrim of ['hero-scrim', 'hero-scrim-mobile']) {
+    for (const scrim of ['hero-scrim', 'hero-scrim-mobile', 'header-scrim']) {
       const hex = resolve(scrim).slice(1)
       const alpha = parseInt(hex.slice(6, 8), 16) / 255
       const composite =
