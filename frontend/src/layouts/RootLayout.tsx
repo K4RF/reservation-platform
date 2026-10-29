@@ -1,8 +1,18 @@
 import { startTransition, useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
+import { Outlet, useLocation, useNavigate } from 'react-router'
 import { routePaths } from '../app/routePaths'
 import { useAuth } from '../state/useAuth'
 import { LoadingState } from '../components/ui/LoadingState'
+import { SiteHeader } from './SiteHeader'
+
+function pageFrame(pathname: string) {
+  if (pathname === routePaths.home) return 'home'
+  if (pathname === routePaths.accommodations) return 'search'
+  if (pathname.startsWith(`${routePaths.accommodations}/`)) return 'detail'
+  if (pathname.startsWith(routePaths.reservations)) return 'booking'
+  if (pathname.startsWith(routePaths.admin)) return 'admin'
+  return 'reading'
+}
 
 export function RootLayout() {
   const { state, logout } = useAuth()
@@ -39,72 +49,21 @@ export function RootLayout() {
       })
     }
   }, [loggingOut, state.status, location.pathname, location.search, location.hash, navigate])
+  // When a status replaces/precedes the Hero, never place an overlay over that message.
+  const homeOverlay =
+    location.pathname === routePaths.home && !loggingOut && state.status !== 'reauth_required'
   return (
-    <div className="app-shell">
+    <div className={`app-shell${homeOverlay ? ' app-shell-home' : ''}`}>
       <a className="skip-link" href="#main-content">
         본문으로 건너뛰기
       </a>
-      <header className="site-header">
-        <Link className="site-brand" to={routePaths.home} aria-label="Reservation Platform">
-          <span className="site-brand-mark" aria-hidden="true">
-            R
-          </span>
-          <span className="site-brand-name">
-            Reservation <span>Platform</span>
-          </span>
-        </Link>
-        <nav className="site-nav" aria-label="주요 탐색">
-          <NavLink
-            className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
-            end
-            to={routePaths.home}
-          >
-            홈
-          </NavLink>
-          <NavLink className="nav-link" to={routePaths.accommodations}>
-            숙소 검색
-          </NavLink>
-          {state.status === 'authenticated' &&
-            (state.role === 'USER' || state.role === 'ADMIN') && (
-              <NavLink className="nav-link" to={routePaths.reservations}>
-                내 예약
-              </NavLink>
-            )}
-          {state.status === 'authenticated' && state.role === 'ADMIN' && (
-            <NavLink className="nav-link" to={routePaths.admin}>
-              관리자
-            </NavLink>
-          )}
-          {state.status === 'authenticated' ? (
-            <button
-              className="nav-link nav-action"
-              type="button"
-              disabled={loggingOut}
-              aria-busy={loggingOut}
-              onClick={() => void handleLogout()}
-            >
-              {loggingOut ? '로그아웃 중…' : '로그아웃'}
-            </button>
-          ) : state.status !== 'loading' ? (
-            <NavLink
-              className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
-              to={routePaths.login}
-            >
-              로그인
-            </NavLink>
-          ) : null}
-          {state.status !== 'authenticated' && state.status !== 'loading' && (
-            <NavLink
-              className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
-              to={routePaths.signup}
-            >
-              회원가입
-            </NavLink>
-          )}
-          {state.status === 'loading' && <span role="status">인증 확인 중…</span>}
-        </nav>
-      </header>
-      <main className="site-main" id="main-content" tabIndex={-1}>
+      <SiteHeader key={location.key} loggingOut={loggingOut} onLogout={() => void handleLogout()} />
+      <main
+        className="site-main"
+        data-page-frame={pageFrame(location.pathname)}
+        id="main-content"
+        tabIndex={-1}
+      >
         {state.status === 'reauth_required' && (
           <p role="status">
             로그인이 만료되었습니다. 숙소는 계속 둘러볼 수 있으며 예약 시 다시 로그인해 주세요.
