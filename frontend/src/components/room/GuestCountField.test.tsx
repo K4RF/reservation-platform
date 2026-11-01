@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { GuestCountField } from './GuestCountField'
+import { GuestCountPicker } from './GuestCountPicker'
 
 function Harness({ initial = '1', required = true } = {}) {
   const [value, setValue] = useState(initial)
@@ -48,7 +49,7 @@ describe('total guest count input and stepper', () => {
     expect(input().getAttribute('inputmode')).toBe('numeric')
   })
 
-  it.each(['0', '-1', '1.5', '2147483648', '999999999999999999999'])(
+  it.each(['0', '-1', '1.5', '2.0', '1e3', '2147483648', '999999999999999999999'])(
     'retains invalid direct value %s without rounding, clamping or step repair',
     (value) => {
       render(<Harness />)
@@ -96,5 +97,99 @@ describe('total guest count input and stepper', () => {
     expect(more().getAttribute('aria-controls')).toBe(input().id)
     const data = new FormData(screen.getByRole('form', { name: 'test' }) as HTMLFormElement)
     expect(data.getAll('guestCount')).toEqual(['2'])
+  })
+})
+
+function PickerHarness({ required = true } = {}) {
+  const [value, setValue] = useState('2')
+  return (
+    <form aria-label="picker">
+      <GuestCountPicker id="picker" value={value} onChange={setValue} required={required} />
+      <button type="submit">조회</button>
+    </form>
+  )
+}
+const pickerOpen = () => fireEvent.click(screen.getByRole('button', { name: '숙박 인원 선택' }))
+const pickerValue = () =>
+  new FormData(screen.getByRole('form', { name: 'picker' }) as HTMLFormElement).get('guestCount')
+describe('staged guest picker', () => {
+  it('keeps preview/cancel separate, commits explicitly, and serializes one value only', () => {
+    render(<PickerHarness />)
+    pickerOpen()
+    fireEvent.click(more())
+    expect(pickerValue()).toBe('2')
+    fireEvent.click(screen.getByRole('button', { name: '인원 선택 취소' }))
+    expect(pickerValue()).toBe('2')
+    pickerOpen()
+    expect(input()).toHaveProperty('value', '2')
+    fireEvent.click(more())
+    fireEvent.click(screen.getByRole('button', { name: '인원 적용' }))
+    expect(pickerValue()).toBe('3')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '숙박 인원 선택' }))
+    expect(screen.queryByRole('spinbutton')).toBeNull()
+  })
+  it.each(['0', '-1', '1.5', '2.0', '1e3', '2147483648', ''])(
+    'does not apply or silently repair invalid staged %s',
+    (value) => {
+      render(<PickerHarness />)
+      pickerOpen()
+      fireEvent.change(input(), { target: { value } })
+      expect(input()).toHaveProperty('value', value)
+      expect(pickerValue()).toBe('2')
+      expect(screen.getByRole('button', { name: '인원 적용' })).toHaveProperty('disabled', true)
+      fireEvent.keyDown(input(), { key: 'Escape' })
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(pickerValue()).toBe('2')
+    },
+  )
+  it('allows explicitly clearing optional guests without inventing a default', () => {
+    render(<PickerHarness required={false} />)
+    pickerOpen()
+    fireEvent.change(input(), { target: { value: '' } })
+    fireEvent.click(screen.getByRole('button', { name: '인원 적용' }))
+    expect(pickerValue()).toBe('')
+  })
+  it('keeps desktop popover non-modal, exits to the next form action, and discards an outside click', () => {
+    const media = { matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => media),
+    )
+    render(<PickerHarness />)
+    pickerOpen()
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.getAttribute('aria-modal')).toBeNull()
+    expect(document.body.style.overflow).toBe('')
+    fireEvent.click(more())
+    const apply = within(dialog).getByRole('button', { name: '인원 적용' })
+    apply.focus()
+    fireEvent.keyDown(apply, { key: 'Tab' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '조회' }))
+    expect(pickerValue()).toBe('2')
+    pickerOpen()
+    fireEvent.pointerDown(screen.getByRole('button', { name: '조회' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(pickerValue()).toBe('2')
+  })
+  it('preserves the raw editor across popover-to-sheet resize and releases modal scroll lock', () => {
+    const media = Object.assign(new EventTarget(), { matches: true })
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => media),
+    )
+    render(<PickerHarness />)
+    pickerOpen()
+    fireEvent.change(input(), { target: { value: '1.5' } })
+    act(() => {
+      media.matches = false
+      media.dispatchEvent(new Event('change'))
+    })
+    expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true')
+    expect(input()).toHaveProperty('value', '1.5')
+    expect(document.body.style.overflow).toBe('hidden')
+    fireEvent.keyDown(input(), { key: 'Escape' })
+    expect(document.body.style.overflow).toBe('')
+    expect(pickerValue()).toBe('2')
   })
 })

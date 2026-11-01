@@ -1,3 +1,4 @@
+import * as searchLayers from './searchLayers'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -157,8 +158,8 @@ async function createAndOpenDetail() {
 }
 async function prepareChange() {
   fireEvent.click(screen.getByRole('button', { name: '예약 일정 변경 준비' }))
-  fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
-  fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+  searchLayers.editStayDate('새 체크인', '2030-01-02')
+  searchLayers.editStayDate('새 체크아웃', '2030-01-04')
   fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
   await screen.findByText('현재 객실이 일반 신규 예약 가능 목록에 없습니다.')
   fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))

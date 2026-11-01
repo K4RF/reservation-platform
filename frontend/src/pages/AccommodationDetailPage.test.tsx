@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -51,7 +52,7 @@ describe('AccommodationDetailPage with the real API client', () => {
       renderAt('/accommodations/7?' + query)
       await screen.findByRole('heading', { name: '서울 호텔' })
       expect(screen.getByRole('alert').textContent).toContain('올바르지 않은 탐색 조건')
-      expect(screen.getByLabelText('숙박 체크인')).toHaveProperty('value', '')
+      expect(searchLayers.committedDateInput('숙박 체크인')).toHaveProperty('value', '')
       expect(mock.mock.calls.every(([url]) => !url.includes('/rooms/available'))).toBe(true)
       expect(
         screen.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href'),
@@ -66,8 +67,8 @@ describe('AccommodationDetailPage with the real API client', () => {
     renderAt()
     await screen.findByRole('heading', { name: '서울 호텔' })
     await screen.findByRole('heading', { name: '스탠다드' })
-    fireEvent.change(screen.getByLabelText('숙박 체크인'), { target: { value: '2030-01-01' } })
-    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-02' } })
+    searchLayers.editStayDate('숙박 체크인', '2030-01-01')
+    searchLayers.editStayDate('숙박 체크아웃', '2030-01-02')
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()

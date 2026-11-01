@@ -1,6 +1,9 @@
 import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { clearAccessToken } from '../state/accessToken'
+import { mockDialog } from './dialog'
+
+mockDialog()
 
 // jsdom has no layout/scroll implementation. Calls are asserted separately from Browser evidence.
 beforeEach(() => {

@@ -159,7 +159,7 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(42rem, 60%\);/)
     expect(globalCss).toContain('background: var(--color-hero-scrim-mobile)')
     // Provenance/failure text must grow in flow rather than overlap the copy at 200% text scale.
-    expect(globalCss).toMatch(/\.home-image-note\s*\{[^}]*order: -1;/)
+    expect(globalCss).toMatch(/\.home-image-note\s*\{[^}]*order: 2;/)
     expect(globalCss).not.toMatch(/\.home-image-note\s*\{[^}]*position: absolute;/)
     for (const [size, maxBytes] of [
       [800, 80 * 1024],
@@ -278,7 +278,10 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(/\.stay-calendar\s*\{[^}]*background: var\(--color-surface\);/)
     expect(globalCss).toMatch(/\.stay-calendar-grid \.stay-date-boundary\s*\{[^}]*box-shadow:/)
     expect(globalCss).toMatch(/\.stay-calendar-scroll\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(/\.stay-calendar-grid\s*\{[^}]*min-width: 14rem;/)
+    expect(globalCss).toMatch(/\.stay-calendar-grid\s*\{[^}]*min-width: 19\.25rem;/)
+    expect(globalCss).toMatch(/\.search-layer\s*\{[^}]*overflow: auto;/)
+    expect(globalCss).toContain('.compact-search-with-city')
+    expect(globalCss).not.toContain('.search-main-fields')
     expect(globalCss).toMatch(/\.room-detail-header\s*\{[^}]*background: var\(--color-secondary\);/)
   })
 

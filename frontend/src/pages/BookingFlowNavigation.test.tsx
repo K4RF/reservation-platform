@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -50,9 +51,9 @@ describe('booking flow page lifecycle', () => {
         </MemoryRouter>
       </AuthProvider>,
     )
-    await screen.findByLabelText('숙박 체크인')
-    fireEvent.change(screen.getByLabelText('숙박 체크인'), { target: { value: '2030-01-01' } })
-    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-03' } })
+    await screen.findByRole('button', { name: '숙박 날짜 선택' })
+    searchLayers.editStayDate('숙박 체크인', '2030-01-01')
+    searchLayers.editStayDate('숙박 체크아웃', '2030-01-03')
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     for (const [label, value] of [
@@ -68,8 +69,8 @@ describe('booking flow page lifecycle', () => {
     fireEvent.click(screen.getByRole('button', { name: '화면 이탈' }))
     expect(screen.queryByText('제출 전 최종 확인')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
-    await screen.findByLabelText('숙박 체크인')
-    expect((screen.getByLabelText('숙박 체크인') as HTMLInputElement).value).toBe('')
+    await screen.findByRole('button', { name: '숙박 날짜 선택' })
+    expect((searchLayers.committedDateInput('숙박 체크인') as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '앞으로가기' }))
     expect(screen.getByText('다른 화면')).toBeTruthy()
