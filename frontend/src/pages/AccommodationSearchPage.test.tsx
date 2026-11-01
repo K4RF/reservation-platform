@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -17,7 +18,14 @@ function submit() {
 
 describe('AccommodationSearchPage with the real API client', () => {
   it('starts wide-screen filters expanded but keeps the native disclosure choice during draft editing', async () => {
-    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    )
     const mock = vi.fn().mockImplementation(() => Response.json(accommodationPage()))
     vi.stubGlobal('fetch', mock)
     renderPage()
@@ -27,7 +35,7 @@ describe('AccommodationSearchPage with the real API client', () => {
     expect(details.open).toBe(true)
     fireEvent.click(summary)
     await waitFor(() => expect(details.open).toBe(false))
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    searchLayers.stepGuests('인원', true)
     expect(details.open).toBe(false)
     expect(mock).toHaveBeenCalledTimes(1)
     fireEvent.click(summary)
@@ -45,7 +53,7 @@ describe('AccommodationSearchPage with the real API client', () => {
     expect(summary.textContent).toContain('2030-01-10 → 2030-01-12')
     expect(summary.textContent).toContain('2명')
     expect(summary.textContent).toContain('등록순 · 오름차순')
-    fireEvent.change(screen.getByLabelText('도시 (정확한 이름)'), {
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), {
       target: { value: '부산광역시' },
     })
     fireEvent.change(screen.getByLabelText('숙소명'), { target: { value: '호텔' } })
@@ -88,8 +96,8 @@ describe('AccommodationSearchPage with the real API client', () => {
     vi.stubGlobal('fetch', mock)
     renderPage('/?guestCount=2&checkInDate=2030-01-10&checkOutDate=2030-01-12')
     await screen.findByRole('link', { name: '서울 호텔' })
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 줄이기' }))
+    expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '2')
+    searchLayers.stepGuests('인원', false)
     expect(mock).toHaveBeenCalledTimes(1)
     submit()
     await waitFor(() => expect(mock).toHaveBeenCalledTimes(2))
@@ -104,13 +112,13 @@ describe('AccommodationSearchPage with the real API client', () => {
     vi.stubGlobal('fetch', mock)
     renderPage()
     await screen.findByRole('link', { name: '서울 호텔' })
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '')
+    expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '')
     expect(new URL(mock.mock.calls[0][0], 'http://localhost').searchParams.has('guestCount')).toBe(
       false,
     )
-    fireEvent.change(screen.getByLabelText('인원', { exact: true }), { target: { value: '1.5' } })
-    submit()
-    expect(screen.getByRole('alert').textContent).toContain('양의 정수')
+    searchLayers.setGuests('1.5', '인원')
+    expect(screen.getByRole('spinbutton', { name: '인원' })).toHaveProperty('value', '1.5')
+    expect(screen.getByRole('button', { name: '인원 적용' })).toHaveProperty('disabled', true)
     expect(mock).toHaveBeenCalledTimes(1)
   })
   it('shows loading, lists results, pages with preserved filters and resets a new search to page zero', async () => {
@@ -151,15 +159,15 @@ describe('AccommodationSearchPage with the real API client', () => {
       ),
     )
     renderPage('/?city=서울특별시&guestCount=2')
-    fireEvent.change(screen.getByLabelText('도시 (정확한 이름)'), {
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), {
       target: { value: '부산광역시' },
     })
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    searchLayers.stepGuests('인원', true)
     expect(screen.getByText('숙소를 불러오고 있습니다.')).toBeTruthy()
     complete(Response.json(accommodationPage({ content: [], totalElements: 0, totalPages: 0 })))
     await screen.findByText('검색 조건에 맞는 숙소가 없습니다.')
-    expect(screen.getByLabelText('도시 (정확한 이름)')).toHaveProperty('value', '부산광역시')
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '3')
+    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '부산광역시')
+    expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '3')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('서울특별시')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('2명')
     expect((screen.getByRole('button', { name: '다음' }) as HTMLButtonElement).disabled).toBe(true)
@@ -173,18 +181,18 @@ describe('AccommodationSearchPage with the real API client', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderPage('/?city=서울특별시&guestCount=2')
     await screen.findByRole('alert')
-    fireEvent.change(screen.getByLabelText('도시 (정확한 이름)'), {
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), {
       target: { value: '부산광역시' },
     })
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    searchLayers.stepGuests('인원', true)
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     await screen.findByRole('link', { name: '서울 호텔' })
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(new URL(fetchMock.mock.calls[1][0], 'http://localhost').searchParams.get('city')).toBe(
       '서울특별시',
     )
-    expect(screen.getByLabelText('도시 (정확한 이름)')).toHaveProperty('value', '부산광역시')
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '3')
+    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '부산광역시')
+    expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '3')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('서울특별시')
   })
   it('validates date pairs, date ordering and price range before requesting', async () => {
@@ -192,15 +200,14 @@ describe('AccommodationSearchPage with the real API client', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderPage()
     await screen.findByRole('link', { name: '서울 호텔' })
-    fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-02' } })
-    expect(screen.getByLabelText('체크아웃')).toHaveProperty('value', '2030-01-03')
-    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '' } })
-    submit()
-    expect(screen.getByRole('alert').textContent).toContain('함께 입력')
-    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-01' } })
-    submit()
+    searchLayers.editStayDate('체크인', '2030-01-02')
+    expect(searchLayers.committedDateInput('체크아웃')).toHaveProperty('value', '2030-01-03')
+    searchLayers.editStayDate('체크아웃', '')
+    expect(screen.getByRole('button', { name: '날짜 적용' })).toHaveProperty('disabled', true)
+    expect(screen.getByRole('alert').textContent).toContain('모두 입력')
+    searchLayers.editStayDate('체크아웃', '2030-01-01')
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-03' } })
+    searchLayers.editStayDate('체크아웃', '2030-01-03')
     fireEvent.change(screen.getByLabelText('최소 기본 1박 가격'), { target: { value: '200' } })
     fireEvent.change(screen.getByLabelText('최대 기본 1박 가격'), { target: { value: '100' } })
     submit()

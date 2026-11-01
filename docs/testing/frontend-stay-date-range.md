@@ -1,5 +1,9 @@
 # 통합 숙박 날짜 범위 UX (#241)
 
+> 현재 UI는 #275에서 닫힌 요약 + modal 날짜 편집기로 변경됐다.
+> [현재 계약과 검증](../ui/frontend-compact-search-275.md)을 우선하며,
+> 아래 inline/non-modal 구조는 #241 당시의 기록이다.
+
 > 2026-10-24 디자인 인계 보완: [승인 디자인 기준](../ui/approved-design.md)과
 > [독립 참조 시안](../ui/prototypes/premium-travel/index.html)이 저장소에 추가됐다.
 > 아래의 "별도 시안 파일을 확인하지 못했다"는 구현 당시 기록이다.

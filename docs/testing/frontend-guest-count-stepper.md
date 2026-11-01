@@ -1,5 +1,9 @@
 # 전체 숙박 인원 Stepper UX (#242)
 
+> 현재 UI는 #275에서 닫힌 요약 + staged Popover/Sheet로 변경됐다.
+> [현재 계약과 검증](../ui/frontend-compact-search-275.md)을 우선하며,
+> 아래 펼쳐진 Stepper 구조는 #242 당시의 기록이다.
+
 2026-10-24(Asia/Tokyo), 최신 `develop`의 `beb0281`에서
 `feature/#242-guest-count-stepper`를 생성했다. Backend/API/DB/인증·예약 쓰기 계약은 변경하지 않았다.
 

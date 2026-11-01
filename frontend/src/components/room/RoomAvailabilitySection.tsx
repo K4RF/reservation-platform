@@ -2,8 +2,7 @@ import { useCallback, useState } from 'react'
 import { getAvailableRooms } from '../../api/room'
 import type { AvailabilityRequest } from '../../api/availabilityValidation'
 import { useAvailabilityForm } from './useAvailabilityForm'
-import { StayDateFields } from './StayDateFields'
-import { GuestCountField } from './GuestCountField'
+import { CompactSearchBar } from './CompactSearchBar'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
@@ -56,15 +55,16 @@ function AvailabilityForm({
       <h2 id="availability-title" tabIndex={-1}>
         예약 가능한 객실 조회
       </h2>
-      <p>조회 시점의 가용성입니다. 최종 예약 시 Backend가 재고와 가격을 다시 검증합니다.</p>
+      <p>날짜와 전체 인원으로 객실을 확인하세요. 예약 가능 여부는 확정 시 다시 확인합니다.</p>
       <form className="accommodation-search-form" onSubmit={submit} aria-label="객실 가용성 조건">
-        <StayDateFields prefix="availability" draft={draft} onChange={change} />
-        <GuestCountField
-          id="availability-guests"
-          value={draft.guestCount}
-          onChange={(value) => change('guestCount', value)}
+        <CompactSearchBar
+          prefix="availability"
+          dates={draft}
+          onDateChange={change}
+          guestCount={draft.guestCount}
+          onGuestChange={(value) => change('guestCount', value)}
+          actionLabel="예약 가능 객실 조회"
         />
-        <button type="submit">예약 가능 객실 조회</button>
       </form>
       {error && <ErrorState message={error} />}
       {!request && !error && (

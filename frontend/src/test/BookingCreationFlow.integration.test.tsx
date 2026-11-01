@@ -1,3 +1,4 @@
+import * as searchLayers from './searchLayers'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -120,7 +121,7 @@ function mockApi(
 async function searchToDetail() {
   fireEvent.click(await screen.findByRole('link', { name: '서울 호텔' }))
   await screen.findByRole('heading', { name: '서울 호텔', level: 1 })
-  await screen.findByLabelText('숙박 체크인')
+  await screen.findByRole('button', { name: '숙박 날짜 선택' })
 }
 describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
   it('preserves edited stay/room hints on Back from login but rechecks availability without restoring guest data or writing', async () => {
@@ -146,14 +147,10 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     const mock = mockApi()
     renderAt('/')
     expectUiSemantics()
-    fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
-    fireEvent.change(screen.getByLabelText('체크인', { exact: true }), {
-      target: { value: '2030-01-01' },
-    })
-    fireEvent.change(screen.getByLabelText('체크아웃', { exact: true }), {
-      target: { value: '2030-01-03' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '서울특별시' } })
+    searchLayers.editStayDate('체크인', '2030-01-01')
+    searchLayers.editStayDate('체크아웃', '2030-01-03')
+    searchLayers.stepGuests('인원', true)
     expect(mock).not.toHaveBeenCalled()
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
@@ -307,9 +304,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(await screen.findByRole('heading', { name: '스탠다드' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
     await screen.findByText('2 / 2 페이지')
-    expect((screen.getByLabelText('도시 (정확한 이름)') as HTMLInputElement).value).toBe(
-      '서울특별시',
-    )
+    expect((screen.getByLabelText('여행지 · 도시명') as HTMLInputElement).value).toBe('서울특별시')
     fireEvent.click(screen.getByRole('button', { name: '앞으로가기' }))
     await reachReview('280,000.65')
     expect(screen.getByText('날짜별 요금')).toBeTruthy()
@@ -369,12 +364,8 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     const mock = mockApi(false, { emptyAvailability: true })
     renderAt('/accommodations')
     await searchToDetail()
-    fireEvent.change(screen.getByLabelText('숙박 체크인'), {
-      target: { value: bookingRequest.checkInDate },
-    })
-    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), {
-      target: { value: bookingRequest.checkOutDate },
-    })
+    searchLayers.editStayDate('숙박 체크인', bookingRequest.checkInDate)
+    searchLayers.editStayDate('숙박 체크아웃', bookingRequest.checkOutDate)
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     await screen.findByText('선택한 조건에 예약 가능한 객실이 없습니다.')
     expect(screen.getByRole('heading', { name: '스탠다드' })).toBeTruthy()

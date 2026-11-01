@@ -1,3 +1,4 @@
+import * as searchLayers from '../../test/searchLayers'
 import { fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter } from 'react-router'
@@ -11,8 +12,8 @@ mockDialog()
 
 const submit = () => fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
 function dates() {
-  fireEvent.change(screen.getByLabelText('숙박 체크인'), { target: { value: '2030-01-01' } })
-  fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-03' } })
+  searchLayers.editStayDate('숙박 체크인', '2030-01-01')
+  searchLayers.editStayDate('숙박 체크아웃', '2030-01-03')
 }
 function mockApi() {
   const mock = vi.fn().mockImplementation((url: string) =>
@@ -70,14 +71,14 @@ describe('availability and selection lifecycle with real API client', () => {
     expect(screen.getByRole('navigation', { name: '예약 가능 객실 페이지' }).textContent).toContain(
       '2 / 2',
     )
-    expect(screen.getByLabelText('숙박 체크인')).toHaveProperty('value', '2030-01-01')
+    expect(searchLayers.committedDateInput('숙박 체크인')).toHaveProperty('value', '2030-01-01')
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '스탠다드 상세 보기' }))
     fireEvent.click(await screen.findByRole('button', { name: '이 객실 선택' }))
     await screen.findByRole('button', { name: '예약하려면 로그인' })
     expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(1)
     expect(mock.mock.calls[0][0]).toContain('page=1')
-    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+    searchLayers.stepGuests('숙박 인원', true)
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     expect(screen.queryByRole('dialog')).toBeNull()
   })
@@ -91,12 +92,8 @@ describe('availability and selection lifecycle with real API client', () => {
       fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
       await screen.findByText('총 예상 금액: 246,913.56')
       const calls = mock.mock.calls.length
-      if (edit === 'stepper')
-        fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
-      else
-        fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
-          target: { value: '2' },
-        })
+      if (edit === 'stepper') searchLayers.stepGuests('숙박 인원', true)
+      else searchLayers.setGuests('2', '숙박 인원')
       expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
       expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
       expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
@@ -122,14 +119,12 @@ describe('availability and selection lifecycle with real API client', () => {
     vi.stubGlobal('fetch', mock)
     render(<RoomAvailabilitySection accommodationId={7} />)
     dates()
-    fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
-      target: { value: String(room.capacity) },
-    })
+    searchLayers.setGuests(String(room.capacity), '숙박 인원')
     submit()
     await screen.findByRole('button', { name: '스탠다드 선택' })
     expect(screen.getByText(`최대 ${room.capacity}명`)).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
-    expect(screen.getByLabelText('숙박 인원', { exact: true })).toHaveProperty(
+    searchLayers.stepGuests('숙박 인원', true)
+    expect(searchLayers.committedGuestInput('숙박 인원')).toHaveProperty(
       'value',
       String(room.capacity + 1),
     )
@@ -144,15 +139,17 @@ describe('availability and selection lifecycle with real API client', () => {
       const mock = mockApi()
       render(<RoomAvailabilitySection accommodationId={7} />)
       dates()
-      fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
-        target: { value: guestCount },
-      })
-      submit()
-      expect(screen.getByRole('alert').textContent).toContain('1명 이상의 정수')
+      searchLayers.setGuests(guestCount, '숙박 인원')
+      expect(screen.getByRole('button', { name: '인원 적용' })).toHaveProperty('disabled', true)
+      expect(screen.getByRole('spinbutton', { name: '숙박 인원' })).toHaveProperty(
+        'value',
+        guestCount,
+      )
+      expect(searchLayers.committedGuestInput('숙박 인원').value).toBe('1')
       expect(mock).not.toHaveBeenCalled()
     },
   )
-  it('keeps selected rooms/prices during calendar preview/cancel, then invalidates them on apply before a fresh GET', async () => {
+  it('keeps selected rooms/prices during guest and calendar preview/cancel, then invalidates them on apply before a fresh GET', async () => {
     const mock = mockApi()
     render(<RoomAvailabilitySection accommodationId={7} />)
     dates()
@@ -160,18 +157,25 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     await screen.findByText('총 예상 금액: 246,913.56')
     const calls = mock.mock.calls.length
-    fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 선택' }))
+    fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+    expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    expect(screen.getByText('총 예상 금액: 246,913.56')).toBeTruthy()
+    expect(mock).toHaveBeenCalledTimes(calls)
+    fireEvent.click(screen.getByRole('button', { name: '인원 선택 취소' }))
+    expect(searchLayers.committedGuestInput('숙박 인원').value).toBe('1')
+    fireEvent.click(screen.getByRole('button', { name: '숙박 날짜 선택' }))
     fireEvent.click(screen.getByRole('button', { name: '2030-01-10' }))
     expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '날짜 선택 취소' }))
     expect(screen.getByText('총 예상 금액: 246,913.56')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+    fireEvent.click(screen.getByRole('button', { name: '숙박 날짜 선택' }))
     fireEvent.click(screen.getByRole('button', { name: '2030-01-10' }))
     fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
     expect(mock).toHaveBeenCalledTimes(calls)
-    expect(screen.getByLabelText('숙박 체크아웃')).toHaveProperty('value', '2030-01-11')
+    expect(searchLayers.committedDateInput('숙박 체크아웃')).toHaveProperty('value', '2030-01-11')
     submit()
     await screen.findByRole('button', { name: '스탠다드 선택' })
     expect(mock.mock.calls.at(-1)![0]).toContain('checkInDate=2030-01-10&checkOutDate=2030-01-11')
@@ -227,8 +231,8 @@ describe('availability and selection lifecycle with real API client', () => {
     const mock = mockApi()
     render(<RoomAvailabilitySection accommodationId={7} />)
     dates()
-    fireEvent.change(screen.getByLabelText('숙박 체크아웃'), { target: { value: '2030-01-01' } })
-    submit()
+    searchLayers.editStayDate('숙박 체크아웃', '2030-01-01')
+    expect(screen.getByRole('button', { name: '날짜 적용' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('alert').textContent).toContain('늦은 날짜')
     expect(mock).not.toHaveBeenCalled()
   })
@@ -240,9 +244,8 @@ describe('availability and selection lifecycle with real API client', () => {
       dates()
       submit()
       fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
-      fireEvent.change(screen.getByLabelText(label), {
-        target: { value: label === '숙박 인원' ? '2' : '2030-01-02' },
-      })
+      if (label === '숙박 인원') searchLayers.setGuests('2', label)
+      else searchLayers.editStayDate(label, '2030-01-02')
       expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
       expect(screen.queryByText('선택된 객실')).toBeNull()
       expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
@@ -255,7 +258,7 @@ describe('availability and selection lifecycle with real API client', () => {
     submit()
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     view.rerender(<RoomAvailabilitySection accommodationId={8} />)
-    expect((screen.getByLabelText('숙박 체크인') as HTMLInputElement).value).toBe('')
+    expect((searchLayers.committedDateInput('숙박 체크인') as HTMLInputElement).value).toBe('')
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
   })
   it('clears selection on re-query and room pagination', async () => {
@@ -336,20 +339,16 @@ describe('availability and selection lifecycle with real API client', () => {
       dates()
       submit()
       if (edit === 'direct input') {
-        fireEvent.change(screen.getByLabelText('숙박 체크아웃'), {
-          target: { value: '2030-01-04' },
-        })
+        searchLayers.editStayDate('숙박 체크아웃', '2030-01-04')
       } else if (edit === 'calendar apply') {
-        fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+        fireEvent.click(screen.getByRole('button', { name: '숙박 날짜 선택' }))
         fireEvent.click(screen.getByRole('button', { name: '체크아웃 선택' }))
         fireEvent.click(screen.getByRole('button', { name: '2030-01-04' }))
         fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
       } else if (edit === 'guest stepper') {
-        fireEvent.click(screen.getByRole('button', { name: '숙박 인원 1명 늘리기' }))
+        searchLayers.stepGuests('숙박 인원', true)
       } else {
-        fireEvent.change(screen.getByLabelText('숙박 인원', { exact: true }), {
-          target: { value: '2' },
-        })
+        searchLayers.setGuests('2', '숙박 인원')
       }
       submit()
       await screen.findByRole('button', { name: '새 객실 선택' })

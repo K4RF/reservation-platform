@@ -1,3 +1,4 @@
+import * as searchLayers from '../../test/searchLayers'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ReservationChangeAvailabilitySection } from './ReservationChangeAvailabilitySection'
@@ -9,8 +10,8 @@ const missing = '현재 객실이 일반 신규 예약 가능 목록에 없습�
 const submit = () => fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
 const open = () => fireEvent.click(screen.getByRole('button', { name: '예약 일정 변경 준비' }))
 function dates(start = '2030-01-02', end = '2030-01-04') {
-  fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: start } })
-  fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: end } })
+  searchLayers.editStayDate('새 체크인', start)
+  searchLayers.editStayDate('새 체크아웃', end)
 }
 function renderPreparation() {
   return render(
@@ -63,7 +64,7 @@ describe('reservation change date preparation', () => {
       await screen.findByText(missing)
       expect(screen.getByText(/이 결과만으로 변경을 차단하지/)).toBeTruthy()
       expect(screen.queryByText('다른 객실')).toBeNull()
-      expect(screen.queryByRole('button', { name: /선택/ })).toBeNull()
+      expect(screen.queryByRole('button', { name: '다른 객실 선택' })).toBeNull()
       expect(screen.getByRole('button', { name: '변경 날짜 가용성 조회' })).toHaveProperty(
         'disabled',
         false,
@@ -80,8 +81,10 @@ describe('reservation change date preparation', () => {
     vi.stubGlobal('fetch', mock)
     renderPreparation()
     open()
-    dates(start, end)
-    submit()
+    searchLayers.directDates('새')
+    fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: start } })
+    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: end } })
+    expect(screen.getByRole('button', { name: '날짜 적용' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('alert')).toBeTruthy()
     expect(mock).not.toHaveBeenCalled()
   })
@@ -95,9 +98,7 @@ describe('reservation change date preparation', () => {
       dates()
       submit()
       await screen.findByText(found)
-      fireEvent.change(screen.getByLabelText(label), {
-        target: { value: label === '새 체크인' ? '2030-01-03' : '2030-01-05' },
-      })
+      searchLayers.editStayDate(label, label === '새 체크인' ? '2030-01-03' : '2030-01-05')
       expect(screen.queryByText(found)).toBeNull()
       expect(mock).toHaveBeenCalledTimes(1)
       submit()
@@ -183,7 +184,7 @@ describe('reservation change date preparation', () => {
       if (edit === 'direct input') {
         dates('2030-01-03', '2030-01-05')
       } else {
-        fireEvent.click(screen.getByRole('button', { name: '날짜 달력 열기' }))
+        fireEvent.click(screen.getByRole('button', { name: '새 날짜 선택' }))
         fireEvent.click(screen.getByRole('button', { name: '2030-01-03' }))
         fireEvent.click(screen.getByRole('button', { name: '2030-01-05' }))
         fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
@@ -209,7 +210,7 @@ describe('reservation change date preparation', () => {
     expect(signal.aborted).toBe(true)
     expect(screen.queryByRole('form')).toBeNull()
     open()
-    expect(screen.getByLabelText('새 체크인')).toHaveProperty(
+    expect(searchLayers.committedDateInput('새 체크인')).toHaveProperty(
       'value',
       reservationDetail.checkInDate,
     )

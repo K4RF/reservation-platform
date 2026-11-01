@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { StayDateCalendar } from './StayDateCalendar'
-import { changeStayCheckIn, stayNights, type StayDates, type StayDateField } from './stayDateRange'
+import { SearchLayer } from './SearchLayer'
+import { stayNights, type StayDates, type StayDateField } from './stayDateRange'
 
 export function StayDateFields({
   prefix,
@@ -16,84 +17,57 @@ export function StayDateFields({
   required?: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const [notice, setNotice] = useState('')
   const trigger = useRef<HTMLButtonElement>(null)
-  const calendarId = `${prefix}-calendar`
+  const close = useCallback(() => setOpen(false), [])
   const nights = stayNights(draft)
-  function close() {
-    setOpen(false)
-    trigger.current?.focus()
-  }
-  function apply(dates: StayDates) {
-    for (const field of ['checkInDate', 'checkOutDate'] as const) {
-      if (dates[field] !== draft[field]) onChange(field, dates[field])
-    }
-  }
+  const sameYear = draft.checkInDate.slice(0, 4) === draft.checkOutDate.slice(0, 4)
+  const displayDate = (date: string) => (sameYear ? date.slice(5) : date).replaceAll('-', '.')
+  const id = `${prefix}-calendar`
   return (
-    <div className="stay-date-range" role="group" aria-label={`${labelPrefix || '숙박'} 날짜 범위`}>
-      <div className="stay-date-inputs">
-        {(['checkInDate', 'checkOutDate'] as const).map((field, index) => (
-          <div className="form-field" key={field}>
-            <label htmlFor={`${prefix}-${field}`}>
-              {`${labelPrefix} ${['체크인', '체크아웃'][index]}`.trim()}
-            </label>
-            <input
-              id={`${prefix}-${field}`}
-              type="date"
-              name={field}
-              required={required}
-              min="0001-01-01"
-              max="9999-12-31"
-              aria-describedby={`${prefix}-date-help`}
-              value={draft[field]}
-              onChange={(event) => {
-                setOpen(false)
-                if (field === 'checkInDate') {
-                  const next = changeStayCheckIn(draft, event.target.value)
-                  apply(next.dates)
-                  setNotice(next.notice)
-                } else {
-                  onChange(field, event.target.value)
-                  setNotice('')
-                }
-              }}
-            />
-          </div>
-        ))}
-      </div>
-      <p className="stay-date-summary">
-        {nights === null
-          ? '숙박 기간 미선택 · 최소 1박'
-          : `체크인 ${draft.checkInDate} ~ 체크아웃 ${draft.checkOutDate} · ${nights}박`}
-      </p>
+    <div className="stay-date-range">
+      {/* Serialization only: validation belongs to the visible editor and the submitting parser. */}
+      <input type="hidden" name="checkInDate" value={draft.checkInDate} />
+      <input type="hidden" name="checkOutDate" value={draft.checkOutDate} />
       <button
+        className="compact-search-trigger"
         ref={trigger}
         type="button"
+        aria-label={`${labelPrefix || '숙박'} 날짜 선택`}
+        aria-describedby={`${prefix}-date-detail`}
+        aria-haspopup="dialog"
         aria-expanded={open}
-        aria-controls={calendarId}
-        onClick={() => {
-          if (open) close()
-          else setOpen(true)
-        }}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen(true)}
       >
-        날짜 달력 {open ? '닫기' : '열기'}
+        <span className="compact-search-caption">체크인 — 체크아웃</span>
+        <span id={`${prefix}-date-summary`}>
+          {nights === null
+            ? draft.checkInDate || draft.checkOutDate
+              ? '날짜 확인 필요'
+              : '날짜 선택'
+            : `${displayDate(draft.checkInDate)} — ${displayDate(draft.checkOutDate)} · ${nights}박`}
+        </span>
       </button>
-      {notice && <p role="status">{notice}</p>}
-      <p id={`${prefix}-date-help`} className="stay-date-help">
-        숙박 날짜는 [체크인, 체크아웃) 기준입니다. 숙소별 최소/최대 숙박일·사전 예약 제한은 조회
-        API가 없어 미리 적용하지 않으며 서버가 최종 검증합니다.
-      </p>
+      <span className="sr-only" id={`${prefix}-date-detail`}>
+        {nights === null
+          ? '날짜를 선택하거나 확인해 주세요.'
+          : `체크인 ${draft.checkInDate}, 체크아웃 ${draft.checkOutDate}, ${nights}박`}
+      </span>
       {open && (
-        <StayDateCalendar
-          id={calendarId}
-          initial={draft}
-          onCancel={close}
-          onApply={(dates) => {
-            apply(dates)
-            setNotice('달력의 숙박 기간을 적용했습니다. 조건을 확인한 뒤 조회하세요.')
-            close()
-          }}
-        />
+        <SearchLayer id={id} title="언제 머무르시나요?" anchor={trigger} onClose={close}>
+          <StayDateCalendar
+            id={`${id}-editor`}
+            initial={draft}
+            labelPrefix={labelPrefix}
+            required={required}
+            onCancel={close}
+            onApply={(dates) => {
+              for (const field of ['checkInDate', 'checkOutDate'] as const)
+                if (dates[field] !== draft[field]) onChange(field, dates[field])
+              close()
+            }}
+          />
+        </SearchLayer>
       )}
     </div>
   )

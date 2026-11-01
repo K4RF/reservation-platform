@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
@@ -5,6 +6,7 @@ import { AppRoutes } from './routes'
 import { AuthProvider } from '../state/AuthProvider'
 import { bookingCompletePath } from './routePaths'
 import { accommodationPage } from '../test/accommodation'
+import { committedDates, directDates, setGuests, setStayDates } from '../test/searchLayers'
 
 describe('reservation route identity', () => {
   it('builds completion routes only from the server numeric ID', () => {
@@ -39,8 +41,7 @@ describe('AppRoutes', () => {
     expect(image.getAttribute('fetchpriority')).toBe('high')
     expect(image.getAttribute('loading')).not.toBe('lazy')
     expect(screen.getByText('AI 생성 브랜드 이미지 · 실제 숙소 사진이 아닙니다.')).toBeTruthy()
-    const target = screen.getByRole('heading', { name: '어디로 떠나고 싶으세요?' })
-    expect(target.tabIndex).toBe(-1)
+    const target = screen.getByLabelText('여행지 · 도시명')
     expect(screen.getByRole('link', { name: '여행 검색으로 이동 ↓' }).getAttribute('href')).toBe(
       '#' + target.id,
     )
@@ -54,9 +55,9 @@ describe('AppRoutes', () => {
     const fetch = vi.fn()
     vi.stubGlobal('fetch', fetch)
     const { container } = renderAt('/')
-    fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
-    fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-10' } })
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '서울특별시' } })
+    setStayDates('2030-01-10', '2030-01-11')
+    setGuests('2')
     fireEvent.error(container.querySelector('.home-hero-image')!)
     expect(container.querySelector('.home-hero-image')).toBeNull()
     expect(
@@ -64,10 +65,12 @@ describe('AppRoutes', () => {
         .getByText('브랜드 이미지를 불러오지 못했습니다. 검색은 계속 이용할 수 있습니다.')
         .getAttribute('role'),
     ).toBe('status')
-    expect(screen.getByLabelText('어디로 떠나세요?')).toHaveProperty('value', '서울특별시')
-    expect(screen.getByLabelText('체크인')).toHaveProperty('value', '2030-01-10')
-    expect(screen.getByLabelText('체크아웃')).toHaveProperty('value', '2030-01-11')
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
+    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '서울특별시')
+    expect(committedDates(screen.getByRole('form', { name: '여행 검색' }))).toEqual({
+      checkInDate: '2030-01-10',
+      checkOutDate: '2030-01-11',
+    })
+    expect(screen.getByRole('button', { name: '인원 선택' }).textContent).toContain('총 2명')
     expect(screen.getByRole('button', { name: '숙소 찾기' }).hasAttribute('disabled')).toBe(false)
     expect(fetch).not.toHaveBeenCalled()
   })
@@ -76,10 +79,9 @@ describe('AppRoutes', () => {
     const mock = vi.fn().mockResolvedValue(Response.json(accommodationPage()))
     vi.stubGlobal('fetch', mock)
     renderAt('/')
-    fireEvent.change(screen.getByLabelText('어디로 떠나세요?'), { target: { value: '서울특별시' } })
-    fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-10' } })
-    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-12' } })
-    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '서울특별시' } })
+    setStayDates('2030-01-10', '2030-01-12')
+    setGuests('2')
     expect(mock).not.toHaveBeenCalled()
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
@@ -88,17 +90,18 @@ describe('AppRoutes', () => {
     expect(query.get('checkInDate')).toBe('2030-01-10')
     expect(query.get('checkOutDate')).toBe('2030-01-12')
     expect(query.get('guestCount')).toBe('2')
-    expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
+    expect(screen.getByRole('button', { name: '인원 선택' }).textContent).toContain('총 2명')
     expect(new Headers(mock.mock.calls[0][1].headers).has('Authorization')).toBe(false)
   })
   it('rejects incomplete dates in home search before making any request', () => {
     const mock = vi.fn()
     vi.stubGlobal('fetch', mock)
     renderAt('/')
-    fireEvent.change(screen.getByLabelText('체크인'), { target: { value: '2030-01-10' } })
-    expect(screen.getByLabelText('체크아웃')).toHaveProperty('value', '2030-01-11')
-    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '' } })
-    fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
+    directDates()
+    searchLayers.editStayDate('체크인', '2030-01-10')
+    expect(searchLayers.committedDateInput('체크아웃')).toHaveProperty('value', '2030-01-11')
+    searchLayers.editStayDate('체크아웃', '')
+    expect(screen.getByRole('button', { name: '날짜 적용' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('alert')).toBeTruthy()
     expect(mock).not.toHaveBeenCalled()
   })

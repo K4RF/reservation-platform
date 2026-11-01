@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -41,8 +42,8 @@ function respond(url: string, detail = reservationDetail) {
 
 async function confirmChange() {
   fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
-  fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
-  fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+  searchLayers.editStayDate('새 체크인', '2030-01-02')
+  searchLayers.editStayDate('새 체크아웃', '2030-01-04')
   fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
   await screen.findByText('현재 객실이 일반 신규 예약 가능 목록에 없습니다.')
   fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
@@ -283,8 +284,8 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     vi.stubGlobal('fetch', mock)
     renderDetail()
     fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
-    fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
-    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+    searchLayers.editStayDate('새 체크인', '2030-01-02')
+    searchLayers.editStayDate('새 체크아웃', '2030-01-04')
     fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
     await screen.findByText('현재 객실이 일반 신규 예약 가능 목록에 없습니다.')
     expect(screen.getByText('guest@example.com')).toBeTruthy()
@@ -364,7 +365,7 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('INVENTORY_011')
     expect(screen.getByText('350.25')).toBeTruthy()
     expect(screen.getByText('첫 숙박일 요금 Snapshot: 100.10')).toBeTruthy()
-    expect(screen.getByLabelText('새 체크인')).toHaveProperty('value', '2030-01-02')
+    expect(searchLayers.committedDateInput('새 체크인')).toHaveProperty('value', '2030-01-02')
     expect(screen.getByRole('button', { name: '변경 날짜 가용성 조회' })).toHaveProperty(
       'disabled',
       false,
@@ -388,7 +389,10 @@ describe('reservation detail snapshots through router/auth/API client', () => {
       'disabled',
       true,
     )
-    expect(screen.getByLabelText('새 체크인').closest('fieldset')).toHaveProperty('disabled', true)
+    expect(searchLayers.committedDateInput('새 체크인').closest('fieldset')).toHaveProperty(
+      'disabled',
+      true,
+    )
     expect(screen.getByText('350.25')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
     await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
@@ -415,13 +419,13 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     vi.stubGlobal('fetch', mock)
     renderDetail()
     fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
-    fireEvent.change(screen.getByLabelText('새 체크인'), { target: { value: '2030-01-02' } })
-    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-04' } })
+    searchLayers.editStayDate('새 체크인', '2030-01-02')
+    searchLayers.editStayDate('새 체크아웃', '2030-01-04')
     fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
     fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
     await screen.findByText('새 일정 참고 예상 총액: 200.20')
     fireEvent.click(screen.getByRole('checkbox'))
-    fireEvent.change(screen.getByLabelText('새 체크아웃'), { target: { value: '2030-01-05' } })
+    searchLayers.editStayDate('새 체크아웃', '2030-01-05')
     expect(screen.queryByText('새 일정 참고 예상 총액: 200.20')).toBeNull()
     expect(screen.queryByRole('checkbox')).toBeNull()
     fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))

@@ -1,3 +1,4 @@
+import * as searchLayers from '../test/searchLayers'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -53,6 +54,39 @@ function mockApi() {
 const submit = () => fireEvent.submit(screen.getByRole('form', { name: '숙소 검색 조건' }))
 
 describe('search URL and pagination navigation', () => {
+  it('keeps staged layers out of URL/history and preserves filters when committed conditions are submitted', async () => {
+    const mock = mockApi()
+    renderAt(
+      '?city=서울특별시&guestCount=2&checkInDate=2030-01-10&checkOutDate=2030-01-12&page=1&roomAmenities=WIFI',
+    )
+    await screen.findByRole('link', { name: '서울 호텔' })
+    const original = screen.getByLabelText('현재 검색 URL').textContent
+    searchLayers.directDates()
+    fireEvent.change(screen.getByLabelText('체크아웃'), { target: { value: '2030-01-14' } })
+    expect(screen.getByLabelText('현재 검색 URL').textContent).toBe(original)
+    expect(mock).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: '날짜 선택 취소' }))
+    expect(searchLayers.committedDateInput('체크아웃').value).toBe('2030-01-12')
+    fireEvent.click(screen.getByRole('button', { name: '인원 선택' }))
+    fireEvent.click(screen.getByRole('button', { name: '인원 1명 늘리기' }))
+    fireEvent.keyDown(screen.getByRole('spinbutton', { name: '인원' }), { key: 'Escape' })
+    expect(mock).toHaveBeenCalledTimes(1)
+    expect(screen.getByLabelText('현재 검색 URL').textContent).toBe(original)
+    expect(searchLayers.committedGuestInput('인원').value).toBe('2')
+    searchLayers.setStayDates('2030-01-10', '2030-01-14')
+    expect(mock).toHaveBeenCalledTimes(1)
+    submit()
+    await waitFor(() => expect(mock).toHaveBeenCalledTimes(2))
+    const query = new URL(mock.mock.calls[1][0], 'http://localhost').searchParams
+    expect(query.get('page')).toBe('0')
+    expect(query.get('roomAmenities')).toBe('WIFI')
+    expect(query.get('checkOutDate')).toBe('2030-01-14')
+    fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
+    await waitFor(() => expect(mock).toHaveBeenCalledTimes(3))
+    expect(screen.getByLabelText('현재 검색 URL').textContent).toBe(original)
+    expect(searchLayers.committedDateInput('체크아웃').value).toBe('2030-01-12')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
   it.each(['return link', 'history back'])(
     'restores filters/page and only restores scroll/focus after the fresh search GET via %s',
     async (mode) => {
@@ -116,8 +150,8 @@ describe('search URL and pagination navigation', () => {
       })
       expect(screen.getByText('2 / 3 페이지')).toBeTruthy()
       expect(screen.getByLabelText('숙소명')).toHaveProperty('value', '호텔')
-      expect(screen.getByLabelText('도시 (정확한 이름)')).toHaveProperty('value', '서울특별시')
-      expect(screen.getByLabelText('인원', { exact: true })).toHaveProperty('value', '2')
+      expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '서울특별시')
+      expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '2')
       expect(screen.getByLabelText('정렬')).toHaveProperty('value', 'NAME')
       expect(screen.getByLabelText('와이파이')).toHaveProperty('checked', true)
       expect(

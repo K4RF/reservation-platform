@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, vi } from 'vitest'
 
 // jsdom has no native top layer, focus trap, layout or scrolling. Browser QA covers these.
+let registered = false
 export function mockDialog() {
+  if (registered) return
+  registered = true
   const prototype = HTMLDialogElement.prototype
   const originalShow = Object.getOwnPropertyDescriptor(prototype, 'showModal')
   const originalClose = Object.getOwnPropertyDescriptor(prototype, 'close')

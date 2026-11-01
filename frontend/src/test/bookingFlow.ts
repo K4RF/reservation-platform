@@ -1,16 +1,12 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { bookingRequest } from './reservation'
+import { setGuests, setStayDates } from './searchLayers'
 
 // Shared user actions, not mocks of Booking components or API helpers.
 export async function selectBookingRoom() {
-  await screen.findByLabelText('숙박 체크인')
-  fireEvent.change(screen.getByLabelText('숙박 체크인'), {
-    target: { value: bookingRequest.checkInDate },
-  })
-  fireEvent.change(screen.getByLabelText('숙박 체크아웃'), {
-    target: { value: bookingRequest.checkOutDate },
-  })
-  fireEvent.change(screen.getByLabelText('숙박 인원'), { target: { value: '2' } })
+  await screen.findByRole('button', { name: '숙박 날짜 선택' })
+  setStayDates(bookingRequest.checkInDate, bookingRequest.checkOutDate, '숙박')
+  setGuests('2', '숙박 인원')
   fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
   fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
 }

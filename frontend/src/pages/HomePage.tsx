@@ -3,8 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
-import { StayDateFields } from '../components/room/StayDateFields'
-import { GuestCountField } from '../components/room/GuestCountField'
+import { CompactSearchBar } from '../components/room/CompactSearchBar'
 import heroLarge from '../assets/brand/coast-hero-1600.webp'
 import heroSmall from '../assets/brand/coast-hero-800.webp'
 
@@ -58,7 +57,7 @@ export function HomePage() {
             <br />
             마음이 먼저 도착하는 곳을 찾아보세요.
           </p>
-          <a className="home-search-jump" href="#home-search-title">
+          <a className="home-search-jump" href="#home-city">
             여행 검색으로 이동 ↓
           </a>
         </div>
@@ -67,43 +66,31 @@ export function HomePage() {
             ? '브랜드 이미지를 불러오지 못했습니다. 검색은 계속 이용할 수 있습니다.'
             : 'AI 생성 브랜드 이미지 · 실제 숙소 사진이 아닙니다.'}
         </p>
-      </div>
-      <section className="home-search-section" aria-labelledby="home-search-title">
-        <div className="home-search-header">
-          <h2 id="home-search-title" tabIndex={-1}>
-            어디로 떠나고 싶으세요?
-          </h2>
-          <p>도시와 숙박 날짜, 전체 인원을 선택해 보세요.</p>
-        </div>
-        <form className="home-search" aria-label="여행 검색" onSubmit={search}>
-          <div className="form-field">
-            <label htmlFor="home-city">어디로 떠나세요?</label>
-            <input id="home-city" name="city" maxLength={100} placeholder="도시의 정확한 이름" />
+        <section className="home-search-section" aria-labelledby="home-search-title">
+          <div className="home-search-header sr-only">
+            <h2 id="home-search-title">어디로 떠나고 싶으세요?</h2>
           </div>
-          <StayDateFields
-            prefix="home"
-            labelPrefix=""
-            required={false}
-            draft={dates}
-            onChange={(field, value) => {
-              setDates((current) => ({ ...current, [field]: value }))
-              setError('')
-            }}
-          />
-          <GuestCountField
-            id="home-guests"
-            label="인원"
-            value={guestCount}
-            required={false}
-            onChange={(value) => {
-              setGuestCount(value)
-              setError('')
-            }}
-          />
-          <button type="submit">숙소 찾기</button>
-          {error && <p role="alert">{error}</p>}
-        </form>
-      </section>
+          <form className="home-search" aria-label="여행 검색" onSubmit={search}>
+            <CompactSearchBar
+              prefix="home"
+              city={{}}
+              required={false}
+              dates={dates}
+              onDateChange={(field, value) => {
+                setDates((current) => ({ ...current, [field]: value }))
+                setError('')
+              }}
+              guestCount={guestCount}
+              onGuestChange={(value) => {
+                setGuestCount(value)
+                setError('')
+              }}
+              actionLabel="숙소 찾기"
+              error={error}
+            />
+          </form>
+        </section>
+      </div>
       <section className="home-discovery" aria-labelledby="home-discovery-title">
         <div className="home-discovery-header">
           <div>

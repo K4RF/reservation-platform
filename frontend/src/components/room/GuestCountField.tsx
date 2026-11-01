@@ -18,7 +18,7 @@ export function GuestCountField({
   const input = useRef<HTMLInputElement>(null)
   const count = Number(value)
   const empty = value === ''
-  const valid = !empty && isValidGuestCount(count)
+  const valid = !empty && /^\d+$/.test(value) && isValidGuestCount(count)
   const invalid = !valid && (!empty || required)
   function step(next: number) {
     onChange(String(next))
