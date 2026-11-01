@@ -3,8 +3,7 @@ import type { AccommodationSearchRequest } from '../../api/accommodation'
 import { accommodationAmenities, roomAmenities } from '../../api/accommodation'
 import { amenityLabels } from './accommodationView'
 import { parseSearchQuery, type AccommodationSearchQuery } from './searchQuery'
-import { StayDateFields } from '../room/StayDateFields'
-import { GuestCountField } from '../room/GuestCountField'
+import { CompactSearchBar } from '../room/CompactSearchBar'
 
 export function AccommodationSearchForm({
   onSearch,
@@ -59,41 +58,23 @@ export function AccommodationSearchForm({
       onSubmit={submit}
       aria-label="숙소 검색 조건"
     >
-      <div className="search-main-fields">
-        {(['city'] as const).map((name) => (
-          <div className="form-field" key={name}>
-            <label htmlFor={`search-${name}`}>도시 (정확한 이름)</label>
-            <input
-              id={`search-${name}`}
-              name={name}
-              maxLength={100}
-              defaultValue={initialQuery[name]}
-            />
-          </div>
-        ))}
-        <StayDateFields
-          prefix="search"
-          labelPrefix=""
-          required={false}
-          draft={dates}
-          onChange={(field, value) => {
-            setDates((current) => ({ ...current, [field]: value }))
-            setError('')
-          }}
-        />
-        <GuestCountField
-          id="search-guests"
-          label="인원"
-          value={guestCount}
-          required={false}
-          onChange={(value) => {
-            setGuestCount(value)
-            setError('')
-          }}
-        />
-        <button type="submit">검색</button>
-        {error && <p role="alert">{error}</p>}
-      </div>
+      <CompactSearchBar
+        prefix="search"
+        city={{ initial: initialQuery.city }}
+        required={false}
+        dates={dates}
+        onDateChange={(field, value) => {
+          setDates((current) => ({ ...current, [field]: value }))
+          setError('')
+        }}
+        guestCount={guestCount}
+        onGuestChange={(value) => {
+          setGuestCount(value)
+          setError('')
+        }}
+        actionLabel="검색"
+        error={error}
+      />
       <div className="search-comparison-layout">
         <details
           className="search-filters"

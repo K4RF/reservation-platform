@@ -86,11 +86,13 @@ export function AccommodationSearchPage() {
         summary={parsed.valid ? <AccommodationSearchSummary query={parsed.query} /> : null}
       >
         <section className="search-results" aria-label="숙소 검색 결과">
-          <p className="search-price-note">
-            가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다. 날짜
-            입력 시 모든 숙박일의 예약 가능 여부를 확인합니다. 사진·최저가·숙박 총액은 검색 응답에
-            제공되지 않습니다.
-          </p>
+          <details className="search-price-help">
+            <summary>가격·일정 조건 안내</summary>
+            <p className="search-price-note">
+              가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다. 날짜
+              입력 시 모든 숙박일의 예약 가능 여부를 확인합니다.
+            </p>
+          </details>
           {!parsed.valid && <ErrorState message={parsed.message} />}
           {parsed.valid && state.status === 'loading' && (
             <LoadingState message="숙소를 불러오고 있습니다." />
