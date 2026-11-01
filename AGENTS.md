@@ -129,6 +129,11 @@ Backend configuration and behavior are implemented and verified.
   and route-specific frames. Reuse these without moving mutation gates into the menu.
   See `docs/ui/frontend-consumer-frame-274.md` for #274 evidence and capture limits;
   the frame is not completed search, Media, Gallery, Booking or Auth redesign.
+- `CompactSearchBar` owns shared controls only; `SearchLayer` owns modal/popover
+  presentation. Keep editor drafts separate from applied and submitted conditions.
+  Preview/cancel must not fetch, invalidate selection or replay writes. See
+  `docs/ui/frontend-compact-search-275.md`; full Media/results/Gallery layouts remain
+  follow-up work, not implied by the shared controls.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
