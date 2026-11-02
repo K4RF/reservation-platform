@@ -120,7 +120,7 @@ describe('public room detail and history boundary', () => {
     }
     expect(within(dialog).getByText('123,456.78')).toBeTruthy()
     expect(
-      within(dialog).getByText(/객실 설명·침대·면적·전망 정보는 등록되어 있지 않습니다/),
+      within(dialog).getByText(/객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다/),
     ).toBeTruthy()
     expect(within(dialog).queryByRole('img')).toBeNull()
     expect(within(dialog).getByText('객실 사진 미제공')).toBeTruthy()

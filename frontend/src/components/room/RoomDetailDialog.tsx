@@ -153,7 +153,7 @@ export function RoomDetailDialog({
             <p>등록된 편의시설이 없습니다.</p>
           )}
           <p className="room-detail-unavailable">
-            객실 설명·침대·면적·전망 정보는 등록되어 있지 않습니다.
+            객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다.
           </p>
           {context.request && (
             <p>

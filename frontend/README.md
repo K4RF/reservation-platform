@@ -6,6 +6,11 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 
 ## 현재 Milestone
 
+#276에서 기존 Media API의 응답 검증, 이미지/Gallery와 ADMIN 사진 관리 화면을 연결했습니다.
+실행·업로드·실패 복구·Browser/실제 HTTP 검증 경계는
+[#276 보고서](../docs/ui/frontend-media-integration-276.md)를 참고하세요.
+전체 화면 재구성/실제 Browser 업로드 E2E/최종 사용자 승인은 별도입니다.
+
 현재 UI 작업 기준은 [승인 시안 기반 재구성 명세 (#271)](../docs/ui/prototype-rebuild.md)입니다.
 2026-10-29 기준 **새 f0.5.3(Milestone #21)**에서 구성·밀도·상호작용을 전면 재구성합니다.
 기존 f0.5.2(#19)의 #253–#260은 개발자 구현/회귀 기록이며 사용자 시각 승인이 아닙니다.
@@ -62,7 +67,7 @@ UI 후속 단계는 `f0.5.1`의 #224 Audit → #225–#230 화면 정돈 → #24
 Home A1·Navy & Ivory는 승인 목표입니다. #251은 Navy·Ivory 전역 토큰·기본 서체를 적용했으며,
 #253은 Home의 큰 사진 Hero·하단 검색 진입을 적용했습니다. 별도 생성한 AI 브랜드 풍경이며
 실제 숙소 사진이 아닙니다. #254는 Search 비교 배치·필터·Summary를 적용했으며,
-#255는 Detail 소개·객실 비교·선택 확인 패널을 적용했습니다. 실매물 사진/Gallery는 후속 범위입니다.
+#255는 당시 Detail 소개·객실 비교·선택 확인 패널을 적용했습니다. 이후 #276에서 현재 Media 계약을 연결했습니다.
 날짜 UX #241은 기능 개선이며 전체 Palette/Home 리디자인 완료를 의미하지 않습니다.
 [Audit 보고서·우선순위·Browser 증거](../docs/ui/frontend-ui-audit-224.md)를 기준으로 후속 작업을 검토합니다.
 Audit 전용 읽기 도구는 [scripts/ui-audit](scripts/ui-audit/README.md)에 있으며 실제 인증·DB 검증을 대체하지 않습니다.

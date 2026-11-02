@@ -25,5 +25,10 @@ Use case: photorealistic-natural. Asset: concept-only hotel room photography for
 
 ## Production
 
+#276 additionally uses these unchanged images in the isolated UI Audit visual-comparison
+fixture only. The same real React components render synthetic catalog records there.
+They are never uploaded to a real catalog, copied into the production asset bundle,
+or used as property evidence. See [Media verification](../../frontend-media-integration-276.md).
+
 Use owner-provided or separately licensed photos with source/rights/consent records.
 Real Media needs storage, Admin input, validation, DTOs and missing-image handling.
