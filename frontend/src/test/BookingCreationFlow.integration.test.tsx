@@ -151,11 +151,11 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     searchLayers.editStayDate('체크인', '2030-01-01')
     searchLayers.editStayDate('체크아웃', '2030-01-03')
     searchLayers.stepGuests('인원', true)
-    expect(mock).not.toHaveBeenCalled()
+    expect(mock).toHaveBeenCalledOnce() // Independent, bounded Home catalog read only.
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
     expectUiSemantics()
-    const homeQuery = new URL(mock.mock.calls[0][0], 'http://localhost').searchParams
+    const homeQuery = new URL(mock.mock.calls[1][0], 'http://localhost').searchParams
     expect(homeQuery.get('checkInDate')).toBe('2030-01-01')
     expect(homeQuery.get('checkOutDate')).toBe('2030-01-03')
     expect(homeQuery.get('guestCount')).toBe('2')

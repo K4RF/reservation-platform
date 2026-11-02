@@ -143,7 +143,7 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(
       /\.search-comparison-layout\s*\{[^}]*minmax\(0, 15rem\) minmax\(0, 1fr\)/,
     )
-    expect(globalCss).toMatch(/\.catalog-card-visual\s*\{[^}]*aspect-ratio: 16 \/ 10;/)
+    expect(globalCss).toMatch(/\.catalog-image\s*\{[^}]*aspect-ratio: 2 \/ 1;/)
     expect(globalCss).toContain('.accommodation-search-form.catalog-search-form')
     expect(globalCss).toMatch(
       /@media \(max-width: 48rem\)\s*\{\s*\.accommodation-list\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,
@@ -317,15 +317,15 @@ describe('design token and global stylesheet contracts', () => {
     )
     expect(globalCss).toMatch(/\.room-selection-panel\s*\{[^}]*position: static;/)
     expect(globalCss).toMatch(/\.detail-section-nav\s*\{[^}]*position: static;/)
-    expect(globalCss).toMatch(/\.catalog-media-accommodation\s*\{[^}]*aspect-ratio: 16 \/ 5;/)
     expect(globalCss).toMatch(
-      /\.catalog-media-placeholder\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);[^}]*width: 100%;[^}]*max-width: 100%;/,
+      /\.catalog-gallery-mosaic\s*\{[^}]*grid-template-columns: 1\.8fr 1fr;/,
     )
+    expect(globalCss).toMatch(/\.catalog-image\s*\{[^}]*width: 100%;[^}]*max-width: 100%;/)
     expect(globalCss).toContain('@media (max-width: 24rem), (max-height: 36rem)')
     expect(globalCss).toContain(
       '.catalog-room-card-exploration .room-card-content > :is(h3, p, ul)',
     )
-    expect(globalCss).toContain('.catalog-room-card-exploration > .catalog-media-room')
+    expect(globalCss).toContain('.catalog-room-card-exploration > .catalog-image')
     expect(globalCss).not.toContain('overflow-x: hidden')
   })
 

@@ -4,6 +4,7 @@ import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
 import { CompactSearchBar } from '../components/room/CompactSearchBar'
+import { HomeCatalog } from '../components/accommodation/HomeCatalog'
 import heroLarge from '../assets/brand/coast-hero-1600.webp'
 import heroSmall from '../assets/brand/coast-hero-800.webp'
 
@@ -101,23 +102,7 @@ export function HomePage() {
             전체 숙소 둘러보기 →
           </Link>
         </div>
-        <div className="home-guide">
-          <div>
-            <span className="eyebrow">01 / EXPLORE</span>
-            <h3>나에게 맞는 숙소</h3>
-            <p>지역과 편의시설로 원하는 공간을 좁혀보세요.</p>
-          </div>
-          <div>
-            <span className="eyebrow">02 / CHECK</span>
-            <h3>실제 가능한 객실</h3>
-            <p>날짜별 재고와 숙박 인원으로 예약 가능 여부를 확인합니다.</p>
-          </div>
-          <div>
-            <span className="eyebrow">03 / BOOK</span>
-            <h3>확인하고 예약하기</h3>
-            <p>숙박일별 요금을 확인하고, 로그인 후 예약자 정보를 입력하세요.</p>
-          </div>
-        </div>
+        <HomeCatalog />
       </section>
       {signupCompleted && (
         <p role="status">회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.</p>

@@ -1,5 +1,6 @@
 import { apiClient } from './client'
 import { ApiError } from './errors'
+import { hasCatalogMedia, type CatalogMedia } from './media'
 
 export const accommodationAmenities = [
   'PARKING',
@@ -33,7 +34,7 @@ export interface AccommodationSearchRequest {
   direction?: 'ASC' | 'DESC'
 }
 
-export interface AccommodationResponse {
+export interface AccommodationResponse extends CatalogMedia {
   accommodationId: number
   name: string
   description: string
@@ -58,7 +59,7 @@ export interface AccommodationPageResponse {
   last: boolean
 }
 
-export function isAccommodation(value: unknown): value is AccommodationResponse {
+export function isAccommodation(value: unknown, mediaLimit = 20): value is AccommodationResponse {
   if (!value || typeof value !== 'object') return false
   const row = value as Record<string, unknown>
   return (
@@ -70,7 +71,8 @@ export function isAccommodation(value: unknown): value is AccommodationResponse 
     ) &&
     (row.status === 'ACTIVE' || row.status === 'INACTIVE') &&
     Array.isArray(row.amenities) &&
-    row.amenities.every((amenity) => accommodationAmenities.includes(amenity))
+    row.amenities.every((amenity) => accommodationAmenities.includes(amenity)) &&
+    hasCatalogMedia(row, mediaLimit)
   )
 }
 
@@ -91,7 +93,7 @@ export async function searchAccommodations(
   if (
     !response ||
     !Array.isArray(response.content) ||
-    !response.content.every(isAccommodation) ||
+    !response.content.every((row) => isAccommodation(row, 1)) ||
     !['page', 'size', 'totalElements', 'totalPages'].every((key) => {
       const value = response[key as 'page' | 'size' | 'totalElements' | 'totalPages']
       return Number.isSafeInteger(value) && value >= 0

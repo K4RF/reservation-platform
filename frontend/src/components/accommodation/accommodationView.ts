@@ -11,6 +11,7 @@ export const amenityLabels: Record<AccommodationAmenity, string> = {
 export function toAccommodationCard(response: AccommodationResponse) {
   return {
     id: response.accommodationId,
+    representativeImage: response.representativeImage,
     name: response.name,
     description: response.description,
     location: [response.country, response.city, response.region, response.address]

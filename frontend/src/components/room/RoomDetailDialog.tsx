@@ -5,7 +5,7 @@ import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
 import { LoadingState } from '../ui/LoadingState'
 import type { RoomDetailContext } from './RoomDetailTrigger'
-import { CatalogMediaPlaceholder } from '../accommodation/CatalogMediaPlaceholder'
+import { CatalogGallery } from '../media/CatalogGallery'
 
 function sameRoom(left: RoomResponse, right: RoomResponse) {
   return (
@@ -114,7 +114,7 @@ export function RoomDetailDialog({
       )}
       {room && (
         <>
-          <CatalogMediaPlaceholder kind="room" />
+          <CatalogGallery images={room.images} label="객실 사진" inline />
           <h3 className="room-detail-name">{room.name}</h3>
           <dl className="room-detail-facts">
             <div>
@@ -153,7 +153,7 @@ export function RoomDetailDialog({
             <p>등록된 편의시설이 없습니다.</p>
           )}
           <p className="room-detail-unavailable">
-            현재 API는 객실 사진·설명·침대·면적·전망을 제공하지 않습니다.
+            객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다.
           </p>
           {context.request && (
             <p>

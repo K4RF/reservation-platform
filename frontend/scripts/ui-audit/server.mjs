@@ -15,6 +15,29 @@ const server = await createServer({
       name: 'isolated-ui-audit',
       configureServer(vite) {
         vite.middlewares.use(async (request, response, next) => {
+          // Only synthetic audit content, never a proxy into the development DB/storage.
+          const asset = {
+            '/api/v1/media/2001/content': 'coast-concept.png',
+            '/api/v1/media/2002/content': 'room-concept.png',
+          }[request.url?.split('?')[0]]
+          if (asset && request.method === 'GET') {
+            response.setHeader('Content-Type', 'image/png')
+            response.setHeader('Cache-Control', 'no-store')
+            response.end(
+              await readFile(
+                new URL(
+                  '../../../docs/ui/prototypes/premium-travel/assets/' + asset,
+                  import.meta.url,
+                ),
+              ),
+            )
+            return
+          }
+          if (request.url?.startsWith('/api/v1/media/')) {
+            response.statusCode = 404
+            response.end()
+            return
+          }
           if (request.url?.split('?')[0] !== '/') return next()
           try {
             const html = await readFile(new URL('./index.html', import.meta.url), 'utf8')

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { AccommodationDetailPage } from './AccommodationDetailPage'
 import { accommodation } from '../test/accommodation'
 import { roomPage } from '../test/room'
+import { media } from '../test/media'
 import { AuthProvider } from '../state/AuthProvider'
 
 function NavigateDetail() {
@@ -61,8 +62,15 @@ describe('AccommodationDetailPage with the real API client', () => {
   )
   it('connects the availability query and room selection to the detail page', async () => {
     const mock = mockApi()
+    const images = [media(), media(2, 1)]
     mock.mockImplementation((url: string) =>
-      Promise.resolve(Response.json(url.includes('/rooms') ? roomPage() : accommodation)),
+      Promise.resolve(
+        Response.json(
+          url.includes('/rooms')
+            ? roomPage()
+            : { ...accommodation, representativeImage: images[0], images },
+        ),
+      ),
     )
     renderAt()
     await screen.findByRole('heading', { name: '서울 호텔' })
@@ -72,6 +80,12 @@ describe('AccommodationDetailPage with the real API client', () => {
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    const before = mock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '숙소 사진 2장 보기' }))
+    fireEvent.error(screen.getByRole('dialog').querySelector('img')!)
+    fireEvent.click(screen.getByRole('button', { name: '숙소 사진 전체 보기 닫기' }))
+    expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
+    expect(mock).toHaveBeenCalledTimes(before)
     expect(mock.mock.calls.some(([url]) => url.includes('/rooms/available?'))).toBe(true)
   })
   it('loads real-contract fields and rooms without requesting non-existent policy GET APIs', async () => {

@@ -2,6 +2,8 @@ import type { RoomPageResponse, RoomResponse } from '../api/room'
 import type { RoomWriteRequest } from '../api/adminRoom'
 
 export const room: RoomResponse = {
+  representativeImage: null,
+  images: [],
   roomId: 3,
   accommodationId: 7,
   name: '스탠다드',

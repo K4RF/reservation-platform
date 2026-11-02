@@ -3,6 +3,22 @@ import { auditResponse } from '../../scripts/ui-audit/responses'
 import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('keeps Media demo photos inside audit fixtures, bounds list projections and provides ADMIN ETags without writes', async () => {
+    const list = await auditResponse('/api/v1/accommodations', 'GET', 'ready', 'present').json()
+    expect(list.content[0].images).toHaveLength(1)
+    const detail = await auditResponse('/api/v1/accommodations/7', 'GET', 'ready', 'present').json()
+    expect(detail.images).toHaveLength(2)
+    expect(detail.images[0].altText).toContain('실제 시설 아님')
+    const read = auditResponse('/api/v1/accommodations/7/media', 'GET', 'ready', 'partial')
+    expect(read.headers.get('ETag')).toBe('"' + 'a'.repeat(64) + '"')
+    expect((await read.json()).images[1].image.url).toContain('/2999/')
+    expect(auditResponse('/api/v1/accommodations/7/media', 'POST', 'ready', 'present').status).toBe(
+      405,
+    )
+    expect(
+      (await auditResponse('/api/v1/accommodations/7', 'GET', 'ready', 'missing').json()).images,
+    ).toEqual([])
+  })
   it('observes only supported buffered metrics, omits resource URLs and unrelated data, and disconnects', () => {
     const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
     const instances: FakeObserver[] = []

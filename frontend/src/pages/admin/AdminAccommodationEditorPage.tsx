@@ -1,5 +1,6 @@
 import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import { MediaManager } from '../../components/admin/MediaManager'
 import { Link, useNavigate, useParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
 import { changeAccommodationStatus, saveAccommodation } from '../../api/adminAccommodation'
@@ -37,6 +38,7 @@ export function AdminAccommodationEditorPage({ create = false }: { create?: bool
 }
 function AccommodationEditor({ id }: { id: number | null }) {
   const mutation = useAdminMutation()
+  const [mediaBlocked, setMediaBlocked] = useState(false)
   const navigate = useNavigate()
   return (
     <section aria-label="숙소 관리 편집">
@@ -45,8 +47,13 @@ function AccommodationEditor({ id }: { id: number | null }) {
         context="숙소 정보 · 운영 상태 · 정책 입력"
       />
       <Link to="/admin/accommodations">관리 목록으로</Link>
+      {id !== null && (
+        <a className="nav-link" href="#catalog-media-management">
+          사진 관리로 이동
+        </a>
+      )}
       <p>저장 요청은 자동 재전송하지 않습니다. 서버가 권한·유효성·저장 결과를 최종 판단합니다.</p>
-      <AdminMutationFeedback mutation={mutation} />
+      <AdminMutationFeedback mutation={mutation} reviewControls={!mediaBlocked} />
       {id === null ? (
         <AccommodationForm
           disabled={mutation.disabled}
@@ -61,12 +68,27 @@ function AccommodationEditor({ id }: { id: number | null }) {
           }}
         />
       ) : (
-        <AccommodationDetail id={id} mutation={mutation} />
+        <AccommodationDetail
+          id={id}
+          mutation={mutation}
+          mediaBlocked={mediaBlocked}
+          setMediaBlocked={setMediaBlocked}
+        />
       )}
     </section>
   )
 }
-function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMutation }) {
+function AccommodationDetail({
+  id,
+  mutation,
+  mediaBlocked,
+  setMediaBlocked,
+}: {
+  id: number
+  mutation: AdminMutation
+  mediaBlocked: boolean
+  setMediaBlocked: (value: boolean) => void
+}) {
   const load = useCallback((signal: AbortSignal) => getAccommodation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
   return (
@@ -129,7 +151,7 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
           </section>
           <AccommodationForm
             initial={state.data}
-            disabled={mutation.disabled}
+            disabled={mutation.disabled || mediaBlocked}
             onSave={(body) => {
               void mutation.run(
                 (signal) => saveAccommodation(id, body, signal),
@@ -141,7 +163,7 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
           <CatalogStatusForm
             resource="accommodation"
             currentStatus={state.data.status}
-            disabled={mutation.disabled}
+            disabled={mutation.disabled || mediaBlocked}
             onSave={(status) => {
               void mutation.run(
                 (signal) => changeAccommodationStatus(id, status, signal),
@@ -150,10 +172,24 @@ function AccommodationDetail({ id, mutation }: { id: number; mutation: AdminMuta
               )
             }}
           />
-          <AccommodationPolicyForm id={id} kind="booking" mutation={mutation} />
-          <AccommodationPolicyForm id={id} kind="cancellation" mutation={mutation} />
+          <AccommodationPolicyForm
+            id={id}
+            kind="booking"
+            mutation={{ ...mutation, disabled: mutation.disabled || mediaBlocked }}
+          />
+          <AccommodationPolicyForm
+            id={id}
+            kind="cancellation"
+            mutation={{ ...mutation, disabled: mutation.disabled || mediaBlocked }}
+          />
         </>
       )}
+      <MediaManager
+        owner={{ type: 'ACCOMMODATION', id }}
+        verified={state.status === 'success'}
+        mutation={mutation}
+        setBlocked={setMediaBlocked}
+      />
     </>
   )
 }

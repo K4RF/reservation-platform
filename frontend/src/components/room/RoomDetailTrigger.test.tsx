@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RoomResponse } from '../../api/room'
 import { room } from '../../test/room'
+import { media } from '../../test/media'
 import { mockDialog } from '../../test/dialog'
 import { RoomCard } from './RoomCard'
 
@@ -85,6 +86,24 @@ afterEach(() => {
 })
 
 describe('public room detail and history boundary', () => {
+  it('renders fresh Media inside the existing dialog, and a photo failure never selects or invalidates a verified room', async () => {
+    const images = [media(), media(2, 1)]
+    const fetch = mockResponse({ ...room, representativeImage: images[0], images })
+    view({ available: true })
+    open()
+    await screen.findByRole('heading', { name: room.name, level: 3 })
+    const dialog = screen.getByRole('dialog')
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    fireEvent.click(within(dialog).getByRole('button', { name: '다음 사진' }))
+    fireEvent.error(within(dialog).getByRole('img'))
+    expect(within(dialog).getByRole('button', { name: '이 객실 선택' })).toHaveProperty(
+      'disabled',
+      false,
+    )
+    expect(screen.getByTestId('selection').textContent).toBe('none')
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0][1].method).toBe('GET')
+  })
   it('loads only on open using a public GET and shows the seven DTO fields without fabricated media/currency', async () => {
     const fetch = mockResponse()
     view()
@@ -100,13 +119,15 @@ describe('public room detail and history boundary', () => {
       expect(within(dialog).getByText(label)).toBeTruthy()
     }
     expect(within(dialog).getByText('123,456.78')).toBeTruthy()
-    expect(within(dialog).getByText(/사진·설명·침대·면적·전망을 제공하지 않습니다/)).toBeTruthy()
+    expect(
+      within(dialog).getByText(/객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다/),
+    ).toBeTruthy()
     expect(within(dialog).queryByRole('img')).toBeNull()
     expect(within(dialog).getByText('객실 사진 미제공')).toBeTruthy()
     expect(dialog.querySelector('img')).toBeNull()
     expect(
-      dialog.querySelector('.catalog-media-placeholder svg')?.getAttribute('aria-hidden'),
-    ).toBe('true')
+      within(dialog).getByText('객실 사진 미제공').closest('.catalog-image-empty'),
+    ).toBeTruthy()
     expect(within(dialog).queryByText(/KRW|₩|\d[\d,.]*\s?원/)).toBeNull()
     expect(within(dialog).queryByRole('button', { name: '이 객실 선택' })).toBeNull()
     expect(screen.getByTestId('path').textContent).toBe(path)

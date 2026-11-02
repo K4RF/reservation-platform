@@ -244,7 +244,10 @@ Before completing a change:
   file, while rollback/crash and obsolete files are cleaned with PK locks and fresh
   READ_COMMITTED reference checks. Never bulk-delete storage or replay Media writes.
   See docs/architecture/media-management.md for cleanup settings/recovery and SQL.
-  Frontend integration is #276 and is not implied by these Backend APIs. See
+  Frontend API validation, CatalogImage/Gallery and ADMIN album management are
+  connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
+  mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
+  Full Home/Search/Detail layout completion is still separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication
@@ -445,7 +448,8 @@ Before completing a change:
   and instruct an availability refresh. Catalog-only detail is read-only. Detail
   base price is not a daily-price sum or reservation snapshot; do not invent
   currency, bed, size, view or descriptions absent from RoomResponse. Backend Media
-  fields exist after #272 but Frontend photo rendering still requires #276.
+  fields exist after #272; #276 renders them without changing room selection gates.
+  Room Gallery stays inside the existing Room modal, never a nested selection modal.
   See `docs/testing/frontend-room-detail-selection.md` for focus/scroll/history
   behavior, design differences and Browser/HTTP verification boundaries.
   Always reload availability before restoring a selected room after login.

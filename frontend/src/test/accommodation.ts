@@ -1,6 +1,8 @@
 import type { AccommodationPageResponse, AccommodationResponse } from '../api/accommodation'
 
 export const accommodation: AccommodationResponse = {
+  representativeImage: null,
+  images: [],
   accommodationId: 7,
   name: '서울 호텔',
   description: '편안한 숙소',

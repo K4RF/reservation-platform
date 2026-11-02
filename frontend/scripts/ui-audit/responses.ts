@@ -7,12 +7,18 @@ import {
   reservationPage,
 } from '../../src/test/reservation'
 import { inventoryCalendar } from '../../src/test/inventory'
+import type { MediaResponse } from '../../src/api/media'
 
 export type AuditScenario =
   'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress' | 'comparison'
 
 // Render fixtures only. Never forwards a request or mutates an actual reservation/catalog.
-export function auditResponse(url: string, method: string, scenario: AuditScenario): Response {
+export function auditResponse(
+  url: string,
+  method: string,
+  scenario: AuditScenario,
+  mediaMode = 'missing',
+): Response {
   const { pathname: path, searchParams: query } = new URL(url, 'http://127.0.0.1:5174')
   const failure = (status: number, code: string, message: string) =>
     Response.json(
@@ -32,22 +38,44 @@ export function auditResponse(url: string, method: string, scenario: AuditScenar
   const empty = scenario === 'empty'
   // Read-only layout probes, never actual catalog/guest data or a new API contract.
   const stress = scenario === 'stress'
+  const photo = (id: number, order: number): MediaResponse => ({
+    mediaId: id,
+    url: `/api/v1/media/${id}/content`,
+    altText: stress
+      ? 'LongAlternativeTextWithoutSpaces'.repeat(9).slice(0, 300)
+      : `AI 생성 가상 콘셉트 사진 ${order + 1} · 실제 시설 아님`,
+    width: 1672,
+    height: 941,
+    byteSize: id === 2001 ? 2456556 : 2763272,
+    contentType: 'image/png',
+    sortOrder: order,
+  })
+  const images =
+    mediaMode === 'missing'
+      ? []
+      : [
+          photo(mediaMode === 'failed' ? 2998 : 2001, 0),
+          photo(mediaMode === 'partial' || mediaMode === 'failed' ? 2999 : 2002, 1),
+        ]
+  const roomImages = images.length ? [photo(mediaMode === 'failed' ? 2999 : 2002, 0)] : []
+  const baseCatalog = { ...accommodation, representativeImage: images[0] ?? null, images }
+  const baseRoom = { ...room, representativeImage: roomImages[0] ?? null, images: roomImages }
   const catalog = stress
     ? {
-        ...accommodation,
+        ...baseCatalog,
         name: 'LongAccommodationName'.repeat(5).slice(0, 100),
         description:
           '긴 설명과 줄바꿈을 생략하지 않고 표시합니다.\n' + 'DescriptionWithoutSpaces'.repeat(8),
         address: 'DetailAddressWithoutSpaces'.repeat(6),
       }
-    : accommodation
+    : baseCatalog
   const catalogRoom = stress
     ? {
-        ...room,
+        ...baseRoom,
         name: 'LongRoomNameWithoutSpaces'.repeat(5).slice(0, 100),
         nightlyPrice: 9999999999.99,
       }
-    : room
+    : baseRoom
   const detail = stress
     ? {
         ...reservationDetail,
@@ -67,7 +95,8 @@ export function auditResponse(url: string, method: string, scenario: AuditScenar
   // Synthetic layout-only rows; no photographs, prices, popularity or new DTO fields.
   if (scenario === 'comparison' && path === '/api/v1/accommodations') {
     const rows: AccommodationResponse[] = Array.from({ length: 4 }, (_, index) => ({
-      ...accommodation,
+      ...catalog,
+      images: catalog.images.slice(0, 1),
       accommodationId: 7 + index,
       name: index === 0 ? accommodation.name : `UI 비교 점검 숙소 ${index + 1}`,
       description:
@@ -94,11 +123,30 @@ export function auditResponse(url: string, method: string, scenario: AuditScenar
   if (path === '/api/v1/accommodations')
     return Response.json(
       accommodationPage(
-        empty ? { content: [], totalElements: 0, totalPages: 0 } : { content: [catalog] },
+        empty
+          ? { content: [], totalElements: 0, totalPages: 0 }
+          : { content: [{ ...catalog, images: catalog.images.slice(0, 1) }] },
       ),
     )
   if (path === '/api/v1/accommodations/7') return Response.json(catalog)
   if (path === '/api/v1/rooms/3') return Response.json(catalogRoom)
+  if (['/api/v1/accommodations/7/media', '/api/v1/rooms/3/media'].includes(path)) {
+    const roomOwner = path.includes('/rooms/')
+    const revision = 'a'.repeat(64)
+    return Response.json(
+      {
+        ownerType: roomOwner ? 'ROOM' : 'ACCOMMODATION',
+        ownerId: roomOwner ? 3 : 7,
+        revision,
+        images: (roomOwner ? roomImages : images).map((image) => ({
+          image,
+          source: 'ImageGen 승인 시안 · 격리 UI Audit 전용',
+          rightsRecord: '실제 시설 근거 아님 · ASSETS.md 참조',
+        })),
+      },
+      { headers: { ETag: `"${revision}"`, 'Cache-Control': 'no-store' } },
+    )
+  }
   if (['/api/v1/accommodations/7/rooms', '/api/v1/accommodations/7/rooms/available'].includes(path))
     return Response.json(
       roomPage(

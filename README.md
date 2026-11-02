@@ -32,7 +32,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - JWT 인증, Redis 기반 Refresh Token 재발급, 로그아웃
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
-- 숙소·객실 Media 메타데이터 및 공개 이미지 파일 읽기 API (Frontend 사진 연결은 후속)
+- 숙소·객실 Media 읽기와 공통 이미지/Gallery, ADMIN 사진 관리 화면 연결
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회
 - 본인 예약 목록·상세 조회, 일정 변경, 저장 취소 정책 확인 및 취소
 
@@ -354,6 +354,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
 - [소비자 Header·Footer·페이지 프레임과 Browser 검증 범위 (#274)](docs/ui/frontend-consumer-frame-274.md)
 - [Compact Search Bar·날짜 Dialog·인원 Popover와 검증 (#275)](docs/ui/frontend-compact-search-275.md)
+- [실제 Media 계약·이미지/Gallery·ADMIN 사진 관리와 검증 경계 (#276)](docs/ui/frontend-media-integration-276.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)

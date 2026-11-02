@@ -17,6 +17,7 @@ function History() {
     <>
       <output data-testid="location">{location.pathname + location.search}</output>
       <button onClick={() => navigate('/reservations/43')}>타인 예약 직접 접근</button>
+      <button onClick={() => navigate('/admin/accommodations/7')}>사진 관리로 돌아가기</button>
     </>
   )
 }
@@ -71,6 +72,84 @@ function inventorySubmit(total: string) {
 }
 
 describe('Admin Management connected flow (HTTP mocks, not Backend authorization proof)', () => {
+  it('connects album upload/metadata/order/representative to fresh public Home, Gallery and replacement/deletion without reservation writes', async () => {
+    const api = adminManagementApi(true)
+    open('/admin/accommodations/7')
+    await login('숙소 관리 #7')
+    await screen.findByLabelText('숙소 이름')
+    fireEvent.click(screen.getByRole('button', { name: '사진 관리 목록 새로 조회' }))
+    await screen.findByRole('form', { name: '사진 작업' })
+    change('숙소 이름', '저장하지 않은 숙소 입력')
+    async function run() {
+      const before = writes(api).length
+      const editor = form('사진 작업')
+      fireEvent.click(
+        within(editor).getByLabelText('대상·작업·사진 사용권을 확인했으며 한 번 제출합니다.'),
+      )
+      fireEvent.submit(editor)
+      await waitFor(() => expect(writes(api)).toHaveLength(before + 1))
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole('region', { name: '사진 관리' })).getByRole('button', {
+            name: '사진 작업 실행',
+          }),
+        ).toHaveProperty('disabled', false),
+      )
+    }
+    async function upload(alt: string, replace = false) {
+      if (replace) change('사진 작업 종류', 'replace')
+      fireEvent.change(screen.getByLabelText('JPEG/PNG 파일'), {
+        target: { files: [new File(['pixels'], 'test.png', { type: 'image/png' })] },
+      })
+      change('사진 대체 텍스트', alt)
+      change('사진 출처', 'Generated pixels')
+      change('사진 사용권 근거', 'isolated test only')
+      await run()
+    }
+    await upload('첫 사진')
+    await upload('둘째 사진')
+    expect(screen.getByLabelText('숙소 이름')).toHaveProperty('value', '저장하지 않은 숙소 입력')
+    change('사진 작업 종류', 'metadata')
+    change('사진 대체 텍스트', '첫 사진 수정')
+    await run()
+    change('사진 작업 종류', 'order')
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: `사진 #${api.state.mediaAlbums.ACCOMMODATION.images[1].image.mediaId} 앞으로`,
+      }),
+    )
+    await run()
+    expect(api.state.accommodation?.representativeImage?.altText).toBe('둘째 사진')
+    change('사진 작업 종류', 'representative')
+    change('작업할 사진', String(api.state.mediaAlbums.ACCOMMODATION.images[1].image.mediaId))
+    await run()
+    expect(api.state.accommodation?.representativeImage?.altText).toBe('첫 사진 수정')
+    const oldId = api.state.accommodation!.representativeImage!.mediaId
+    await upload('교체된 사진', true)
+    expect(api.state.accommodation?.representativeImage?.mediaId).not.toBe(oldId)
+    fireEvent.click(screen.getByRole('link', { name: '홈' }))
+    expect((await screen.findByRole('img', { name: '교체된 사진' })).getAttribute('loading')).toBe(
+      'lazy',
+    )
+    fireEvent.click(screen.getByRole('link', { name: '서울 호텔' }))
+    await screen.findByRole('button', { name: '숙소 사진 2장 보기' })
+    fireEvent.click(screen.getByRole('button', { name: '숙소 사진 2장 보기' }))
+    expect(screen.getByRole('dialog').querySelector('img')?.getAttribute('alt')).toBe('교체된 사진')
+    fireEvent.click(screen.getByRole('button', { name: '숙소 사진 전체 보기 닫기' }))
+    fireEvent.click(screen.getByRole('button', { name: '사진 관리로 돌아가기' }))
+    await screen.findByLabelText('숙소 이름')
+    fireEvent.click(screen.getByRole('button', { name: '사진 관리 목록 새로 조회' }))
+    await screen.findByRole('form', { name: '사진 작업' })
+    change('사진 작업 종류', 'delete')
+    await run()
+    expect(api.state.accommodation?.representativeImage?.altText).toBe('둘째 사진')
+    change('사진 작업 종류', 'delete')
+    await run()
+    expect(api.state.accommodation?.images).toEqual([])
+    expect(api.unexpected).toEqual([])
+    expect(writes(api).filter(([url]) => url.includes('/reservations'))).toHaveLength(0)
+    expectUiSemantics()
+  }, 15_000) // Multiple serialized writes + fresh GETs + route transitions; no production retry.
   it('connects email login → catalog create/update/status/policies → parent room → price → inventory without reservation mutation', async () => {
     const api = adminManagementApi()
     open()

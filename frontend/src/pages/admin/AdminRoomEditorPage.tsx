@@ -1,5 +1,6 @@
 import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
+import { MediaManager } from '../../components/admin/MediaManager'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
 import { getRoom } from '../../api/room'
@@ -56,6 +57,7 @@ function RoomEditor({
 }) {
   const mutation = useAdminMutation(),
     navigate = useNavigate()
+  const [mediaBlocked, setMediaBlocked] = useState(false)
   const load = useCallback(
     async (signal: AbortSignal) => {
       const room = id === null ? undefined : await getRoom(id, signal)
@@ -87,12 +89,18 @@ function RoomEditor({
         context="숙소별 객실 · 기본 정보 및 운영 상태"
       />
       <Link to={listPath}>객실 관리 목록으로</Link>
+      {id !== null && (
+        <a className="nav-link" href="#catalog-media-management">
+          사진 관리로 이동
+        </a>
+      )}
       <p>
         저장 요청은 자동 재전송하지 않습니다. 화면 이동·요청 중단은 서버 Rollback을 의미하지
         않습니다.
       </p>
       <AdminMutationFeedback
         mutation={mutation}
+        reviewControls={!mediaBlocked}
         reviewLink={{ to: listPath, label: '객실 목록에서 결과 확인' }}
         reviewMessage="객실 목록·상세를 새로 조회해 저장 결과를 확인하세요. 확인 전 재제출하지 마세요."
       />
@@ -126,7 +134,7 @@ function RoomEditor({
           )}
           <RoomForm
             initial={state.data.room}
-            disabled={mutation.disabled}
+            disabled={mutation.disabled || mediaBlocked}
             onSave={(body) => {
               const ownerId = state.data.accommodation.accommodationId
               void mutation.run(
@@ -148,7 +156,7 @@ function RoomEditor({
             <CatalogStatusForm
               resource="room"
               currentStatus={state.data.room.status}
-              disabled={mutation.disabled}
+              disabled={mutation.disabled || mediaBlocked}
               onSave={(status) => {
                 const room = state.data.room!
                 void mutation.run(
@@ -160,6 +168,14 @@ function RoomEditor({
             />
           )}
         </>
+      )}
+      {id !== null && (
+        <MediaManager
+          owner={{ type: 'ROOM', id }}
+          verified={state.status === 'success' && !!state.data.room}
+          mutation={mutation}
+          setBlocked={setMediaBlocked}
+        />
       )}
     </section>
   )

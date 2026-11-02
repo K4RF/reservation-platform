@@ -1,9 +1,10 @@
 import { apiClient } from './client'
 import { ApiError } from './errors'
+import { hasCatalogMedia, type CatalogMedia } from './media'
 import { roomAmenities, type RoomAmenity } from './accommodation'
 import { validateAvailability, type AvailabilityRequest } from './availabilityValidation'
 
-export interface RoomResponse {
+export interface RoomResponse extends CatalogMedia {
   roomId: number
   accommodationId: number
   name: string
@@ -34,7 +35,10 @@ export interface RoomSearchRequest {
   direction?: 'ASC' | 'DESC'
 }
 
-export function isRoomResponse(room: RoomResponse | undefined): room is RoomResponse {
+export function isRoomResponse(
+  room: RoomResponse | undefined,
+  mediaLimit = 20,
+): room is RoomResponse {
   return (
     !!room &&
     Number.isSafeInteger(room.roomId) &&
@@ -49,7 +53,8 @@ export function isRoomResponse(room: RoomResponse | undefined): room is RoomResp
     room.nightlyPrice >= 0 &&
     (room.status === 'ACTIVE' || room.status === 'INACTIVE') &&
     Array.isArray(room.amenities) &&
-    room.amenities.every((item) => roomAmenities.includes(item))
+    room.amenities.every((item) => roomAmenities.includes(item)) &&
+    hasCatalogMedia(room, mediaLimit)
   )
 }
 
@@ -106,7 +111,7 @@ function readRoomPage(
     !response ||
     !Array.isArray(response.content) ||
     !response.content.every(
-      (room) => isRoomResponse(room) && room.accommodationId === accommodationId,
+      (room) => isRoomResponse(room, 1) && room.accommodationId === accommodationId,
     ) ||
     !['page', 'size', 'totalElements', 'totalPages'].every((key) => {
       const value = response[key as 'page' | 'size' | 'totalElements' | 'totalPages']

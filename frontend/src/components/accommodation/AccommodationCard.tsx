@@ -3,20 +3,24 @@ import type { AccommodationCardModel } from './accommodationView'
 import { explorationDetailPath } from '../../app/bookingContext'
 import { canonicalSearchQuery } from './searchQuery'
 import { rememberSearchPosition } from '../../app/explorationPosition'
+import { CatalogImage } from '../media/CatalogImage'
 
-export function AccommodationCard({ accommodation }: { accommodation: AccommodationCardModel }) {
+export function AccommodationCard({
+  accommodation,
+  priority = false,
+}: {
+  accommodation: AccommodationCardModel
+  priority?: boolean
+}) {
   const { search } = useLocation()
   const detailPath = explorationDetailPath(accommodation.id, search)
   return (
     <article className="accommodation-card catalog-stay-card">
-      <div className="catalog-card-visual">
-        <svg aria-hidden="true" focusable="false" viewBox="0 0 48 36" fill="none">
-          <rect x="1" y="1" width="46" height="34" rx="2" stroke="currentColor" />
-          <path d="m2 29 13-12 9 8 8-7 14 12" stroke="currentColor" />
-          <circle cx="33" cy="10" r="3" stroke="currentColor" />
-        </svg>
-        <span>사진 정보 미제공</span>
-      </div>
+      <CatalogImage
+        image={accommodation.representativeImage}
+        priority={priority}
+        label="숙소 사진"
+      />
       <div className="catalog-card-content">
         <p className="catalog-location">{accommodation.location}</p>
         <h2>

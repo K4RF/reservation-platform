@@ -24,6 +24,7 @@ node scripts/ui-audit/server.mjs
 | scenario  | ready / empty / error / loading / cancelled / stress / comparison |
 | textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                |
 | metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록       |
+| media     | missing(기본) / present / failed / partial. 격리된 사진 상태      |
 
 예:
 
@@ -49,6 +50,13 @@ Entry/Fixture 변경 뒤 신규 시나리오를 인식하지 못하면 서버를
 대표 투숙객 입력은 가짜 값만 쓰고 제출 전 확인까지만 진행한다. 예약 생성/변경/취소/관리 저장은 실행하지 않는다.
 
 도구 검증:
+
+#276의 `media=present`는 승인 시안의 AI 콘셉트 PNG를 **이 Audit 서버에서만**
+가상 catalog의 `/api/v1/media/2001/content`, `/2002/content`로 제공합니다.
+Production API나 개발 DB/storage에 등록하지 않습니다. `failed`/`partial`의
+2998/2999는 의도적인 파일404입니다. `scenario=stress`는 긴 alt도 검증합니다.
+ADMIN album GET/ETag는 fixture이며 모든 Media 쓰기도 여전히405로 차단합니다.
+실제 업로드 검증은 [#276 보고서](../../../docs/ui/frontend-media-integration-276.md)와 구분합니다.
 
 ```powershell
 pnpm exec tsc -p scripts/ui-audit/tsconfig.json

@@ -23,16 +23,10 @@ describe('AccommodationList', () => {
     expect(screen.getByText('주차')).toBeTruthy()
     expect(screen.getByText('운영 중')).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()
-    expect(screen.getByText('사진 정보 미제공').closest('[aria-hidden="true"]')).toBeNull()
+    expect(screen.getByText('숙소 사진 미제공').closest('[aria-hidden="true"]')).toBeNull()
     expect(document.querySelector('img')).toBeNull()
     expect(screen.queryByText(/최저가|평점|인기|리뷰|할인/)).toBeNull()
-    expect(
-      screen
-        .getByText('사진 정보 미제공')
-        .closest('article')
-        ?.querySelector('svg')
-        ?.getAttribute('aria-hidden'),
-    ).toBe('true')
+    expect(screen.getByText('숙소 사진 미제공').closest('.catalog-image-empty')).toBeTruthy()
   })
   it('uses only the legacy address when structured location is null', () => {
     expect(

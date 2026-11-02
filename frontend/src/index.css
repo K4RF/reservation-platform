@@ -1273,29 +1273,118 @@ legend {
   font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-display-max));
   margin-block: var(--space-4);
 }
-.catalog-media-placeholder {
+.catalog-image {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  place-content: center;
-  justify-items: center;
-  gap: var(--space-3);
+  place-items: center;
+  position: relative;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  min-height: 10rem;
-  padding: var(--space-5);
-  border: 1px solid var(--color-border);
+  aspect-ratio: 2 / 1;
+  overflow: clip;
   background: var(--color-secondary);
-  color: var(--color-text-subtle);
+  color: var(--color-text-muted);
   text-align: center;
+  font-size: var(--font-size-sm);
 }
-.catalog-media-placeholder svg {
-  width: var(--space-12);
-  height: auto;
+.catalog-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: cover;
+  object-position: center;
 }
-.catalog-media-accommodation {
-  aspect-ratio: 16 / 5;
-  min-height: 18rem;
+.catalog-image > span {
+  padding: var(--space-4);
+}
+.catalog-image-empty {
+  aspect-ratio: auto;
+  min-height: 3rem;
+  border-block: 1px solid var(--color-border);
+  background: transparent;
+}
+.catalog-gallery {
+  position: relative;
+  min-width: 0;
+}
+.catalog-gallery-mosaic {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  height: 28.4375rem;
+}
+.catalog-gallery-mosaic > .catalog-image {
+  aspect-ratio: auto;
+  height: 100%;
+}
+.catalog-gallery-mosaic > .catalog-image:first-child {
+  grid-row: 1 / -1;
+}
+.catalog-gallery-mosaic:has(> :nth-child(2):last-child) > :last-child {
+  grid-row: 1 / -1;
+}
+.catalog-gallery-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.catalog-gallery-open {
+  position: absolute;
+  max-width: calc(100% - 2 * var(--space-4));
+  bottom: var(--space-4);
+  right: var(--space-4);
+}
+.catalog-photo-full {
+  aspect-ratio: 16 / 10;
+}
+.catalog-photo-full img {
+  object-fit: contain;
+}
+.catalog-photo-browser > p {
+  overflow-wrap: anywhere;
+}
+.admin-media {
+  margin-block: var(--space-8);
+  min-width: 0;
+}
+.admin-media-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  padding-left: var(--space-5);
+}
+.admin-media-list > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-media input[type='file'] {
+  max-width: 100%;
+  min-width: 0;
+}
+.admin-media fieldset {
+  min-width: 0;
+}
+.admin-media select {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 48rem) {
+  .catalog-image {
+    aspect-ratio: 4 / 3;
+  }
+  .catalog-image-empty {
+    aspect-ratio: auto;
+  }
+  .catalog-gallery-mosaic {
+    display: block;
+    height: 21.875rem;
+  }
+  .catalog-gallery-mosaic > .catalog-image:not(:first-child) {
+    display: none;
+  }
+  .catalog-photo-full {
+    aspect-ratio: 4 / 3;
+  }
 }
 .detail-section-nav {
   position: static;
@@ -1421,14 +1510,10 @@ legend {
   .accommodation-overview-grid .accommodation-operating-facts {
     grid-template-columns: minmax(0, 1fr);
   }
-  .catalog-media-accommodation {
-    aspect-ratio: 16 / 10;
-    min-height: 12rem;
-  }
   .accommodation-detail-page .catalog-room-card-exploration {
     grid-template-columns: minmax(0, 1fr);
   }
-  .catalog-room-card-exploration > .catalog-media-room {
+  .catalog-room-card-exploration > .catalog-image:not(.catalog-image-empty) {
     aspect-ratio: 16 / 10;
   }
   .room-selection-panel,
@@ -2034,23 +2119,6 @@ form[aria-label='대표 투숙객 정보'] {
   font-weight: var(--font-weight-strong);
   margin: 0;
 }
-.home-guide {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-8);
-  margin: var(--space-12) 0 var(--space-4);
-}
-.home-guide h3 {
-  font-size: var(--font-size-lg);
-  letter-spacing: -0.035em;
-}
-.home-guide > div {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-}
-.home-guide p {
-  line-height: var(--leading-guide);
-}
 @media (max-width: 75rem) {
   .home-hero-copy {
     max-width: 42rem;
@@ -2058,23 +2126,6 @@ form[aria-label='대표 투숙객 정보'] {
   .home-hero::before {
     background: var(--color-hero-scrim-mobile);
   }
-}
-.catalog-card-visual {
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: var(--space-3);
-  aspect-ratio: 16 / 10;
-  min-height: 12rem;
-  padding: var(--space-5);
-  background: var(--color-secondary);
-  color: var(--color-text-subtle);
-  font-size: var(--font-size-sm);
-  letter-spacing: 0.05em;
-}
-.catalog-card-visual svg {
-  width: var(--space-12);
-  height: auto;
 }
 .accommodation-card p {
   line-height: var(--leading-description);
@@ -2911,11 +2962,6 @@ form[aria-label='대표 투숙객 정보'] {
     border-inline: 0;
     border-radius: 0;
   }
-  .home-guide {
-    grid-template-columns: 1fr;
-    gap: var(--space-4);
-    margin-top: var(--space-8);
-  }
   .home-hero {
     min-height: 45rem;
     padding: calc(var(--site-header-mobile-height) + var(--space-6)) var(--site-mobile-gutter)
@@ -3106,10 +3152,6 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .room-detail-dialog > :not(.room-detail-header) {
   margin-inline: var(--space-6);
-}
-.room-detail-dialog > .catalog-media-placeholder {
-  width: auto;
-  aspect-ratio: auto;
 }
 .room-detail-dialog > :last-child {
   margin-bottom: var(--space-6);
