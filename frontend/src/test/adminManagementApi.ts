@@ -7,6 +7,7 @@ import { accommodation, accommodationPage } from './accommodation'
 import { room, roomPage } from './room'
 import { reservationDetail, reservationPage } from './reservation'
 import { accessTokenWithExpiry } from './jwt'
+import { album, media } from './media'
 
 // Stateful HTTP fixture, NOT a substitute for Spring Security/DB verification.
 // Unknown URLs are recorded and rejected; no invented Admin or policy-read API is supported.
@@ -19,14 +20,17 @@ export function adminManagementApi(seedCatalog = false) {
     price: null as RoomDailyPriceResponse | null,
     inventories: [] as RoomInventoryResponse[],
     reservation: structuredClone(reservationDetail),
+    mediaAlbums: { ACCOMMODATION: album(), ROOM: album({ type: 'ROOM', id: 3 }) },
   }
   const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 3600, 'ACCESS', 'ADMIN')
   const unexpected: string[] = []
   let writeFailure: { status: number; code: string } | 'network' | undefined
+  let nextMediaId = 100
   const respond = (url: string, init: RequestInit) => {
     const { pathname: path, searchParams: params } = new URL(url, 'http://localhost')
     const method = init.method ?? 'GET',
-      body = init.body ? JSON.parse(init.body as string) : undefined
+      body =
+        init.body && !(init.body instanceof FormData) ? JSON.parse(init.body as string) : undefined
     if (path === '/api/v1/auth/login' && method === 'POST') {
       expect(body).toEqual({ email: 'admin@example.com', password: 'Password123!' })
       expect(new Headers(init.headers).has('Authorization')).toBe(false)
@@ -39,8 +43,74 @@ export function adminManagementApi(seedCatalog = false) {
     const inventory = path.includes('/inventories'),
       reservation = path.startsWith('/api/v1/reservations')
     expect(new Headers(init.headers).get('Authorization')).toBe(
-      method !== 'GET' || inventory || reservation ? `Bearer ${token}` : null,
+      method !== 'GET' || inventory || reservation || path.endsWith('/media')
+        ? `Bearer ${token}`
+        : null,
     )
+    const mediaMatch = path.match(
+      /^\/api\/v1\/(accommodations\/7|rooms\/3)\/media(?:\/(\d+)(\/content|\/representative)?|\/(order))?$/,
+    )
+    if (mediaMatch) {
+      const type = mediaMatch[1].startsWith('rooms') ? 'ROOM' : 'ACCOMMODATION'
+      const current = state.mediaAlbums[type]
+      const reply = () => Response.json(current, { headers: { ETag: current.etag } })
+      if (method === 'GET') return reply()
+      expect(new Headers(init.headers).get('If-Match')).toBe(current.etag)
+      const id = Number(mediaMatch[2])
+      const finish = () => {
+        current.images.forEach((row, i) => {
+          row.image.sortOrder = i
+        })
+        current.revision = (++nextMediaId).toString(16).padStart(64, '0')
+        current.etag = `"${current.revision}"`
+        const target = type === 'ROOM' ? state.room : state.accommodation
+        if (target) {
+          target.images = current.images.map((row) => ({ ...row.image }))
+          target.representativeImage = target.images[0] ?? null
+        }
+        return reply()
+      }
+      if (init.body instanceof FormData) {
+        const formData = init.body
+        expect(new Headers(init.headers).has('Content-Type')).toBe(false)
+        return new Promise<Response>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onerror = () => reject(reader.error)
+          reader.onload = () => {
+            const metadata = JSON.parse(String(reader.result))
+            const item = {
+              image: { ...media(++nextMediaId), altText: metadata.altText },
+              source: metadata.source,
+              rightsRecord: metadata.rightsRecord,
+            }
+            if (method === 'POST') current.images.push(item)
+            else
+              current.images.splice(
+                current.images.findIndex((row) => row.image.mediaId === id),
+                1,
+                item,
+              )
+            resolve(finish())
+          }
+          reader.readAsText(formData.get('metadata') as Blob)
+        })
+      }
+      const item = current.images.find((row) => row.image.mediaId === id)
+      if (method === 'DELETE')
+        current.images = current.images.filter((row) => row.image.mediaId !== id)
+      else if (mediaMatch[3] === '/representative' && item)
+        current.images = [item, ...current.images.filter((row) => row !== item)]
+      else if (mediaMatch[4])
+        current.images = body.mediaIds.map((id: number) =>
+          current.images.find((row) => row.image.mediaId === id)!,
+        )
+      else if (item) {
+        item.image.altText = body.altText
+        item.source = body.source
+        item.rightsRecord = body.rightsRecord
+      }
+      return finish()
+    }
     if (
       ['/api/v1/rooms/3/inventories', '/api/v1/rooms/3/inventories/2030-07-20'].includes(path) &&
       ['POST', 'PUT'].includes(method) &&
@@ -58,7 +128,7 @@ export function adminManagementApi(seedCatalog = false) {
             : []
         return Response.json(
           accommodationPage({
-            content: rows,
+            content: rows.map((row) => ({ ...row, images: row.images.slice(0, 1) })),
             totalElements: rows.length,
             totalPages: rows.length ? 1 : 0,
           }),
@@ -105,7 +175,11 @@ export function adminManagementApi(seedCatalog = false) {
             ? [state.room]
             : []
         return Response.json(
-          roomPage({ content: rows, totalElements: rows.length, totalPages: rows.length ? 1 : 0 }),
+          roomPage({
+            content: rows.map((row) => ({ ...row, images: row.images.slice(0, 1) })),
+            totalElements: rows.length,
+            totalPages: rows.length ? 1 : 0,
+          }),
         )
       }
       if (method === 'POST') {
