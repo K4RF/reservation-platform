@@ -81,7 +81,11 @@ describe('signup flow', () => {
     expect(
       await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
     ).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toContain('회원가입이 완료되었습니다')
+    expect(
+      screen
+        .getByText('회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.')
+        .getAttribute('role'),
+    ).toBe('status')
   })
 
   it('maps backend field validation errors to the matching input', async () => {

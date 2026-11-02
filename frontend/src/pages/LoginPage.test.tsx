@@ -100,7 +100,7 @@ describe('login flow', () => {
     expect(
       await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
     ).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toContain('로그인 상태입니다')
+    expect(screen.getByText('로그인 상태입니다.').getAttribute('role')).toBe('status')
     expect(screen.getByRole('button', { name: '로그아웃' })).toBeTruthy()
     expect(getAccessToken()).toBe(tokens.accessToken)
     expect(getRefreshToken()).toBe(tokens.refreshToken)
@@ -171,7 +171,10 @@ describe('login flow', () => {
 
   it('keeps public home available after reissue failure and offers login with expiry guidance', async () => {
     setTokenPair(tokens.accessToken, tokens.refreshToken)
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => Promise.resolve(new Response('{}', { status: 401 }))),
+    )
     render(
       <AuthProvider>
         <MemoryRouter initialEntries={['/']}>

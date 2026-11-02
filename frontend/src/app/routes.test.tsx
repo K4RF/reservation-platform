@@ -28,8 +28,10 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
-  it('uses a decorative responsive brand image, explicit AI provenance and ordinary catalog entry without requests', () => {
-    const fetch = vi.fn()
+  it('uses a decorative brand image and a bounded public catalog read without fabricated rankings', () => {
+    const fetch = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
     vi.stubGlobal('fetch', fetch)
     const { container } = renderAt('/')
     const image = container.querySelector('.home-hero-image')!
@@ -48,11 +50,17 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('link', { name: '전체 숙소 둘러보기 →' }).getAttribute('href')).toBe(
       '/accommodations',
     )
-    expect(fetch).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledOnce()
+    expect(fetch.mock.calls[0][0]).toBe(
+      '/api/v1/accommodations?status=ACTIVE&page=0&size=2&sortBy=ID&direction=ASC',
+    )
+    expect(new Headers(fetch.mock.calls[0][1].headers).has('Authorization')).toBe(false)
   })
 
-  it('keeps search drafts and controls usable after a brand image failure without retrying or fetching catalog data', () => {
-    const fetch = vi.fn()
+  it('keeps search drafts after a brand image failure without repeating the catalog read', () => {
+    const fetch = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
     vi.stubGlobal('fetch', fetch)
     const { container } = renderAt('/')
     fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '서울특별시' } })
@@ -72,20 +80,22 @@ describe('AppRoutes', () => {
     })
     expect(screen.getByRole('button', { name: '인원 선택' }).textContent).toContain('총 2명')
     expect(screen.getByRole('button', { name: '숙소 찾기' }).hasAttribute('disabled')).toBe(false)
-    expect(fetch).not.toHaveBeenCalled()
+    expect(fetch).toHaveBeenCalledOnce()
   })
 
   it('submits destination, stay dates and guests from the public home search', async () => {
-    const mock = vi.fn().mockResolvedValue(Response.json(accommodationPage()))
+    const mock = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
     vi.stubGlobal('fetch', mock)
     renderAt('/')
     fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '서울특별시' } })
     setStayDates('2030-01-10', '2030-01-12')
     setGuests('2')
-    expect(mock).not.toHaveBeenCalled()
+    expect(mock).toHaveBeenCalledOnce() // Home discovery only; staged editing does not search.
     fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
     await screen.findByRole('link', { name: '서울 호텔' })
-    const query = new URL(mock.mock.calls[0][0], 'http://localhost').searchParams
+    const query = new URL(mock.mock.calls[1][0], 'http://localhost').searchParams
     expect(query.get('city')).toBe('서울특별시')
     expect(query.get('checkInDate')).toBe('2030-01-10')
     expect(query.get('checkOutDate')).toBe('2030-01-12')
@@ -93,8 +103,10 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('button', { name: '인원 선택' }).textContent).toContain('총 2명')
     expect(new Headers(mock.mock.calls[0][1].headers).has('Authorization')).toBe(false)
   })
-  it('rejects incomplete dates in home search before making any request', () => {
-    const mock = vi.fn()
+  it('rejects incomplete dates without a search beyond the independent Home catalog read', () => {
+    const mock = vi
+      .fn()
+      .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
     vi.stubGlobal('fetch', mock)
     renderAt('/')
     directDates()
@@ -103,7 +115,7 @@ describe('AppRoutes', () => {
     searchLayers.editStayDate('체크아웃', '')
     expect(screen.getByRole('button', { name: '날짜 적용' })).toHaveProperty('disabled', true)
     expect(screen.getByRole('alert')).toBeTruthy()
-    expect(mock).not.toHaveBeenCalled()
+    expect(mock).toHaveBeenCalledOnce()
   })
   it('renders the home page inside the shared layout', () => {
     renderAt('/')

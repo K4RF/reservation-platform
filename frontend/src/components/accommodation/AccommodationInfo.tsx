@@ -1,6 +1,6 @@
 import type { AccommodationResponse } from '../../api/accommodation'
 import { toAccommodationCard } from './accommodationView'
-import { CatalogMediaPlaceholder } from './CatalogMediaPlaceholder'
+import { CatalogGallery } from '../media/CatalogGallery'
 
 export function AccommodationInfo({ accommodation }: { accommodation: AccommodationResponse }) {
   const card = toAccommodationCard(accommodation)
@@ -11,7 +11,7 @@ export function AccommodationInfo({ accommodation }: { accommodation: Accommodat
         <h1>{card.name}</h1>
         <p className="catalog-status">{card.status}</p>
       </div>
-      <CatalogMediaPlaceholder kind="accommodation" />
+      <CatalogGallery images={accommodation.images} label="숙소 사진" />
       <nav className="detail-section-nav" aria-label="숙소 상세 탐색">
         <a href="#accommodation-introduction">숙소 소개</a>
         <a className="detail-booking-entry" href="#availability-title">

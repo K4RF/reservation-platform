@@ -1,13 +1,13 @@
 import type { RoomResponse } from '../../api/room'
 import { RoomDetailTrigger, type RoomDetailContext } from './RoomDetailTrigger'
-import { CatalogMediaPlaceholder } from '../accommodation/CatalogMediaPlaceholder'
+import { CatalogImage } from '../media/CatalogImage'
 
 export function RoomCard({ room, detail }: { room: RoomResponse; detail?: RoomDetailContext }) {
   return (
     <article
       className={`accommodation-card catalog-room-card${detail ? ' catalog-room-card-exploration' : ''}`}
     >
-      {detail && <CatalogMediaPlaceholder kind="room" />}
+      {detail && <CatalogImage image={room.representativeImage} label="객실 사진" />}
       <div className="room-card-content">
         <h3>{room.name}</h3>
         <p>최대 {room.capacity}명</p>

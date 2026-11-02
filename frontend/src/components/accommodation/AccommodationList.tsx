@@ -4,15 +4,20 @@ import { EmptyState } from '../ui/EmptyState'
 
 export function AccommodationList({
   accommodations,
+  priorityFirst = true,
 }: {
   accommodations: AccommodationCardModel[]
+  priorityFirst?: boolean
 }) {
   if (!accommodations.length) return <EmptyState message="검색 조건에 맞는 숙소가 없습니다." />
   return (
     <ul className="accommodation-list" aria-label="숙소 목록">
-      {accommodations.map((accommodation) => (
+      {accommodations.map((accommodation, index) => (
         <li key={accommodation.id}>
-          <AccommodationCard accommodation={accommodation} />
+          <AccommodationCard
+            accommodation={accommodation}
+            priority={priorityFirst && index === 0}
+          />
         </li>
       ))}
     </ul>
