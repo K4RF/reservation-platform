@@ -18,6 +18,9 @@ if (params.get('metrics') === '1') {
 const role = params.get('role')
 const scenario = params.get('scenario') ?? 'ready'
 const textScale = params.get('textScale') ?? '100'
+const mediaMode = params.get('media') ?? 'missing'
+if (!['present', 'missing', 'failed', 'partial'].includes(mediaMode))
+  throw new Error('Unknown audit Media mode')
 if (!['100', '200'].includes(textScale)) throw new Error('Unknown audit text scale')
 // Text/rem enlargement probe only, not browser zoom or a production preference.
 document.documentElement.style.fontSize = `${textScale}%`
@@ -41,7 +44,7 @@ window.fetch = (input, init) => {
         once: true,
       })
     })
-  return Promise.resolve(auditResponse(url, method, scenario as AuditScenario))
+  return Promise.resolve(auditResponse(url, method, scenario as AuditScenario, mediaMode))
 }
 
 createRoot(document.getElementById('root')!).render(
