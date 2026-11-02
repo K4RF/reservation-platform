@@ -18,6 +18,7 @@ export interface ApiRequestOptions {
   signal?: AbortSignal
   includeAuth?: boolean
   retryOnUnauthorized?: boolean
+  onResponseHeaders?: (headers: Headers) => void
 }
 
 export interface ApiClientOptions {
@@ -51,9 +52,11 @@ export function createApiClient(options: ApiClientOptions) {
         const headers = new Headers(options.headers)
         new Headers(request.headers).forEach((value, name) => headers.set(name, value))
         if (!headers.has('Accept')) headers.set('Accept', 'application/json')
-        if (request.body !== undefined && !headers.has('Content-Type')) {
+        const multipart = request.body instanceof FormData
+        if (request.body !== undefined && !multipart && !headers.has('Content-Type')) {
           headers.set('Content-Type', 'application/json')
         }
+        if (multipart) headers.delete('Content-Type') // Browser supplies the multipart boundary.
         const accessToken =
           request.includeAuth === false
             ? null
@@ -80,7 +83,11 @@ export function createApiClient(options: ApiClientOptions) {
           const response = await fetch(`${baseUrl}${path}`, {
             method: request.method ?? 'GET',
             headers,
-            body: request.body === undefined ? undefined : JSON.stringify(request.body),
+            body: multipart
+              ? (request.body as FormData)
+              : request.body === undefined
+                ? undefined
+                : JSON.stringify(request.body),
             signal: controller.signal,
           })
           responseReceived = true
@@ -109,6 +116,7 @@ export function createApiClient(options: ApiClientOptions) {
             }
             throw toHttpApiError(response.status, body)
           }
+          request.onResponseHeaders?.(new Headers(response.headers))
           if (!rawBody) {
             if (response.status === 204 || response.status === 205) return undefined
             throw new ApiError('API returned an empty response', { kind: 'unexpected_response' })
