@@ -94,18 +94,21 @@ export function auditResponse(
     : reservationDetail
   // Synthetic layout-only rows. Photos are fictional audit assets, never real property evidence.
   if (scenario === 'comparison' && path === '/api/v1/accommodations') {
-    const rows: AccommodationResponse[] = Array.from({ length: 4 }, (_, index) => ({
-      ...catalog,
-      representativeImage: catalog.images[index % catalog.images.length] ?? null,
-      images: catalog.images.length ? [catalog.images[index % catalog.images.length]] : [],
-      accommodationId: 7 + index,
-      name: index === 0 ? accommodation.name : `UI 비교 점검 숙소 ${index + 1}`,
-      description:
-        index === 0
-          ? accommodation.description
-          : '화면 비교 검증용 가상 Fixture입니다. 실제 숙소가 아닙니다.',
-      status: index === 3 ? 'INACTIVE' : 'ACTIVE',
-    }))
+    const rows: AccommodationResponse[] = Array.from(
+      { length: 4 },
+      (_, index): AccommodationResponse => ({
+        ...catalog,
+        representativeImage: catalog.images[index % catalog.images.length] ?? null,
+        images: catalog.images.length ? [catalog.images[index % catalog.images.length]] : [],
+        accommodationId: 7 + index,
+        name: index === 0 ? accommodation.name : `UI 비교 점검 숙소 ${index + 1}`,
+        description:
+          index === 0
+            ? accommodation.description
+            : '화면 비교 검증용 가상 Fixture입니다. 실제 숙소가 아닙니다.',
+        status: index === 3 ? 'INACTIVE' : 'ACTIVE',
+      }),
+    ).filter((row) => !query.has('status') || row.status === query.get('status'))
     const size = Number(query.get('size') ?? 20)
     const page = Number(query.get('page') ?? 0)
     const totalPages = Math.ceil(rows.length / size)

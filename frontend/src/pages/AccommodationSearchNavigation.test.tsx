@@ -120,7 +120,8 @@ describe('search URL and pagination navigation', () => {
       vi.stubGlobal('fetch', mock)
       vi.stubGlobal('scrollY', 831)
       renderAt(query)
-      fireEvent.click(await screen.findByRole('link', { name: '서울 호텔' }))
+      const entryName = mode === 'return link' ? '서울 호텔 객실 보기' : '서울 호텔'
+      fireEvent.click(await screen.findByRole('link', { name: entryName }))
       await screen.findByRole('heading', { name: '서울 호텔' })
       const back = screen.getByRole('link', { name: '숙소 검색으로 돌아가기' })
       expect(back.getAttribute('href')).toBe('/accommodations?' + canonicalSearchQuery(query))
@@ -141,7 +142,7 @@ describe('search URL and pagination navigation', () => {
           }),
         ),
       )
-      const trigger = await screen.findByRole('link', { name: '서울 호텔' })
+      const trigger = await screen.findByRole('link', { name: entryName })
       await waitFor(() => expect(document.activeElement).toBe(trigger))
       expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({
         left: 0,
@@ -152,7 +153,7 @@ describe('search URL and pagination navigation', () => {
       expect(screen.getByLabelText('숙소명')).toHaveProperty('value', '호텔')
       expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '서울특별시')
       expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '2')
-      expect(screen.getByLabelText('정렬')).toHaveProperty('value', 'NAME')
+      expect(screen.getByLabelText('숙소 정렬')).toHaveProperty('value', 'NAME:DESC')
       expect(screen.getByLabelText('와이파이')).toHaveProperty('checked', true)
       expect(
         new URL(
@@ -196,7 +197,7 @@ describe('search URL and pagination navigation', () => {
     fireEvent.change(screen.getByLabelText('숙소명'), { target: { value: '두번째' } })
     fireEvent.change(screen.getByLabelText('페이지 크기'), { target: { value: '10' } })
     fireEvent.click(screen.getByLabelText('주차'))
-    submit()
+    fireEvent.submit(screen.getByRole('form', { name: '상세 검색 조건' }))
     await screen.findByRole('link', { name: '서울 호텔' })
     expect(screen.getByLabelText('현재 검색 URL').textContent).toContain('page=0')
     fireEvent.click(screen.getByRole('button', { name: '다음' }))
@@ -226,7 +227,7 @@ describe('search URL and pagination navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: '이전' }))
     await screen.findByText('2 / 3 페이지')
     fireEvent.change(screen.getByLabelText('페이지 크기'), { target: { value: '50' } })
-    submit()
+    fireEvent.submit(screen.getByRole('form', { name: '상세 검색 조건' }))
     await screen.findByText('1 / 3 페이지')
     expect(screen.getByLabelText('현재 검색 URL').textContent).toContain('page=0&size=50')
   })

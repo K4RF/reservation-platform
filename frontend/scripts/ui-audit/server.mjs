@@ -36,7 +36,7 @@ const server = await createServer({
             try {
               let body =
                 file === 'capture.css'
-                  ? '.studio { display: none !important; }'
+                  ? '.studio, .demo-note, .state-demo { display: none !important; }'
                   : await readFile(
                       new URL(
                         '../../../docs/ui/prototypes/premium-travel/' + file,
