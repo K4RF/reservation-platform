@@ -1,0 +1,118 @@
+[
+  {
+    "scenario": "empty",
+    "observed": true
+  },
+  {
+    "scenario": "error",
+    "observed": true
+  },
+  {
+    "scenario": "loading",
+    "observed": true
+  },
+  {
+    "scenario": "missing",
+    "mediaImgs": 0,
+    "placeholderCount": 2,
+    "scrollWidth": 375,
+    "width": 390
+  },
+  {
+    "scenario": "320-long-text",
+    "bar": {
+      "bottom": 646.4375,
+      "height": 190.75,
+      "left": 22,
+      "right": 283,
+      "top": 455.6875,
+      "width": 261,
+      "x": 22,
+      "y": 455.6875
+    },
+    "hero": {
+      "bottom": 720,
+      "height": 720,
+      "left": 0,
+      "right": 305,
+      "top": 0,
+      "width": 305,
+      "x": 0,
+      "y": 0
+    },
+    "scrollWidth": 305,
+    "width": 320
+  },
+  {
+    "scenario": "390-200-percent-rem",
+    "bar": {
+      "bottom": 1702.71875,
+      "height": 480.0625,
+      "left": 44,
+      "right": 331,
+      "top": 1222.65625,
+      "width": 287,
+      "x": 44,
+      "y": 1222.65625
+    },
+    "fontSize": "32px",
+    "header": {
+      "bottom": 144,
+      "height": 144,
+      "left": 0,
+      "right": 375,
+      "top": 0,
+      "width": 375,
+      "x": 0,
+      "y": 0
+    },
+    "hero": {
+      "bottom": 1965.0625,
+      "height": 1965.0625,
+      "left": 0,
+      "right": 375,
+      "top": 0,
+      "width": 375,
+      "x": 0,
+      "y": 0
+    },
+    "scrollWidth": 375,
+    "width": 390
+  },
+  {
+    "scenario": "date-escape",
+    "bodyOverflow": "",
+    "focus": "숙박 날짜 선택",
+    "openDialogs": 0
+  },
+  {
+    "scenario": "guest-preview-escape",
+    "bodyOverflow": "",
+    "focus": "인원 선택",
+    "guests": "숙박 인원총 1명",
+    "openDialogs": 0
+  },
+  {
+    "scenario": "menu-escape",
+    "bodyOverflow": "",
+    "focus": "메뉴",
+    "openDialogs": 0
+  },
+  {
+    "scenario": "200-percent-search-focus",
+    "activeBox": {
+      "bottom": 622.71875,
+      "height": 88,
+      "left": 61,
+      "right": 314,
+      "top": 534.71875,
+      "width": 253,
+      "x": 61,
+      "y": 534.71875
+    },
+    "activeText": "숙소 찾기",
+    "scrollWidth": 375,
+    "scrollY": 1063,
+    "width": 390
+  }
+]
