@@ -13,7 +13,9 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 
 #277은 Home의 건축·바다 브랜드 Hero, 내부 compact 검색, ACTIVE 숙소 최대 2개의
 사진 탐색을 재구성했습니다. [화면 비교·출처·검증 기록](../docs/ui/frontend-home-rebuild-277.md)을
-참고하세요. Search/Detail 전체 Layout과 f0.6.0 사용자 승인은 별도입니다.
+참고하세요. #278은 Search를 사진 카드·Compact 조건·모바일 필터 Sheet로 재구성했습니다.
+[시안 비교·초안/복귀·검증 기록](../docs/ui/frontend-search-rebuild-278.md)을 참고하세요.
+Detail 전체 Layout과 f0.6.0 사용자 승인은 별도입니다.
 
 현재 UI 작업 기준은 [승인 시안 기반 재구성 명세 (#271)](../docs/ui/prototype-rebuild.md)입니다.
 2026-10-29 기준 **새 f0.5.3(Milestone #21)**에서 구성·밀도·상호작용을 전면 재구성합니다.
@@ -92,10 +94,12 @@ Home의 이미지 출처·정확한 생성 Prompt·WebP 크기는
 [Home A1 적용 (#253)](../docs/ui/frontend-home-a1-253.md)을 따릅니다.
 이미지는 장식이며 실패해도 검색 입력/검증을 유지합니다. 실제 listing Media와 혼용하지 않습니다.
 
-숙소 Search는 Desktop 2열/Mobile 1열 카드, 넓은 화면 필터 사이드바와 좁은 화면 네이티브 접이식 필터를 사용합니다.
-입력은 하나의 검색 Form에 보관하며 정렬도 명시적으로 적용합니다. Summary는 편집 Draft가 아닌 제출된 URL 조건입니다.
-사진·최저가·총액이 없는 현재 DTO에 맞춰 미제공 슬롯만 표시합니다. 실제 Media 연동 완료가 아닙니다.
-[Search 비교 화면 (#254)](../docs/ui/frontend-search-comparison-254.md)에 시안 대비 차이·검증 경계를 기록했습니다.
+숙소 Search는 Desktop 2열/Mobile 1열 사진 카드, 225px Sidebar와 좁은 화면 필터 Sheet를 사용합니다.
+Compact 도시/날짜/인원과 필터는 독립 초안이며 각 적용은 제출된 URL 조건과 합칩니다.
+정렬은 ID/NAME만 즉시 적용하고 페이지를 초기화합니다. Sheet 취소/초기화 preview는 조회하지 않습니다.
+#276의 실제 대표 Media만 표시하며 가짜 사진·가격·후기를 채우지 않습니다. 전체 소개·주소는 펼쳐 읽습니다.
+현재 비교/회귀는 [#278 보고서](../docs/ui/frontend-search-rebuild-278.md),
+역사적 baseline은 [#254](../docs/ui/frontend-search-comparison-254.md)에 보존했습니다.
 
 Detail은 큰 사진 미제공 영역과 소개/이용 안내, 가용성 조건, 객실 비교와 선택 확인 패널을 제공합니다.
 Desktop은 객실 목록 옆 확인 패널, Mobile은 1열과 명시적 확인 이동 CTA를 사용합니다.

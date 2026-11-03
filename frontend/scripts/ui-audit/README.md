@@ -44,14 +44,15 @@ loading은 기존 apiClient의 약 10초 Timeout 이전 구간을 관찰한다. 
 `textScale=200`은 root font-size를 200%로 키워 글자/rem Reflow를 점검한다. Browser Zoom,
 OS 배율이나 실기기의 글자 확대와 동일한 검증으로 보고하지 않는다. 운영 앱에는 추가하지 않는다.
 `comparison`은 #254의 2열/1열 카드와 Pagination을 검증하는 숙소 4개짜리 가상 Fixture다.
-검색에 `size=2`를 주면 2개씩 2페이지다. 실제 필터 동작/정렬을 수행하지 않으므로 API 의미의 증거가 아니다.
+status가 없으면 `size=2`에 2개씩 2페이지다. #278은 요청의 status만 반영하여 ACTIVE 3개,
+INACTIVE 1개를 구분한다. 다른 필터/정렬은 수행하지 않으므로 API 의미의 증거가 아니다.
 7번만 기존 상세/객실 Fixture에 연결된다. 다른 ID의 상세 연동이나 실제 매물 사진을 제공하지 않는다.
 Entry/Fixture 변경 뒤 신규 시나리오를 인식하지 못하면 서버를 재시작하고 새로고침한다.
 #277의 `comparison&media=present`는 첫 두 숙소의 대표 사진을 서로 다른 가상
 콘셉트로 투영합니다. `partial`은 두 번째 사진만404입니다. `hero=failed`는
 이 Audit 서버의 Referer Query에만 적용하며 Production 코드/환경변수/API를 바꾸지 않습니다.
 `/__reference/index.html?view=a1&palette=navy`는 원본 HTML/CSS/JS/이미지를 allowlist로
-읽어 제공하며 외부 `capture.css`의 `.studio { display:none }`만 덧붙입니다.
+읽어 제공하며 외부 `capture.css`로 `.studio`, `.demo-note`, `.state-demo`만 숨깁니다.
 원본 파일·CSP·시안 Layout을 수정하지 않고 검토 도구바 없는 동일 시작 위치를 촬영합니다.
 Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매물은 여전히 비교 자료일 뿐입니다.
 측정 시 제목/실제 Fixture 콘텐츠와 확대 글자 크기를 확인한다. 빈 페이지의 Overflow=0을 성공으로 세지 않는다.
