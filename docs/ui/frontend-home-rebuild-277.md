@@ -105,7 +105,7 @@ Browser의 320px에서는 scrollWidth=305≤320, 200%에서는 375≤390이었�
 적용 전 +1은 총 1명에 반영되지 않았다. body scroll lock과 열린 dialog가 남지 않았다.
 문서 overflow:hidden으로 문제를 숨기지 않았다.
 
-### CI·실제 HTTP 경계
+### 최초 구현 시 CI·실제 HTTP 경계
 
 `.github/workflows/frontend-ci.yml`의 lint/format:check/typecheck/test/build 단계와
 pnpm frozen lockfile 설치 조건을 검토했다. dependency, lockfile, Vite 실행 설정,
@@ -118,3 +118,32 @@ GitHub Actions는 Node **24.19.0**, pnpm11.19.0, Ubuntu이며 로컬 Node 패치
 원격 실행도 하지 않았다. 실제 Backend HTTP/실매물 사진·OAuth2·Browser 예약 쓰기·물리 키보드/안전영역은
 이번에 재검증하지 않았다. #276의 실제 HTTP 기록은 그 이슈의 증거로만 유지한다.
 최종 사용자 승인/실기기 검수와 후속 화면 통합은 남아 있다. Issue를 자동 종료하지 않는다.
+
+### PR #291 CI 후속 수정
+
+삭제된 로컬 `feature/#277-home-a1-rebuild`를 원격의 기존 `87dd089`에서 같은 이름으로
+복원했다. 기존 구현/테스트/문서 커밋은 그대로 유지한다.
+
+[실패한 Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/41648014448/job/125958391626)는
+`Set up job / Prepare all required actions`에서 다음 오류로 종료됐다.
+
+```text
+Unable to resolve action `pnpm/action-setup@v6`, unable to find version `v6`
+```
+
+Checkout, 의존성 설치, lint, test, build는 실행되지 않았다. 프론트 코드의 컴파일 실패를
+나타내는 로그가 아니다. 후속 공식 `git ls-remote --tags` 조회에서는 v6 태그가 존재하므로
+버전 자체가 미출시됐다고 단정하지 않는다. 해당 실행에서 참조 해석이 실패한 것까지 확인했으며,
+GitHub 측 일시 장애/태그 조회 실패의 내부 원인은 이 로그만으로 구분할 수 없다.
+
+workflow의 pnpm Action만 [공식 v6.1.0](https://github.com/pnpm/action-setup/releases/tag/v6.1.0)의
+전체 커밋 SHA `ea17c68df8912ef543352723c149a84f56e3d413`로 고정해 floating 태그 의존을 제거했다.
+공식 원격 태그의 peeled commit과 해당 커밋의 action.yml을 직접 확인했다.
+node24 런타임 및 기존 version/cache/cache_dependency_path/package_json_file 입력을 지원한다.
+다른 Action 태그 checkout@v6/setup-node@v7도 공식 원격에서 확인했다.
+pnpm11.19.0, Node 설정, 캐시, frozen 설치, dependency/lockfile 및 제품 코드는 변경하지 않았다.
+SHA 고정이 GitHub 서비스의 모든 일시적 네트워크 실패를 방지한다는 의미는 아니다.
+
+로컬에서 frozen install, lint, format:check, typecheck, build와 전체 80 files/1,156 tests가
+통과했다. workflow YAML도 Prettier 파싱/형식 검사를 통과했다. 로컬은 Node24.14.0/Windows이고
+Actions의 Node24.19.0/Ubuntu 실행 결과를 대체하지 않는다. 수정된 커밋의 원격 CI는 push 후 확인해야 한다.
