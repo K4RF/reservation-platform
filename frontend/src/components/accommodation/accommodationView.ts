@@ -17,6 +17,11 @@ export function toAccommodationCard(response: AccommodationResponse) {
     location: [response.country, response.city, response.region, response.address]
       .filter((value) => value?.trim())
       .join(' '),
+    shortLocation:
+      [response.country, response.city, response.region]
+        .filter((value) => value?.trim())
+        .join(' · ') || response.address,
+    address: response.address,
     amenities: response.amenities.map((amenity) => amenityLabels[amenity]),
     status: response.status === 'ACTIVE' ? '운영 중' : '운영 중지',
   }

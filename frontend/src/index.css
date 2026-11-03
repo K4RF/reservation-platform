@@ -965,8 +965,7 @@ legend {
 .stay-direct-entry > .stay-date-inputs {
   margin-top: var(--space-3);
 }
-.stay-direct-entry > summary,
-.search-price-help > summary {
+.stay-direct-entry > summary {
   min-height: var(--control-min-height);
   padding-block: var(--space-2);
 }
@@ -1083,17 +1082,17 @@ legend {
 .search-page-header {
   display: grid;
   gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-8);
 }
 .search-page-header p {
   margin: 0;
 }
 .accommodation-search-page .search-page-header h1 {
-  font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-display-max));
+  font-family: var(--font-family-display);
+  font-size: 2.875rem;
   font-weight: var(--font-weight-display);
   margin: 0;
 }
-.search-price-note,
 .availability-guidance {
   padding: var(--space-3) var(--space-4);
   border-inline-start: var(--focus-ring-width) solid var(--color-primary);
@@ -1133,7 +1132,7 @@ legend {
 .accommodation-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-8);
+  gap: var(--space-8) 1.625rem;
   list-style: none;
   padding: 0;
   margin-block: var(--space-5) var(--space-8);
@@ -1184,10 +1183,11 @@ legend {
 .catalog-stay-card .catalog-location {
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-subtle);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
 }
 .catalog-stay-card .catalog-description {
   white-space: pre-wrap;
+  font-size: var(--font-size-sm);
 }
 .catalog-stay-card {
   display: flex;
@@ -1200,7 +1200,7 @@ legend {
   flex-direction: column;
   align-items: start;
   flex: 1;
-  gap: var(--space-3);
+  gap: var(--space-2);
   padding: var(--space-6);
   min-width: 0;
 }
@@ -1209,20 +1209,45 @@ legend {
 }
 .catalog-card-content h2 {
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
 }
 .catalog-card-content h2 a {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-min-height);
 }
-.catalog-card-content .catalog-card-guidance {
+.catalog-card-content .catalog-card-action {
   width: 100%;
   margin-top: auto;
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+.catalog-card-content .catalog-amenities li {
+  font-size: var(--font-size-xs);
+}
+.catalog-card-action a,
+.catalog-more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-min-height);
+}
+.catalog-card-action {
+  text-align: right;
+}
+.catalog-more {
+  width: 100%;
+  font-size: var(--font-size-sm);
+}
+.catalog-more > p {
+  margin-top: var(--space-3);
+  white-space: pre-wrap;
+}
+.catalog-stay-card > .catalog-image:not(.catalog-image-empty) {
+  height: 15rem;
+  aspect-ratio: auto;
 }
 .accommodation-info > h2 {
   margin-top: var(--space-6);
@@ -1583,121 +1608,152 @@ legend {
   overflow-wrap: anywhere;
 }
 
-.search-filters summary {
-  cursor: pointer;
-  padding: var(--space-2) 0;
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-}
-.search-filter-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: var(--space-4);
-  margin-top: var(--space-4);
-}
-.search-filter-grid fieldset {
-  margin: 0;
-}
-/* One native form owns every search input; result actions are explicitly non-submit. */
-.accommodation-search-form.catalog-search-form {
+/* Search editors are independent forms; only their explicit action commits values. */
+.accommodation-search-form.search-conditions-form {
   display: block;
+  margin: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
-  margin-block: var(--space-6);
+}
+.search-page-header {
+  padding-bottom: 0;
+  border: 0;
+}
+.search-page-header h1 {
+  line-height: 1.15;
 }
 .search-comparison-layout {
   display: grid;
-  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 14.0625rem) minmax(0, 1fr);
+  gap: 2.875rem;
   align-items: start;
-  gap: var(--space-8);
-  margin-top: var(--space-6);
+  margin-top: 2.25rem;
 }
-.catalog-search-form .search-filters {
-  grid-column: auto;
-  order: 0;
-  padding: 0;
-  border: 0;
+.search-filters {
   min-width: 0;
 }
-.catalog-search-form .search-filters summary {
-  min-height: var(--control-min-height);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border-control);
-  background: var(--color-surface);
+.search-filters > h2 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-display);
+  margin: 0 0 var(--space-5);
 }
-.catalog-search-form .search-filter-grid {
-  grid-template-columns: minmax(0, 1fr);
+.search-filter-grid {
+  display: grid;
   gap: var(--space-5);
 }
-.search-filter-help {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-.search-filter-apply {
-  width: 100%;
-  margin-top: var(--space-5);
-}
-.search-results-column {
+.search-filter-grid fieldset {
   min-width: 0;
-}
-.search-applied-summary {
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-.search-applied-summary p {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-.search-applied-summary p {
-  margin-top: 0;
-}
-.search-applied-values {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
   margin: 0;
+  padding: var(--space-5) 0 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
 }
-.search-applied-values > span {
+.search-filter-grid legend {
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
 }
-.search-sort-controls {
+.search-filter-grid fieldset .form-field + .form-field {
+  margin-top: var(--space-3);
+}
+.search-filter-grid .amenity-option {
+  min-height: var(--control-min-height);
+  margin: 0;
+}
+.search-filter-help,
+.search-filter-summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.search-draft-notice {
+  margin-top: var(--space-3);
+}
+.search-filter-summary {
+  overflow-wrap: anywhere;
+  margin: 0 0 var(--space-4);
+}
+.search-filter-actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: var(--space-3);
-  margin-block: var(--space-3);
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  padding-bottom: env(safe-area-inset-bottom);
 }
-.search-sort-controls .form-field {
-  flex: 1 1 8rem;
+.search-filter-actions > button {
+  flex: 1 1 auto;
 }
-.search-sort-controls button {
-  flex: 0 1 auto;
-}
+.search-results-column,
 .search-results {
   min-width: 0;
 }
-.search-price-help .search-price-note {
-  margin-block: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+.search-result-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  min-height: var(--control-min-height);
+}
+.search-result-tools .search-result-count {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+}
+.search-sort-controls {
+  margin-inline-start: auto;
+  max-width: 100%;
+  min-width: 0;
+}
+.search-sort-controls select {
+  font-size: var(--font-size-sm);
+  width: auto;
+  max-width: 100%;
+}
+.search-results > .accommodation-list {
+  margin-top: 0;
+}
+#search-filter-sheet {
+  width: min(36rem, calc(100% - var(--space-6)));
+  scroll-padding-block: var(--space-4);
+}
+#search-filter-sheet .search-filter-editor {
+  padding-bottom: var(--space-2);
 }
 @media (max-width: 64rem) {
   .search-comparison-layout {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .catalog-search-form .search-filter-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: var(--space-6);
   }
 }
 @media (max-width: 48rem) {
   .accommodation-list {
     grid-template-columns: minmax(0, 1fr);
   }
-}
-@media (max-width: 40rem) {
-  .catalog-search-form .search-filter-grid {
+  .search-comparison-layout {
     grid-template-columns: minmax(0, 1fr);
+    margin-top: var(--space-6);
+  }
+  .accommodation-search-page .search-page-header h1 {
+    font-size: 2.1875rem;
+  }
+  .search-page-header {
+    margin-bottom: var(--space-6);
+  }
+  .search-result-tools {
+    gap: var(--space-2);
+  }
+  .search-result-tools > button {
+    font-size: var(--font-size-sm);
+  }
+  .search-result-tools .search-result-count {
+    font-size: var(--font-size-xs);
+  }
+  .catalog-stay-card > .catalog-image:not(.catalog-image-empty) {
+    height: 15.625rem;
+  }
+  .catalog-card-content {
+    padding: 1.375rem;
   }
 }
 .accommodation-search-form > [role='alert'] {
