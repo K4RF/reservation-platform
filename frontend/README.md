@@ -11,6 +11,10 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 [#276 보고서](../docs/ui/frontend-media-integration-276.md)를 참고하세요.
 전체 화면 재구성/실제 Browser 업로드 E2E/최종 사용자 승인은 별도입니다.
 
+#277은 Home의 건축·바다 브랜드 Hero, 내부 compact 검색, ACTIVE 숙소 최대 2개의
+사진 탐색을 재구성했습니다. [화면 비교·출처·검증 기록](../docs/ui/frontend-home-rebuild-277.md)을
+참고하세요. Search/Detail 전체 Layout과 f0.6.0 사용자 승인은 별도입니다.
+
 현재 UI 작업 기준은 [승인 시안 기반 재구성 명세 (#271)](../docs/ui/prototype-rebuild.md)입니다.
 2026-10-29 기준 **새 f0.5.3(Milestone #21)**에서 구성·밀도·상호작용을 전면 재구성합니다.
 기존 f0.5.2(#19)의 #253–#260은 개발자 구현/회귀 기록이며 사용자 시각 승인이 아닙니다.

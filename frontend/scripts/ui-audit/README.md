@@ -25,6 +25,7 @@ node scripts/ui-audit/server.mjs
 | textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                |
 | metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록       |
 | media     | missing(기본) / present / failed / partial. 격리된 사진 상태      |
+| hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환      |
 
 예:
 
@@ -46,6 +47,13 @@ OS 배율이나 실기기의 글자 확대와 동일한 검증으로 보고하�
 검색에 `size=2`를 주면 2개씩 2페이지다. 실제 필터 동작/정렬을 수행하지 않으므로 API 의미의 증거가 아니다.
 7번만 기존 상세/객실 Fixture에 연결된다. 다른 ID의 상세 연동이나 실제 매물 사진을 제공하지 않는다.
 Entry/Fixture 변경 뒤 신규 시나리오를 인식하지 못하면 서버를 재시작하고 새로고침한다.
+#277의 `comparison&media=present`는 첫 두 숙소의 대표 사진을 서로 다른 가상
+콘셉트로 투영합니다. `partial`은 두 번째 사진만404입니다. `hero=failed`는
+이 Audit 서버의 Referer Query에만 적용하며 Production 코드/환경변수/API를 바꾸지 않습니다.
+`/__reference/index.html?view=a1&palette=navy`는 원본 HTML/CSS/JS/이미지를 allowlist로
+읽어 제공하며 외부 `capture.css`의 `.studio { display:none }`만 덧붙입니다.
+원본 파일·CSP·시안 Layout을 수정하지 않고 검토 도구바 없는 동일 시작 위치를 촬영합니다.
+Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매물은 여전히 비교 자료일 뿐입니다.
 측정 시 제목/실제 Fixture 콘텐츠와 확대 글자 크기를 확인한다. 빈 페이지의 Overflow=0을 성공으로 세지 않는다.
 대표 투숙객 입력은 가짜 값만 쓰고 제출 전 확인까지만 진행한다. 예약 생성/변경/취소/관리 저장은 실행하지 않는다.
 

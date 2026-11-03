@@ -355,6 +355,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [소비자 Header·Footer·페이지 프레임과 Browser 검증 범위 (#274)](docs/ui/frontend-consumer-frame-274.md)
 - [Compact Search Bar·날짜 Dialog·인원 Popover와 검증 (#275)](docs/ui/frontend-compact-search-275.md)
 - [실제 Media 계약·이미지/Gallery·ADMIN 사진 관리와 검증 경계 (#276)](docs/ui/frontend-media-integration-276.md)
+- [Home A1 Hero·사진 탐색·1440/390 비교와 검증 (#277)](docs/ui/frontend-home-rebuild-277.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)

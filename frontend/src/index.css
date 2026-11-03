@@ -1996,10 +1996,10 @@ form[aria-label='대표 투숙객 정보'] {
   isolation: isolate;
   display: grid;
   grid-template-rows: 1fr auto auto;
-  row-gap: var(--space-3);
+  row-gap: var(--space-2);
   align-items: center;
   min-height: 46.25rem;
-  padding: calc(var(--site-header-height) + var(--space-6)) var(--footer-gutter) var(--space-4);
+  padding: calc(var(--site-header-height) + 2.125rem) 8% env(safe-area-inset-bottom);
   background: var(--color-hero-fallback);
   color: var(--color-on-primary);
 }
@@ -2010,7 +2010,7 @@ form[aria-label='대표 투숙객 정보'] {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 65% 45%;
+  object-position: 62% 50%;
 }
 .home-hero::before {
   content: '';
@@ -2025,10 +2025,11 @@ form[aria-label='대표 투숙객 정보'] {
   );
 }
 .home-hero-copy {
-  max-width: min(42rem, 60%);
+  max-width: min(44rem, 100%);
 }
 .home-hero-eyebrow {
-  font-size: var(--font-size-xs);
+  margin: 0;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-semibold);
   letter-spacing: 0.18em;
   color: inherit;
@@ -2043,14 +2044,18 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .home-hero-copy h1 {
   font-family: var(--font-family-display);
-  font-size: clamp(var(--font-size-cinematic-min), 6vw, var(--font-size-cinematic-max));
+  font-size: clamp(var(--font-size-cinematic-min), 5.3vw, var(--font-size-cinematic-max));
   color: inherit;
   font-weight: var(--font-weight-display);
   line-height: 1.08;
-  letter-spacing: -0.035em;
-  margin: var(--space-5) 0 var(--space-6);
+  letter-spacing: -0.025em;
+  margin: 1.375rem 0 1.625rem;
+}
+.home-headline-lead {
+  display: block;
 }
 .home-hero-description {
+  margin: 0;
   color: inherit;
   line-height: var(--leading-guide);
 }
@@ -2064,9 +2069,15 @@ form[aria-label='대표 투숙객 정보'] {
 .home-search-jump:focus-visible {
   outline-color: var(--color-on-primary);
 }
+.home-hero-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  min-width: 0;
+}
 .home-image-note {
-  order: 2;
-  justify-self: end;
   max-width: 100%;
   margin: 0;
   padding: var(--space-1) var(--space-2);
@@ -2079,10 +2090,6 @@ form[aria-label='대표 투숙객 정보'] {
   z-index: 1;
   width: 100%;
   margin: 0;
-}
-.home-search-header p {
-  margin: var(--space-2) 0 0;
-  font-size: var(--font-size-sm);
 }
 .home-search {
   background: var(--color-surface);
@@ -2098,10 +2105,11 @@ form[aria-label='대표 투숙객 정보'] {
 }
 
 .home-discovery {
-  width: min(calc(100% - var(--space-12)), var(--content-wide));
-  margin: var(--space-16) auto;
+  width: 84%;
+  margin: 0 auto;
+  padding-block: 5rem;
 }
-.home-page > [role='status'] {
+.home-page > [role='status']:not(.sr-only) {
   width: min(calc(100% - var(--space-12)), var(--content-wide));
   margin: var(--space-6) auto;
 }
@@ -2112,6 +2120,61 @@ form[aria-label='대표 투숙객 정보'] {
   align-items: end;
   gap: var(--space-4);
 }
+.home-discovery-header h2 {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+  letter-spacing: -0.02em;
+  font-size: 2.5rem;
+  line-height: 1.15;
+  margin: var(--space-3) 0;
+}
+.home-discovery-description {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.home-explore-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.75rem;
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.home-explore-grid > li {
+  min-width: 0;
+}
+.home-explore-grid:has(> li:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.home-explore-card {
+  display: block;
+  min-width: 0;
+  text-decoration: none;
+}
+.home-explore-card .catalog-image:not(.catalog-image-empty) {
+  height: 22.5rem;
+  aspect-ratio: auto;
+}
+.home-explore-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+}
+.home-explore-caption > div {
+  min-width: 0;
+}
+.home-explore-caption h3 {
+  font-family: var(--font-family-display);
+  font-size: 1.625rem;
+  margin: 0 0 var(--space-1);
+}
+.home-explore-caption p {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
 .home-catalog-link {
   display: inline-flex;
   align-items: center;
@@ -2120,9 +2183,6 @@ form[aria-label='대표 투숙객 정보'] {
   margin: 0;
 }
 @media (max-width: 75rem) {
-  .home-hero-copy {
-    max-width: 42rem;
-  }
   .home-hero::before {
     background: var(--color-hero-scrim-mobile);
   }
@@ -2939,7 +2999,7 @@ form[aria-label='대표 투숙객 정보'] {
     text-underline-offset: var(--space-1);
   }
   .home-hero {
-    padding-top: calc(var(--site-header-mobile-height) + var(--space-6));
+    padding-top: calc(var(--site-header-mobile-height) + 3.3125rem);
   }
 }
 @media (max-width: 40rem) {
@@ -2964,11 +3024,67 @@ form[aria-label='대표 투숙객 정보'] {
   }
   .home-hero {
     min-height: 45rem;
-    padding: calc(var(--site-header-mobile-height) + var(--space-6)) var(--site-mobile-gutter)
-      var(--space-4);
+    align-items: start;
+    padding-inline: var(--site-mobile-gutter);
+    padding-block-end: env(safe-area-inset-bottom);
+  }
+  .home-hero-image {
+    object-position: 63% 50%;
+  }
+  .home-hero-copy h1 {
+    font-size: 3.0625rem;
+    line-height: 1.06;
+    margin: var(--space-5) 0;
+  }
+  .home-hero-eyebrow {
+    font-size: 0.5625rem;
+  }
+  .home-hero-copy {
+    max-width: 100%;
+  }
+  .home-hero-description {
+    font-size: var(--font-size-sm);
+  }
+  .home-hero-footer .home-search-jump {
+    font-size: var(--font-size-xs);
+  }
+  .home-hero-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  }
+  .home-image-note {
+    font-size: var(--font-size-xs);
   }
   .home-discovery {
-    width: calc(100% - var(--space-8));
+    width: calc(100% - 2 * var(--site-mobile-gutter));
+    padding-block: 2.8125rem;
+  }
+  .home-discovery-header {
+    align-items: start;
+    gap: 0.625rem;
+  }
+  .home-discovery-header h2 {
+    font-size: 1.9375rem;
+  }
+  .home-discovery-header > div {
+    flex: 1 1 10rem;
+  }
+  .home-discovery-description {
+    font-size: var(--font-size-xs);
+  }
+  .home-catalog-link {
+    font-size: var(--font-size-xs);
+  }
+  .home-explore-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+  }
+  .home-explore-card .catalog-image:not(.catalog-image-empty) {
+    height: 18.125rem;
+  }
+  .home-explore-caption h3 {
+    font-size: var(--font-size-xl);
   }
   .auth-page {
     padding: 0;

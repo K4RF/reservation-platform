@@ -134,6 +134,12 @@ Backend configuration and behavior are implemented and verified.
   Preview/cancel must not fetch, invalidate selection or replay writes. See
   `docs/ui/frontend-compact-search-275.md`; full Media/results/Gallery layouts remain
   follow-up work, not implied by the shared controls.
+- Home A1 uses a decorative, explicitly AI-labelled architecture/coast Hero and a
+  bounded ID-ordered ACTIVE catalog read (page 0, size 2), not a recommendation or
+  price ranking. Exploration uses only actual response Media/name/location fields;
+  missing/failed photos never receive a fictional fallback. Home drafts are not
+  copied into photo links before submission. See `docs/ui/frontend-home-rebuild-277.md`
+  for #277 comparisons, provenance and Browser-fixture/HTTP/CI limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
@@ -247,7 +253,8 @@ Before completing a change:
   Frontend API validation, CatalogImage/Gallery and ADMIN album management are
   connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
   mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
-  Full Home/Search/Detail layout completion is still separate. See
+  Home layout is rebuilt in #277; full Search/Detail layout completion is still
+  separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication

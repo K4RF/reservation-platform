@@ -3,6 +3,27 @@ import { auditResponse } from '../../scripts/ui-audit/responses'
 import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('uses two distinct fictional Media projections for Home comparison, including partial failure', async () => {
+    const present = await auditResponse(
+      '/api/v1/accommodations?size=2',
+      'GET',
+      'comparison',
+      'present',
+    ).json()
+    expect(
+      present.content.map(
+        (row: { representativeImage: { mediaId: number } }) => row.representativeImage.mediaId,
+      ),
+    ).toEqual([2001, 2002])
+    const partial = await auditResponse(
+      '/api/v1/accommodations?size=2',
+      'GET',
+      'comparison',
+      'partial',
+    ).json()
+    expect(partial.content[1].representativeImage.url).toBe('/api/v1/media/2999/content')
+    expect(partial.content[1].images).toEqual([partial.content[1].representativeImage])
+  })
   it('keeps Media demo photos inside audit fixtures, bounds list projections and provides ADMIN ETags without writes', async () => {
     const list = await auditResponse('/api/v1/accommodations', 'GET', 'ready', 'present').json()
     expect(list.content[0].images).toHaveLength(1)

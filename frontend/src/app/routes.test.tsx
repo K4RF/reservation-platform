@@ -1,11 +1,13 @@
 import * as searchLayers from '../test/searchLayers'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from './routes'
 import { AuthProvider } from '../state/AuthProvider'
 import { bookingCompletePath } from './routePaths'
-import { accommodationPage } from '../test/accommodation'
+import { accommodation, accommodationPage } from '../test/accommodation'
+import { media } from '../test/media'
+import { explorationDetailPath } from './bookingContext'
 import { committedDates, directDates, setGuests, setStayDates } from '../test/searchLayers'
 
 describe('reservation route identity', () => {
@@ -28,7 +30,7 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
-  it('uses a decorative brand image and a bounded public catalog read without fabricated rankings', () => {
+  it('uses a decorative brand image and a bounded public catalog read without fabricated rankings', async () => {
     const fetch = vi
       .fn()
       .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
@@ -42,12 +44,15 @@ describe('AppRoutes', () => {
     expect(image.getAttribute('srcset')).toContain('1600w')
     expect(image.getAttribute('fetchpriority')).toBe('high')
     expect(image.getAttribute('loading')).not.toBe('lazy')
+    expect(image.getAttribute('src')).toContain('home-a1-1600.webp')
+    expect(container.querySelector('.home-headline-lead')?.textContent).toBe('Somewhere')
+    expect(screen.getByRole('heading', { name: 'Stay for the feeling.' })).toBeTruthy()
     expect(screen.getByText('AI 생성 브랜드 이미지 · 실제 숙소 사진이 아닙니다.')).toBeTruthy()
     const target = screen.getByLabelText('여행지 · 도시명')
     expect(screen.getByRole('link', { name: '여행 검색으로 이동 ↓' }).getAttribute('href')).toBe(
       '#' + target.id,
     )
-    expect(screen.getByRole('link', { name: '전체 숙소 둘러보기 →' }).getAttribute('href')).toBe(
+    expect(screen.getByRole('link', { name: '전체 숙소 →' }).getAttribute('href')).toBe(
       '/accommodations',
     )
     expect(fetch).toHaveBeenCalledOnce()
@@ -55,6 +60,136 @@ describe('AppRoutes', () => {
       '/api/v1/accommodations?status=ACTIVE&page=0&size=2&sortBy=ID&direction=ASC',
     )
     expect(new Headers(fetch.mock.calls[0][1].headers).has('Authorization')).toBe(false)
+    await screen.findByRole('link', { name: '서울 호텔' })
+    expect(
+      within(screen.getByRole('list', { name: '숙소 목록' })).getAllByRole('listitem'),
+    ).toHaveLength(1)
+  })
+
+  it('renders bounded photo exploration using only real response fields and keeps drafts after Media failure', async () => {
+    const photo = media()
+    const fetch = vi.fn().mockResolvedValue(
+      Response.json(
+        accommodationPage({
+          content: [
+            { ...accommodation, representativeImage: photo, images: [photo] },
+            {
+              ...accommodation,
+              accommodationId: 8,
+              name: '주소만 있는 숙소',
+              city: null,
+              region: null,
+              address: '기존 상세 주소',
+            },
+          ],
+        }),
+      ),
+    )
+    vi.stubGlobal('fetch', fetch)
+    renderAt('/')
+    const card = await screen.findByRole('link', { name: '서울 호텔' })
+    expect(card.getAttribute('href')).toBe(explorationDetailPath(7, ''))
+    expect(within(card).getByText('서울특별시 · 강남구')).toBeTruthy()
+    expect(within(card).queryByText(accommodation.description)).toBeNull()
+    const image = within(card).getByRole('img', { name: photo.altText! })
+    expect(image.getAttribute('loading')).toBe('lazy')
+    expect(image.getAttribute('src')).toBe('/api/v1/media/1/content')
+    const legacy = screen.getByRole('link', { name: '주소만 있는 숙소' })
+    expect(within(legacy).getByText('기존 상세 주소')).toBeTruthy()
+    expect(within(legacy).getByText('숙소 사진 미제공')).toBeTruthy()
+    expect(within(legacy).queryByRole('img')).toBeNull()
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '부산광역시' } })
+    fireEvent.error(image)
+    expect(within(card).getByText('사진을 불러오지 못했습니다.')).toBeTruthy()
+    expect(card.getAttribute('href')).toBe(explorationDetailPath(7, ''))
+    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '부산광역시')
+    expect(fetch).toHaveBeenCalledOnce()
+  })
+
+  it('defensively shows at most two ACTIVE rows in response order without filling missing slots', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json(
+          accommodationPage({
+            content: [
+              { ...accommodation, accommodationId: 8, name: '비활성 숙소', status: 'INACTIVE' },
+              accommodation,
+              { ...accommodation, accommodationId: 9, name: '다음 숙소' },
+              { ...accommodation, accommodationId: 10, name: '초과 숙소' },
+            ],
+          }),
+        ),
+      ),
+    )
+    renderAt('/')
+    const list = await screen.findByRole('list', { name: '숙소 목록' })
+    expect(
+      within(list)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual([expect.stringContaining('서울 호텔'), expect.stringContaining('다음 숙소')])
+    expect(screen.queryByRole('link', { name: '비활성 숙소' })).toBeNull()
+    expect(screen.queryByRole('link', { name: '초과 숙소' })).toBeNull()
+  })
+
+  it('keeps search usable through catalog loading, failure, explicit retry and empty results', async () => {
+    let resolve!: (response: Response) => void
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((done) => {
+            resolve = done
+          }),
+      )
+      .mockResolvedValueOnce(
+        Response.json(accommodationPage({ content: [], totalElements: 0, totalPages: 0 })),
+      )
+    vi.stubGlobal('fetch', fetch)
+    renderAt('/')
+    expect(screen.getByText('머물 곳을 불러오고 있습니다.').getAttribute('role')).toBe('status')
+    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '제주시' } })
+    await act(async () => resolve(Response.json({}, { status: 500 })))
+    expect(await screen.findByText('머물 곳을 불러오지 못했습니다.')).toBeTruthy()
+    expect(fetch).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+    expect(
+      await screen.findByText('아직 소개할 숙소가 없습니다. 전체 숙소에서 다시 살펴보세요.'),
+    ).toBeTruthy()
+    expect(screen.queryByRole('list', { name: '숙소 목록' })).toBeNull()
+    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '제주시')
+    expect(screen.getByRole('button', { name: '숙소 찾기' })).toHaveProperty('disabled', false)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch.mock.calls[1][0]).toBe(fetch.mock.calls[0][0])
+  })
+
+  it('aborts a pending Home read on search navigation and ignores its late response', async () => {
+    let resolve!: (response: Response) => void
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((done) => {
+            resolve = done
+          }),
+      )
+      .mockImplementation(() => Promise.resolve(Response.json(accommodationPage())))
+    vi.stubGlobal('fetch', fetch)
+    renderAt('/')
+    fireEvent.submit(screen.getByRole('form', { name: '여행 검색' }))
+    await screen.findByRole('link', { name: '서울 호텔' })
+    expect(fetch.mock.calls[0][1].signal.aborted).toBe(true)
+    await act(async () =>
+      resolve(
+        Response.json(
+          accommodationPage({ content: [{ ...accommodation, name: '늦은 Home 결과' }] }),
+        ),
+      ),
+    )
+    expect(screen.queryByText('늦은 Home 결과')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Stay for the feeling.' })).toBeNull()
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 
   it('keeps search drafts after a brand image failure without repeating the catalog read', () => {

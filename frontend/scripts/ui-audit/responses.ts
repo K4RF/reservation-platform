@@ -92,11 +92,12 @@ export function auditResponse(
         })),
       }
     : reservationDetail
-  // Synthetic layout-only rows; no photographs, prices, popularity or new DTO fields.
+  // Synthetic layout-only rows. Photos are fictional audit assets, never real property evidence.
   if (scenario === 'comparison' && path === '/api/v1/accommodations') {
     const rows: AccommodationResponse[] = Array.from({ length: 4 }, (_, index) => ({
       ...catalog,
-      images: catalog.images.slice(0, 1),
+      representativeImage: catalog.images[index % catalog.images.length] ?? null,
+      images: catalog.images.length ? [catalog.images[index % catalog.images.length]] : [],
       accommodationId: 7 + index,
       name: index === 0 ? accommodation.name : `UI 비교 점검 숙소 ${index + 1}`,
       description:

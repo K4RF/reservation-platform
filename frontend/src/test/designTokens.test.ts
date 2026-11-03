@@ -156,16 +156,18 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).toMatch(/\.home-hero\s*\{[^}]*var\(--site-header-height\)/)
     expect(globalCss).toMatch(/\.home-hero-image\s*\{[^}]*object-fit: cover;/)
     expect(globalCss).toContain('var(--color-hero-scrim) 60%')
-    expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(42rem, 60%\);/)
+    expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(44rem, 100%\);/)
     expect(globalCss).toContain('background: var(--color-hero-scrim-mobile)')
     // Provenance/failure text must grow in flow rather than overlap the copy at 200% text scale.
-    expect(globalCss).toMatch(/\.home-image-note\s*\{[^}]*order: 2;/)
+    expect(globalCss).toMatch(/\.home-hero-footer\s*\{[^}]*flex-wrap: wrap;/)
     expect(globalCss).not.toMatch(/\.home-image-note\s*\{[^}]*position: absolute;/)
+    expect(globalCss).not.toMatch(/\.home-search-section\s*\{[^}]*position: absolute;/)
+    expect(globalCss).toContain(".home-page > [role='status']:not(.sr-only)")
     for (const [size, maxBytes] of [
       [800, 80 * 1024],
       [1600, 256 * 1024],
     ]) {
-      const assetPath = `../assets/brand/coast-hero-${size}.webp`
+      const assetPath = `../assets/brand/home-a1-${size}.webp`
       const bytes = readFileSync(fileURLToPath(new URL(assetPath, import.meta.url).href))
       expect(bytes.subarray(0, 4).toString()).toBe('RIFF')
       expect(bytes.subarray(8, 12).toString()).toBe('WEBP')
