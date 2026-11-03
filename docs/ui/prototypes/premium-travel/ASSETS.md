@@ -1,7 +1,8 @@
 # Prototype asset provenance
 
 Created 2026-10-22 with built-in ImageGen. Two fictional concept images, not photographs
-of actual listings. Project usage is limited to approval-stage design reference.
+of actual listings. Initially limited to approval-stage design reference; the
+narrow #277 decorative-brand exception is recorded below.
 Do not attach these images to real accommodations/rooms as property evidence.
 No third-party hotel photograph or external font file is bundled. This record does
 not assert exclusive copyright or a stock-photo license.
@@ -27,8 +28,19 @@ Use case: photorealistic-natural. Asset: concept-only hotel room photography for
 
 #276 additionally uses these unchanged images in the isolated UI Audit visual-comparison
 fixture only. The same real React components render synthetic catalog records there.
-They are never uploaded to a real catalog, copied into the production asset bundle,
-or used as property evidence. See [Media verification](../../frontend-media-integration-276.md).
+They are never uploaded to a real catalog or used as property evidence.
+At #276 neither image was copied into the production bundle. See
+[Media verification](../../frontend-media-integration-276.md).
+
+#277 promotes **coast-concept.png only** to a decorative Home brand Hero through
+800/1600 WebP derivatives. The issue expressly allows this change of purpose with
+updated provenance and AI notice. It is still fictional, not real accommodation
+Media or a rights/authenticity guarantee. The original PNG and room concept are
+not production runtime dependencies. Source hash, derivative sizes/hashes,
+encoding commands, limits and the historical #253 asset are recorded in the
+[single brand provenance record](../../../../frontend/src/assets/brand/README.md).
+The Home displays one concise AI/non-listing notice; no prototype prices, reviews,
+facility claims or fictional catalog records are copied into production.
 
 Use owner-provided or separately licensed photos with source/rights/consent records.
 Real Media needs storage, Admin input, validation, DTOs and missing-image handling.
