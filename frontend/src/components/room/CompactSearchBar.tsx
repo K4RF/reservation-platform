@@ -19,7 +19,7 @@ export function CompactSearchBar({
   onDateChange: (field: StayDateField, value: string) => void
   guestCount: string
   onGuestChange: (value: string) => void
-  city?: { initial?: string }
+  city?: { initial?: string; onChange?: (value: string) => void }
   required?: boolean
   actionLabel: string
   error?: string
@@ -34,6 +34,7 @@ export function CompactSearchBar({
             name="city"
             maxLength={100}
             defaultValue={city.initial}
+            onChange={(event) => city.onChange?.(event.target.value)}
             placeholder="도시 이름"
             aria-describedby={`${prefix}-city-help`}
           />

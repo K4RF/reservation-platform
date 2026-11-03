@@ -42,6 +42,7 @@ export function AccommodationSearchPage() {
       restoredEntry.current = location.key
       if (navigationType === 'POP' || location.state?.restoreSearchPosition === true)
         restoreSearchPosition(canonicalSearchQuery(queryKey)!, heading.current)
+      else if (location.state?.focusSearchResults === true) heading.current?.focus()
     }
   }, [state.status, parsed.valid, queryKey, location.key, location.state, navigationType])
   useEffect(() => {
@@ -68,14 +69,14 @@ export function AccommodationSearchPage() {
   function search(next: AccommodationSearchRequest) {
     const nextParams = toSearchParams(next)
     if (nextParams.toString() === queryKey) setRetry((value) => value + 1)
-    else setParams(nextParams)
+    else setParams(nextParams, { state: { focusSearchResults: true } })
   }
   return (
     <section className="accommodation-search-page" aria-labelledby="accommodation-search-title">
       <header className="search-page-header">
         <p className="eyebrow">FIND YOUR OWN PACE</p>
-        <h1 ref={heading} tabIndex={-1} id="accommodation-search-title">
-          숙소 검색
+        <h1 ref={heading} tabIndex={-1} id="accommodation-search-title" aria-label="숙소 검색">
+          A place to be.
         </h1>
         <p>머물고 싶은 곳을, 당신의 속도로 찾아보세요.</p>
       </header>
@@ -83,16 +84,12 @@ export function AccommodationSearchPage() {
         key={queryKey}
         initialQuery={parsed.valid ? parsed.query : defaultSearchQuery}
         onSearch={search}
+        resultCount={
+          parsed.valid && state.status === 'success' ? state.result.totalElements : undefined
+        }
         summary={parsed.valid ? <AccommodationSearchSummary query={parsed.query} /> : null}
       >
         <section className="search-results" aria-label="숙소 검색 결과">
-          <details className="search-price-help">
-            <summary>가격·일정 조건 안내</summary>
-            <p className="search-price-note">
-              가격 조건은 활성 객실의 기본 1박 가격이며 날짜별 가격이나 숙박 총액이 아닙니다. 날짜
-              입력 시 모든 숙박일의 예약 가능 여부를 확인합니다.
-            </p>
-          </details>
           {!parsed.valid && <ErrorState message={parsed.message} />}
           {parsed.valid && state.status === 'loading' && (
             <LoadingState message="숙소를 불러오고 있습니다." />
@@ -102,9 +99,6 @@ export function AccommodationSearchPage() {
           )}
           {parsed.valid && state.status === 'success' && (
             <>
-              <p className="search-result-count" role="status">
-                총 {state.result.totalElements}개 숙소
-              </p>
               <AccommodationList accommodations={state.result.content.map(toAccommodationCard)} />
               <nav className="accommodation-pagination" aria-label="숙소 페이지">
                 <button

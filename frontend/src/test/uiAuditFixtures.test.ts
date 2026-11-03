@@ -3,6 +3,24 @@ import { auditResponse } from '../../scripts/ui-audit/responses'
 import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('keeps the normal ACTIVE Search comparison free of the synthetic inactive row', async () => {
+    const page = await auditResponse(
+      '/api/v1/accommodations?status=ACTIVE',
+      'GET',
+      'comparison',
+      'present',
+    ).json()
+    expect(page.content).toHaveLength(3)
+    expect(page.content.every((row: { status: string }) => row.status === 'ACTIVE')).toBe(true)
+    expect(page.totalElements).toBe(3)
+    const inactive = await auditResponse(
+      '/api/v1/accommodations?status=INACTIVE',
+      'GET',
+      'comparison',
+      'present',
+    ).json()
+    expect(inactive.content).toHaveLength(1)
+  })
   it('uses two distinct fictional Media projections for Home comparison, including partial failure', async () => {
     const present = await auditResponse(
       '/api/v1/accommodations?size=2',

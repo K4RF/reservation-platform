@@ -140,6 +140,13 @@ Backend configuration and behavior are implemented and verified.
   missing/failed photos never receive a fictional fallback. Home drafts are not
   copied into photo links before submission. See `docs/ui/frontend-home-rebuild-277.md`
   for #277 comparisons, provenance and Browser-fixture/HTTP/CI limits.
+- Search #278 separates Compact conditions, filter drafts and submitted URL state.
+  Each editor commits only its own draft against applied conditions; sort commits
+  applied state only. Reuse SearchLayer for the narrow filter Sheet; preview/reset/
+  cancel must not query. Keep legacy size/status in additional settings, ID/NAME
+  sorts, full description/address access and both title/Room-CTA return positions.
+  Cards use actual representative Media without per-card Room GETs or invented
+  prices. See `docs/ui/frontend-search-rebuild-278.md` for comparisons and limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
@@ -253,7 +260,7 @@ Before completing a change:
   Frontend API validation, CatalogImage/Gallery and ADMIN album management are
   connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
   mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
-  Home layout is rebuilt in #277; full Search/Detail layout completion is still
+  Home layout is rebuilt in #277 and Search in #278; full Detail layout remains
   separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,

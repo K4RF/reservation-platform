@@ -137,14 +137,15 @@ describe('design token and global stylesheet contracts', () => {
     }
   })
 
-  it('scopes the Search comparison layout with two-column cards, a native filter disclosure and bounded media slots', () => {
+  it('scopes Search editors, sidebar and two-column media without hiding document overflow', () => {
     expect(globalCss).toMatch(/\.accommodation-search-page\s*\{[^}]*var\(--content-catalog\)/)
     expect(globalCss).toMatch(/\.accommodation-list\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
     expect(globalCss).toMatch(
-      /\.search-comparison-layout\s*\{[^}]*minmax\(0, 15rem\) minmax\(0, 1fr\)/,
+      /\.search-comparison-layout\s*\{[^}]*minmax\(0, 14.0625rem\) minmax\(0, 1fr\)/,
     )
     expect(globalCss).toMatch(/\.catalog-image\s*\{[^}]*aspect-ratio: 2 \/ 1;/)
-    expect(globalCss).toContain('.accommodation-search-form.catalog-search-form')
+    expect(globalCss).toContain('.accommodation-search-form.search-conditions-form')
+    expect(globalCss).toContain('#search-filter-sheet')
     expect(globalCss).toMatch(
       /@media \(max-width: 48rem\)\s*\{\s*\.accommodation-list\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,
     )
