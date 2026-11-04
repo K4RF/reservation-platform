@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { useAuth } from '../state/useAuth'
 import {
@@ -39,6 +39,7 @@ function AccommodationDetail({ id }: { id: number }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { state: auth } = useAuth()
+  const [bookingStage, setBookingStage] = useState(false)
   const canBook = auth.status === 'authenticated' && (auth.role === 'USER' || auth.role === 'ADMIN')
   const load = useCallback((signal: AbortSignal) => getAccommodation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
@@ -52,10 +53,12 @@ function AccommodationDetail({ id }: { id: number }) {
     ([...params.keys()].some((key) => key !== 'search') && !initialContext)
   return (
     <div className="accommodation-detail-page">
-      <Link to={searchReturnPath(location.search)} state={{ restoreSearchPosition: true }}>
-        숙소 검색으로 돌아가기
-      </Link>
-      {invalidContext && (
+      {!bookingStage && (
+        <Link to={searchReturnPath(location.search)} state={{ restoreSearchPosition: true }}>
+          숙소 검색으로 돌아가기
+        </Link>
+      )}
+      {!bookingStage && invalidContext && (
         <ErrorState message="올바르지 않은 탐색 조건입니다. 날짜와 인원을 다시 입력하세요." />
       )}
       {state.status === 'loading' && <LoadingState message="숙소 상세를 불러오고 있습니다." />}
@@ -67,8 +70,12 @@ function AccommodationDetail({ id }: { id: number }) {
         ))}
       {state.status === 'success' && (
         <>
-          <AccommodationTitle accommodation={state.data} />
-          <CatalogGallery images={state.data.images} label="숙소 사진" />
+          {!bookingStage && (
+            <>
+              <AccommodationTitle accommodation={state.data} />
+              <CatalogGallery images={state.data.images} label="숙소 사진" />
+            </>
+          )}
           <RoomAvailabilitySection
             key={`availability-${id}-${location.search}`}
             initialContext={initialContext}
@@ -84,6 +91,8 @@ function AccommodationDetail({ id }: { id: number }) {
             }
             accommodationId={id}
             accommodationName={state.data.name}
+            accommodationImage={state.data.representativeImage}
+            onBookingStageChange={setBookingStage}
             introduction={<AccommodationInfo accommodation={state.data} />}
             information={<AccommodationOperatingInfo accommodation={state.data} />}
             catalog={<RoomListSection accommodationId={id} />}

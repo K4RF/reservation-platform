@@ -4,21 +4,32 @@ import { createReservation } from '../../api/reservation'
 import { bookingFailure } from './bookingFailure'
 import { LoadingState } from '../ui/LoadingState'
 import { getSessionVersion } from '../../state/accessToken'
+import { Link } from 'react-router'
+import { routePaths } from '../../app/routePaths'
 
 export function BookingSubmit({
   request,
   onComplete,
   onEdit,
+  onLockChange,
 }: {
   request: BookingRequest
   onComplete?: (id: number) => void
   onEdit: () => void
+  onLockChange?: (locked: boolean) => void
 }) {
   const locked = useRef(false)
   const mounted = useRef(true)
   const [state, setState] = useState<'ready' | 'pending' | 'success' | 'error'>('ready')
   const [failure, setFailure] = useState<ReturnType<typeof bookingFailure>>()
   const [completedId, setCompletedId] = useState<number>()
+  const failureFocus = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    if (failure) {
+      failureFocus.current?.focus()
+      failureFocus.current?.scrollIntoView?.({ block: 'center' })
+    }
+  }, [failure])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -28,6 +39,7 @@ export function BookingSubmit({
   async function submit() {
     if (locked.current) return
     locked.current = true
+    onLockChange?.(true)
     setState('pending')
     setFailure(undefined)
     const session = getSessionVersion()
@@ -41,6 +53,7 @@ export function BookingSubmit({
       if (!mounted.current || session !== getSessionVersion()) return
       const next = bookingFailure(error)
       locked.current = !next.retryable
+      onLockChange?.(!next.retryable)
       setFailure(next)
       setState('error')
     }
@@ -50,17 +63,27 @@ export function BookingSubmit({
       {state === 'pending' && (
         <LoadingState message="예약을 생성하고 있습니다. 중복 제출하지 마세요." />
       )}
-      {failure && <p role="alert">{failure.message}</p>}
+      {failure && (
+        <>
+          <p ref={failureFocus} role="alert" tabIndex={-1}>
+            {failure.message}
+          </p>
+          {!failure.retryable && <Link to={routePaths.reservations}>내 예약에서 결과 확인</Link>}
+        </>
+      )}
       {state === 'success' ? (
         <p role="status">
-          예약 생성 완료: ID {completedId}. 입력 내용은 더 이상 제출할 수 없습니다.
+          예약이 생성되었습니다.{' '}
+          <Link to={`${routePaths.reservations}/${completedId}`}>저장된 예약 확인</Link>
         </p>
       ) : (
         <div className="action-group booking-submit-actions">
           <button
             type="button"
             disabled={state === 'pending' || (state === 'error' && !failure?.retryable)}
-            onClick={onEdit}
+            onClick={() => {
+              if (!locked.current) onEdit()
+            }}
           >
             투숙객 정보 수정
           </button>
@@ -75,9 +98,6 @@ export function BookingSubmit({
           </button>
         </div>
       )}
-      <p className="booking-note">
-        중복 클릭 방지는 이 화면에만 적용됩니다. 실제 재고 검증은 Backend가 수행합니다.
-      </p>
     </>
   )
 }

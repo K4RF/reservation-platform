@@ -6,6 +6,8 @@ import { ErrorState } from '../components/ui/ErrorState'
 import { LoadingState } from '../components/ui/LoadingState'
 import { formatMinorUnits, toMinorUnits } from '../utils/money'
 import { routePaths } from '../app/routePaths'
+import { BookingResultCatalog } from '../components/booking/BookingResultCatalog'
+import { reservationPath } from '../api/reservationContract'
 
 export function BookingCompletePage() {
   const { reservationId } = useParams()
@@ -22,7 +24,7 @@ function BookingComplete({ id }: { id: number }) {
       <header className="booking-complete-header">
         <p className="booking-eyebrow">YOUR RESERVATION</p>
         <h1>예약 결과 확인</h1>
-        <p>서버에 저장된 결과를 확인하고 다음 여정을 준비하세요.</p>
+        <p>머무를 일정과 예약 내역을 확인하세요.</p>
       </header>
       {state.status === 'loading' && (
         <LoadingState message="서버의 예약 결과를 확인하고 있습니다." />
@@ -48,8 +50,7 @@ function BookingComplete({ id }: { id: number }) {
               <p className="booking-result-number">
                 예약 번호: {state.data.reservationNumber ?? '미등록'}
               </p>
-              <p>예약 ID: {state.data.reservationId}</p>
-              <p>객실 ID: {state.data.roomId}</p>
+              <BookingResultCatalog roomId={state.data.roomId} />
               <p>
                 {state.data.checkInDate} ~ {state.data.checkOutDate} · {state.data.stayNights}박 ·{' '}
                 {state.data.guestCount}명
@@ -60,13 +61,13 @@ function BookingComplete({ id }: { id: number }) {
               className="booking-result-amount"
               aria-labelledby="booking-result-amount-title"
             >
-              <h3 id="booking-result-amount-title">서버 저장 금액</h3>
-              <span className="booking-price-basis">예상 요금과 구분되는 저장 Snapshot</span>
+              <h3 id="booking-result-amount-title">예약 금액</h3>
+              <span className="booking-price-basis">저장된 예약 금액</span>
               <p className="booking-total">
-                예약 금액 Snapshot: {formatMinorUnits(toMinorUnits(state.data.totalAmount, 19))}
+                예약 금액: {formatMinorUnits(toMinorUnits(state.data.totalAmount, 19))}
               </p>
               <p className="booking-note">
-                현재 요금을 다시 합산하지 않고 저장된 응답을 표시합니다.
+                예약할 때 저장된 금액입니다. 현재 요금과 다를 수 있습니다.
               </p>
             </section>
             <section className="booking-result-guest" aria-labelledby="booking-result-guest-title">
@@ -88,6 +89,9 @@ function BookingComplete({ id }: { id: number }) {
         </>
       )}
       <nav className="action-group booking-result-actions" aria-label="예약 결과 다음 단계">
+        {state.status === 'success' && (
+          <Link to={reservationPath(state.data.reservationId)}>예약 상세 보기</Link>
+        )}
         <Link to={routePaths.accommodations}>숙소 검색으로 돌아가기</Link>
         <Link className="primary-action" to={routePaths.reservations}>
           내 예약 목록 확인
