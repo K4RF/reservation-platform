@@ -14,7 +14,7 @@ node scripts/ui-audit/server.mjs
 
 `127.0.0.1:5174`에만 바인딩한다. Production 빌드/Preview에 이 도구를 배포하지 않는다.
 실제 `.env`/개발 DB/Redis/Google 비밀값이 필요 없으며 별도 Audit 폴더만 envDir로 사용한다.
-실제 Backend Proxy는 없고 앱의 fetch는 Fixture 읽기로 대체된다. 쓰기는 405 AUDIT_READ_ONLY,
+실제 Backend Proxy는 없고 앱의 fetch는 Fixture로 대체된다. 기본 쓰기는 405 AUDIT_READ_ONLY,
 미지원 API는 404를 반환하며 실제 서버로 전달하지 않는다. Google 버튼의 외부 이동/실제 OAuth2는 점검하지 않는다.
 
 | Query     | 값                                                                |
@@ -26,6 +26,7 @@ node scripts/ui-audit/server.mjs
 | metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록       |
 | media     | missing(기본) / present / failed / partial. 격리된 사진 상태      |
 | hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환      |
+| booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과     |
 
 예:
 
@@ -56,7 +57,13 @@ Entry/Fixture 변경 뒤 신규 시나리오를 인식하지 못하면 서버를
 원본 파일·CSP·시안 Layout을 수정하지 않고 검토 도구바 없는 동일 시작 위치를 촬영합니다.
 Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매물은 여전히 비교 자료일 뿐입니다.
 측정 시 제목/실제 Fixture 콘텐츠와 확대 글자 크기를 확인한다. 빈 페이지의 Overflow=0을 성공으로 세지 않는다.
-대표 투숙객 입력은 가짜 값만 쓰고 제출 전 확인까지만 진행한다. 예약 생성/변경/취소/관리 저장은 실행하지 않는다.
+대표 투숙객 입력은 가짜 값만 쓴다. 기본은 제출 전 확인까지만 진행하며 실제 예약/변경/취소/관리 저장은 실행하지 않는다.
+
+#280의 명시적 `booking=success`는 **오직 POST /api/v1/reservations**에 고정된 42번 Fixture/201을 반환한다.
+`booking=ambiguous`는 같은 경로에서 5초 대기 후 합성500을 반환하여 대기/결과 불명 잠금을 관찰한다.
+요청 Body를 보관/반영하지 않으며 입력한 이름·날짜와 응답이 다를 수 있다. 이후 완료 GET도 고정 Fixture다.
+다른 쓰기는 이 옵션에서도405이며 기본 차단과 무Proxy 원칙은 유지한다. 실제 HTTP/재고/Commit 증거가 아니다.
+로컬 서버 재시작 뒤 Query를 지정하고 새로고침한다. 이 도구의 옵션을 제품 코드·환경변수에 옮기지 않는다.
 
 도구 검증:
 

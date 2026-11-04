@@ -17,7 +17,9 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 [시안 비교·초안/복귀·검증 기록](../docs/ui/frontend-search-rebuild-278.md)을 참고하세요.
 #279은 Detail의 단일 객실 목록·예약 Rail·Mobile CTA와 Gallery 진입을 재구성했습니다.
 [시안 비교·Booking 경계·검증 기록](../docs/ui/frontend-detail-rebuild-279.md)을 참고하세요.
-#280 Booking 전체 재구성과 f0.6.0 사용자 승인은 별도입니다.
+#280은 Detail 아래의 긴 폼을 별도 입력/검토 단계로 바꾸고 현재 여행 정보와 저장된 완료 결과를 구분했습니다.
+[Booking 비교·안전성·검증 경계](../docs/ui/frontend-booking-rebuild-280.md)를 참고하세요.
+f0.6.0 사용자 최종 승인은 별도입니다.
 
 현재 UI 작업 기준은 [승인 시안 기반 재구성 명세 (#271)](../docs/ui/prototype-rebuild.md)입니다.
 2026-10-29 기준 **새 f0.5.3(Milestone #21)**에서 구성·밀도·상호작용을 전면 재구성합니다.
@@ -110,10 +112,13 @@ Room Modal/Sheet·ID/정원/상세 변경 검증·새 가용성·선택 초기�
 현재 비교/한계는 [#279 보고서](../docs/ui/frontend-detail-rebuild-279.md),
 역사적 구현은 [#255](../docs/ui/frontend-detail-room-selection-255.md)에 보존했습니다.
 
-Booking은 입력/최종 확인 단계와 예상 요금 표시를 구분하고, 로그인 후에는 객실 비교 아래 넓은 요약/입력 영역을 사용합니다.
-완료 화면은 서버 GET의 ID/Number·저장 금액·대표 투숙객을 표시하며 결제 완료를 의미하지 않습니다.
-기존 단일 POST·실패 잠금·로그인 복귀는 유지합니다. 반응형·Focus와 검증 경계는
-[Booking 리디자인 (#256)](../docs/ui/frontend-booking-redesign-256.md)을 참고하세요.
+Booking 계속을 누르면 같은 URL에서 Detail 본문 대신 입력/최종 확인 단계를 표시합니다.
+Desktop은 입력 최대 640px·여행 요약 360px, Mobile은 실제 사진/일정/인원/예상가 다음 입력 순서입니다.
+가격 세션은 객실 선택부터 공유하며 일별 내역은 펼쳐 봅니다. 대기·불명 결과는 수정/제출/객실 복귀를 잠급니다.
+완료 화면은 소유자 GET의 예약번호·저장 금액·투숙객을 표시하며 결제 완료를 의미하지 않습니다.
+현재 이름/사진은 선택적인 공개 조회이고 과거 Snapshot이 아닙니다. 사진/카탈로그 실패가 저장 결과를 바꾸지 않습니다.
+현재 비교·Focus·Mock/Browser/HTTP 경계는 [#280](../docs/ui/frontend-booking-rebuild-280.md),
+역사적 구현은 [#256](../docs/ui/frontend-booking-redesign-256.md)에 보존했습니다.
 
 내 예약 목록/상세는 현재 카탈로그 이름과 저장된 투숙객·가격·정책·취소 결과를 구분합니다.
 일정 변경은 저장 일정/새 요청/참고 요금을, 취소는 사전 금액 미제공과 저장 결과를 분리해 표시합니다.
@@ -639,8 +644,9 @@ Booking State를 보관하지 않습니다. 이후 #182에서 선택 객실의 �
 
 ## 객실 요금·예약 요약 (#182)
 
-가용 객실 선택 시 `BookingSummary`가 객실·Capacity·인원·숙박 기간·숙박일 수·기본 가격,
-숙박일별 적용 요금/출처와 총 예상 금액을 표시합니다. 가격 타입은 `api/bookingPrice.ts`의
+가용 객실 선택 시 `BookingPriceSession`이 가격 조회를 소유하고 Rail/Booking의 `BookingSummary`에 공유합니다.
+Booking의 객실·정원·인원·일정·실제 사진은 `BookingTripSummary`, 일별 가격/출처·총 예상가는
+`BookingSummary`가 표시합니다. 가격 타입은 `api/bookingPrice.ts`의
 `RoomDailyPriceResponse`/`BookingPrice`로 정의했습니다. 기간 전체 견적 API가 없으므로
 `GET /api/v1/rooms/{roomId}/prices/{stayDate}`를 `[check-in, check-out)`의 각 날짜에 호출합니다.
 요청은 최대 4개 동시 실행으로 제한하고 날짜 순서대로 표시합니다. UTC 달력 연산으로

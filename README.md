@@ -358,6 +358,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [Home A1 Hero·사진 탐색·1440/390 비교와 검증 (#277)](docs/ui/frontend-home-rebuild-277.md)
 - [Search 사진 카드·필터 Sheet·1440/390 비교와 검증 (#278)](docs/ui/frontend-search-rebuild-278.md)
 - [Detail Gallery·단일 객실 목록·예약 Rail·Mobile CTA와 검증 (#279)](docs/ui/frontend-detail-rebuild-279.md)
+- [Booking 입력·검토·여행 요약·저장 완료 결과와 검증 (#280)](docs/ui/frontend-booking-rebuild-280.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)
