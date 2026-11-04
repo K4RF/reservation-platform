@@ -6,8 +6,38 @@ import { room } from '../test/room'
 import { accommodation } from '../test/accommodation'
 import { setTokenPair } from '../state/accessToken'
 import { accessTokenWithExpiry } from '../test/jwt'
+import { media } from '../test/media'
 
 describe('reservation catalog enrichment', () => {
+  it.each([true, false])(
+    'uses actual Room Media first and only actual Accommodation Media as fallback (room photo %s)',
+    async (roomPhoto) => {
+      const roomImage = media(1),
+        accommodationImage = media(2)
+      const mock = vi.fn((url: string) =>
+        Response.json(
+          url.endsWith('/rooms/3')
+            ? {
+                ...room,
+                representativeImage: roomPhoto ? roomImage : null,
+                images: roomPhoto ? [roomImage] : [],
+              }
+            : {
+                ...accommodation,
+                representativeImage: accommodationImage,
+                images: [accommodationImage],
+              },
+        ),
+      )
+      vi.stubGlobal('fetch', mock)
+      const result = await getReservationCatalog([
+        reservationResult,
+        { ...reservationResult, reservationId: 43 },
+      ])
+      expect(result.get(3)?.representativeImage).toEqual(roomPhoto ? roomImage : accommodationImage)
+      expect(mock).toHaveBeenCalledTimes(2)
+    },
+  )
   it('deduplicates rooms/accommodations per page and keeps catalog GETs public', async () => {
     setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
     const mock = vi
@@ -30,6 +60,7 @@ describe('reservation catalog enrichment', () => {
       roomName: room.name,
       accommodationName: accommodation.name,
       accommodationId: 7,
+      representativeImage: null,
     })
     expect(result.get(4)?.accommodationName).toBe(accommodation.name)
     expect(
@@ -53,11 +84,13 @@ describe('reservation catalog enrichment', () => {
       roomName: room.name,
       accommodationName: null,
       accommodationId: 7,
+      representativeImage: null,
     })
     expect(result.get(4)).toEqual({
       roomName: null,
       accommodationName: null,
       accommodationId: null,
+      representativeImage: null,
     })
   })
   it('does not fetch anything for an empty reservation page', async () => {

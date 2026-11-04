@@ -62,14 +62,11 @@ function ReservationDetail({ id }: { id: number }) {
       )}
       {state.status === 'success' && (
         <>
-          <ReservationCard reservation={state.data.card} linkToDetail={false} />
-          <p className="reservation-context-note">
-            숙소·객실 이름은 현재 정보입니다. 금액은 예약 Snapshot이며 결제 완료를 의미하지
-            않습니다.
-          </p>
           <ReservationSnapshots
             reservation={state.data.detail}
             accommodationId={state.data.accommodationId}
+            summary={<ReservationCard reservation={state.data.card} linkToDetail={false} />}
+            onCatalogRetry={state.data.card.catalogUnavailable ? retry : undefined}
             onRefreshDetail={() => {
               setNotice(
                 '취소 요청은 다시 보내지 않습니다. 서버에 저장된 예약 상태를 다시 조회합니다.',
@@ -90,9 +87,6 @@ function ReservationDetail({ id }: { id: number }) {
               retry()
             }}
           />
-          {state.data.card.catalogUnavailable && (
-            <button onClick={retry}>현재 숙소·객실 정보 다시 조회</button>
-          )}
         </>
       )}
       <Link className="reservation-detail-link" to={routePaths.reservations}>

@@ -65,13 +65,8 @@ function ReservationPage({
       <header className="reservation-page-header">
         <p className="reservation-eyebrow">YOUR STAYS</p>
         <h1 id="my-reservations-title">내 예약</h1>
-        <p>본인이 생성한 예약을 최신 예약 ID 순서로 확인합니다.</p>
+        <p>다가올 머무름부터 지난 여행까지, 예약을 한곳에서 확인하세요.</p>
       </header>
-      <div className="reservation-context-note">
-        <p className="reservation-source-label">기록을 읽는 기준</p>
-        <p>숙소·객실 이름은 현재 카탈로그 정보이며 예약 당시 이름의 Snapshot이 아닙니다.</p>
-        <p>금액은 서버에 저장된 예약 Snapshot이며 결제 완료나 실제 환불을 의미하지 않습니다.</p>
-      </div>
       {state.status === 'loading' && <LoadingState message="내 예약을 불러오고 있습니다." />}
       {state.status === 'error' && (
         <ErrorState message={reservationReadError(state.error)} onRetry={retry} />
@@ -82,6 +77,9 @@ function ReservationPage({
             총 {state.data.totalElements}개 예약
           </p>
           <ReservationList reservations={state.data.cards} />
+          <p className="reservation-note">
+            최근 예약 순입니다. 금액은 예약 당시 저장된 금액이며 결제·환불 완료를 뜻하지 않습니다.
+          </p>
           {state.data.cards.some((card) => card.catalogUnavailable) && (
             <button onClick={retry}>현재 숙소·객실 정보 다시 조회</button>
           )}

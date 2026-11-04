@@ -3,6 +3,7 @@ import type { ReservationCatalogInfo } from '../../api/reservationCatalog'
 import { ApiError } from '../../api/errors'
 import { reservationDetailPath } from '../../app/routePaths'
 import { formatMinorUnits, toMinorUnits } from '../../utils/money'
+import type { MediaResponse } from '../../api/media'
 
 export interface ReservationCardModel {
   id: number
@@ -11,6 +12,7 @@ export interface ReservationCardModel {
   accommodationName: string
   roomName: string
   catalogUnavailable: boolean
+  representativeImage: MediaResponse | null
   checkInDate: string
   checkOutDate: string
   stayNights: number
@@ -33,6 +35,7 @@ export function toReservationCard(
       (catalog?.accommodationId ? `숙소 ID: ${catalog.accommodationId}` : '숙소 정보 조회 불가'),
     roomName: catalog?.roomName ?? `객실 ID: ${row.roomId}`,
     catalogUnavailable: !catalog?.roomName || !catalog.accommodationName,
+    representativeImage: catalog?.representativeImage ?? null,
     checkInDate: row.checkInDate,
     checkOutDate: row.checkOutDate,
     stayNights: row.stayNights,

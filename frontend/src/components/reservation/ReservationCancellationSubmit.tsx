@@ -26,7 +26,14 @@ export function ReservationCancellationSubmit({
   const [result, setResult] = useState<ReservationCancellationResponse>()
   const locked = useRef(false)
   const controller = useRef<AbortController | null>(null)
+  const failureFocus = useRef<HTMLDivElement>(null)
   useEffect(() => () => controller.current?.abort(), [])
+  useEffect(() => {
+    if (failure) {
+      failureFocus.current?.focus()
+      failureFocus.current?.scrollIntoView?.({ block: 'center' })
+    }
+  }, [failure])
 
   async function submit() {
     if (!acknowledged || locked.current) return
@@ -75,7 +82,11 @@ export function ReservationCancellationSubmit({
         불가능합니다.
       </p>
       {pending && <LoadingState message="예약을 취소하고 있습니다. 중복 제출하지 마세요." />}
-      {failure && <ErrorState message={failure} />}
+      {failure && (
+        <div ref={failureFocus} tabIndex={-1}>
+          <ErrorState message={failure} />
+        </div>
+      )}
       {result && !onCancelled && <ReservationCancellationFeedback result={result} />}
       <div className="action-group reservation-mutation-actions">
         <button
@@ -94,8 +105,7 @@ export function ReservationCancellationSubmit({
         )}
       </div>
       <p className="reservation-note">
-        화면 이탈이나 요청 중단은 서버 롤백을 의미하지 않습니다. 중복 제출 방지는 다중 탭·서버
-        멱등성을 보장하지 않습니다.
+        화면을 나가도 요청이 처리될 수 있습니다. 결과를 확인하기 전 다시 취소하지 마세요.
       </p>
     </div>
   )

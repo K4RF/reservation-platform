@@ -169,7 +169,7 @@ async function prepareChange() {
 }
 async function changeAndReviewCancel() {
   await prepareChange()
-  await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+  await screen.findByText('첫 숙박일 저장 요금: 250.15')
   fireEvent.click(screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }))
   await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
   const panel = screen.getByRole('region', { name: '취소 전 확인' })
@@ -235,7 +235,7 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
       await createAndOpenDetail()
       await prepareChange()
       expect((await screen.findByRole('alert')).textContent).toContain(code)
-      expect(screen.getByText('첫 숙박일 요금 Snapshot: 100.10')).toBeTruthy()
+      expect(screen.getByText('첫 숙박일 저장 요금: 100.10')).toBeTruthy()
       expect(api.saved?.checkInDate).toBe(bookingRequest.checkInDate)
       fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
       await screen.findByRole('link', { name: '예약 42 상세 보기' })
@@ -256,7 +256,7 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
     expect((await screen.findByRole('alert')).textContent).toContain('RESERVATION_009')
     expect(api.saved?.status).toBe('CONFIRMED')
     fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
-    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    await screen.findByText('첫 숙박일 저장 요금: 250.15')
     expect(screen.getByText('예약 확정')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: '예약 취소 완료' })).toBeNull()
     expect(writes(api.fetch)).toHaveLength(3)

@@ -36,10 +36,17 @@ export function ReservationChangeConfirmation({
   const locked = useRef(false)
   const controller = useRef<AbortController | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
+  const failureFocus = useRef<HTMLDivElement>(null)
   useEffect(() => () => controller.current?.abort(), [])
   useEffect(() => {
     heading.current?.focus()
   }, [])
+  useEffect(() => {
+    if (failure) {
+      failureFocus.current?.focus()
+      failureFocus.current?.scrollIntoView?.({ block: 'center' })
+    }
+  }, [failure])
 
   async function submit() {
     if (locked.current || price.status !== 'success' || !acknowledged) return
@@ -76,27 +83,35 @@ export function ReservationChangeConfirmation({
       </h4>
       <div className="reservation-schedule-comparison">
         <section aria-label="변경 전 저장 기록">
-          <p className="reservation-source-label">변경 전 · 서버 저장 Snapshot</p>
+          <p className="reservation-source-label">현재 저장된 일정</p>
           <p className="reservation-stay-line">
             기존 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
           </p>
           <p>기존 확정 총액: {formatMinorUnits(toMinorUnits(reservation.totalAmount, 19))}</p>
         </section>
         <section aria-label="변경 요청 일정">
-          <p className="reservation-source-label">변경 요청 · 아직 반영되지 않음</p>
+          <p className="reservation-source-label">변경할 일정</p>
           <p className="reservation-stay-line reservation-new-stay">
             새 일정: {request.checkInDate} ~ {request.checkOutDate} (체크아웃 제외)
           </p>
           <p className="reservation-note">아래 참고 예상액은 변경 응답의 확정 금액이 아닙니다.</p>
+          {price.status === 'success' && (
+            <p className="reservation-reference-total">
+              새 일정 참고 예상 총액: {formatMinorUnits(price.data.totalMinorUnits)}
+            </p>
+          )}
         </section>
       </div>
-      <p>객실·인원·대표 투숙객·취소 정책 Snapshot은 변경하지 않습니다.</p>
+      <p className="reservation-note">
+        객실·총 인원·대표 투숙객·저장 취소 정책은 그대로 유지합니다.
+      </p>
       {price.status === 'loading' && <LoadingState message="변경 참고 요금을 조회하고 있습니다." />}
       {price.status === 'error' && (
         <ErrorState message="변경 참고 요금을 확인하지 못했습니다." onRetry={retry} />
       )}
       {price.status === 'success' && (
-        <>
+        <details className="reservation-snapshot-disclosure">
+          <summary>변경 참고 요금 내역</summary>
           <p className="reservation-note" id="change-price-scroll-hint">
             좁은 화면에서는 요금 표를 좌우로 스크롤할 수 있습니다.
           </p>
@@ -127,14 +142,11 @@ export function ReservationChangeConfirmation({
               </tbody>
             </table>
           </div>
-          <p className="reservation-reference-total">
-            새 일정 참고 예상 총액: {formatMinorUnits(price.data.totalMinorUnits)}
-          </p>
-        </>
+        </details>
       )}
       <p className="reservation-note">
-        예상액은 가격 보장이나 원자적 견적이 아닙니다. 변경 시 서버가 전체 기간 요금·재고·예약
-        정책·현재 상태를 재검증하며 응답 금액이 확정값입니다.
+        참고 예상액은 확정 금액이 아닙니다. 변경 시 전체 기간의 요금·재고·예약 조건을 다시
+        확인합니다.
       </p>
       <label className="confirmation-check">
         <input
@@ -146,7 +158,11 @@ export function ReservationChangeConfirmation({
         참고 예상 금액과 서버 재검증 안내를 확인했습니다.
       </label>
       {pending && <LoadingState message="일정을 변경하고 있습니다. 중복 제출하지 마세요." />}
-      {failure && <ErrorState message={failure.message} />}
+      {failure && (
+        <div ref={failureFocus} tabIndex={-1}>
+          <ErrorState message={failure.message} />
+        </div>
+      )}
       {result && (
         <p className="reservation-feedback reservation-success" role="status">
           일정 변경 완료. 서버 확정 총액: {formatMinorUnits(toMinorUnits(result.totalAmount, 19))}
@@ -168,9 +184,8 @@ export function ReservationChangeConfirmation({
           </button>
         )}
       </div>
-      <p>
-        화면 이탈이나 요청 취소가 서버 롤백을 의미하지 않습니다. 이 화면의 중복 제출 방지는 다중
-        탭·서버 멱등성을 보장하지 않습니다.
+      <p className="reservation-note">
+        화면을 나가도 요청이 처리될 수 있습니다. 다시 변경하기 전 내 예약에서 결과를 확인하세요.
       </p>
     </section>
   )

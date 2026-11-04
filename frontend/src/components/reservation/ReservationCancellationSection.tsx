@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError } from '../../api/errors'
 import {
   getReservationCancellationSummary,
@@ -17,15 +17,22 @@ interface CancellationActions {
   onCancelled?: (result: ReservationCancellationResponse) => void
   onLock?: (locked: boolean) => void
 }
+interface PreparationState {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}
 
 export function ReservationCancellationSection({
   reservation,
   onRefresh,
   onCancelled,
   onLock,
+  open,
+  onOpenChange,
 }: {
   reservation: CancellationSummary
-} & CancellationActions) {
+} & CancellationActions &
+  PreparationState) {
   if (reservation.status !== 'CONFIRMED') return null
   return (
     <CancellationPreparation
@@ -34,6 +41,8 @@ export function ReservationCancellationSection({
       onRefresh={onRefresh}
       onCancelled={onCancelled}
       onLock={onLock}
+      open={open}
+      onOpenChange={onOpenChange}
     />
   )
 }
@@ -43,20 +52,32 @@ function CancellationPreparation({
   onRefresh,
   onCancelled,
   onLock,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   reservationId: number
-} & CancellationActions) {
-  const [open, setOpen] = useState(false)
+} & CancellationActions &
+  PreparationState) {
+  const [localOpen, setOpen] = useState(false)
+  const open = controlledOpen ?? localOpen
   const [locked, setLocked] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  function toggle(next: boolean) {
+    if (locked) return
+    if (onOpenChange) onOpenChange(next)
+    else setOpen(next)
+    if (!next) trigger.current?.focus()
+  }
   const id = `reservation-${reservationId}-cancellation-preparation`
   return (
     <>
       <button
+        ref={trigger}
         type="button"
         disabled={locked}
         aria-expanded={open}
         aria-controls={id}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => toggle(!open)}
       >
         취소 정책 및 수수료 확인
       </button>
@@ -66,6 +87,7 @@ function CancellationPreparation({
           id={id}
           onRefresh={onRefresh}
           onCancelled={onCancelled}
+          onClose={() => toggle(false)}
           onLock={(value) => {
             setLocked(value)
             onLock?.(value)
@@ -82,10 +104,16 @@ function CancellationConfirmation({
   onRefresh,
   onCancelled,
   onLock,
+  onClose,
 }: {
   reservationId: number
   id: string
+  onClose: () => void
 } & CancellationActions) {
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    heading.current?.focus()
+  }, [])
   const load = useCallback(
     (signal: AbortSignal) => getReservationCancellationSummary(reservationId, signal),
     [reservationId],
@@ -96,8 +124,16 @@ function CancellationConfirmation({
       className="confirmation-panel reservation-cancel-confirmation"
       id={id}
       aria-labelledby={`${id}-heading`}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.stopPropagation()
+          onClose()
+        }
+      }}
     >
-      <h3 id={`${id}-heading`}>취소 전 확인</h3>
+      <h3 id={`${id}-heading`} ref={heading} tabIndex={-1}>
+        취소 전 확인
+      </h3>
       {state.status === 'loading' && (
         <LoadingState message="저장된 취소 정책과 예약 상태를 다시 조회하고 있습니다." />
       )}
