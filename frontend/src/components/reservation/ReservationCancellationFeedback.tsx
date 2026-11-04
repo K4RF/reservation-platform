@@ -12,11 +12,9 @@ export function ReservationCancellationFeedback({
       className="reservation-card reservation-operation-result"
       aria-labelledby="cancel-success-heading"
     >
-      <p className="reservation-source-label">취소 API 응답 · 서버 처리 결과</p>
+      <p className="reservation-source-label">방금 처리된 취소 결과</p>
       <h2 id="cancel-success-heading">예약 취소 완료</h2>
-      <p role="status">
-        서버에서 예약을 CANCELLED로 처리했습니다. 최신 예약 상세를 다시 조회합니다.
-      </p>
+      <p role="status">예약이 취소되었습니다. 최신 예약 내역을 다시 확인합니다.</p>
       <dl className="reservation-facts">
         <div>
           <dt>취소 시각 (UTC)</dt>

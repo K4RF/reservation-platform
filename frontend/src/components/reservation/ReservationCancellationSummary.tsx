@@ -29,8 +29,8 @@ export function ReservationCancellationPolicy({ policy }: { policy: Cancellation
         취소 마감: 체크인 {policy.cancellationDeadlineDaysBeforeCheckIn}일 전까지
       </p>
       <p className="reservation-note">
-        현재 숙소 정책이 아닌 예약에 저장된 정책입니다. 실제 취소 가능 여부와 수수료는 서버가 숙소
-        TimeZone 기준으로 판단합니다.
+        예약에 저장된 정책입니다. 실제 취소 가능 여부와 수수료는 숙소의 현지 날짜를 기준으로 취소 시
+        확인합니다.
       </p>
     </div>
   )
@@ -82,8 +82,7 @@ export function ReservationCancellationSummary({
   return (
     <>
       <div className="reservation-cancel-record">
-        <p className="reservation-source-label">취소 확인을 위해 새로 읽은 저장 기록</p>
-        <p>확인 시 다시 조회한 서버 예약 정보입니다.</p>
+        <p className="reservation-source-label">방금 다시 확인한 예약</p>
         <p>예약 번호: {reservation.reservationNumber ?? '미등록 (과거 예약)'}</p>
         <p>
           예약 일정: {reservation.checkInDate} ~ {reservation.checkOutDate}
@@ -106,11 +105,8 @@ export function ReservationCancellationSummary({
             <p>취소 전 예상 환불 금액: 제공되지 않음</p>
           </div>
           <p>
-            확정 상태만으로 현재 취소 가능 여부를 보장하지 않습니다. 수수료·환불 금액은 실제 취소 시
-            서버가 계산하며, 브라우저에서 계산하지 않습니다.
-          </p>
-          <p>
-            취소 요청은 수수료가 발생할 수 있습니다. 실제 결제 취소나 환불 완료를 의미하지 않습니다.
+            확정 상태만으로 취소 가능 여부를 보장하지 않습니다. 수수료·환불 금액은 취소 시
+            계산됩니다. 결제 취소·환불 완료를 의미하지 않습니다.
           </p>
         </>
       )}

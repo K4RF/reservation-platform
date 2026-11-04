@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import type { ReservationCardModel } from './reservationView'
+import { CatalogImage } from '../media/CatalogImage'
 
 export function ReservationCard({
   reservation,
@@ -13,58 +14,62 @@ export function ReservationCard({
       className={`reservation-card reservation-summary-card reservation-summary-${reservation.status.toLowerCase()}`}
       aria-label={`예약 ${reservation.id}`}
     >
-      <div className="reservation-card-header">
-        <div className="reservation-card-title">
-          <p className="reservation-source-label">
-            예약 ID: {reservation.id} ·{' '}
-            {reservation.catalogUnavailable ? '현재 카탈로그 일부 미조회' : '현재 카탈로그 이름'}
-          </p>
-          <h2>{reservation.accommodationName}</h2>
-        </div>
-        <span
-          className={`reservation-status reservation-status-${reservation.status.toLowerCase()}`}
-        >
-          {reservation.statusLabel}
-        </span>
+      <div className="reservation-card-photo">
+        <CatalogImage image={reservation.representativeImage} label="현재 숙소·객실 사진" />
       </div>
-      <p>객실: {reservation.roomName}</p>
-      <p className="reservation-number">예약 번호: {reservation.number}</p>
-      <dl className="reservation-facts">
-        <div>
-          <dt>체크인</dt>
-          <dd>
-            <time dateTime={reservation.checkInDate}>{reservation.checkInDate}</time>
-          </dd>
+      <div className="reservation-card-body">
+        <div className="reservation-card-header">
+          <div className="reservation-card-title">
+            <h2>{reservation.accommodationName}</h2>
+          </div>
+          <span
+            className={`reservation-status reservation-status-${reservation.status.toLowerCase()}`}
+          >
+            {reservation.statusLabel}
+          </span>
         </div>
-        <div>
-          <dt>체크아웃</dt>
-          <dd>
-            <time dateTime={reservation.checkOutDate}>{reservation.checkOutDate}</time>
-          </dd>
-        </div>
-        <div>
-          <dt>숙박 / 인원</dt>
-          <dd>
-            {reservation.stayNights}박 · {reservation.guestCount}명
-          </dd>
-        </div>
-        <div className="reservation-amount">
-          <dt>확정 예약 금액</dt>
-          <dd>{reservation.totalAmount}</dd>
-        </div>
-      </dl>
-      {reservation.catalogUnavailable && (
-        <p>현재 숙소·객실 정보 일부를 불러오지 못했습니다. 예약 기록은 유지됩니다.</p>
-      )}
-      {linkToDetail && (
-        <Link
-          className="reservation-detail-link"
-          to={reservation.detailPath}
-          aria-label={`예약 ${reservation.id} 상세 보기`}
-        >
-          예약 상세 보기
-        </Link>
-      )}
+        <p className="reservation-card-room">객실: {reservation.roomName}</p>
+        <p className="reservation-number">예약 번호: {reservation.number}</p>
+        <dl className="reservation-facts">
+          <div>
+            <dt>체크인</dt>
+            <dd>
+              <time dateTime={reservation.checkInDate}>{reservation.checkInDate}</time>
+            </dd>
+          </div>
+          <div>
+            <dt>체크아웃</dt>
+            <dd>
+              <time dateTime={reservation.checkOutDate}>{reservation.checkOutDate}</time>
+            </dd>
+          </div>
+          <div>
+            <dt>숙박 / 총 인원</dt>
+            <dd>
+              {reservation.stayNights}박 · {reservation.guestCount}명
+            </dd>
+          </div>
+          <div className="reservation-amount">
+            <dt>확정 예약 금액</dt>
+            <dd>{reservation.totalAmount}</dd>
+          </div>
+        </dl>
+        <p className="reservation-note reservation-catalog-basis">
+          숙소·객실 이름과 사진은 현재 정보입니다.
+        </p>
+        {reservation.catalogUnavailable && (
+          <p>현재 숙소·객실 정보 일부를 불러오지 못했습니다. 예약 기록은 유지됩니다.</p>
+        )}
+        {linkToDetail && (
+          <Link
+            className="reservation-detail-link"
+            to={reservation.detailPath}
+            aria-label={`예약 ${reservation.id} 상세 보기`}
+          >
+            예약 상세 보기
+          </Link>
+        )}
+      </div>
     </article>
   )
 }

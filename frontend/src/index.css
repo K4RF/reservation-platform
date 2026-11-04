@@ -2696,9 +2696,13 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .my-reservations-page,
 .reservation-detail-page {
-  width: min(100%, var(--content-reservation));
+  width: min(100%, var(--content-wide));
   min-width: 0;
   text-align: left;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
 }
 .reservation-card {
   min-width: 0;
@@ -2756,6 +2760,10 @@ form[aria-label='대표 투숙객 정보'] {
   gap: var(--space-3);
   margin-bottom: var(--space-5);
 }
+.reservation-page-header h1 {
+  font-size: 2.5rem;
+  font-weight: var(--font-weight-display);
+}
 .reservation-page-header p {
   margin: 0;
 }
@@ -2776,6 +2784,43 @@ form[aria-label='대표 투숙객 정보'] {
 }
 .reservation-summary-card {
   border-radius: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.reservation-card-photo {
+  min-width: 0;
+}
+.reservation-card-photo .catalog-image:not(.catalog-image-empty) {
+  height: 100%;
+  min-height: 12rem;
+  aspect-ratio: auto;
+}
+.reservation-card-body {
+  min-width: 0;
+  padding: var(--space-6);
+}
+.reservation-summary-card:has(.catalog-image-empty) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.reservation-card-photo .catalog-image-empty {
+  margin: var(--space-4) var(--space-6) 0;
+  padding-block: var(--space-2);
+}
+.reservation-card-photo .catalog-image[data-state='failed'] > span {
+  padding: var(--space-1);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+.reservation-summary-card .reservation-catalog-basis {
+  font-size: var(--font-size-xs);
+}
+.reservation-summary-card .reservation-card-title h2 {
+  font-family: var(--font-family-display);
+  font-size: 1.625rem;
+  font-weight: var(--font-weight-display);
 }
 .reservation-summary-card .reservation-amount {
   padding: var(--space-3);
@@ -2790,16 +2835,51 @@ form[aria-label='대표 투숙객 정보'] {
   background: var(--color-surface-hover);
 }
 .reservation-detail-page {
-  width: min(100%, var(--content-wide));
+  width: min(100%, 70rem);
 }
-.reservation-snapshot-grid {
+.reservation-management-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
   align-items: start;
-  gap: var(--space-6);
+  gap: calc(var(--space-8) + var(--space-2));
   margin-block: var(--space-6);
 }
-.reservation-snapshot-grid > section {
+.reservation-management-main {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-5);
+}
+.reservation-management-rail {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  position: sticky;
+  top: var(--space-6);
+  max-height: calc(100dvh - var(--space-12));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: var(--space-4);
+}
+.reservation-management-rail .reservation-summary-card {
+  display: block;
+}
+.reservation-management-rail .reservation-card-photo .catalog-image:not(.catalog-image-empty) {
+  min-height: 0;
+  height: 10rem;
+}
+.reservation-management-rail .reservation-card-body {
+  padding: var(--space-5);
+}
+.reservation-management-rail .reservation-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  font-size: var(--font-size-sm);
+}
+.reservation-management-rail .reservation-amount {
+  grid-column: 1 / -1;
+}
+.reservation-management-main > :is(section, details) {
   min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 0;
@@ -2808,8 +2888,42 @@ form[aria-label='대표 투숙객 정보'] {
 .reservation-snapshot-wide {
   grid-column: 1 / -1;
 }
-.reservation-snapshot-grid > section > .reservation-source-label {
+.reservation-management-main > section > .reservation-source-label {
   margin-top: 0;
+}
+.reservation-action-entries {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.reservation-action-entries > fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.reservation-action-entries > fieldset:has(> button[aria-expanded='true']) {
+  grid-column: 1 / -1;
+  order: -1;
+}
+.reservation-action-entries > fieldset > legend {
+  font-size: var(--font-size-xs);
+  margin-bottom: var(--space-2);
+}
+.reservation-action-entries > fieldset > button {
+  width: 100%;
+  min-height: 3rem;
+}
+.reservation-snapshot-disclosure > summary {
+  min-height: var(--control-min-height);
+  cursor: pointer;
+  font-weight: var(--font-weight-semibold);
+}
+.reservation-snapshot-disclosure[open] > summary {
+  margin-bottom: var(--space-4);
+}
+.reservation-detail-page :is(h2, h3, h4, input, summary, [tabindex='-1']) {
+  scroll-margin-block: var(--space-6);
 }
 .reservation-schedule-comparison {
   display: grid;
@@ -2850,16 +2964,126 @@ form[aria-label='대표 투숙객 정보'] {
   font-weight: var(--font-weight-semibold);
 }
 @media (max-width: 64rem) {
-  .reservation-snapshot-grid {
+  .reservation-management-layout {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .reservation-management-layout > :is(.reservation-management-main, .reservation-management-rail) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .reservation-management-rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+}
+@media (max-height: 40rem) {
+  .reservation-management-rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 @media (max-width: 48rem) {
+  .reservation-page-header h1 {
+    font-size: 1.875rem;
+  }
+  .reservation-summary-card,
+  .reservation-management-rail .reservation-summary-card {
+    display: grid;
+    grid-template-columns: minmax(0, 5rem) minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+  .reservation-card-body,
+  .reservation-management-rail .reservation-card-body {
+    display: contents;
+  }
+  .reservation-card-photo {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .reservation-card-photo .catalog-image:not(.catalog-image-empty),
+  .reservation-management-rail .reservation-card-photo .catalog-image:not(.catalog-image-empty) {
+    min-height: 0;
+    height: 5rem;
+  }
+  .reservation-summary-card .reservation-card-header,
+  .reservation-summary-card .reservation-card-room {
+    grid-column: 2;
+    margin: 0;
+  }
+  .reservation-summary-card .reservation-card-header {
+    align-items: start;
+    gap: var(--space-2);
+  }
+  .reservation-summary-card .reservation-card-title h2 {
+    font-size: var(--font-size-lg);
+  }
+  .reservation-card-body > :not(.reservation-card-header, .reservation-card-room) {
+    grid-column: 1 / -1;
+    margin-block: 0;
+  }
+  .reservation-summary-card .reservation-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+  .reservation-summary-card .reservation-amount {
+    grid-column: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .reservation-summary-card .reservation-number {
+    padding-block: var(--space-2);
+  }
+  .reservation-management-rail > .reservation-note {
+    font-size: var(--font-size-xs);
+    margin-block: var(--space-2);
+    line-height: 1.5;
+  }
+  .reservation-summary-card:has(.catalog-image-empty) .reservation-card-photo {
+    grid-row: auto;
+  }
+  .reservation-summary-card:has(.catalog-image-empty)
+    :is(.reservation-card-photo, .reservation-card-header, .reservation-card-room) {
+    grid-column: 1 / -1;
+  }
+  .reservation-card-photo .catalog-image-empty {
+    margin: 0;
+  }
+  .reservation-management-layout {
+    gap: var(--space-5);
+  }
+  .reservation-management-main > :is(section, details) {
+    padding: var(--space-4);
+  }
+  .reservation-action-entries {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .reservation-schedule-comparison {
     grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (max-width: 24rem) {
+  .reservation-summary-card,
+  .reservation-management-rail .reservation-summary-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reservation-summary-card
+    :is(.reservation-card-photo, .reservation-card-header, .reservation-card-room) {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .reservation-summary-card .reservation-status {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .reservation-management-main .accommodation-search-form {
+    padding: 0;
+    border: 0;
+  }
   .reservation-detail-page
     :is(.reservation-card, .confirmation-panel, .reservation-policy, .reservation-cancel-record),
   .reservation-detail-page .reservation-change-fields {
