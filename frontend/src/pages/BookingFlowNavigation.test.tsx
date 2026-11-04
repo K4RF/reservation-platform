@@ -58,6 +58,9 @@ describe('booking flow page lifecycle', () => {
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '예약 정보 입력' }))
+    expect(screen.getByRole('heading', { name: '머무름을 준비하세요' }).tagName).toBe('H1')
+    expect(screen.queryByRole('form', { name: '객실 가용성 조건' })).toBeNull()
+    expect(screen.queryByRole('region', { name: '숙소 사진 Gallery' })).toBeNull()
     for (const [label, value] of [
       ['대표 투숙객 이름', '홍길동'],
       ['대표 투숙객 이메일', 'guest@example.com'],
@@ -66,7 +69,7 @@ describe('booking flow page lifecycle', () => {
       fireEvent.change(screen.getByLabelText(label), { target: { value } })
     fireEvent.submit(screen.getByRole('form', { name: '대표 투숙객 정보' }))
     await screen.findByText('총 예상 금액: 200.00')
-    expect(screen.getByText('숙소: 서울 호텔')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '서울 호텔' })).toBeTruthy()
     expect(screen.getByText('대표 투숙객: 홍길동')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '화면 이탈' }))
     expect(screen.queryByText('제출 전 최종 확인')).toBeNull()

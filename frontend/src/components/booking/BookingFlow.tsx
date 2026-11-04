@@ -1,5 +1,6 @@
-import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
-import { BookingSummary } from './BookingSummary'
+import { useCallback, useEffect, useReducer, useRef, useState, type FormEvent } from 'react'
+import { BookingSummary, type BookingPriceQuery } from './BookingSummary'
+import { BookingTripSummary } from './BookingTripSummary'
 import {
   bookingReducer,
   buildBookingRequest,
@@ -15,11 +16,13 @@ import { BookingSubmit } from './BookingSubmit'
 export function BookingFlow({
   selection,
   onComplete,
-  showSummary = true,
+  price,
+  onReturn,
 }: {
   selection: BookingSelection | null
   onComplete?: (id: number) => void
-  showSummary?: boolean
+  price?: BookingPriceQuery
+  onReturn?: () => void
 }) {
   const error = validateSelection(selection)
   if (error || !selection) return <ErrorState message={error ?? '예약 조건을 다시 선택하세요.'} />
@@ -29,7 +32,8 @@ export function BookingFlow({
       key={`${accommodation.accommodationId}:${room.roomId}:${stay.checkInDate}:${stay.checkOutDate}:${stay.guestCount}`}
       selection={selection}
       onComplete={onComplete}
-      showSummary={showSummary}
+      price={price}
+      onReturn={onReturn}
     />
   )
 }
@@ -37,17 +41,29 @@ export function BookingFlow({
 function BookingInput({
   selection,
   onComplete,
-  showSummary,
+  price,
+  onReturn,
 }: {
   selection: BookingSelection
   onComplete?: (id: number) => void
-  showSummary: boolean
+  price?: BookingPriceQuery
+  onReturn?: () => void
 }) {
   const [state, dispatch] = useReducer(bookingReducer, initialBookingState)
   const [errors, setErrors] = useState<GuestErrors>({})
   const reviewTitle = useRef<HTMLHeadingElement>(null)
   const nameInput = useRef<HTMLInputElement>(null)
   const previousStep = useRef(state.step)
+  const stageTitle = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    stageTitle.current?.focus()
+  }, [])
+  const returnLocked = useRef(false)
+  const [locked, setLocked] = useState(false)
+  const lockReturn = useCallback((value: boolean) => {
+    returnLocked.current = value
+    setLocked(value)
+  }, [])
   useEffect(() => {
     if (previousStep.current !== state.step) {
       if (state.step === 'review') reviewTitle.current?.focus()
@@ -61,27 +77,41 @@ function BookingInput({
     setErrors(next)
     if (!Object.keys(next).length)
       dispatch({ type: 'review', request: buildBookingRequest(selection, state.guest) })
+    else {
+      const first = Object.keys(next)[0]
+      document.getElementById(`booking-${first}`)?.focus()
+    }
   }
   return (
     <section className="booking-flow" aria-label="예약 정보 입력 및 확인">
+      {onReturn && (
+        <button
+          type="button"
+          className="booking-return"
+          disabled={locked}
+          onClick={() => {
+            if (!returnLocked.current) onReturn()
+          }}
+        >
+          객실 선택으로 돌아가기
+        </button>
+      )}
       <header className="booking-flow-header">
         <p className="booking-eyebrow">YOUR NEXT STAY</p>
-        <h3>머무름을 준비하세요</h3>
+        <h1 id="booking-stage-title" ref={stageTitle} tabIndex={-1}>
+          머무름을 준비하세요
+        </h1>
         <ol className="booking-steps" aria-label="예약 입력 진행 단계">
           <li aria-current={state.step === 'input' ? 'step' : undefined}>1. 투숙객 입력</li>
           <li aria-current={state.step === 'review' ? 'step' : undefined}>2. 최종 확인</li>
         </ol>
-        <p>아래 확인 단계를 마친 후 예약 생성을 직접 요청합니다.</p>
       </header>
-      <p className="booking-accommodation">
-        숙소: {selection.accommodation.name ?? `ID ${selection.accommodation.accommodationId}`}
-      </p>
       <div className="booking-input-layout">
-        {showSummary && <BookingSummary room={selection.room} request={selection.stay} />}
+        <aside className="booking-journey-summary" aria-label="여행 및 예상 요금">
+          <BookingTripSummary selection={selection} />
+          <BookingSummary room={selection.room} request={selection.stay} price={price} />
+        </aside>
         <div className="booking-input-content">
-          <p className="booking-note">
-            예약 소유자는 로그인한 회원입니다. 대표 투숙객은 별도로 입력하세요.
-          </p>
           {state.step === 'input' ? (
             <form
               className="booking-guest-form"
@@ -89,9 +119,9 @@ function BookingInput({
               noValidate
               onSubmit={review}
             >
-              <h3>대표 투숙객 정보</h3>
+              <h2>대표 투숙객 정보</h2>
               <p className="booking-note">
-                예약 안내를 받을 정보를 입력하세요. 모든 항목은 필수입니다.
+                예약 안내를 받을 정보입니다. 로그인한 회원과 달라도 됩니다. 모든 항목은 필수입니다.
               </p>
               {(['name', 'email', 'phone'] as const).map((field, index) => (
                 <div className="form-field" key={field}>
@@ -132,28 +162,27 @@ function BookingInput({
               className="confirmation-panel booking-review"
               aria-labelledby="booking-review-title"
             >
-              <h3 id="booking-review-title" ref={reviewTitle} tabIndex={-1}>
+              <h2 id="booking-review-title" ref={reviewTitle} tabIndex={-1}>
                 제출 전 최종 확인
-              </h3>
+              </h2>
               <div className="booking-guest-details">
                 <p>대표 투숙객: {state.request.representativeGuest.name}</p>
                 <p>안내 이메일: {state.request.representativeGuest.email}</p>
                 <p>연락처: {state.request.representativeGuest.phone}</p>
               </div>
               <p className="booking-review-notice">
-                위 숙소·객실·날짜·인원과 예상 금액을 확인하세요. 예약은 아직 생성되지 않았습니다.
+                숙소·객실·날짜·인원과 예상 금액을 확인하세요. 예약 생성 시 금액과 가용성을 다시
+                확인합니다.
               </p>
               <BookingSubmit
                 request={state.request}
                 onComplete={onComplete}
                 onEdit={() => dispatch({ type: 'edit' })}
+                onLockChange={lockReturn}
               />
             </section>
           )}
-          <p className="booking-note">
-            입력 정보는 이 화면에만 유지됩니다. 새로고침·화면 이탈·객실 또는 조건 변경 시
-            초기화됩니다.
-          </p>
+          <p className="booking-note">입력 정보는 이 화면에만 보관되며 화면을 나가면 지워집니다.</p>
         </div>
       </div>
     </section>

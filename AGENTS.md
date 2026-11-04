@@ -151,10 +151,17 @@ Backend configuration and behavior are implemented and verified.
   available results afterwards. RoomAvailabilitySection retains selection/gates;
   RoomExplorationLayout owns presentation, a bounded sticky Rail and measured-height
   Mobile fixed CTA (normal flow at low height, hidden for inputs/dialogs). Continue
-  is explicit. Keep one price Summary across the separate Booking stage using
-  BookingFlow's optional showSummary=false; do not duplicate price GETs or forms.
+  is explicit. BookingPriceSession owns one price read across the Rail and the
+  separate Booking stage; do not duplicate price GETs or forms.
   Gallery clicks only open the clicked photo and restore its focus, never select
   a Room. See `docs/ui/frontend-detail-rebuild-279.md` for evidence and limits.
+- Booking #280 replaces the Detail body with a focused input/review stage on the
+  same URL, retaining selection and the price session. Journey summary uses actual
+  current Media/names, never historical photos or invented metadata. Pending and
+  ambiguous creation lock both edit/submit and the internal Room-return action.
+  The completion owner GET alone determines saved status/number/guest/amount;
+  optional public current-catalog reads and Media failures cannot change that result.
+  See `docs/ui/frontend-booking-rebuild-280.md` for Browser-fixture/HTTP/CI limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
@@ -268,8 +275,8 @@ Before completing a change:
   Frontend API validation, CatalogImage/Gallery and ADMIN album management are
   connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
   mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
-  Home layout is rebuilt in #277, Search in #278 and Detail in #279; full Booking
-  redesign and final user approval remain separate. See
+  Home layout is rebuilt in #277, Search in #278, Detail in #279 and Booking in #280;
+  final user approval remains separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication

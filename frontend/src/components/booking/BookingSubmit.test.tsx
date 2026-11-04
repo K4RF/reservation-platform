@@ -1,9 +1,13 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render as renderUi, screen, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingSubmit } from './BookingSubmit'
 import { bookingRequest, reservationResult } from '../../test/reservation'
 import { bookingFailure } from './bookingFailure'
 import { ApiError } from '../../api/errors'
+
+const render = (ui: ReactNode) => renderUi(ui, { wrapper: MemoryRouter })
 
 describe('booking submission', () => {
   it('blocks rapid repeated clicks and locks success after one POST', async () => {
@@ -60,19 +64,27 @@ describe('booking submission', () => {
     await screen.findByRole('alert')
     expect(mock).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: '예약 생성 다시 시도' }))
-    await screen.findByText(/예약 생성 완료: ID 42/)
+    expect(
+      (await screen.findByRole('link', { name: '저장된 예약 확인' })).getAttribute('href'),
+    ).toBe('/reservations/42')
     expect(mock).toHaveBeenCalledTimes(2)
   })
   it('does not resend after network ambiguity', async () => {
     const mock = vi.fn().mockRejectedValue(new TypeError('offline'))
     vi.stubGlobal('fetch', mock)
-    render(<BookingSubmit request={bookingRequest} onEdit={vi.fn()} />)
+    const lock = vi.fn()
+    render(<BookingSubmit request={bookingRequest} onEdit={vi.fn()} onLockChange={lock} />)
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     expect((await screen.findByRole('alert')).textContent).toContain(
       '예약 생성 여부를 확인할 수 없습니다',
     )
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     expect(mock).toHaveBeenCalledTimes(1)
+    expect(lock.mock.calls).toEqual([[true], [true]])
+    expect(document.activeElement).toBe(screen.getByRole('alert'))
+    expect(screen.getByRole('link', { name: '내 예약에서 결과 확인' }).getAttribute('href')).toBe(
+      '/reservations',
+    )
   })
   it('does not navigate from a stale request after unmount', async () => {
     let resolve!: (value: Response) => void

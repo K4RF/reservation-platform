@@ -9,7 +9,12 @@ import { LoadingState } from '../ui/LoadingState'
 import { EmptyState } from '../ui/EmptyState'
 import { RoomCard } from './RoomCard'
 import { BookingFlow } from '../booking/BookingFlow'
-import { BookingSummary } from '../booking/BookingSummary'
+import {
+  BookingSummary,
+  BookingPriceSession,
+  type BookingPriceQuery,
+} from '../booking/BookingSummary'
+import type { MediaResponse } from '../../api/media'
 import { RoomExplorationLayout } from './RoomExplorationLayout'
 import type { BookingContext } from '../../app/bookingContext'
 
@@ -23,6 +28,8 @@ interface AvailabilityProps {
   information?: ReactNode
   catalog?: ReactNode
   accommodationActive?: boolean
+  accommodationImage?: MediaResponse | null
+  onBookingStageChange?: (active: boolean) => void
 }
 
 export function RoomAvailabilitySection(props: AvailabilityProps) {
@@ -92,7 +99,7 @@ function AvailabilityForm(props: AvailabilityProps) {
     )
   return (
     <AvailabilityResults
-      key={revision}
+      key={`${revision}:${Boolean(props.onLoginRequired)}`}
       focusResults={revision > 0}
       {...props}
       controls={controls}
@@ -113,6 +120,8 @@ function AvailabilityResults({
   information,
   controls,
   focusResults,
+  accommodationImage,
+  onBookingStageChange,
 }: AvailabilityProps & {
   request: AvailabilityRequest
   controls: ReactNode
@@ -121,10 +130,6 @@ function AvailabilityResults({
   const [page, setPage] = useState(initialContext?.roomPage ?? 0)
   const [selectedId, setSelectedId] = useState<number | null>(initialContext?.roomId ?? null)
   const [bookingStarted, setBookingStarted] = useState(false)
-  const bookingTitle = useRef<HTMLHeadingElement>(null)
-  useEffect(() => {
-    if (bookingStarted) bookingTitle.current?.focus()
-  }, [bookingStarted])
   const load = useCallback(
     (signal: AbortSignal) => getAvailableRooms(accommodationId, request, page, signal),
     [accommodationId, request, page],
@@ -147,6 +152,11 @@ function AvailabilityResults({
     state.status === 'success'
       ? state.data.content.find((room) => room.roomId === selectedId)
       : undefined
+  const bookingActive = bookingStarted && !!selected && !onLoginRequired
+  useEffect(() => {
+    onBookingStageChange?.(bookingActive)
+    return () => onBookingStageChange?.(false)
+  }, [bookingActive, onBookingStageChange])
   function proceed() {
     if (!selected) return
     if (onLoginRequired) onLoginRequired({ stay: request, roomId: selected.roomId, roomPage: page })
@@ -237,53 +247,69 @@ function AvailabilityResults({
       )}
     </section>
   )
-  const summary = selected && (
-    <div className="selected-room" role="status" aria-label="선택한 객실">
-      <p className="selected-room-title">선택한 객실: {selected.name}</p>
-      <BookingSummary room={selected} request={request} compact />
-      <p className="selection-panel-notice">
-        선택은 예약 확정이 아닙니다. 최종 금액과 가용성은 예약 시 다시 확인합니다.
-      </p>
-      {bookingStarted ? (
-        <a href="#booking-stage-title">예약 입력으로 이동</a>
-      ) : (
-        <button className="primary-action" type="button" onClick={proceed}>
-          {onLoginRequired ? '예약하려면 로그인' : '예약 정보 입력'}
+  function renderLayout(price?: BookingPriceQuery) {
+    const summary = selected && (
+      <div className="selected-room" role="status" aria-label="선택한 객실">
+        <p className="selected-room-title">선택한 객실: {selected.name}</p>
+        <BookingSummary room={selected} request={request} compact price={price} />
+        <p className="selection-panel-notice">
+          선택은 예약 확정이 아닙니다. 최종 금액과 가용성은 예약 시 다시 확인합니다.
+        </p>
+        {bookingStarted ? (
+          <a href="#booking-stage-title">예약 입력으로 이동</a>
+        ) : (
+          <button className="primary-action" type="button" onClick={proceed}>
+            {onLoginRequired ? '예약하려면 로그인' : '예약 정보 입력'}
+          </button>
+        )}
+        <button type="button" onClick={() => choose(null)}>
+          객실 선택 해제
         </button>
-      )}
-      <button type="button" onClick={() => choose(null)}>
-        객실 선택 해제
-      </button>
-    </div>
-  )
-  return (
-    <RoomExplorationLayout
-      introduction={introduction}
-      information={information}
-      controls={controls}
-      rooms={rooms}
-      summary={summary}
-      selectedName={selected?.name}
-      onContinue={selected && !bookingStarted ? proceed : undefined}
-      booking={
-        bookingStarted &&
-        selected && (
-          <section className="detail-booking-stage" aria-labelledby="booking-stage-title">
-            <h2 ref={bookingTitle} id="booking-stage-title" tabIndex={-1}>
-              예약 정보 입력
-            </h2>
-            <BookingFlow
-              showSummary={false}
-              onComplete={onComplete}
-              selection={{
-                accommodation: { accommodationId, name: accommodationName },
-                room: selected,
-                stay: request,
-              }}
-            />
-          </section>
-        )
-      }
-    />
+      </div>
+    )
+    return (
+      <RoomExplorationLayout
+        introduction={introduction}
+        information={information}
+        controls={controls}
+        rooms={rooms}
+        summary={summary}
+        selectedName={selected?.name}
+        onContinue={selected && !bookingStarted ? proceed : undefined}
+        booking={
+          bookingActive &&
+          selected && (
+            <section className="detail-booking-stage" aria-labelledby="booking-stage-title">
+              <BookingFlow
+                price={price}
+                onReturn={() => {
+                  setBookingStarted(false)
+                  requestAnimationFrame(() =>
+                    document.getElementById('room-selection-panel-title')?.focus(),
+                  )
+                }}
+                onComplete={onComplete}
+                selection={{
+                  accommodation: {
+                    accommodationId,
+                    name: accommodationName,
+                    representativeImage: accommodationImage,
+                  },
+                  room: selected,
+                  stay: request,
+                }}
+              />
+            </section>
+          )
+        }
+      />
+    )
+  }
+  return selected ? (
+    <BookingPriceSession key={selected.roomId} room={selected} request={request}>
+      {renderLayout}
+    </BookingPriceSession>
+  ) : (
+    renderLayout()
   )
 }

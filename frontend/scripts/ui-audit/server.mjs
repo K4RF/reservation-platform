@@ -106,7 +106,9 @@ const server = await createServer({
 })
 await server.listen()
 server.printUrls()
-console.log('UI AUDIT ONLY: synthetic auth, fixture reads, writes blocked; no Backend proxy.')
+console.log(
+  'UI AUDIT ONLY: synthetic auth and fixtures; writes blocked by default, opt-in Booking simulation; no Backend proxy.',
+)
 for (const signal of ['SIGINT', 'SIGTERM'])
   process.once(signal, async () => {
     await server.close()

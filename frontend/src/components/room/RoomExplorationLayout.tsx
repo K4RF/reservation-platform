@@ -21,6 +21,7 @@ export function RoomExplorationLayout({
 }) {
   const action = useRef<HTMLDivElement>(null)
   const [actionHeight, setActionHeight] = useState(0)
+  const bookingActive = Boolean(booking)
   useEffect(() => {
     const element = action.current
     if (!element || typeof ResizeObserver === 'undefined') return
@@ -29,11 +30,12 @@ export function RoomExplorationLayout({
     )
     observer.observe(element)
     return () => observer.disconnect()
-  }, [])
+  }, [bookingActive])
   function reveal(id: string) {
     document.getElementById(id)?.focus()
     document.getElementById(id)?.scrollIntoView({ block: 'start' })
   }
+  if (booking) return booking
   return (
     <div
       className="room-exploration"

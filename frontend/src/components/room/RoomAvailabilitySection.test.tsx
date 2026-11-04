@@ -46,7 +46,13 @@ describe('availability and selection lifecycle with real API client', () => {
     const before = mock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: '선택 객실로 계속하기' }))
     expect(screen.getByRole('form', { name: '대표 투숙객 정보' })).toBeTruthy()
-    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '예약 정보 입력' }))
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { name: '머무름을 준비하세요' }),
+    )
+    expect(screen.getAllByText('총 예상 금액: 246,913.56')).toHaveLength(1)
+    expect(mock).toHaveBeenCalledTimes(before)
+    expect(screen.queryByRole('button', { name: '객실 선택 해제' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '객실 선택으로 돌아가기' }))
     expect(screen.getAllByText('총 예상 금액: 246,913.56')).toHaveLength(1)
     expect(mock).toHaveBeenCalledTimes(before)
     fireEvent.click(screen.getByRole('button', { name: '객실 선택 해제' }))

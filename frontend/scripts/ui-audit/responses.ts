@@ -11,6 +11,7 @@ import type { MediaResponse } from '../../src/api/media'
 
 export type AuditScenario =
   'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress' | 'comparison'
+export type AuditBooking = 'blocked' | 'success' | 'ambiguous'
 
 // Render fixtures only. Never forwards a request or mutates an actual reservation/catalog.
 export function auditResponse(
@@ -18,6 +19,7 @@ export function auditResponse(
   method: string,
   scenario: AuditScenario,
   mediaMode = 'missing',
+  booking: AuditBooking = 'blocked',
 ): Response {
   const { pathname: path, searchParams: query } = new URL(url, 'http://127.0.0.1:5174')
   const failure = (status: number, code: string, message: string) =>
@@ -32,6 +34,12 @@ export function auditResponse(
       },
       { status },
     )
+  // Explicit synthetic Booking outcome only. No request/body is stored or forwarded.
+  if (method.toUpperCase() === 'POST' && path === '/api/v1/reservations') {
+    if (booking === 'success') return Response.json(reservationDetail, { status: 201 })
+    if (booking === 'ambiguous')
+      return failure(500, 'AUDIT_BOOKING_AMBIGUOUS', '격리된 예약 결과 불명 Fixture')
+  }
   if (method.toUpperCase() !== 'GET')
     return failure(405, 'AUDIT_READ_ONLY', 'UI 점검 도구에서는 모든 쓰기 요청을 차단합니다.')
   if (scenario === 'error') return failure(500, 'AUDIT_FIXTURE_ERROR', 'UI 점검용 오류 응답입니다.')

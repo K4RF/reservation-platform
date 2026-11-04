@@ -2,9 +2,14 @@ import type { BookingRequest, RepresentativeGuestRequest } from '../../api/booki
 import type { AvailabilityRequest } from '../../api/availabilityValidation'
 import { validateAvailability } from '../../api/availabilityValidation'
 import type { RoomResponse } from '../../api/room'
+import type { MediaResponse } from '../../api/media'
 
 export interface BookingSelection {
-  accommodation: { accommodationId: number; name?: string }
+  accommodation: {
+    accommodationId: number
+    name?: string
+    representativeImage?: MediaResponse | null
+  }
   room: RoomResponse
   stay: AvailabilityRequest
 }

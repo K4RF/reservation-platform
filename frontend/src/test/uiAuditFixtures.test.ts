@@ -3,6 +3,25 @@ import { auditResponse } from '../../scripts/ui-audit/responses'
 import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('simulates only explicitly opted-in Booking outcomes without enabling other writes', async () => {
+    expect(auditResponse('/api/v1/reservations', 'POST', 'ready').status).toBe(405)
+    const result = auditResponse('/api/v1/reservations', 'POST', 'ready', 'present', 'success')
+    expect(result.status).toBe(201)
+    expect((await result.json()).reservationId).toBe(42)
+    expect(
+      auditResponse('/api/v1/reservations', 'POST', 'ready', 'present', 'ambiguous').status,
+    ).toBe(500)
+    for (const method of ['PUT', 'PATCH', 'DELETE'])
+      expect(
+        auditResponse('/api/v1/reservations', method, 'ready', 'present', 'success').status,
+      ).toBe(405)
+    expect(
+      auditResponse('/api/v1/reservations/42/cancel', 'POST', 'ready', 'present', 'success').status,
+    ).toBe(405)
+    expect(
+      auditResponse('/api/v1/accommodations/7/media', 'POST', 'ready', 'present', 'success').status,
+    ).toBe(405)
+  })
   it('keeps the normal ACTIVE Search comparison free of the synthetic inactive row', async () => {
     const page = await auditResponse(
       '/api/v1/accommodations?status=ACTIVE',

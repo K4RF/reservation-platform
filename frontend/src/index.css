@@ -1716,12 +1716,8 @@ legend {
   font-size: var(--font-size-sm);
 }
 .detail-booking-stage {
-  padding: var(--space-8) 1.75rem;
-  border-top: 1px solid var(--color-border);
+  padding: 0;
   scroll-margin-top: var(--space-6);
-}
-.detail-booking-stage .booking-input-layout {
-  grid-template-columns: minmax(0, 1fr);
 }
 .detail-mobile-action {
   display: none;
@@ -2075,18 +2071,152 @@ legend {
 }
 .booking-input-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22.5rem);
   align-items: start;
-  gap: var(--space-8);
+  gap: var(--space-12);
+  margin-top: var(--space-6);
+}
+.booking-input-layout > .booking-journey-summary {
+  grid-column: 2;
+  grid-row: 1;
+}
+.booking-input-layout > .booking-input-content {
+  grid-column: 1;
+  grid-row: 1;
+}
+.booking-flow {
+  width: min(100%, 70rem);
+  margin-inline: auto;
+}
+.booking-return {
+  margin-bottom: var(--space-5);
+}
+.booking-flow-header > h1 {
+  font-family: var(--font-family-display);
+  font-size: 2.5rem;
+  font-weight: var(--font-weight-display);
+  margin-block: var(--space-3);
+  line-height: 1.25;
+}
+.booking-flow-header > p {
+  margin-block: var(--space-3);
+}
+.booking-input-content > :is(.booking-guest-form, .booking-review) {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  max-width: 40rem;
+}
+.booking-flow .booking-guest-form > .booking-note {
+  margin-top: 0;
+}
+.booking-flow .booking-guest-form > h2 {
+  margin-bottom: 0;
+}
+.booking-input-content h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-display);
+  margin-top: 0;
+}
+.booking-journey-summary {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.booking-trip-heading > .catalog-image:not(.catalog-image-empty) {
+  height: 10rem;
+  aspect-ratio: auto;
+  margin-bottom: var(--space-4);
+}
+.booking-trip-heading h2 {
+  font-size: var(--font-size-xl);
+  margin-block: var(--space-2);
+  font-weight: var(--font-weight-display);
+}
+.booking-trip-heading p {
+  margin-block: var(--space-2);
+}
+.booking-trip .booking-trip-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-4);
+}
+.booking-trip-facts dt {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.booking-trip-facts dd {
+  margin: 0;
+}
+.booking-trip .booking-note,
+.booking-journey-summary .booking-note {
+  font-size: var(--font-size-xs);
+}
+.booking-price-details > summary {
+  padding-block: var(--space-3);
+  min-height: var(--control-min-height);
+  cursor: pointer;
+}
+.booking-journey-summary .booking-total {
+  padding-inline: 0;
+  font-size: var(--font-size-xl);
+}
+.booking-journey-summary .booking-price-basis {
+  padding: 0;
+  background: transparent;
+  font-weight: var(--font-weight-regular);
+}
+.booking-journey-summary .booking-summary-header {
+  margin-bottom: 0;
+}
+.accommodation-detail-page .booking-journey-summary .booking-summary {
+  margin-block: var(--space-4) 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.booking-journey-summary .booking-total {
+  margin-block: var(--space-2);
+  padding-block: var(--space-3);
+}
+.booking-result-catalog {
+  display: flex;
+  align-items: start;
+  gap: var(--space-4);
+  margin-block: var(--space-4);
+}
+.booking-result-catalog > .catalog-image:not(.catalog-image-empty) {
+  width: 7.5rem;
+  height: 6.25rem;
+  flex: 0 0 7.5rem;
+  aspect-ratio: auto;
+}
+.booking-result-catalog > div {
+  min-width: 0;
+}
+.booking-result-catalog:has(> .catalog-image-empty) {
+  display: block;
+}
+.booking-result-catalog .booking-note {
+  font-size: var(--font-size-xs);
+}
+.booking-result-catalog h3 {
+  font-weight: var(--font-weight-display);
+  margin: 0;
+}
+.booking-result-catalog p {
+  margin-block: var(--space-2);
+}
+.booking-flow :is(h1, h2, input, [role='alert']) {
+  scroll-margin-block: var(--space-6);
 }
 .booking-input-content {
   min-width: 0;
 }
-.booking-flow .booking-review > h3 {
+.booking-flow .booking-review > h2 {
   scroll-margin-top: var(--space-6);
-}
-.booking-flow-header > h3 {
-  font-size: var(--font-size-xl);
 }
 .booking-complete-header {
   max-width: var(--content-result);
@@ -2095,7 +2225,7 @@ legend {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
-  margin-block: var(--space-5);
+  margin-block: var(--space-4) 0;
   padding: 0;
   list-style: none;
   font-size: var(--font-size-sm);
@@ -2185,8 +2315,78 @@ legend {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
+  .booking-input-layout > :is(.booking-journey-summary, .booking-input-content) {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .booking-flow-header > h1 {
+    font-size: 1.875rem;
+  }
+  .booking-journey-summary {
+    padding: var(--space-4);
+  }
+  .booking-trip-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .booking-trip-heading:has(.catalog-image-empty) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .booking-trip-heading > .catalog-image:not(.catalog-image-empty) {
+    height: 6.5rem;
+    margin: 0;
+  }
+  .booking-trip-heading .booking-eyebrow {
+    display: none;
+  }
+  .booking-trip-heading h2 {
+    font-size: var(--font-size-lg);
+  }
+  .booking-trip-facts dt {
+    display: inline;
+  }
+  .booking-trip-facts dd {
+    display: inline;
+    margin-left: var(--space-2);
+  }
+  .booking-journey-summary .booking-summary-header > h3 {
+    font-size: var(--font-size-lg);
+  }
 }
 @media (max-width: 48rem) {
+  .booking-result-catalog > .catalog-image:not(.catalog-image-empty) {
+    width: 5rem;
+    height: 5rem;
+    flex-basis: 5rem;
+  }
+  .booking-flow-header > .booking-eyebrow {
+    display: none;
+  }
+  .booking-return {
+    margin-bottom: var(--space-3);
+  }
+  .booking-flow-header > h1 {
+    margin-block: 0;
+  }
+  .booking-journey-summary .booking-note {
+    margin-block: var(--space-2);
+    line-height: 1.5;
+  }
+  .booking-trip-heading {
+    grid-template-columns: minmax(0, 5rem) minmax(0, 1fr);
+  }
+  .booking-trip-heading > .catalog-image:not(.catalog-image-empty) {
+    height: 5rem;
+  }
+  .booking-trip .booking-trip-facts {
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+  .booking-journey-summary .booking-total {
+    padding-block: var(--space-2);
+    font-size: var(--font-size-lg);
+  }
   .booking-result-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
@@ -2221,7 +2421,7 @@ legend {
   margin-block: var(--space-5);
 }
 .accommodation-detail-page .booking-flow {
-  width: min(100%, var(--content-wide));
+  width: min(100%, 70rem);
   margin-inline: auto;
 }
 .booking-summary {
