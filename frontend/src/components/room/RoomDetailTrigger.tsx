@@ -67,6 +67,7 @@ export function RoomDetailTrigger({
         id={id}
         ref={trigger}
         type="button"
+        aria-label={`${room.name} 상세 보기`}
         aria-haspopup="dialog"
         onClick={() => {
           if (trigger.current) position.current = captureExplorationPosition(trigger.current)
@@ -86,7 +87,7 @@ export function RoomDetailTrigger({
           )
         }}
       >
-        {room.name} 상세 보기
+        상세 보기
       </button>
       {open && <RoomDetailDialog room={room} context={context} id={id} onClose={close} />}
     </>

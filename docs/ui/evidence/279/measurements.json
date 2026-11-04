@@ -1,0 +1,448 @@
+{
+  "source": "develop 783760c plus #279; isolated Browser fixtures, not real Backend HTTP",
+  "capturedAt": "2026-11-04T11:58:21.909Z",
+  "measurements": [
+    {
+      "name": "reference-1440",
+      "photos": [
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        }
+      ],
+      "regions": {
+        ".book-panel": {
+          "bottom": 1240.03125,
+          "height": 416.859375,
+          "left": 994.5,
+          "right": 1339.5,
+          "top": 823.171875,
+          "width": 345,
+          "x": 994.5,
+          "y": 823.171875
+        },
+        ".detail-body": {
+          "bottom": 1925.78125,
+          "height": 1154.609375,
+          "left": 0,
+          "right": 1425,
+          "top": 771.171875,
+          "width": 1425,
+          "x": 0,
+          "y": 771.171875
+        },
+        ".detail-title": {
+          "bottom": 316.171875,
+          "height": 176.375,
+          "left": 0,
+          "right": 1425,
+          "top": 139.796875,
+          "width": 1425,
+          "x": 0,
+          "y": 139.796875
+        },
+        ".footer": {
+          "bottom": 2019.0625,
+          "height": 93.28125,
+          "left": 0,
+          "right": 1425,
+          "top": 1925.78125,
+          "width": 1425,
+          "x": 0,
+          "y": 1925.78125
+        },
+        ".gallery": {
+          "bottom": 771.171875,
+          "height": 455,
+          "left": 57,
+          "right": 1368,
+          "top": 316.171875,
+          "width": 1311,
+          "x": 57,
+          "y": 316.171875
+        },
+        ".mast": {
+          "bottom": 94,
+          "height": 94,
+          "left": 0,
+          "right": 1425,
+          "top": 0,
+          "width": 1425,
+          "x": 0,
+          "y": 0
+        },
+        ".mobile-book": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        ".room-card": {
+          "bottom": 1573.78125,
+          "height": 262,
+          "left": 85.5,
+          "right": 924.5,
+          "top": 1311.78125,
+          "width": 839,
+          "x": 85.5,
+          "y": 1311.78125
+        }
+      },
+      "scrollY": 0,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1425,
+        "width": 1440
+      }
+    },
+    {
+      "name": "reference-390",
+      "photos": [
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "auto",
+          "naturalWidth": 1672
+        }
+      ],
+      "regions": {
+        ".book-panel": {
+          "bottom": 2587.734375,
+          "height": 441.359375,
+          "left": 22,
+          "right": 353,
+          "top": 2146.375,
+          "width": 331,
+          "x": 22,
+          "y": 2146.375
+        },
+        ".detail-body": {
+          "bottom": 2687.734375,
+          "height": 2078.140625,
+          "left": 0,
+          "right": 375,
+          "top": 609.59375,
+          "width": 375,
+          "x": 0,
+          "y": 609.59375
+        },
+        ".detail-title": {
+          "bottom": 259.59375,
+          "height": 151.09375,
+          "left": 0,
+          "right": 375,
+          "top": 108.5,
+          "width": 375,
+          "x": 0,
+          "y": 108.5
+        },
+        ".footer": {
+          "bottom": 2810.734375,
+          "height": 123,
+          "left": 0,
+          "right": 375,
+          "top": 2687.734375,
+          "width": 375,
+          "x": 0,
+          "y": 2687.734375
+        },
+        ".gallery": {
+          "bottom": 609.59375,
+          "height": 350,
+          "left": 14,
+          "right": 361,
+          "top": 259.59375,
+          "width": 347,
+          "x": 14,
+          "y": 259.59375
+        },
+        ".mast": {
+          "bottom": 72,
+          "height": 72,
+          "left": 0,
+          "right": 375,
+          "top": 0,
+          "width": 375,
+          "x": 0,
+          "y": 0
+        },
+        ".mobile-book": {
+          "bottom": 844,
+          "height": 72.09375,
+          "left": 0,
+          "right": 375,
+          "top": 771.90625,
+          "width": 375,
+          "x": 0,
+          "y": 771.90625
+        },
+        ".room-card": {
+          "bottom": 1592,
+          "height": 502.375,
+          "left": 22,
+          "right": 353,
+          "top": 1089.625,
+          "width": 331,
+          "x": 22,
+          "y": 1089.625
+        }
+      },
+      "scrollY": 0,
+      "viewport": {
+        "height": 844,
+        "scrollWidth": 375,
+        "width": 390
+      }
+    },
+    {
+      "name": "implementation-1440",
+      "photos": [
+        {
+          "loaded": true,
+          "loading": "eager",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "lazy",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "lazy",
+          "naturalWidth": 1672
+        }
+      ],
+      "regions": {
+        ".accommodation-detail-header": {
+          "bottom": 320.28125,
+          "height": 156.28125,
+          "left": 57,
+          "right": 1368,
+          "top": 164,
+          "width": 1311,
+          "x": 57,
+          "y": 164
+        },
+        ".catalog-gallery": {
+          "bottom": 775.28125,
+          "height": 455,
+          "left": 57,
+          "right": 1368,
+          "top": 320.28125,
+          "width": 1311,
+          "x": 57,
+          "y": 320.28125
+        },
+        ".catalog-room-card": {
+          "bottom": 1596.28125,
+          "height": 303.46875,
+          "left": 85,
+          "right": 925,
+          "top": 1292.8125,
+          "width": 840,
+          "x": 85,
+          "y": 1292.8125
+        },
+        ".detail-body-layout": {
+          "bottom": 2080.96875,
+          "height": 1305.6875,
+          "left": 57,
+          "right": 1368,
+          "top": 775.28125,
+          "width": 1311,
+          "x": 57,
+          "y": 775.28125
+        },
+        ".detail-booking-rail": {
+          "bottom": 1298.453125,
+          "height": 471.171875,
+          "left": 995,
+          "right": 1340,
+          "top": 827.28125,
+          "width": 345,
+          "x": 995,
+          "y": 827.28125
+        },
+        ".detail-mobile-action": {
+          "bottom": 0,
+          "height": 0,
+          "left": 0,
+          "right": 0,
+          "top": 0,
+          "width": 0,
+          "x": 0,
+          "y": 0
+        },
+        ".site-footer": {
+          "bottom": 2205.15625,
+          "height": 76.1875,
+          "left": 0,
+          "right": 1425,
+          "top": 2128.96875,
+          "width": 1425,
+          "x": 0,
+          "y": 2128.96875
+        },
+        ".site-header": {
+          "bottom": 94,
+          "height": 94,
+          "left": 0,
+          "right": 1425,
+          "top": 0,
+          "width": 1425,
+          "x": 0,
+          "y": 0
+        }
+      },
+      "scrollY": 0,
+      "viewport": {
+        "height": 900,
+        "scrollWidth": 1425,
+        "width": 1440
+      }
+    },
+    {
+      "name": "implementation-390",
+      "photos": [
+        {
+          "loaded": true,
+          "loading": "eager",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": false,
+          "loading": "lazy",
+          "naturalWidth": 1672
+        },
+        {
+          "loaded": true,
+          "loading": "lazy",
+          "naturalWidth": 1672
+        }
+      ],
+      "regions": {
+        ".accommodation-detail-header": {
+          "bottom": 266.28125,
+          "height": 138.28125,
+          "left": 14,
+          "right": 361,
+          "top": 128,
+          "width": 347,
+          "x": 14,
+          "y": 128
+        },
+        ".catalog-gallery": {
+          "bottom": 616.28125,
+          "height": 350,
+          "left": 14,
+          "right": 361,
+          "top": 266.28125,
+          "width": 347,
+          "x": 14,
+          "y": 266.28125
+        },
+        ".catalog-room-card": {
+          "bottom": 1686.875,
+          "height": 547.46875,
+          "left": 22,
+          "right": 353,
+          "top": 1139.40625,
+          "width": 331,
+          "x": 22,
+          "y": 1139.40625
+        },
+        ".detail-body-layout": {
+          "bottom": 2906.765625,
+          "height": 2290.484375,
+          "left": 14,
+          "right": 361,
+          "top": 616.28125,
+          "width": 347,
+          "x": 14,
+          "y": 616.28125
+        },
+        ".detail-booking-rail": {
+          "bottom": 2874.765625,
+          "height": 501.171875,
+          "left": 22,
+          "right": 353,
+          "top": 2373.59375,
+          "width": 331,
+          "x": 22,
+          "y": 2373.59375
+        },
+        ".detail-mobile-action": {
+          "bottom": 844,
+          "height": 69,
+          "left": 0,
+          "right": 375,
+          "top": 775,
+          "width": 375,
+          "x": 0,
+          "y": 775
+        },
+        ".site-footer": {
+          "bottom": 3123.140625,
+          "height": 99.375,
+          "left": 0,
+          "right": 375,
+          "top": 3023.765625,
+          "width": 375,
+          "x": 0,
+          "y": 3023.765625
+        },
+        ".site-header": {
+          "bottom": 72,
+          "height": 72,
+          "left": 0,
+          "right": 375,
+          "top": 0,
+          "width": 375,
+          "x": 0,
+          "y": 0
+        }
+      },
+      "scrollY": 0,
+      "viewport": {
+        "height": 844,
+        "scrollWidth": 375,
+        "width": 390
+      }
+    }
+  ]
+}

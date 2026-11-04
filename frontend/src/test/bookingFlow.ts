@@ -13,6 +13,7 @@ export async function selectBookingRoom() {
 
 export async function reviewBooking(expectedTotal = '200.00') {
   await selectBookingRoom()
+  fireEvent.click(await screen.findByRole('button', { name: '예약 정보 입력' }))
   for (const [label, value] of [
     ['대표 투숙객 이름', bookingRequest.representativeGuest.name],
     ['대표 투숙객 이메일', bookingRequest.representativeGuest.email],

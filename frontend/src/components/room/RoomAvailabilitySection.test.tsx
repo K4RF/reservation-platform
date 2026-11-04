@@ -35,6 +35,39 @@ function mockApi() {
   return mock
 }
 describe('availability and selection lifecycle with real API client', () => {
+  it('opens Booking only on explicit continue and shares one price read across that boundary', async () => {
+    const mock = mockApi()
+    render(<RoomAvailabilitySection accommodationId={7} />)
+    dates()
+    submit()
+    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    await screen.findByText('총 예상 금액: 246,913.56')
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+    const before = mock.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '선택 객실로 계속하기' }))
+    expect(screen.getByRole('form', { name: '대표 투숙객 정보' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '예약 정보 입력' }))
+    expect(screen.getAllByText('총 예상 금액: 246,913.56')).toHaveLength(1)
+    expect(mock).toHaveBeenCalledTimes(before)
+    fireEvent.click(screen.getByRole('button', { name: '객실 선택 해제' }))
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+    expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
+  })
+  it('uses the unselected Mobile action as a focus jump only, never a query or selection', () => {
+    const mock = mockApi()
+    const scroll = vi.fn()
+    const previous = HTMLElement.prototype.scrollIntoView
+    HTMLElement.prototype.scrollIntoView = scroll
+    try {
+      render(<RoomAvailabilitySection accommodationId={7} />)
+      fireEvent.click(screen.getByRole('button', { name: '일정·객실 확인' }))
+      expect(document.activeElement?.id).toBe('availability-title')
+      expect(scroll).toHaveBeenCalledWith({ block: 'start' })
+      expect(mock).not.toHaveBeenCalled()
+    } finally {
+      HTMLElement.prototype.scrollIntoView = previous
+    }
+  })
   it('preserves the nonzero availability page and stay on detail close; explicit detail selection uses the existing booking path and guest edits invalidate it', async () => {
     const mock = vi.fn((url: string) =>
       Promise.resolve(
@@ -94,10 +127,13 @@ describe('availability and selection lifecycle with real API client', () => {
       const calls = mock.mock.calls.length
       if (edit === 'stepper') searchLayers.stepGuests('숙박 인원', true)
       else searchLayers.setGuests('2', '숙박 인원')
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: '숙박 인원 선택' }))
       expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
       expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
       expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
-      expect(screen.queryByRole('complementary', { name: '선택한 객실 확인' })).toBeNull()
+      expect(
+        screen.getByRole('complementary', { name: '선택한 객실 확인' }).textContent,
+      ).not.toContain('총 예상 금액')
       expect(mock).toHaveBeenCalledTimes(calls)
       submit()
       await screen.findByRole('button', { name: '스탠다드 선택' })
@@ -172,6 +208,7 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '숙박 날짜 선택' }))
     fireEvent.click(screen.getByRole('button', { name: '2030-01-10' }))
     fireEvent.click(screen.getByRole('button', { name: '날짜 적용' }))
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '숙박 날짜 선택' }))
     expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
     expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
     expect(mock).toHaveBeenCalledTimes(calls)
@@ -191,7 +228,7 @@ describe('availability and selection lifecycle with real API client', () => {
     submit()
     expect(screen.getByText('예약 가능한 객실을 확인하고 있습니다.')).toBeTruthy()
     await screen.findByRole('complementary', { name: '선택한 객실 확인' })
-    expect(screen.getByText(/가용 객실을 비교한 후 객실을 선택해 주세요/)).toBeTruthy()
+    expect(screen.getByText(/일정과 인원을 적용한 뒤 객실을 선택해 주세요/)).toBeTruthy()
     expect(screen.queryByRole('heading', { name: '예약 요약' })).toBeNull()
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
     expect(
@@ -200,7 +237,7 @@ describe('availability and selection lifecycle with real API client', () => {
       }),
     ).toBeTruthy()
     expect(screen.getByRole('status', { name: '선택한 객실' }).textContent).toContain(
-      '2030-01-01 ~ 2030-01-03',
+      '2030-01-01 → 2030-01-03',
     )
     expect(screen.getByRole('button', { name: '스탠다드 선택' }).getAttribute('aria-pressed')).toBe(
       'true',

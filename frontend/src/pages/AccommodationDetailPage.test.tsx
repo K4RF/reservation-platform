@@ -79,6 +79,8 @@ describe('AccommodationDetailPage with the real API client', () => {
     searchLayers.editStayDate('숙박 체크아웃', '2030-01-02')
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    expect(screen.queryByRole('list', { name: '객실 목록' })).toBeNull()
+    expect(screen.getAllByRole('heading', { name: '스탠다드' })).toHaveLength(1)
     expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
     const before = mock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: '숙소 사진 2장 보기' }))
@@ -87,6 +89,28 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.getByRole('status', { name: '선택한 객실' })).toBeTruthy()
     expect(mock).toHaveBeenCalledTimes(before)
     expect(mock.mock.calls.some(([url]) => url.includes('/rooms/available?'))).toBe(true)
+    searchLayers.stepGuests('숙박 인원', true)
+    expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+    expect(screen.queryByRole('list', { name: '예약 가능한 객실 목록' })).toBeNull()
+    await screen.findByRole('list', { name: '객실 목록' })
+    expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(1)
+  })
+  it('keeps an inactive accommodation read-only even with an incoming stay/room hint', async () => {
+    const mock = mockApi()
+    mock.mockImplementation((url: string) =>
+      Promise.resolve(
+        Response.json(
+          url.includes('/rooms?') ? roomPage() : { ...accommodation, status: 'INACTIVE' },
+        ),
+      ),
+    )
+    renderAt(
+      '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3',
+    )
+    await screen.findByRole('list', { name: '객실 목록' })
+    expect(screen.getByText(/운영 중지 숙소입니다/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
+    expect(mock.mock.calls.every(([url]) => !url.includes('/available'))).toBe(true)
   })
   it('loads real-contract fields and rooms without requesting non-existent policy GET APIs', async () => {
     const fetchMock = mockApi()
@@ -99,20 +123,19 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.getByText('15:00:00')).toBeTruthy()
     expect(screen.getByText('11:00:00')).toBeTruthy()
     expect(screen.getByText('Asia/Seoul')).toBeTruthy()
-    expect(screen.getByText(/정책 조회를 제공하지 않아/)).toBeTruthy()
+    expect(screen.getByText('예약·취소 정책은 현재 이 화면에서 확인할 수 없습니다.')).toBeTruthy()
     expect(screen.getByText('숙소 사진 미제공')).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()
     expect(screen.queryByRole('button', { name: /사진.*보기/ })).toBeNull()
     for (const [name, id] of [
       ['숙소 소개', 'accommodation-introduction'],
-      ['일정·객실 선택 ↓', 'availability-title'],
+      ['객실 선택', 'room-list-title'],
       ['이용 안내', 'accommodation-operating-info'],
-      ['객실 기본 정보', 'room-list-title'],
     ]) {
       expect(screen.getByRole('link', { name }).getAttribute('href')).toBe('#' + id)
       expect(document.getElementById(id)?.tabIndex).toBe(-1)
     }
-    fireEvent.click(screen.getByRole('link', { name: '일정·객실 선택 ↓' }))
+    fireEvent.click(screen.getByRole('link', { name: '객실 선택' }))
     // An in-page CTA only moves to the existing query controls; it never queries/selects/writes.
     expect(fetchMock.mock.calls.every(([url]) => !url.includes('/rooms/available'))).toBe(true)
     expect(fetchMock).toHaveBeenCalledTimes(2)
@@ -138,7 +161,7 @@ describe('AccommodationDetailPage with the real API client', () => {
       ),
     )
     renderAt()
-    await screen.findByText('테헤란로 1')
+    await screen.findAllByText('테헤란로 1')
     expect(screen.getAllByText('등록되지 않음')).toHaveLength(2)
     await screen.findByText('등록된 객실이 없습니다.')
   })

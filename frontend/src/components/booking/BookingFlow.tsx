@@ -15,9 +15,11 @@ import { BookingSubmit } from './BookingSubmit'
 export function BookingFlow({
   selection,
   onComplete,
+  showSummary = true,
 }: {
   selection: BookingSelection | null
   onComplete?: (id: number) => void
+  showSummary?: boolean
 }) {
   const error = validateSelection(selection)
   if (error || !selection) return <ErrorState message={error ?? '예약 조건을 다시 선택하세요.'} />
@@ -27,6 +29,7 @@ export function BookingFlow({
       key={`${accommodation.accommodationId}:${room.roomId}:${stay.checkInDate}:${stay.checkOutDate}:${stay.guestCount}`}
       selection={selection}
       onComplete={onComplete}
+      showSummary={showSummary}
     />
   )
 }
@@ -34,9 +37,11 @@ export function BookingFlow({
 function BookingInput({
   selection,
   onComplete,
+  showSummary,
 }: {
   selection: BookingSelection
   onComplete?: (id: number) => void
+  showSummary: boolean
 }) {
   const [state, dispatch] = useReducer(bookingReducer, initialBookingState)
   const [errors, setErrors] = useState<GuestErrors>({})
@@ -72,7 +77,7 @@ function BookingInput({
         숙소: {selection.accommodation.name ?? `ID ${selection.accommodation.accommodationId}`}
       </p>
       <div className="booking-input-layout">
-        <BookingSummary room={selection.room} request={selection.stay} />
+        {showSummary && <BookingSummary room={selection.room} request={selection.stay} />}
         <div className="booking-input-content">
           <p className="booking-note">
             예약 소유자는 로그인한 회원입니다. 대표 투숙객은 별도로 입력하세요.

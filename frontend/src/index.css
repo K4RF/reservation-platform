@@ -519,6 +519,7 @@ legend {
 }
 .site-main[data-page-frame='detail'] {
   padding-inline: var(--detail-gutter);
+  padding-top: 1.625rem;
 }
 .site-main[data-page-frame='search'] > .accommodation-search-page,
 .site-main[data-page-frame='detail'] > .accommodation-detail-page {
@@ -1280,7 +1281,7 @@ legend {
 }
 
 .accommodation-detail-page section {
-  margin: var(--space-8) 0;
+  margin: 0;
   overflow-wrap: anywhere;
 }
 .accommodation-detail-page {
@@ -1289,14 +1290,26 @@ legend {
 }
 .accommodation-detail-page > section {
   padding: 0;
-  margin-block: var(--space-8) var(--space-12);
 }
 .accommodation-detail-header {
-  margin-bottom: var(--space-6);
+  padding: var(--space-4) 1.75rem var(--space-6);
 }
 .accommodation-detail-header h1 {
-  font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-display-max));
-  margin-block: var(--space-4);
+  font-family: var(--font-family-display);
+  font-size: 2.375rem;
+  font-weight: var(--font-weight-display);
+  line-height: 1.25;
+  margin-block: var(--space-3);
+}
+.accommodation-detail-header > p {
+  margin: 0;
+}
+.accommodation-detail-page > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-inline: 1.75rem;
+  font-size: var(--font-size-xs);
 }
 .catalog-image {
   display: grid;
@@ -1340,11 +1353,18 @@ legend {
   gap: var(--space-2);
   height: 28.4375rem;
 }
-.catalog-gallery-mosaic > .catalog-image {
+.catalog-gallery-mosaic > .catalog-gallery-tile {
+  padding: 0;
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+}
+.catalog-gallery-tile > .catalog-image {
   aspect-ratio: auto;
   height: 100%;
 }
-.catalog-gallery-mosaic > .catalog-image:first-child {
+.catalog-gallery-mosaic > :first-child {
   grid-row: 1 / -1;
 }
 .catalog-gallery-mosaic:has(> :nth-child(2):last-child) > :last-child {
@@ -1404,7 +1424,11 @@ legend {
     display: block;
     height: 21.875rem;
   }
-  .catalog-gallery-mosaic > .catalog-image:not(:first-child) {
+  .catalog-gallery-mosaic > .catalog-gallery-tile {
+    width: 100%;
+    height: 100%;
+  }
+  .catalog-gallery-mosaic > :not(:first-child) {
     display: none;
   }
   .catalog-photo-full {
@@ -1426,28 +1450,6 @@ legend {
   align-items: center;
   min-height: var(--control-min-height);
 }
-.detail-section-nav .detail-booking-entry {
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  border-radius: var(--radius-control);
-}
-.accommodation-overview-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
-  gap: var(--space-12);
-}
-.accommodation-overview-grid > section {
-  margin: 0;
-  min-width: 0;
-}
-.accommodation-overview-grid h2:first-child {
-  margin-top: 0;
-}
-.accommodation-overview-grid .accommodation-operating-facts {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
-}
 .accommodation-operating-facts dt {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
@@ -1460,12 +1462,6 @@ legend {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   line-height: var(--leading-description);
-}
-.availability-results-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
-  align-items: start;
-  gap: var(--space-8);
 }
 .availability-room-results,
 .room-selection-panel {
@@ -1524,17 +1520,7 @@ legend {
 .availability-room-results .accommodation-list {
   margin-top: 0;
 }
-@media (max-width: 64rem) {
-  .accommodation-overview-grid,
-  .availability-results-layout {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-6);
-  }
-}
 @media (max-width: 40rem) {
-  .accommodation-overview-grid .accommodation-operating-facts {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .accommodation-detail-page .catalog-room-card-exploration {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1593,6 +1579,250 @@ legend {
 .room-availability > .accommodation-search-form {
   padding: var(--space-4);
   background: var(--color-background);
+}
+
+/* Detail: one exploration list and one booking rail, never a second catalogue. */
+.room-exploration {
+  min-width: 0;
+}
+.detail-body-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 21.5625rem);
+  gap: 4.375rem;
+  align-items: start;
+  padding: 3.25rem 1.75rem 4rem;
+}
+.detail-main-content {
+  min-width: 0;
+}
+.detail-main-content > section {
+  margin-bottom: var(--space-12);
+}
+.detail-main-content .detail-section-nav {
+  margin-top: 0;
+  padding-top: 0;
+  gap: var(--space-6);
+  font-size: var(--font-size-sm);
+}
+.detail-main-content h2 {
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+}
+.detail-main-content h3 {
+  font-size: var(--font-size-lg);
+}
+.detail-main-content .accommodation-operating-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.detail-main-content .accommodation-operating-facts > div {
+  min-width: 0;
+}
+.detail-main-content .catalog-room-card-exploration {
+  grid-template-columns: minmax(0, 14.375rem) minmax(0, 1fr);
+}
+.detail-main-content .catalog-room-card-exploration > .catalog-image:not(.catalog-image-empty) {
+  height: 100%;
+  min-height: 16.25rem;
+  aspect-ratio: auto;
+}
+.detail-main-content .catalog-room-card-exploration .room-card-content {
+  padding: 1.5625rem;
+  gap: var(--space-3);
+}
+.detail-main-content .catalog-room-card-exploration .room-card-content h3 {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
+}
+.room-card-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: end;
+  gap: var(--space-3);
+}
+.detail-booking-rail.room-selection-panel {
+  position: sticky;
+  top: var(--space-6);
+  max-height: calc(100dvh - 3rem);
+  overflow-y: auto;
+  scroll-padding-block: var(--space-6);
+  padding: 1.75rem;
+}
+.detail-booking-rail.room-selection-panel > h3 {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-2);
+}
+.detail-stay-controls > h2 {
+  font-size: var(--font-size-xl);
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-display);
+  margin-top: 0;
+}
+.detail-stay-controls .accommodation-search-form {
+  display: block;
+  border: 0;
+  padding: 0;
+  margin-block: var(--space-5);
+  background: transparent;
+}
+.detail-stay-controls .compact-search-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.detail-stay-controls .compact-search-bar > :is(.stay-date-range, .guest-count-picker) {
+  padding: var(--space-3) 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.detail-stay-controls .compact-search-bar > .compact-search-submit {
+  margin: var(--space-4) 0 0;
+  min-height: var(--control-min-height);
+  width: 100%;
+  font-size: var(--font-size-sm);
+}
+.detail-booking-rail .booking-summary-compact {
+  margin-block: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+}
+.booking-summary-compact > p {
+  margin: 0;
+}
+.booking-summary-compact .booking-total {
+  padding: 0;
+  border: 0;
+  font-size: var(--font-size-lg);
+}
+.booking-summary-compact .booking-note {
+  font-size: var(--font-size-xs);
+}
+.booking-summary-compact summary {
+  padding-block: var(--space-3);
+  min-height: 44px;
+  cursor: pointer;
+}
+.compact-night-prices {
+  padding-left: var(--space-5);
+  font-size: var(--font-size-sm);
+}
+.detail-booking-stage {
+  padding: var(--space-8) 1.75rem;
+  border-top: 1px solid var(--color-border);
+  scroll-margin-top: var(--space-6);
+}
+.detail-booking-stage .booking-input-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.detail-mobile-action {
+  display: none;
+}
+@media (max-width: 64rem) {
+  .detail-body-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-8);
+    padding-inline: var(--space-2);
+  }
+  .detail-booking-rail.room-selection-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  .room-exploration {
+    padding-bottom: calc(var(--detail-action-height, 7rem) + var(--space-6));
+  }
+  .detail-mobile-action {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    position: fixed;
+    z-index: 15;
+    inset-inline: 0;
+    bottom: 0;
+    padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .detail-mobile-action p {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: clip;
+  }
+  .detail-mobile-action button {
+    max-width: 60%;
+    flex-shrink: 0;
+    font-size: var(--font-size-sm);
+  }
+  body:has(dialog[open]) .accommodation-detail-page .detail-mobile-action,
+  .accommodation-detail-page:has(:is(input, select, textarea):focus) .detail-mobile-action {
+    visibility: hidden;
+  }
+  .room-exploration :is([id], button, a, input, summary) {
+    scroll-margin-bottom: calc(var(--detail-action-height, 7rem) + var(--space-6));
+  }
+  .accommodation-detail-header {
+    padding: var(--space-4) var(--space-2);
+  }
+  .site-main[data-page-frame='detail'] {
+    padding-top: var(--space-3);
+  }
+  .accommodation-detail-page > a {
+    margin-inline: var(--space-2);
+  }
+}
+@media (max-width: 40rem) {
+  .accommodation-detail-header h1 {
+    font-size: 1.875rem;
+  }
+  .detail-booking-rail.room-selection-panel {
+    padding: var(--space-4);
+  }
+  .detail-body-layout {
+    padding-block: var(--space-8);
+  }
+  .detail-main-content .catalog-room-card-exploration {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .detail-main-content .catalog-room-card-exploration > .catalog-image:not(.catalog-image-empty) {
+    min-height: 0;
+    height: 15.625rem;
+  }
+  .detail-main-content .catalog-room-card-exploration .room-card-content {
+    padding: 1.375rem;
+  }
+  .detail-main-content .accommodation-operating-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .detail-booking-stage {
+    padding-inline: var(--space-2);
+  }
+}
+@media (max-width: 64rem) and (max-height: 32rem) {
+  .detail-mobile-action {
+    position: static;
+    flex-wrap: wrap;
+  }
+  .detail-mobile-action button {
+    max-width: 100%;
+  }
+  .room-exploration {
+    padding-bottom: var(--space-6);
+  }
 }
 
 .booking-price-table {
@@ -1842,9 +2072,6 @@ legend {
 .booking-complete-header {
   padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
-}
-.availability-results-layout:has(.booking-flow) {
-  grid-template-columns: minmax(0, 1fr);
 }
 .booking-input-layout {
   display: grid;
@@ -3062,8 +3289,13 @@ form[aria-label='대표 투숙객 정보'] {
   .site-main {
     padding: var(--space-6) var(--space-4);
   }
-  .site-main:not([data-page-frame='home']):not([data-page-frame='admin']) {
+  .site-main:not([data-page-frame='home']):not([data-page-frame='admin']):not(
+      [data-page-frame='detail']
+    ) {
     padding: var(--space-6) var(--site-mobile-gutter);
+  }
+  .site-main[data-page-frame='detail'] {
+    padding: var(--space-3) 0.875rem var(--space-6);
   }
   .site-footer {
     padding: var(--space-6) var(--site-mobile-gutter);

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { CatalogImage } from './CatalogImage'
 import { CatalogGallery } from './CatalogGallery'
@@ -43,5 +43,18 @@ describe('Catalog Media presentation, independent of booking state', () => {
     expect(document.body.style.overflow).toBe('')
     expect(document.activeElement).toBe(trigger)
     expect(screen.queryByRole('button', { name: /예약|선택/ })).toBeNull()
+  })
+  it('opens the clicked mosaic photo in album order and returns focus to that photo', () => {
+    render(<CatalogGallery images={[media(), media(2, 1), media(3, 2)]} label="숙소 사진" />)
+    const tile = screen.getByRole('button', { name: '숙소 사진 2번 크게 보기' })
+    fireEvent.click(tile)
+    const dialog = screen.getByRole('dialog')
+    expect(within(dialog).getByRole('status').textContent).toContain('2 / 3')
+    expect(within(dialog).getByRole('img').getAttribute('src')).toContain('/2/content')
+    fireEvent.click(within(dialog).getByRole('button', { name: '다음 사진' }))
+    expect(within(dialog).getByRole('status').textContent).toContain('3 / 3')
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+    expect(document.activeElement).toBe(tile)
+    expect(document.body.style.overflow).toBe('')
   })
 })

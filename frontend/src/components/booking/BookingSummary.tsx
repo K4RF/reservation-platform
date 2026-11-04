@@ -10,9 +10,11 @@ import { formatMinorUnits, toMinorUnits } from '../../utils/money'
 export function BookingSummary({
   room,
   request,
+  compact = false,
 }: {
   room: RoomResponse
   request: AvailabilityRequest
+  compact?: boolean
 }) {
   const load = useCallback(
     (signal: AbortSignal) =>
@@ -20,6 +22,43 @@ export function BookingSummary({
     [room.roomId, request.checkInDate, request.checkOutDate],
   )
   const { state, retry } = useDetailQuery(load)
+  if (compact)
+    return (
+      <section className="booking-summary booking-summary-compact" aria-label="조회 시점 예상 요금">
+        <p>
+          {request.checkInDate} → {request.checkOutDate} · 총 {request.guestCount}명
+        </p>
+        {state.status === 'loading' && (
+          <LoadingState message="숙박일별 요금을 확인하고 있습니다." />
+        )}
+        {state.status === 'error' && (
+          <ErrorState
+            message="요금을 확인하지 못했습니다. 예상 금액을 제공할 수 없습니다."
+            onRetry={retry}
+          />
+        )}
+        {state.status === 'success' && (
+          <>
+            <p className="booking-total">
+              총 예상 금액: {formatMinorUnits(state.data.totalMinorUnits)}
+            </p>
+            <details>
+              <summary>{state.data.nights.length}박 요금 내역</summary>
+              <ul className="compact-night-prices">
+                {state.data.nights.map((night) => (
+                  <li key={night.stayDate}>
+                    {night.stayDate} ·{' '}
+                    <span>{night.source === 'DAILY' ? '날짜별 요금' : '기본 요금'}</span> ·{' '}
+                    {formatMinorUnits(toMinorUnits(night.nightlyPrice))}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </>
+        )}
+        <p className="booking-note">조회 시점의 예상 합계이며 가격 보장이 아닙니다.</p>
+      </section>
+    )
   return (
     <section className="booking-summary" aria-labelledby="booking-summary-title">
       <header className="booking-summary-header">

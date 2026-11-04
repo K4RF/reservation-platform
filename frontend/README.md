@@ -15,7 +15,9 @@ TypeScript 6, Vite 8 및 pnpm 11을 사용하는 독립 프로젝트이며, `bac
 사진 탐색을 재구성했습니다. [화면 비교·출처·검증 기록](../docs/ui/frontend-home-rebuild-277.md)을
 참고하세요. #278은 Search를 사진 카드·Compact 조건·모바일 필터 Sheet로 재구성했습니다.
 [시안 비교·초안/복귀·검증 기록](../docs/ui/frontend-search-rebuild-278.md)을 참고하세요.
-Detail 전체 Layout과 f0.6.0 사용자 승인은 별도입니다.
+#279은 Detail의 단일 객실 목록·예약 Rail·Mobile CTA와 Gallery 진입을 재구성했습니다.
+[시안 비교·Booking 경계·검증 기록](../docs/ui/frontend-detail-rebuild-279.md)을 참고하세요.
+#280 Booking 전체 재구성과 f0.6.0 사용자 승인은 별도입니다.
 
 현재 UI 작업 기준은 [승인 시안 기반 재구성 명세 (#271)](../docs/ui/prototype-rebuild.md)입니다.
 2026-10-29 기준 **새 f0.5.3(Milestone #21)**에서 구성·밀도·상호작용을 전면 재구성합니다.
@@ -101,11 +103,12 @@ Compact 도시/날짜/인원과 필터는 독립 초안이며 각 적용은 제�
 현재 비교/회귀는 [#278 보고서](../docs/ui/frontend-search-rebuild-278.md),
 역사적 baseline은 [#254](../docs/ui/frontend-search-comparison-254.md)에 보존했습니다.
 
-Detail은 큰 사진 미제공 영역과 소개/이용 안내, 가용성 조건, 객실 비교와 선택 확인 패널을 제공합니다.
-Desktop은 객실 목록 옆 확인 패널, Mobile은 1열과 명시적 확인 이동 CTA를 사용합니다.
-고정 CTA로 긴 요금표·입력/오류·Focus를 가리지 않도록 본문 흐름에 배치했습니다.
-기존 Modal/Sheet·새 가용성 조회·선택 초기화·가격/정책 의미는 유지합니다.
-[Detail·객실 선택 (#255)](../docs/ui/frontend-detail-room-selection-255.md)에 실제 화면과 미완료 Media·검증 한계를 기록했습니다.
+Detail은 실제 비대칭 Gallery·소개·객실·이용 안내와 Desktop sticky 예약 Rail을 제공합니다.
+날짜 미적용 시 카탈로그, 적용 후에는 가용 목록 하나만 보이며 선택/예상가와 명시적 Booking 계속을 구분합니다.
+Mobile 고정 CTA는 측정 높이/safe-area 여백을 확보하고 입력/모달에서는 숨기며 낮은 높이에서는 일반 흐름으로 전환합니다.
+Room Modal/Sheet·ID/정원/상세 변경 검증·새 가용성·선택 초기화와 가격/정책 의미는 유지합니다.
+현재 비교/한계는 [#279 보고서](../docs/ui/frontend-detail-rebuild-279.md),
+역사적 구현은 [#255](../docs/ui/frontend-detail-room-selection-255.md)에 보존했습니다.
 
 Booking은 입력/최종 확인 단계와 예상 요금 표시를 구분하고, 로그인 후에는 객실 비교 아래 넓은 요약/입력 영역을 사용합니다.
 완료 화면은 서버 GET의 ID/Number·저장 금액·대표 투숙객을 표시하며 결제 완료를 의미하지 않습니다.
