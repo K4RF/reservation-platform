@@ -15,6 +15,7 @@ import {
 } from '../test/reservation'
 import { accommodation } from '../test/accommodation'
 import { room, roomPage } from '../test/room'
+import { media } from '../test/media'
 
 function signIn() {
   setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
@@ -75,6 +76,87 @@ async function confirmCancellation() {
 }
 
 describe('reservation detail snapshots through router/auth/API client', () => {
+  it('keeps one active preparation, restores trigger focus on Escape and rereads cancellation without writes', async () => {
+    signIn()
+    const mock = vi.fn<(url: string, init: RequestInit) => Response>((url) => respond(url))
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '새 일정 선택' }))
+    const dialog = searchLayers.openDates('새')
+    fireEvent.keyDown(dialog, { key: 'Escape' })
+    expect(screen.getByRole('form', { name: '예약 변경 날짜 조건' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
+    expect(screen.queryByRole('form', { name: '예약 변경 날짜 조건' })).toBeNull()
+    const heading = screen.getByRole('heading', { name: '취소 전 확인' })
+    expect(document.activeElement).toBe(heading)
+    fireEvent.keyDown(heading, { key: 'Escape' })
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: '취소 정책 및 수수료 확인' }))
+    await screen.findByText('취소 전 예상 수수료 금액: 제공되지 않음')
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations/42'))).toHaveLength(3)
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+  })
+  it('keeps saved money, changed dates and acknowledgement when the current photo fails', async () => {
+    signIn()
+    const photo = media()
+    const mock = vi.fn<(url: string, init: RequestInit) => Response>((url) =>
+      url.endsWith('/rooms/3')
+        ? Response.json({ ...room, representativeImage: photo, images: [photo] })
+        : changeFlowResponse(url),
+    )
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    fireEvent.click(await screen.findByRole('button', { name: '예약 일정 변경 준비' }))
+    searchLayers.setStayDates('2030-01-02', '2030-01-04', '새')
+    fireEvent.submit(screen.getByRole('form', { name: '예약 변경 날짜 조건' }))
+    fireEvent.click(await screen.findByRole('button', { name: '일정 변경 내용 확인' }))
+    await screen.findByText('새 일정 참고 예상 총액: 200.20')
+    fireEvent.click(screen.getByRole('checkbox'))
+    const count = mock.mock.calls.length
+    fireEvent.error(screen.getByRole('img'))
+    expect(screen.getByText('사진을 불러오지 못했습니다.')).toBeTruthy()
+    expect(screen.getByRole('checkbox')).toHaveProperty('checked', true)
+    expect(screen.getByText('새 일정: 2030-01-02 ~ 2030-01-04 (체크아웃 제외)')).toBeTruthy()
+    expect(screen.getByText('350.25')).toBeTruthy()
+    expect(screen.getByText('guest@example.com')).toBeTruthy()
+    expect(mock).toHaveBeenCalledTimes(count)
+    expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
+  })
+  it('does not use catalog recovery or Escape to bypass a pending/failed cancellation gate', async () => {
+    signIn()
+    let reject!: (reason: unknown) => void
+    const mock = vi.fn((url: string, init: RequestInit) =>
+      init.method === 'PATCH'
+        ? new Promise<Response>((_, fail) => {
+            reject = fail
+          })
+        : url.endsWith('/reservations/42')
+          ? Response.json(reservationDetail)
+          : Response.json({}, { status: 404 }),
+    )
+    vi.stubGlobal('fetch', mock)
+    renderDetail()
+    const retry = await screen.findByRole('button', { name: '현재 숙소·객실 정보 다시 조회' })
+    expect(retry).toHaveProperty('disabled', false)
+    await confirmCancellation()
+    expect(retry).toHaveProperty('disabled', true)
+    fireEvent.click(retry)
+    await waitFor(() => expect(reject).toBeTypeOf('function'))
+    await act(async () => reject(new TypeError('lost acknowledgement')))
+    const error = await screen.findByRole('alert')
+    expect(document.activeElement).toBe(error.parentElement)
+    fireEvent.keyDown(error, { key: 'Escape' })
+    expect(screen.getByRole('heading', { name: '취소 전 확인' })).toBeTruthy()
+    expect(retry).toHaveProperty('disabled', true)
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations/42'))).toHaveLength(2)
+    expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
+  })
   it('shows current catalogue names separately from saved guest, mixed prices and cancellation policy', async () => {
     signIn()
     const mock = vi.fn().mockImplementation((url: string) => respond(url))
@@ -82,12 +164,14 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     renderDetail()
     expect(screen.getByText('예약을 불러오고 있습니다.')).toBeTruthy()
     await screen.findByText('guest@example.com')
+    fireEvent.click(screen.getByText('저장된 숙박 요금', { selector: 'summary' }))
+    fireEvent.click(screen.getByText('예약에 저장된 취소 정책', { selector: 'summary' }))
     expect(
-      within(screen.getByRole('region', { name: '대표 투숙객' })).getByText('서버 저장 Snapshot'),
+      within(screen.getByRole('region', { name: '대표 투숙객' })).getByText('예약에 저장된 정보'),
     ).toBeTruthy()
     expect(
       within(screen.getByRole('region', { name: '저장된 숙박 요금' })).getByText(
-        '현재 객실 가격과 구분되는 저장 기록',
+        '예약 당시 저장한 금액입니다. 현재 객실 요금으로 재계산하지 않습니다.',
       ),
     ).toBeTruthy()
     expect(screen.getByText('저장 정책 · 체크인 기준 상대 경계')).toBeTruthy()
@@ -97,8 +181,8 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect(screen.getByText('홍길동')).toBeTruthy()
     expect(screen.getByText('010-1234-5678')).toBeTruthy()
     expect(screen.getByText('350.25')).toBeTruthy()
-    expect(screen.getByText('첫 숙박일 요금 Snapshot: 100.10')).toBeTruthy()
-    const table = screen.getByRole('table', { name: '숙박일별 확정 요금 Snapshot' })
+    expect(screen.getByText('첫 숙박일 저장 요금: 100.10')).toBeTruthy()
+    const table = screen.getByRole('table', { name: '숙박일별 확정 요금' })
     const priceScroll = screen.getByRole('region', { name: '저장된 숙박 요금 표' })
     expect(priceScroll.tabIndex).toBe(0)
     expect(priceScroll.getAttribute('aria-describedby')).toBe('saved-price-scroll-hint')
@@ -121,7 +205,7 @@ describe('reservation detail snapshots through router/auth/API client', () => {
       false,
     )
     expect(screen.queryByRole('heading', { name: '저장된 취소 결과' })).toBeNull()
-    expect(screen.getByText(/숙소·객실 이름은 현재 정보/)).toBeTruthy()
+    expect(screen.getByText(/숙소·객실 이름과 사진은 현재 정보/)).toBeTruthy()
     expect(
       mock.mock.calls.every(
         ([url, init]) =>
@@ -327,14 +411,15 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     vi.stubGlobal('fetch', mock)
     renderDetail()
     await confirmChange()
-    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    await screen.findByText('첫 숙박일 저장 요금: 250.15')
     expect(screen.getByText('550.15')).toBeTruthy()
     expect(screen.getByText(/일정 변경 완료: 2030-01-02 ~ 2030-01-04/)).toBeTruthy()
     expect(screen.queryByText('350.25')).toBeNull()
     expect(screen.queryByText('기존 확정 총액: 350.25')).toBeNull()
     expect(screen.getByText('guest@example.com')).toBeTruthy()
     expect(screen.getByText('체크인 7일 전 이상: 무료 취소')).toBeTruthy()
-    const table = screen.getByRole('table', { name: '숙박일별 확정 요금 Snapshot' })
+    fireEvent.click(screen.getByText('저장된 숙박 요금', { selector: 'summary' }))
+    const table = screen.getByRole('table', { name: '숙박일별 확정 요금' })
     expect(within(table).getByText('2030-01-03')).toBeTruthy()
     expect(within(table).queryByText('2030-01-01')).toBeNull()
     expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
@@ -364,7 +449,8 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     await confirmChange()
     expect((await screen.findByRole('alert')).textContent).toContain('INVENTORY_011')
     expect(screen.getByText('350.25')).toBeTruthy()
-    expect(screen.getByText('첫 숙박일 요금 Snapshot: 100.10')).toBeTruthy()
+    expect(screen.getByText('첫 숙박일 저장 요금: 100.10')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '변경 날짜 수정' }))
     expect(searchLayers.committedDateInput('새 체크인')).toHaveProperty('value', '2030-01-02')
     expect(screen.getByRole('button', { name: '변경 날짜 가용성 조회' })).toHaveProperty(
       'disabled',
@@ -389,13 +475,10 @@ describe('reservation detail snapshots through router/auth/API client', () => {
       'disabled',
       true,
     )
-    expect(searchLayers.committedDateInput('새 체크인').closest('fieldset')).toHaveProperty(
-      'disabled',
-      true,
-    )
+    expect(screen.getByRole('button', { name: '변경 날짜 수정' })).toHaveProperty('disabled', true)
     expect(screen.getByText('350.25')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
-    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    await screen.findByText('첫 숙박일 저장 요금: 250.15')
     expect(screen.getByText('550.15')).toBeTruthy()
     expect(screen.getByText(/변경 요청은 다시 보내지 않습니다/)).toBeTruthy()
     expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
@@ -425,6 +508,7 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '일정 변경 내용 확인' }))
     await screen.findByText('새 일정 참고 예상 총액: 200.20')
     fireEvent.click(screen.getByRole('checkbox'))
+    fireEvent.click(screen.getByRole('button', { name: '변경 날짜 수정' }))
     searchLayers.editStayDate('새 체크아웃', '2030-01-05')
     expect(screen.queryByText('새 일정 참고 예상 총액: 200.20')).toBeNull()
     expect(screen.queryByRole('checkbox')).toBeNull()
@@ -459,7 +543,7 @@ describe('reservation detail snapshots through router/auth/API client', () => {
     expect(screen.getByText(/일정 변경 완료: 2030-01-02 ~ 2030-01-04/)).toBeTruthy()
     failRead = false
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
-    await screen.findByText('첫 숙박일 요금 Snapshot: 250.15')
+    await screen.findByText('첫 숙박일 저장 요금: 250.15')
     expect(mock.mock.calls.filter(([, init]) => init.method === 'PATCH')).toHaveLength(1)
   })
   it('rechecks stored cancellation policy through owner GET and never quotes or cancels', async () => {

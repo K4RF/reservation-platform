@@ -132,7 +132,7 @@ describe('design token and global stylesheet contracts', () => {
       '--content-catalog': '80rem',
       '--content-menu': '28rem',
     })
-    for (const name of ['auth', 'form', 'result', 'reservation', 'wide', 'catalog']) {
+    for (const name of ['auth', 'form', 'result', 'wide', 'catalog']) {
       expect(globalCss).toContain(`var(--content-${name})`)
     }
   })
@@ -366,7 +366,7 @@ describe('design token and global stylesheet contracts', () => {
 
   it('scopes owner reservation snapshots and schedule comparisons without moving mutation CTAs over content', () => {
     expect(globalCss).toMatch(
-      /\.reservation-snapshot-grid\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
+      /\.reservation-management-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 20rem\)/,
     )
     expect(globalCss).toMatch(/\.reservation-snapshot-wide\s*\{[^}]*grid-column: 1 \/ -1;/)
     expect(globalCss).toMatch(

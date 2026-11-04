@@ -28,7 +28,7 @@ describe('reservation change date preparation', () => {
     open()
     expect(mock).not.toHaveBeenCalled()
     expect(screen.getByText('현재 예약 일정: 2030-01-01 ~ 2030-01-03')).toBeTruthy()
-    expect(screen.getByText('객실 ID: 3 · 인원: 2명 (변경하지 않음)')).toBeTruthy()
+    expect(screen.getByText('동일한 객실 · 총 2명 (변경하지 않음)')).toBeTruthy()
     expect(screen.queryByRole('spinbutton')).toBeNull()
     expect(screen.queryByRole('combobox')).toBeNull()
     dates()

@@ -54,13 +54,12 @@ describe('reservation change confirmation', () => {
       ),
     ).toBeTruthy()
     expect(
-      within(screen.getByRole('region', { name: '변경 요청 일정' })).getByText(
-        '변경 요청 · 아직 반영되지 않음',
-      ),
+      within(screen.getByRole('region', { name: '변경 요청 일정' })).getByText('변경할 일정'),
     ).toBeTruthy()
     expect(screen.getByText('기존 확정 총액: 350.25')).toBeTruthy()
     await screen.findByText('새 일정 참고 예상 총액: 200.20')
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: '일정 변경 전 확인' }))
+    fireEvent.click(screen.getByText('변경 참고 요금 내역', { selector: 'summary' }))
     const priceScroll = screen.getByRole('region', { name: '변경 참고 요금 표' })
     expect(priceScroll.tabIndex).toBe(0)
     expect(priceScroll.getAttribute('aria-describedby')).toBe('change-price-scroll-hint')
