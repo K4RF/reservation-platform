@@ -56,6 +56,8 @@ describe('booking flow page lifecycle', () => {
     searchLayers.editStayDate('숙박 체크아웃', '2030-01-03')
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
     fireEvent.click(await screen.findByRole('button', { name: '스탠다드 선택' }))
+    expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '예약 정보 입력' }))
     for (const [label, value] of [
       ['대표 투숙객 이름', '홍길동'],
       ['대표 투숙객 이메일', 'guest@example.com'],

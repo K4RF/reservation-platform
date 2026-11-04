@@ -313,12 +313,16 @@ describe('design token and global stylesheet contracts', () => {
   it('keeps Detail introduction, selection panels and media scoped without overlaying mobile or keyboard content', () => {
     expect(globalCss).toMatch(/\.accommodation-detail-page\s*\{[^}]*var\(--content-catalog\)/)
     expect(globalCss).toMatch(
-      /\.accommodation-overview-grid\s*\{[^}]*minmax\(0, 1\.5fr\) minmax\(0, 1fr\)/,
+      /\.detail-body-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 21\.5625rem\)/,
     )
     expect(globalCss).toMatch(
-      /\.availability-results-layout\s*\{[^}]*minmax\(0, 1\.7fr\) minmax\(0, 1fr\)/,
+      /\.detail-booking-rail\.room-selection-panel\s*\{[^}]*position: sticky;[^}]*overflow-y: auto;/,
     )
     expect(globalCss).toMatch(/\.room-selection-panel\s*\{[^}]*position: static;/)
+    expect(globalCss).toMatch(/\.detail-mobile-action\s*\{[^}]*position: fixed;/)
+    expect(globalCss).toContain('env(safe-area-inset-bottom)')
+    expect(globalCss).toContain('(max-height: 32rem)')
+    expect(globalCss).toContain('--detail-action-height')
     expect(globalCss).toMatch(/\.detail-section-nav\s*\{[^}]*position: static;/)
     expect(globalCss).toMatch(
       /\.catalog-gallery-mosaic\s*\{[^}]*grid-template-columns: 1\.8fr 1fr;/,
@@ -334,7 +338,7 @@ describe('design token and global stylesheet contracts', () => {
 
   it('separates Booking steps, expected prices and saved result panels with normal-flow CTAs', () => {
     expect(globalCss).toMatch(/\.booking-input-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/)
-    expect(globalCss).toContain('.availability-results-layout:has(.booking-flow)')
+    expect(globalCss).toContain('.detail-booking-stage')
     expect(globalCss).toMatch(/\.booking-steps\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
     expect(globalCss).toContain(".booking-steps > [aria-current='step']")
     expect(globalCss).toMatch(/\.booking-submit-actions\s*\{[^}]*position: static;/)
