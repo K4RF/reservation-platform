@@ -17,7 +17,7 @@ export function RoomListSection({ accommodationId }: { accommodationId: number }
       <h2 id="room-list-title" tabIndex={-1}>
         객실 정보
       </h2>
-      <p>기본 가격이며 날짜별 가격·총액·예약 가능 여부는 아닙니다. API에 통화 정보는 없습니다.</p>
+      <p>기본 1박 가격입니다. 일정과 인원을 적용하면 예약 가능한 객실을 확인할 수 있습니다.</p>
       {state.status === 'loading' && <LoadingState message="객실을 불러오고 있습니다." />}
       {state.status === 'error' && (
         <ErrorState message="객실을 불러오지 못했습니다." onRetry={retry} />

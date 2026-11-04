@@ -8,7 +8,12 @@ import {
   isExplorationQuery,
 } from '../app/bookingContext'
 import { getAccommodation } from '../api/accommodation'
-import { AccommodationInfo } from '../components/accommodation/AccommodationInfo'
+import {
+  AccommodationInfo,
+  AccommodationOperatingInfo,
+  AccommodationTitle,
+} from '../components/accommodation/AccommodationInfo'
+import { CatalogGallery } from '../components/media/CatalogGallery'
 import { RoomListSection } from '../components/room/RoomListSection'
 import { RoomAvailabilitySection } from '../components/room/RoomAvailabilitySection'
 import { ErrorState } from '../components/ui/ErrorState'
@@ -62,7 +67,8 @@ function AccommodationDetail({ id }: { id: number }) {
         ))}
       {state.status === 'success' && (
         <>
-          <AccommodationInfo accommodation={state.data} />
+          <AccommodationTitle accommodation={state.data} />
+          <CatalogGallery images={state.data.images} label="숙소 사진" />
           <RoomAvailabilitySection
             key={`availability-${id}-${location.search}`}
             initialContext={initialContext}
@@ -78,11 +84,14 @@ function AccommodationDetail({ id }: { id: number }) {
             }
             accommodationId={id}
             accommodationName={state.data.name}
+            introduction={<AccommodationInfo accommodation={state.data} />}
+            information={<AccommodationOperatingInfo accommodation={state.data} />}
+            catalog={<RoomListSection accommodationId={id} />}
+            accommodationActive={state.data.status === 'ACTIVE'}
             onComplete={(reservationId) =>
               navigate(bookingCompletePath(reservationId), { replace: true })
             }
           />
-          <RoomListSection key={id} accommodationId={id} />
         </>
       )}
     </div>

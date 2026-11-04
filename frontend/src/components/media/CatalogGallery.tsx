@@ -32,6 +32,7 @@ function Gallery({
   inline: boolean
 }) {
   const [open, setOpen] = useState(false)
+  const [startIndex, setStartIndex] = useState(0)
   const trigger = useRef<HTMLButtonElement>(null)
   const id = useId()
   const close = useCallback(() => setOpen(false), [])
@@ -43,7 +44,20 @@ function Gallery({
         className={`catalog-gallery-mosaic${images.length === 1 ? ' catalog-gallery-single' : ''}`}
       >
         {images.slice(0, 3).map((image, index) => (
-          <CatalogImage key={image.mediaId} image={image} priority={index === 0} />
+          <button
+            key={image.mediaId}
+            type="button"
+            className="catalog-gallery-tile"
+            aria-label={`${label} ${index + 1}번 크게 보기`}
+            aria-haspopup="dialog"
+            onClick={(event) => {
+              trigger.current = event.currentTarget
+              setStartIndex(index)
+              setOpen(true)
+            }}
+          >
+            <CatalogImage image={image} priority={index === 0} />
+          </button>
         ))}
       </div>
       <button
@@ -52,20 +66,32 @@ function Gallery({
         className="catalog-gallery-open"
         aria-haspopup="dialog"
         aria-expanded={open}
-        onClick={() => setOpen(true)}
+        onClick={(event) => {
+          trigger.current = event.currentTarget
+          setStartIndex(0)
+          setOpen(true)
+        }}
       >
         {label} {images.length}장 보기
       </button>
       {open && (
         <SearchLayer id={id} title={`${label} 전체 보기`} anchor={trigger} onClose={close}>
-          <PhotoBrowser images={images} label={label} />
+          <PhotoBrowser images={images} label={label} initialIndex={startIndex} />
         </SearchLayer>
       )}
     </section>
   )
 }
-function PhotoBrowser({ images, label }: { images: MediaResponse[]; label: string }) {
-  const [index, setIndex] = useState(0)
+function PhotoBrowser({
+  images,
+  label,
+  initialIndex = 0,
+}: {
+  images: MediaResponse[]
+  label: string
+  initialIndex?: number
+}) {
+  const [index, setIndex] = useState(initialIndex)
   const previous = useRef<HTMLButtonElement>(null)
   const next = useRef<HTMLButtonElement>(null)
   const restoreNavigationFocus = useRef(false)
