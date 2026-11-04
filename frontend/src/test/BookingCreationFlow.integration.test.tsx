@@ -218,6 +218,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(original.get('page')).toBe('1')
     expect(original.get('sortBy')).toBe('NAME')
     expect(original.get('city')).toBe('서울특별시')
+    fireEvent.click(screen.getByRole('button', { name: '객실 선택으로 돌아가기' }))
     expect(screen.getByRole('link', { name: '숙소 검색으로 돌아가기' }).getAttribute('href')).toBe(
       '/accommodations?' + original,
     )
@@ -225,6 +226,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(screen.queryByRole('link', { name: '로그인' })).toBeNull()
     expect(screen.queryByRole('link', { name: '회원가입' })).toBeNull()
     expect(screen.getByRole('link', { name: '내 예약' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '예약 정보 입력' }))
     for (const [label, value] of [
       ['대표 투숙객 이름', bookingRequest.representativeGuest.name],
       ['대표 투숙객 이메일', bookingRequest.representativeGuest.email],
@@ -316,7 +318,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     await screen.findByText('예약이 확정되었습니다.')
     expect(screen.getByText(`예약 번호: ${reservationResult.reservationNumber}`)).toBeTruthy()
-    expect(screen.getByText('예약 금액 Snapshot: 350.25')).toBeTruthy()
+    expect(screen.getByText('예약 금액: 350.25')).toBeTruthy()
     expect(screen.getByTestId('location').textContent).toBe('/reservations/42/complete')
     const calls = mock.mock.calls
     expect(calls.filter(([url]) => url.includes('/prices/'))).toHaveLength(2)
@@ -405,7 +407,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     await screen.findByText('예약이 확정되었습니다.')
     expect(screen.getByTestId('location').textContent).toBe('/reservations/42/complete')
-    expect(screen.getByText('예약 금액 Snapshot: 350.25')).toBeTruthy()
+    expect(screen.getByText('예약 금액: 350.25')).toBeTruthy()
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
     const posts = mock.mock.calls.filter(([, init]) => init.method === 'POST')
     expect(posts).toHaveLength(1)

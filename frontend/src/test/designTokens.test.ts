@@ -337,7 +337,9 @@ describe('design token and global stylesheet contracts', () => {
   })
 
   it('separates Booking steps, expected prices and saved result panels with normal-flow CTAs', () => {
-    expect(globalCss).toMatch(/\.booking-input-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/)
+    expect(globalCss).toMatch(
+      /\.booking-input-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 22\.5rem\)/,
+    )
     expect(globalCss).toContain('.detail-booking-stage')
     expect(globalCss).toMatch(/\.booking-steps\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
     expect(globalCss).toContain(".booking-steps > [aria-current='step']")

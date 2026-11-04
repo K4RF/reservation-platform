@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render as renderUi, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { BookingFlow } from './BookingFlow'
 import { room } from '../../test/room'
 import type { BookingSelection } from './bookingState'
+import { media } from '../../test/media'
+
+const render = (ui: ReactNode) => renderUi(ui, { wrapper: MemoryRouter })
 
 const selection: BookingSelection = {
   accommodation: { accommodationId: 7, name: '서울 호텔' },
@@ -49,10 +54,10 @@ describe('BookingFlow', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: '제출 전 최종 확인' }))
     expect(steps.getByText('1. 투숙객 입력').hasAttribute('aria-current')).toBe(false)
     await screen.findByText('총 예상 금액: 200.00')
-    expect(screen.getByText('숙소: 서울 호텔')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '서울 호텔' })).toBeTruthy()
     expect(screen.getByText('대표 투숙객: 홍길동')).toBeTruthy()
     expect(screen.getByText('안내 이메일: guest@example.com')).toBeTruthy()
-    expect(screen.getByText(/요청 2명/)).toBeTruthy()
+    expect(screen.getByText(/총 2명 · 객실 정원 2명/)).toBeTruthy()
     expect((screen.getByRole('button', { name: '예약 생성' }) as HTMLButtonElement).disabled).toBe(
       false,
     )
@@ -106,5 +111,95 @@ describe('BookingFlow', () => {
     await screen.findByText('요금을 확인하지 못했습니다. 예상 금액을 제공할 수 없습니다.')
     expect(screen.getByText('제출 전 최종 확인')).toBeTruthy()
     expect(screen.queryByText(/총 예상 금액:/)).toBeNull()
+  })
+  it('keeps guest input, review and a single price read when the real photo fails', async () => {
+    const mock = mockPrices()
+    render(
+      <BookingFlow
+        selection={{
+          ...selection,
+          room: { ...room, representativeImage: media(), images: [media()] },
+        }}
+      />,
+    )
+    fill()
+    await screen.findByText('총 예상 금액: 200.00')
+    fireEvent.error(screen.getByRole('img'))
+    expect((screen.getByLabelText('대표 투숙객 이름') as HTMLInputElement).value).toBe('홍길동')
+    review()
+    expect(screen.getByText('대표 투숙객: 홍길동')).toBeTruthy()
+    expect(screen.getByText('총 예상 금액: 200.00')).toBeTruthy()
+    expect(mock).toHaveBeenCalledTimes(2)
+  })
+  it('locks the room-return and edit paths during pending and ambiguous creation without replay', async () => {
+    const mock = mockPrices()
+    const back = vi.fn()
+    let reject!: (reason: unknown) => void
+    mock.mockImplementation((url: string) =>
+      url.endsWith('/reservations')
+        ? new Promise<Response>((_, fail) => {
+            reject = fail
+          })
+        : Promise.resolve(
+            Response.json({
+              roomDailyPriceId: null,
+              roomId: 3,
+              stayDate: url.slice(-10),
+              nightlyPrice: 100,
+              source: 'DEFAULT',
+            }),
+          ),
+    )
+    render(<BookingFlow selection={selection} onReturn={back} />)
+    fill()
+    review()
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    const returnButton = screen.getByRole('button', {
+      name: '객실 선택으로 돌아가기',
+    }) as HTMLButtonElement
+    expect(returnButton.disabled).toBe(true)
+    fireEvent.click(returnButton)
+    expect(back).not.toHaveBeenCalled()
+    await waitFor(() => expect(reject).toBeDefined())
+    await act(async () => reject(new TypeError('offline')))
+    expect(returnButton.disabled).toBe(true)
+    expect(
+      (screen.getByRole('button', { name: '투숙객 정보 수정' }) as HTMLButtonElement).disabled,
+    ).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations'))).toHaveLength(1)
+    expect(screen.getByRole('link', { name: '내 예약에서 결과 확인' })).toBeTruthy()
+  })
+  it('unlocks the explicit return after a definite rejection, without creating again', async () => {
+    const mock = mockPrices()
+    const back = vi.fn()
+    mock.mockImplementation((url: string) =>
+      Promise.resolve(
+        url.endsWith('/reservations')
+          ? Response.json(
+              { status: 409, code: 'INVENTORY_005', message: '재고 부족', errors: [] },
+              { status: 409 },
+            )
+          : Response.json({
+              roomDailyPriceId: null,
+              roomId: 3,
+              stayDate: url.slice(-10),
+              nightlyPrice: 100,
+              source: 'DEFAULT',
+            }),
+      ),
+    )
+    render(<BookingFlow selection={selection} onReturn={back} />)
+    fill()
+    review()
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    await screen.findByRole('alert')
+    expect(
+      (screen.getByRole('button', { name: '객실 선택으로 돌아가기' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: '객실 선택으로 돌아가기' }))
+    expect(back).toHaveBeenCalledTimes(1)
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations'))).toHaveLength(1)
   })
 })
