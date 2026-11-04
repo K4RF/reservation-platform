@@ -147,6 +147,14 @@ Backend configuration and behavior are implemented and verified.
   sorts, full description/address access and both title/Room-CTA return positions.
   Cards use actual representative Media without per-card Room GETs or invented
   prices. See `docs/ui/frontend-search-rebuild-278.md` for comparisons and limits.
+- Detail #279 renders one Room surface: read-only catalog before applied stay,
+  available results afterwards. RoomAvailabilitySection retains selection/gates;
+  RoomExplorationLayout owns presentation, a bounded sticky Rail and measured-height
+  Mobile fixed CTA (normal flow at low height, hidden for inputs/dialogs). Continue
+  is explicit. Keep one price Summary across the separate Booking stage using
+  BookingFlow's optional showSummary=false; do not duplicate price GETs or forms.
+  Gallery clicks only open the clicked photo and restore its focus, never select
+  a Room. See `docs/ui/frontend-detail-rebuild-279.md` for evidence and limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
@@ -260,8 +268,8 @@ Before completing a change:
   Frontend API validation, CatalogImage/Gallery and ADMIN album management are
   connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
   mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
-  Home layout is rebuilt in #277 and Search in #278; full Detail layout remains
-  separate. See
+  Home layout is rebuilt in #277, Search in #278 and Detail in #279; full Booking
+  redesign and final user approval remain separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.
 - Member sign-up, email/password login, Google OAuth2 login, MySQL persistence,
   stateless Spring Security, and JWT Access Token issuance and authentication
