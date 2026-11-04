@@ -162,6 +162,14 @@ Backend configuration and behavior are implemented and verified.
   The completion owner GET alone determines saved status/number/guest/amount;
   optional public current-catalog reads and Media failures cannot change that result.
   See `docs/ui/frontend-booking-rebuild-280.md` for Browser-fixture/HTTP/CI limits.
+- Reservation management #281 uses current public Room/Accommodation Media with
+  page-local catalog deduplication, separately from saved reservation snapshots.
+  Detail owns one active change/cancel preparation. Change editing and review are
+  separate presentations; editing resets price review/acknowledgement, never a write.
+  Keep the mutual mutation gates and also disable catalog recovery during pending
+  or locked outcomes. Cancellation always needs a fresh owner GET/new confirmation
+  after failure. Escape closes only an unlocked preparation and restores its trigger.
+  See `docs/ui/frontend-reservation-rebuild-281.md` for layout and verification limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,

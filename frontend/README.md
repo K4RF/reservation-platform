@@ -120,10 +120,12 @@ Desktop은 입력 최대 640px·여행 요약 360px, Mobile은 실제 사진/일
 현재 비교·Focus·Mock/Browser/HTTP 경계는 [#280](../docs/ui/frontend-booking-rebuild-280.md),
 역사적 구현은 [#256](../docs/ui/frontend-booking-redesign-256.md)에 보존했습니다.
 
-내 예약 목록/상세는 현재 카탈로그 이름과 저장된 투숙객·가격·정책·취소 결과를 구분합니다.
-일정 변경은 저장 일정/새 요청/참고 요금을, 취소는 사전 금액 미제공과 저장 결과를 분리해 표시합니다.
-기존 상호 제출 잠금·재확인 규칙은 유지합니다. 실제 화면과 검증 한계는
-[Reservation Management 리디자인 (#257)](../docs/ui/frontend-reservation-redesign-257.md)을 참고하세요.
+내 예약은 현재 카탈로그 사진/이름과 저장 일정·총 인원·금액·공개 번호를 여행 카드로 표시합니다.
+상세는 Desktop 본문/Sticky 여행 요약, Mobile 여행 요약→관리→투숙객 순서이며 일별 요금/정책은 펼쳐 읽습니다.
+일정 편집과 최종 검토는 분리됩니다. 취소는 열 때 owner GET을 다시 읽고 사전 수수료/환불 견적이 없음을 표시합니다.
+상호 제출 잠금·실패 후 fresh GET/새 확인을 유지하며 카탈로그 재조회도 잠금을 우회하지 못합니다.
+현재 비교·실측·검증 한계는 [#281](../docs/ui/frontend-reservation-rebuild-281.md),
+역사적 구현은 [#257](../docs/ui/frontend-reservation-redesign-257.md)에 보존했습니다.
 
 Login/Signup/Google Callback과 접근 거절/없는 경로 화면은 공통 Navy 안내·Surface 입력 패널을 사용합니다.
 Mobile은 입력/오류가 먼저이며 기존 자동완성·비밀번호 마스킹·Token/Return Lifecycle은 유지합니다.
