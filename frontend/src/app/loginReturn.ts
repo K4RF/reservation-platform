@@ -56,3 +56,22 @@ export function consumeGoogleReturn(): string {
   sessionStorage.removeItem(GOOGLE_RETURN_KEY)
   return path
 }
+
+// Accept only an already validated return target from safeLoginReturn/consumeGoogleReturn.
+export function authReturnDestination(returnPath: string) {
+  const pathname = returnPath.split(/[?#]/, 1)[0]
+  const inArea = (area: string) => pathname === area || pathname.startsWith(`${area}/`)
+  if (inArea(routePaths.accommodations)) {
+    return {
+      purpose:
+        pathname === routePaths.accommodations
+          ? '로그인 후 보던 검색 결과로 돌아갑니다.'
+          : '로그인 후 보던 숙소로 돌아갑니다.',
+      explore: returnPath,
+    }
+  }
+  let purpose = '로그인하고 예약을 진행하거나 내 여행을 확인하세요.'
+  if (inArea(routePaths.reservations)) purpose = '로그인 후 내 예약을 확인할 수 있습니다.'
+  if (inArea(routePaths.admin)) purpose = '관리자 계정으로 로그인해 주세요.'
+  return { purpose, explore: routePaths.accommodations }
+}

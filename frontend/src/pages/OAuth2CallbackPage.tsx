@@ -5,8 +5,8 @@ import { consumeGoogleCallback } from '../api/googleOAuth2'
 import { routePaths } from '../app/routePaths'
 import { LoadingState } from '../components/ui/LoadingState'
 import { useAuth } from '../state/useAuth'
-import { consumeGoogleReturn } from '../app/loginReturn'
-import { AuthPageLayout } from '../components/ui/AuthPageLayout'
+import { authReturnDestination, consumeGoogleReturn } from '../app/loginReturn'
+import { AuthExploreLink, AuthPageLayout } from '../components/ui/AuthPageLayout'
 
 type CallbackStatus = 'working' | 'cancelled' | 'failed' | 'invalid' | 'exchange_failed'
 
@@ -59,20 +59,31 @@ export function OAuth2CallbackPage() {
 
   return (
     <AuthPageLayout
-      className="oauth-callback-page"
       headingId="oauth-title"
       eyebrow="SIGN IN WITH GOOGLE"
       title="Google 로그인"
-      description="인증 결과를 확인합니다."
+      variant="notice"
+      description={
+        status === 'working'
+          ? '인증 결과를 확인하고 있습니다.'
+          : '이메일이나 Google로 다시 로그인할 수 있습니다.'
+      }
     >
       {status === 'working' ? (
         <LoadingState message="Google 로그인을 완료하고 있습니다." />
       ) : (
         <>
           <p role="alert">{message[status]}</p>
-          <Link className="auth-return-link" to={routePaths.login} state={{ from: returnTarget }}>
-            로그인으로 돌아가기
-          </Link>
+          <div className="auth-actions">
+            <Link
+              className="auth-return-link primary-action"
+              to={routePaths.login}
+              state={{ from: returnTarget }}
+            >
+              로그인으로 돌아가기
+            </Link>
+            <AuthExploreLink to={authReturnDestination(returnTarget).explore} />
+          </div>
         </>
       )}
     </AuthPageLayout>

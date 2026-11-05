@@ -105,15 +105,12 @@ export function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           autoComplete="current-password"
           value={password}
           aria-invalid={Boolean(errors.password)}
-          aria-describedby={`login-password-hint${errors.password ? ' login-password-error' : ''}`}
+          aria-describedby={errors.password ? 'login-password-error' : undefined}
           onChange={(event) => {
             setPassword(event.target.value)
             setErrors((current) => ({ ...current, password: undefined }))
           }}
         />
-        <p className="auth-field-hint" id="login-password-hint">
-          가입할 때 사용한 비밀번호를 입력하세요.
-        </p>
         {errors.password && (
           <p id="login-password-error" role="alert">
             {errors.password}
