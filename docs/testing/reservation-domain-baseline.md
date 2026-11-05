@@ -60,7 +60,6 @@ Baseline의 고정 가격과 예상 결과는 다음과 같습니다.
 | 검증 범위 | 담당 테스트 |
 | --- | --- |
 | MySQL 기반 v0.1.3 전체 성공 흐름 | `BookingPolicyCatalogBaselineIntegrationTest` |
-| 빠른 기본 회원·숙소·객실·예약 연결 | `BasicReservationMvpIntegrationTest` |
 | 인원·재고·기간·가격·상태별 성공/실패 경계 | `ReservationIntegrationTest` |
 | 숙소 복합 조건과 결과 없음·Pagination·정렬 | `AccommodationIntegratedSearchIntegrationTest` |
 | 취소 수수료 구간과 반올림 | `ReservationCancellationPolicyTest`, `ReservationIntegrationTest` |

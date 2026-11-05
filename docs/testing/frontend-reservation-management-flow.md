@@ -84,7 +84,7 @@ Frontend: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm
 
 ```powershell
 cd backend
-.\gradlew.bat test --rerun-tasks --tests '*BasicReservationMvpIntegrationTest' --tests '*ReservationIntegrationTest' --tests '*ReservationCancellationPolicyTest' --tests '*CancellationPolicySnapshotTest' --tests '*CancellationPolicySnapshotIntegrationTest' --tests '*AccommodationCancellationPolicyIntegrationTest' --tests '*AccommodationBookingPolicyIntegrationTest'
+.\gradlew.bat test --rerun-tasks --tests '*ReservationIntegrationTest' --tests '*ReservationCancellationPolicyTest' --tests '*CancellationPolicySnapshotTest' --tests '*CancellationPolicySnapshotIntegrationTest' --tests '*AccommodationCancellationPolicyIntegrationTest' --tests '*AccommodationBookingPolicyIntegrationTest'
 ```
 
 별도 H2 + Redis 7.4 Testcontainer의 실제 Spring Boot와 Vite로 로드한 실제 Frontend API/

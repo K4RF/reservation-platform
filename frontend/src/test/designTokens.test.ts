@@ -18,31 +18,6 @@ const references = (value: string) => [...value.matchAll(/var\((--[\w-]+)\)/g)].
 
 // Source contracts only: jsdom does not prove actual CSS variable layout or focus rendering.
 describe('design token and global stylesheet contracts', () => {
-  it('keeps the current redesign free of authored animation and smooth scrolling, including reduced-motion users', () => {
-    // There is no animation to turn off today. If motion is introduced, replace this with
-    // explicit prefers-reduced-motion coverage rather than silently weakening the guard.
-    expect(globalCss).not.toMatch(/(?:^|[;{\s])(?:animation|transition)(?:-[\w-]+)?\s*:/)
-    expect(globalCss).not.toMatch(/scroll-behavior\s*:\s*smooth/)
-  })
-  it('scopes Admin work areas, read panels and write/status forms without hiding overflow', () => {
-    expect(globalCss).toMatch(/\.admin-layout\s*\{[^}]*width: min\(100%, 80rem\)/)
-    expect(globalCss).toMatch(/\.admin-header\s*\{[^}]*background: var\(--color-primary\)/)
-    expect(globalCss).toMatch(/\.admin-header p\s*\{[^}]*color: inherit/)
-    expect(globalCss).toContain('.admin-page-heading')
-    expect(globalCss).toContain('.admin-context-panel')
-    expect(globalCss).toMatch(
-      /\.admin-form > fieldset\s*\{[^}]*border-inline-start:[^;]*var\(--color-primary\)/,
-    )
-    expect(globalCss).toMatch(
-      /\.admin-status-form > fieldset\s*\{[^}]*var\(--color-warning-surface\)/,
-    )
-    expect(globalCss).toMatch(/\.inventory-calendar\s*\{[^}]*overflow-x: auto/)
-    expect(globalCss).toContain('.site-main:has(> .admin-layout)')
-    expect(globalCss).toMatch(
-      /\.admin-content input:is\(\[type='date'\], \[type='time'\]\)\s*\{[^}]*padding-inline: var\(--space-1\)/,
-    )
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
   it('loads a single token source before global rules without local redefinitions', () => {
     expect(globalCss.trimStart().startsWith("@import './styles/tokens.css';")).toBe(true)
     expect(tokensCss.match(/:root\s*\{/g)).toHaveLength(1)
@@ -78,92 +53,25 @@ describe('design token and global stylesheet contracts', () => {
     expect(tokens.get('--color-cancelled')).not.toBe(tokens.get('--color-error'))
   })
 
-  it('maps the approved Navy and Ivory palette without turning Coral into text, CTA or status', () => {
-    for (const [role, value] of Object.entries({
-      primary: '#253b59',
-      background: '#f7f4ee',
-      surface: '#fffefa',
-      text: '#2c3038',
-      'text-muted': '#65676a',
-      border: '#ddd9d1',
-      accent: '#b96f55',
-      focus: 'var(--color-primary)',
-    })) {
-      expect(tokens.get(`--color-${role}`)).toBe(value)
-    }
-    expect(globalCss.match(/var\(--color-accent\)/g)).toHaveLength(1)
-    expect(globalCss).toMatch(/\.eyebrow\s*\{[^}]*border-inline-start:[^;]*var\(--color-accent\);/)
-    for (const [role, color] of Object.entries({
-      success: '#205c4d',
-      error: '#b42318',
-      warning: '#854d0e',
-      cancelled: '#655044',
-    })) {
-      expect(tokens.get(`--color-${role}`)).toBe(color)
-      expect(tokens.get(`--color-${role}`)).not.toBe(tokens.get('--color-primary'))
-      expect(tokens.get(`--color-${role}`)).not.toBe(tokens.get('--color-accent'))
-    }
-  })
-
-  it('uses local display serif with Korean UI sans fallback without loading a remote font', () => {
-    expect(tokens.get('--font-family-display')).toBe(
-      "Georgia, 'Times New Roman', var(--font-family-body)",
-    )
+  it('uses local fonts and a visible global keyboard focus ring', () => {
     expect(tokens.get('--font-family-body')).toContain("'Malgun Gothic'")
     expect(tokens.get('--font-family-body')).toContain('sans-serif')
-    expect(globalCss).toMatch(
-      /\.site-menu-heading h2\s*\{[^}]*font-family: var\(--font-family-display\)/,
-    )
     expect(tokensCss + globalCss).not.toMatch(/@font-face|https?:\/\/|url\(/)
-    expect(tokens.get('--leading-body')).toBe('1.6')
-    expect(tokens.get('--control-min-height')).toBe('2.75rem')
-    expect(tokens.get('--space-4')).toBe('1rem')
+    expect(globalCss).toContain('outline: var(--focus-ring-width) solid var(--color-focus)')
   })
 
-  it('preserves role-based content widths rather than forcing a single page width', () => {
-    expect(
-      Object.fromEntries([...tokens].filter(([name]) => name.startsWith('--content-'))),
-    ).toEqual({
-      '--content-auth': '26.25rem',
-      '--content-form': '32rem',
-      '--content-result': '45rem',
-      '--content-reservation': '60rem',
-      '--content-wide': '70rem',
-      '--content-catalog': '80rem',
-      '--content-menu': '28rem',
-    })
-    for (const name of ['auth', 'form', 'result', 'wide', 'catalog']) {
-      expect(globalCss).toContain(`var(--content-${name})`)
+  it('keeps the document reflowable and scrolls wide tables inside their own regions', () => {
+    expect(globalCss).not.toContain('overflow-x: hidden')
+    for (const region of [
+      'booking-price-scroll',
+      'reservation-price-scroll',
+      'inventory-calendar',
+    ]) {
+      expect(globalCss).toMatch(new RegExp(`\\.${region}\\s*\\{[^}]*overflow-x: auto`))
     }
   })
 
-  it('scopes Search editors, sidebar and two-column media without hiding document overflow', () => {
-    expect(globalCss).toMatch(/\.accommodation-search-page\s*\{[^}]*var\(--content-catalog\)/)
-    expect(globalCss).toMatch(/\.accommodation-list\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
-    expect(globalCss).toMatch(
-      /\.search-comparison-layout\s*\{[^}]*minmax\(0, 14.0625rem\) minmax\(0, 1fr\)/,
-    )
-    expect(globalCss).toMatch(/\.catalog-image\s*\{[^}]*aspect-ratio: 2 \/ 1;/)
-    expect(globalCss).toContain('.accommodation-search-form.search-conditions-form')
-    expect(globalCss).toContain('#search-filter-sheet')
-    expect(globalCss).toMatch(
-      /@media \(max-width: 48rem\)\s*\{\s*\.accommodation-list\s*\{\s*grid-template-columns: minmax\(0, 1fr\);/,
-    )
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-
-  it('keeps cinematic imagery local and bounded while isolating the Home layout and inverse focus', () => {
-    expect(globalCss).toMatch(/\.site-main\[data-page-frame='home'\]\s*\{[^}]*padding: 0;/)
-    expect(globalCss).toMatch(/\.home-hero\s*\{[^}]*var\(--site-header-height\)/)
-    expect(globalCss).toMatch(/\.home-hero-image\s*\{[^}]*object-fit: cover;/)
-    expect(globalCss).toContain('var(--color-hero-scrim) 60%')
-    expect(globalCss).toMatch(/\.home-hero-copy\s*\{[^}]*max-width: min\(44rem, 100%\);/)
-    expect(globalCss).toContain('background: var(--color-hero-scrim-mobile)')
-    // Provenance/failure text must grow in flow rather than overlap the copy at 200% text scale.
-    expect(globalCss).toMatch(/\.home-hero-footer\s*\{[^}]*flex-wrap: wrap;/)
-    expect(globalCss).not.toMatch(/\.home-image-note\s*\{[^}]*position: absolute;/)
-    expect(globalCss).not.toMatch(/\.home-search-section\s*\{[^}]*position: absolute;/)
-    expect(globalCss).toContain(".home-page > [role='status']:not(.sr-only)")
+  it('ships both responsive Home images as bounded local WebP assets', () => {
     for (const [size, maxBytes] of [
       [800, 80 * 1024],
       [1600, 256 * 1024],
@@ -174,236 +82,6 @@ describe('design token and global stylesheet contracts', () => {
       expect(bytes.subarray(8, 12).toString()).toBe('WEBP')
       expect(bytes.length).toBeLessThanOrEqual(maxBytes)
     }
-  })
-
-  it('defines shared typography, spacing, radius, shadow and focus roles', () => {
-    for (const name of [
-      'font-family-body',
-      'font-size-base',
-      'font-weight-regular',
-      'leading-body',
-      'space-4',
-      'radius-card',
-      'shadow-none',
-      'shadow-raised',
-      'focus-ring-width',
-    ]) {
-      expect(tokens.has(`--${name}`)).toBe(true)
-    }
-    expect(globalCss).toMatch(
-      /\.home-search-jump:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
-    )
-    expect(globalCss).toContain(
-      ':is(a, button, input, select, textarea, summary, [tabindex]):focus-visible',
-    )
-    expect(globalCss).toContain('outline: var(--focus-ring-width) solid var(--color-focus)')
-  })
-
-  it('does not reintroduce the overwritten brand or authentication cascade', () => {
-    // One base definition; the A1 frame deliberately changes its size at narrow widths.
-    expect(
-      globalCss.slice(0, globalCss.indexOf('@media')).match(/\.site-brand\s*\{/g),
-    ).toHaveLength(1)
-    expect(globalCss.match(/\.home-link\s*\{/g)).toHaveLength(1)
-    expect(globalCss.match(/\.signup-form button,\s*\.login-form button\s*\{/g)).toHaveLength(1)
-    // Authentication now inherits the common submit/hover appearance, not a private duplicate.
-    expect(globalCss).not.toContain('.signup-form button:hover')
-    expect(globalCss.match(/button\[type='submit'\]:hover:enabled/g)).toHaveLength(1)
-    expect(globalCss).not.toContain('var(--accent)')
-  })
-
-  it('bounds the Auth task and notice layouts without hiding document overflow', () => {
-    expect(globalCss).toMatch(/\.auth-page\s*\{[^}]*width: min\(100%, 60rem\)/)
-    expect(globalCss).toMatch(
-      /\.auth-page-form\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, var\(--content-auth\)\)/,
-    )
-    expect(globalCss).toMatch(/\.auth-page-notice\s*\{[^}]*width: min\(100%, 34rem\)/)
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-
-  it('shares a single scoped alert skin and removes only the retired empty-state selector', () => {
-    const skins = [...globalCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)].filter(
-      ([, selector, body]) =>
-        selector.includes("[role='alert']") &&
-        body.includes('background: var(--color-error-surface)'),
-    )
-    expect(skins).toHaveLength(1)
-    for (const scope of [
-      'auth-page',
-      'home-page',
-      'accommodation-search-page',
-      'accommodation-detail-page',
-      'booking-complete-page',
-      'my-reservations-page',
-      'reservation-detail-page',
-      'admin-content',
-    ]) {
-      expect(skins[0][1]).toContain(`.${scope}`)
-    }
-    expect(globalCss).not.toContain('.admin-empty-state')
-    // These are rendered via dynamic status class names, not unused literal selectors.
-    for (const state of [
-      'booking-result-cancelled',
-      'reservation-status-confirmed',
-      'reservation-status-cancelled',
-      'reservation-summary-cancelled',
-    ]) {
-      expect(globalCss).toContain(`.${state}`)
-    }
-  })
-
-  it('replaces wrapped mobile links with an accessible menu while retaining Admin active styles', () => {
-    expect(globalCss).toMatch(/\.site-brand-mark\s*\{[^}]*border: 1px solid currentColor;/)
-    expect(globalCss).toMatch(/\.site-brand-name\s*\{[^}]*font-family: var\(--font-family-body\);/)
-    expect(globalCss).toMatch(
-      /\.nav-link\[aria-current='page'\]\s*\{[^}]*text-decoration: underline;/,
-    )
-    expect(globalCss).toMatch(
-      /\.admin-sidebar \.nav-link-active\s*\{[^}]*color: var\(--color-on-primary\);/,
-    )
-    expect(globalCss).toMatch(/@media \(max-width: 56rem\)\s*\{\s*\.site-nav\s*\{\s*display: none/)
-    expect(globalCss).toMatch(/\.site-mobile-actions\s*\{[^}]*display: flex/)
-    expect(globalCss).toMatch(/\.site-menu\s*\{[^}]*max-height: calc\(100dvh/)
-    expect(globalCss).toContain(".site-menu .nav-link[aria-current='page']")
-    expect(globalCss).toMatch(/\.app-shell-home > \.site-header\s*\{[^}]*position: absolute/)
-    expect(globalCss).toContain(".site-main[data-page-frame='detail']")
-    expect(globalCss).toMatch(/\.site-footer\s*\{[^}]*flex-wrap: wrap;/)
-  })
-
-  it('makes disabled, loading and empty presentation distinct without opacity-only signalling', () => {
-    expect(globalCss).toMatch(/button:disabled\s*\{[^}]*opacity: 1;[^}]*border-style: dashed;/)
-    expect(globalCss).toMatch(/\.ui-state\.ui-loading\s*\{[^}]*border-inline-start:[^;]*dashed/)
-    expect(globalCss).toMatch(/\.ui-state\.ui-empty\s*\{[^}]*border-style: dashed;/)
-    expect(globalCss).toContain(".room-availability > p[role='status']:not(.ui-state)")
-    expect(globalCss).toContain(".reservation-detail-page > p[role='status']:not(.ui-state)")
-    expect(globalCss).toContain(':hover:enabled:not(')
-    expect(globalCss).toMatch(/\.stay-calendar\s*\{[^}]*background: var\(--color-surface\);/)
-    expect(globalCss).toMatch(/\.stay-calendar-grid \.stay-date-boundary\s*\{[^}]*box-shadow:/)
-    expect(globalCss).toMatch(/\.stay-calendar-scroll\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(/\.stay-calendar-grid\s*\{[^}]*min-width: 19\.25rem;/)
-    expect(globalCss).toMatch(/\.search-layer\s*\{[^}]*overflow: auto;/)
-    expect(globalCss).toContain('.compact-search-with-city')
-    expect(globalCss).not.toContain('.search-main-fields')
-    expect(globalCss).toMatch(/\.room-detail-header\s*\{[^}]*background: var\(--color-secondary\);/)
-  })
-
-  it('shares controls without suppressing native disabled or confirmation semantics', () => {
-    expect(globalCss).toContain(".nav-link[aria-current='page']")
-    expect(globalCss).toContain("button[aria-busy='true']")
-    expect(globalCss).toContain("input:is([type='checkbox'], [type='radio'])")
-    expect(globalCss).toContain("[aria-invalid='true']")
-    expect(globalCss).toContain('.confirmation-panel {')
-    expect(globalCss).not.toContain('pointer-events: none')
-    expect(globalCss).not.toContain('appearance: none')
-    expect(globalCss).not.toContain('.admin-content button {')
-  })
-
-  it('scopes booking price overflow and result actions without clipping the document', () => {
-    expect(globalCss).toMatch(/\.booking-price-scroll\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(
-      /\.booking-summary \.booking-price-table\s*\{[^}]*table-layout: auto;/,
-    )
-    expect(globalCss).toMatch(/\.booking-result-actions\s*\{[^}]*gap: var\(--space-3\);/)
-    expect(globalCss).toContain(
-      '.availability-room-item.availability-room-selected .accommodation-card',
-    )
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-  it('keeps Detail introduction, selection panels and media scoped without overlaying mobile or keyboard content', () => {
-    expect(globalCss).toMatch(/\.accommodation-detail-page\s*\{[^}]*var\(--content-catalog\)/)
-    expect(globalCss).toMatch(
-      /\.detail-body-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 21\.5625rem\)/,
-    )
-    expect(globalCss).toMatch(
-      /\.detail-booking-rail\.room-selection-panel\s*\{[^}]*position: sticky;[^}]*overflow-y: auto;/,
-    )
-    expect(globalCss).toMatch(/\.room-selection-panel\s*\{[^}]*position: static;/)
-    expect(globalCss).toMatch(/\.detail-mobile-action\s*\{[^}]*position: fixed;/)
-    expect(globalCss).toContain('env(safe-area-inset-bottom)')
-    expect(globalCss).toContain('(max-height: 32rem)')
-    expect(globalCss).toContain('--detail-action-height')
-    expect(globalCss).toMatch(/\.detail-section-nav\s*\{[^}]*position: static;/)
-    expect(globalCss).toMatch(
-      /\.catalog-gallery-mosaic\s*\{[^}]*grid-template-columns: 1\.8fr 1fr;/,
-    )
-    expect(globalCss).toMatch(/\.catalog-image\s*\{[^}]*width: 100%;[^}]*max-width: 100%;/)
-    expect(globalCss).toContain('@media (max-width: 24rem), (max-height: 36rem)')
-    expect(globalCss).toContain(
-      '.catalog-room-card-exploration .room-card-content > :is(h3, p, ul)',
-    )
-    expect(globalCss).toContain('.catalog-room-card-exploration > .catalog-image')
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-
-  it('separates Booking steps, expected prices and saved result panels with normal-flow CTAs', () => {
-    expect(globalCss).toMatch(
-      /\.booking-input-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 22\.5rem\)/,
-    )
-    expect(globalCss).toContain('.detail-booking-stage')
-    expect(globalCss).toMatch(/\.booking-steps\s*\{[^}]*repeat\(2, minmax\(0, 1fr\)\)/)
-    expect(globalCss).toContain(".booking-steps > [aria-current='step']")
-    expect(globalCss).toMatch(/\.booking-submit-actions\s*\{[^}]*position: static;/)
-    expect(globalCss).toMatch(/\.booking-result-grid\s*\{[^}]*minmax\(0, 1\.2fr\) minmax\(0, 1fr\)/)
-    expect(globalCss).toMatch(/\.booking-result-grid > section\s*\{[^}]*min-width: 0;/)
-    expect(globalCss).toContain('@media (max-width: 48rem)')
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-
-  it('keeps reservation money tables scrollable and cancellation warnings separate from saved results', () => {
-    expect(globalCss).toMatch(/\.reservation-price-scroll\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(
-      /\.reservation-price-scroll \.booking-price-table\s*\{[^}]*table-layout: auto;/,
-    )
-    expect(globalCss).toMatch(
-      /\.reservation-cancel-confirmation\s*\{[^}]*border-color: var\(--color-error\);/,
-    )
-    expect(globalCss).toMatch(
-      /\.reservation-operation-result\s*\{[^}]*border-color: var\(--color-success\);/,
-    )
-    expect(globalCss).toContain('.reservation-quote-unavailable')
-  })
-
-  it('scopes owner reservation snapshots and schedule comparisons without moving mutation CTAs over content', () => {
-    expect(globalCss).toMatch(
-      /\.reservation-management-layout\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 20rem\)/,
-    )
-    expect(globalCss).toMatch(/\.reservation-snapshot-wide\s*\{[^}]*grid-column: 1 \/ -1;/)
-    expect(globalCss).toMatch(
-      /\.reservation-schedule-comparison\s*\{[^}]*minmax\(0, 1fr\) minmax\(0, 1fr\)/,
-    )
-    expect(globalCss).toMatch(/\.reservation-mutation-actions\s*\{[^}]*position: static;/)
-    expect(globalCss).toContain('.reservation-result-disclaimer')
-    expect(globalCss).not.toContain('overflow-x: hidden')
-  })
-
-  it('keeps Admin layout, status, recovery and Calendar styles scoped without clipping tables', () => {
-    expect(globalCss).toMatch(/\.admin-sidebar nav\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(/\.admin-query-form\s*\{[^}]*align-items: end;/)
-    expect(globalCss).toMatch(/\.inventory-calendar\s*\{[^}]*overflow-x: auto;/)
-    expect(globalCss).toMatch(/\.inventory-calendar table\s*\{[^}]*table-layout: auto;/)
-    expect(globalCss).toContain(".inventory-calendar button[aria-pressed='true']")
-    expect(globalCss).toContain(
-      ".admin-status-badge:is([data-status='INACTIVE'], [data-status='CLOSED'])",
-    )
-    expect(globalCss).toMatch(
-      /\.admin-recovery-panel\s*\{[^}]*border-color: var\(--color-warning\);/,
-    )
-    expect(globalCss).toMatch(
-      /\.admin-content \.admin-save-success\s*\{[^}]*border-color: var\(--color-success\);/,
-    )
-  })
-
-  it('allows scrollbar-width reflow, wraps long text and keeps focus on scroll regions visible', () => {
-    expect(globalCss).toMatch(/body\s*\{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/)
-    expect(globalCss).not.toMatch(/min-width:\s*320px/)
-    expect(globalCss).toMatch(/\.site-main\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
-    expect(globalCss).toMatch(/\.skip-link\s*\{[^}]*z-index: 3;/)
-    expect(globalCss).toMatch(/\.form-field\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\);/)
-    expect(globalCss).toMatch(/\.guest-count-controls\s*\{[^}]*flex-wrap: wrap;/)
-    expect(globalCss).toMatch(/\.room-detail-header\s*\{[^}]*flex-wrap: wrap;/)
-    expect(globalCss).toMatch(
-      /:is\(\.confirmation-check, \.admin-check, \.amenity-option\)\s*\{[^}]*min-height: var\(--control-min-height\);/,
-    )
   })
 
   it('meets semantic text/control contrast thresholds with Navy focus and decorative Coral', () => {

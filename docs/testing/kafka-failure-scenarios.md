@@ -8,7 +8,7 @@
 
 | 장애/복구 시나리오 | 검증 위치 | 확인 결과 |
 | --- | --- | --- |
-| Reservation 생성·변경·취소와 Outbox 원자성 | `BasicReservationMvpIntegrationTest`, `ReservationOutboxTransactionIntegrationTest` | 예약 상태와 재고가 정상 완료된 경우 Event Outbox 행도 같은 DB Transaction에 저장되고, 테스트 profile에서는 발행 전 `PENDING` 상태로 남습니다. Rollback 시 Outbox도 함께 Rollback됩니다. |
+| Reservation 생성·변경·취소와 Outbox 원자성 | `ReservationLifecycleEventIntegrationTest`, `ReservationOutboxTransactionIntegrationTest` | 예약 상태와 재고가 정상 완료된 경우 Event Outbox 행도 같은 DB Transaction에 저장되고, 테스트 profile에서는 발행 전 `PENDING` 상태로 남습니다. Rollback 시 Outbox도 함께 Rollback됩니다. |
 | Producer가 Broker 오류를 비동기 반환 | `ReservationOutboxKafkaIntegrationTest` | 발행 시도 후 상태가 `PENDING`으로 남고 오류/시도 횟수가 저장됩니다. 같은 Event를 다음 Poll에서 재시도해 Embedded Kafka ACK를 받으면 `PUBLISHED`가 됩니다. |
 | Producer가 Future를 반환하기 전에 동기 오류 발생 | `ReservationOutboxPublisherTest`, `KafkaReservationEventProducerTest` | 예외가 예약 경로에 전파되지 않고 Outbox Publisher가 기록하여 해당 Event를 `PENDING`으로 보존합니다. |
 | Consumer의 일시적 처리 오류 | `ReservationEventRetryDltIntegrationTest` | 같은 Record가 제한 횟수만큼 재시도되고 처리 성공 뒤 Event ID ledger가 기록됩니다. |
