@@ -170,6 +170,12 @@ Backend configuration and behavior are implemented and verified.
   or locked outcomes. Cancellation always needs a fresh owner GET/new confirmation
   after failure. Escape closes only an unlocked preparation and restores its trigger.
   See `docs/ui/frontend-reservation-rebuild-281.md` for layout and verification limits.
+- Auth #282 uses the existing SiteHeader brand-only variant for unauthenticated
+  Login/Signup/Callback. `AuthPageLayout` owns task/notice presentation and heading
+  focus only. Signup success returns to Login with a status and validated `from`
+  Router state; no automatic sign-in, password transfer or write replay. Keep
+  public recovery distinct from protected return and verify fresh availability
+  before restoring a Room hint. See `docs/ui/frontend-authentication-rebuild-282.md`.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
