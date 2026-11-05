@@ -86,29 +86,5 @@ CI는 Ubuntu/Node 24.19.0이다(pnpm은 양쪽 11.19.0). 새 패키지/서비스
 Workflow 변경이 없다. Push/PR 미요청으로 원격 Actions는 실행하지 않았다.
 Backend 변경이 없어 Backend test/build는 재실행하지 않았으며, 로컬 Compose DB/Volume도 건드리지 않았다.
 
-## 실제 Browser 관찰
 
-computer-use 스킬과 [읽기 전용 UI Audit](../../frontend/scripts/ui-audit/README.md)으로
-**실제 App Component/CSS**를 1440×1000, 390×844에서 렌더하고 시안과 비교했다.
-전체 화면을 저장하여 직접 시각 확인했다. [측정값](../ui/evidence/244/measurements.json)과
-같은 폴더의 세 PNG가 원본이다.
-
-- Desktop은 704px 폭의 중앙 모달, Mobile은 390px 전체 폭·90dvh 상한의 하단 Sheet다.
-  두 모달 모두 scrollWidth=clientWidth로 내부 가로 넘침이 없었다.
-- 닫기 초기 Focus, 양방향 Tab 순환, Escape 닫기와 Trigger Focus 복귀를 실제 키 입력으로 확인했다.
-  Mobile에서 마지막 선택으로 Focus 이동 시 내부 scrollTop=113으로 CTA가 화면 안에 들어왔다.
-  닫기 Header는 같은 위치를 유지했다. 배경에서 아래로 Scroll해도 페이지 위치는 변하지 않았다.
-- Desktop Escape 복귀 scrollY=597. Mobile의 기존 선택 유지 상태에서 열기 전/닫은 후는
-  1742→1742, Trigger Focus와 날짜/인원도 유지됐다. Mobile 명시적 선택은 기존 예약 요약·
-  로그인 진입 CTA를 표시했다. 실제 로그인이나 예약 생성은 실행하지 않았다.
-
-Audit은 HTTP Fixture + MemoryRouter이다. **실제 Backend/DB·인증/Google·재고 경쟁·쓰기·
-Native Browser Back/Forward E2E 증거가 아니다.** History 동작은 Router 자동 테스트로 분리했다.
-다른 Browser, 실제 Touch/모바일 가상 키보드, Screen Reader, 실제 SPA Hosting 새로고침과
-최종 사용자 UI/UX 승인은 후속 횡단 검증 대상이다.
-
-![Desktop 객실 상세](../ui/evidence/244/room-detail-1440.png)
-
-![Mobile 객실 상세](../ui/evidence/244/room-detail-390.png)
-
-![Mobile 내부 Scroll과 선택 Focus](../ui/evidence/244/room-detail-390-actions.png)
+키보드·포커스 복귀·Mobile Sheet 스크롤은 [검수 가이드](../ui/frontend-guide.md)를 따라 확인한다.

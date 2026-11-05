@@ -86,7 +86,7 @@ Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매�
 Production API나 개발 DB/storage에 등록하지 않습니다. `failed`/`partial`의
 2998/2999는 의도적인 파일404입니다. `scenario=stress`는 긴 alt도 검증합니다.
 ADMIN album GET/ETag는 fixture이며 모든 Media 쓰기도 여전히405로 차단합니다.
-실제 업로드 검증은 [#276 보고서](../../../docs/ui/frontend-media-integration-276.md)와 구분합니다.
+실제 업로드 검증은 [실제 Media 관리 계약](../../../docs/architecture/media-management.md)와 구분합니다.
 
 ```powershell
 pnpm exec tsc -p scripts/ui-audit/tsconfig.json
@@ -114,5 +114,4 @@ Resize와 입력 직후의 이동을 초기 로딩 이동으로 합산하지 말
 Resource body size=0은 실제 파일이 0바이트라는 뜻이 아니다. 캐시/재검증 영향을 구분하고
 전송량을 파일 크기와 혼동하지 않는다. 관찰 없는 항목은 미관측으로 남긴다.
 
-결과·전체 Route·미확인 범위·개선 제안은 [Audit 보고서](../../../docs/ui/frontend-ui-audit-224.md),
-실제 측정과 대표 이미지는 [증거 원본](../../../docs/ui/evidence/224/measurements.json)을 따른다.
+공통 화면 계약과 검수 기준은 [Frontend 가이드](../../../docs/ui/frontend-guide.md)를 따른다.

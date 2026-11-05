@@ -156,6 +156,7 @@ DB 행을 확인하고 UUID key만 root 아래에서 읽는다. 경로 입력/�
 - Redis7.4 Testcontainers: Media snapshot typed JSON roundtrip/Warm hit 무쿼리/구 prefix 격리/TTL,
   commit/rollback 후 hook 무효화, 검색의 warm detail snapshot 우회. 기존 권한/캐시 회귀 Suite 재사용.
 
-전체 실행 결과·CI 경계는 [#272 검증 기록](../testing/catalog-media-272.md)에 남긴다.
-#272 당시의 검증 기록과 구분해 현재 업로드/관리 API 검증은 [#273 기록](../testing/media-management-273.md)을 본다.
-실제 시설 사진 준비·Frontend 연결/시안 재현·사용자 승인은 완료하지 않았다.
+공개 읽기의 집중 테스트는 `CatalogMediaIntegrationTest`, `CatalogMediaMySqlIntegrationTest`,
+`MediaContentIntegrationTest`다. 실제 업로드/교체/삭제의 재현은
+[관리 API 검증](media-management.md#5-격리된-재현입력-예시)을 참고한다.
+Frontend 연결은 [화면 계약과 검수](../ui/frontend-guide.md)를 참고한다. 실제 시설 사진과 최종 사용자 승인은 별도다.

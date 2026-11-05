@@ -104,19 +104,6 @@ Parser/canonical round-trip, 중복·잘못된·외부/비계약 Query 거절, �
   CI의 Ubuntu/Node 24.19.0과 동일 OS/Patch 환경은 아니다. 새 의존성/외부 서비스가 필요하지 않다.
   push/PR 미요청으로 원격 Actions는 실행하지 않았다. Backend 변경이 없어 전체 Backend test/build는 재실행하지 않았다.
 
-Browser는 computer-use 스킬과 [읽기 전용 Audit](../../frontend/scripts/ui-audit/README.md)을 사용했다.
-실제 App Component/CSS를 1440×1000·390×844에서 렌더링하고 시안과 비교했다.
-[측정 JSON](../ui/evidence/243/measurements.json)과 같은 폴더에 8개 JPEG를 저장했다.
-Desktop 복귀 scrollY는 406→406, Mobile은 1038→1037(1px 차이), 두 경우 모두 원래
-`accommodation-link-7`에 Focus가 복원되고 도시·날짜·인원·NAME/DESC·size 10 조건이 유지됐다.
-가로 넘침은 두 폭 모두 0px였다. 직접 상세 URL 새로고침 후 검색 복귀 Link/날짜/인원 유지,
-중복 `search`의 재입력 안내도 실제 Browser에서 확인했다.
 
-시안의 사진/넓은 갤러리·Navy 화면과 현재 텍스트 카드·녹색 화면 차이는 이번 범위의 의도적인 차이다.
-DOM 테스트를 시각 검증으로 대체하지 않았다. Audit은 HTTP Fixture + MemoryRouter이므로
-실제 Backend·인증/Google·쓰기·Native Browser History E2E를 증명하지 않는다.
-History 검증은 Router 테스트, Browser Reload는 Audit 진입 Query 재로딩 검증이다.
-Fixture 페이지 수와 필터 응답은 실제 검색 엔진 결과가 아니다. 실제 SPA Hosting fallback,
-다른 Browser/Touch/Screen Reader·최종 사용자 검수는 f0.6.0에서 남아 있다.
-
-![Mobile 검색 복귀 위치](../ui/evidence/243/search-390-restored.jpg)
+브라우저의 실제 위치와 포커스는 [검수 가이드](../ui/frontend-guide.md)를 따라 확인한다.
+Audit의 MemoryRouter는 Native Browser History나 실제 Backend 연동을 검증하지 않는다.

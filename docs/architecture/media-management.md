@@ -133,8 +133,10 @@ IF NOT EXISTS가 기존 불완전한 테이블/제약을 수리한다는 뜻은 
 ## 5. 격리된 재현·입력 예시
 
 개발 실데이터 대신 테스트 Suite의 임시 MySQL/Redis/디스크·합성 픽셀을 우선 사용한다.
-[#273 검증 기록](../testing/media-management-273.md)의 실제 HTTP 테스트가 테스트용 ADMIN JWT 발급·가상 숙소/객실 Fixture 저장부터
-업로드/조회/교체/삭제까지 재현하고 종료 시 자기 임시 파일만 정리한다.
+`MediaManagementMySqlIntegrationTest`는 실제 TCP HTTP로 테스트용 ADMIN JWT·가상 숙소/객실의
+업로드/조회/교체/삭제, 대표 변경과 공개/예약 조회, 파일 정리 경합을 검증한다.
+`MediaManagementIntegrationTest`는 MockMvc와 임시 파일로 권한·오래된 ETag·파일 실패 복구를 검증한다.
+두 Suite는 개발 데이터가 아닌 자신의 임시 파일만 정리한다.
 실제 호텔 사진이나 [참조 전용 시안 자산](../ui/prototypes/premium-travel/ASSETS.md)을 사용하지 않는다.
 
 별도 격리된 개발 환경에서 Swagger/curl로 확인할 때에는 해당 DB의 가상 숙소/객실을 선택하고,
