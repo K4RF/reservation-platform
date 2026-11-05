@@ -85,7 +85,7 @@ describe('consumer site frame', () => {
   })
 
   it('cycles keyboard focus and dismisses on explicit close or navigation without adding a menu history entry', () => {
-    renderFrame('/login')
+    renderFrame('/accommodations/7')
     const { dialog } = openMenu()
     const close = within(dialog).getByRole('button', { name: '메뉴 닫기' })
     const last = within(dialog).getByRole('link', { name: '회원가입' })
@@ -100,7 +100,7 @@ describe('consumer site frame', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByLabelText('현재 주소').textContent).toBe('/accommodations')
     fireEvent.click(screen.getByRole('button', { name: '뒤로 가기' }))
-    expect(screen.getByLabelText('현재 주소').textContent).toBe('/login')
+    expect(screen.getByLabelText('현재 주소').textContent).toBe('/accommodations/7')
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 

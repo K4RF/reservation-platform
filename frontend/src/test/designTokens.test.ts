@@ -124,7 +124,7 @@ describe('design token and global stylesheet contracts', () => {
     expect(
       Object.fromEntries([...tokens].filter(([name]) => name.startsWith('--content-'))),
     ).toEqual({
-      '--content-auth': '28rem',
+      '--content-auth': '26.25rem',
       '--content-form': '32rem',
       '--content-result': '45rem',
       '--content-reservation': '60rem',
@@ -212,13 +212,12 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toContain('var(--accent)')
   })
 
-  it('scopes Auth branding and content panels with form-first mobile reflow and visible inverse focus', () => {
-    expect(globalCss).toMatch(/\.auth-page\s*\{[^}]*grid-template-areas: 'introduction form';/)
-    expect(globalCss).toMatch(/\.auth-panel\s*\{[^}]*var\(--content-auth\)/)
-    expect(globalCss).toContain("grid-template-areas: 'form' 'introduction'")
+  it('bounds the Auth task and notice layouts without hiding document overflow', () => {
+    expect(globalCss).toMatch(/\.auth-page\s*\{[^}]*width: min\(100%, 60rem\)/)
     expect(globalCss).toMatch(
-      /\.auth-introduction a:focus-visible\s*\{[^}]*outline-color: var\(--color-on-primary\);/,
+      /\.auth-page-form\s*\{[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, var\(--content-auth\)\)/,
     )
+    expect(globalCss).toMatch(/\.auth-page-notice\s*\{[^}]*width: min\(100%, 34rem\)/)
     expect(globalCss).not.toContain('overflow-x: hidden')
   })
 

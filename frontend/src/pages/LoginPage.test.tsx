@@ -40,15 +40,16 @@ function enterValidDetails() {
 describe('login flow', () => {
   it('renders the login route, signup link, and blocks invalid local input', () => {
     renderLogin()
-    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '로그인' }))
+    expect(within(screen.getByRole('banner')).getAllByRole('link')).toHaveLength(1)
     expect(screen.getByRole('region', { name: '로그인' }).classList.contains('auth-page')).toBe(
       true,
     )
     expect(screen.getByRole('form', { name: '이메일 로그인' })).toBeTruthy()
-    expect(
-      screen.getByRole('link', { name: '로그인 없이 숙소 둘러보기' }).getAttribute('href'),
-    ).toBe('/accommodations')
-    expect(screen.getByText(/새로고침 후에는 다시 로그인해야 합니다/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: '숙소 둘러보기' }).getAttribute('href')).toBe(
+      '/accommodations',
+    )
+    expect(screen.queryByText(/브라우저 메모리/)).toBeNull()
     expect(screen.getByLabelText('이메일').getAttribute('inputmode')).toBe('email')
     expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
     expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('current-password')
@@ -66,10 +67,9 @@ describe('login flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
     expect(screen.getByText('이메일을 입력해 주세요.')).toBeTruthy()
     expect(screen.getByText('비밀번호를 입력해 주세요.')).toBeTruthy()
-    expect(screen.getByLabelText('비밀번호').getAttribute('aria-describedby')?.split(' ')).toEqual([
-      'login-password-hint',
+    expect(screen.getByLabelText('비밀번호').getAttribute('aria-describedby')).toBe(
       'login-password-error',
-    ])
+    )
     expect(loginWithEmail).not.toHaveBeenCalled()
   })
 
@@ -110,7 +110,7 @@ describe('login flow', () => {
     fireEvent.click(screen.getByRole('button', { name: '로그아웃' }))
     expect(await screen.findByText('로그아웃되었습니다.')).toBeTruthy()
     expect(logoutFromBackend).toHaveBeenCalledOnce()
-    expect(screen.getByRole('link', { name: '로그인' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '로그인' })).toBeTruthy()
     expect(getAccessToken()).toBeNull()
     expect(getRefreshToken()).toBeNull()
     const protectedFetch = vi.fn().mockResolvedValue(new Response('{}', { status: 401 }))

@@ -1,6 +1,8 @@
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router'
 import { AppRoutes } from '../../src/app/routes'
+import { saveGoogleReturn } from '../../src/app/loginReturn'
+import { createGoogleLoginStartUrl } from '../../src/api/googleOAuth2'
 import { AuthProvider } from '../../src/state/AuthProvider'
 import { setTokenPair } from '../../src/state/accessToken'
 import { accessTokenWithExpiry } from '../../src/test/jwt'
@@ -20,6 +22,24 @@ const scenario = params.get('scenario') ?? 'ready'
 const textScale = params.get('textScale') ?? '100'
 const mediaMode = params.get('media') ?? 'missing'
 const booking = params.get('booking') ?? 'blocked'
+const auth = params.get('auth') ?? 'blocked'
+if (
+  !['blocked', 'signup-success', 'login-error', 'callback-pending', 'callback-error'].includes(auth)
+)
+  throw new Error('Unknown audit Auth state')
+let entry: string | { pathname: string; state: { signupCompleted: boolean; from: string } } =
+  params.get('path') ?? '/'
+const authReturn =
+  '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3'
+if (auth === 'signup-success') {
+  entry = { pathname: '/login', state: { signupCompleted: true, from: authReturn } }
+}
+if (auth === 'callback-pending' || auth === 'callback-error') {
+  // Use a synthetic one-time code and state to exercise the real callback, without Google.
+  const start = new URL(createGoogleLoginStartUrl(location.origin))
+  saveGoogleReturn(authReturn)
+  entry = `/oauth2/callback#code=${'a'.repeat(43)}&state=${start.searchParams.get('state')}`
+}
 if (!['blocked', 'success', 'ambiguous'].includes(booking))
   throw new Error('Unknown audit Booking outcome')
 if (!['present', 'missing', 'failed', 'partial'].includes(mediaMode))
@@ -40,11 +60,27 @@ window.fetch = (input, init) => {
   const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
   const method = init?.method ?? (input instanceof Request ? input.method : 'GET')
   const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined)
-  if (
-    booking === 'ambiguous' &&
-    method.toUpperCase() === 'POST' &&
-    new URL(url, location.origin).pathname === '/api/v1/reservations'
-  )
+  const path = new URL(url, location.origin).pathname
+  if (method.toUpperCase() === 'POST') {
+    if (auth === 'login-error' && path === '/api/v1/auth/login') {
+      return Promise.resolve(
+        Response.json({ status: 401, code: 'AUTH_003', message: 'Audit fixture' }, { status: 401 }),
+      )
+    }
+    if (path === '/api/v1/auth/oauth2/exchange') {
+      if (auth === 'callback-error') {
+        return Promise.resolve(Response.json({ message: 'Audit fixture' }, { status: 401 }))
+      }
+      if (auth === 'callback-pending') {
+        return new Promise<Response>((_, reject) => {
+          const abort = () => reject(new DOMException('Aborted', 'AbortError'))
+          if (signal?.aborted) abort()
+          else signal?.addEventListener('abort', abort, { once: true })
+        })
+      }
+    }
+  }
+  if (booking === 'ambiguous' && method.toUpperCase() === 'POST' && path === '/api/v1/reservations')
     return new Promise<Response>((resolve, reject) => {
       const abort = () => {
         clearTimeout(timer)
@@ -71,7 +107,7 @@ window.fetch = (input, init) => {
 
 createRoot(document.getElementById('root')!).render(
   <AuthProvider>
-    <MemoryRouter initialEntries={[params.get('path') ?? '/']}>
+    <MemoryRouter initialEntries={[entry]}>
       <AppRoutes />
     </MemoryRouter>
   </AuthProvider>,

@@ -106,10 +106,10 @@ describe('authentication user lifecycle (HTTP boundary integration)', () => {
     expectUiSemantics()
     submit('회원가입')
     expect(
-      await screen.findByText('회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.'),
+      await screen.findByText('회원가입이 완료되었습니다. 가입한 이메일로 로그인해 주세요.'),
     ).toBeTruthy()
     expect(screen.getByTestId('auth').textContent).toBe('anonymous')
-    fireEvent.click(screen.getByRole('link', { name: '로그인' }))
+    expect(screen.getByTestId('location').textContent).toBe('/login')
     expectUiSemantics()
     submit('로그인')
     await waitFor(() => expect(screen.getByTestId('auth').textContent).toBe('authenticated:USER'))
@@ -127,7 +127,7 @@ describe('authentication user lifecycle (HTTP boundary integration)', () => {
     expect(getRefreshToken()).toBeNull()
     expect(calls(mock, '/auth/logout')).toHaveLength(1)
     expect(screen.getByTestId('auth').textContent).toBe('anonymous')
-    fireEvent.click(screen.getByRole('link', { name: '홈' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Reservation Platform' }))
     expect(screen.queryByRole('link', { name: '내 예약' })).toBeNull()
     // New navigation to the protected URL must require login again.
     first.unmount()
