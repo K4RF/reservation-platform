@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { ApiError } from '../../api/errors'
 import { ErrorState } from '../ui/ErrorState'
@@ -18,8 +18,20 @@ export function AdminMutationFeedback({
   reviewControls?: boolean
 }) {
   const [reviewed, setReviewed] = useState(false)
+  const feedback = useRef<HTMLDivElement>(null)
+  const { error, success } = mutation
+  const hasResult = error !== undefined || !!success
+  useEffect(() => {
+    if (error !== undefined || success) feedback.current?.focus()
+  }, [error, success])
   return (
-    <div className="admin-mutation-feedback">
+    <div
+      className="admin-mutation-feedback"
+      ref={feedback}
+      tabIndex={hasResult ? -1 : undefined}
+      role={hasResult ? 'group' : undefined}
+      aria-label={hasResult ? '관리 저장 결과' : undefined}
+    >
       {mutation.pending && <LoadingState message="저장 중입니다. 중복 요청을 보내지 마세요." />}
       {mutation.success && (
         <p className="admin-save-success" role="status">
@@ -43,10 +55,10 @@ export function AdminMutationFeedback({
       {mutation.uncertain && (
         <section className="admin-recovery-panel" aria-label="불명확한 저장 결과 확인">
           <p role="alert">
-            저장이 이미 반영되었을 수 있어 재전송을 잠갔습니다. 요청은 자동 재시도하지 않습니다.
+            저장이 이미 반영되었을 수 있어 다시 저장할 수 없습니다.{' '}
             {reviewMessage ??
               '숙소는 목록·상세를 재조회하고, 조회 API가 없는 정책은 서버 기록 등으로 결과를 확인하세요.'}{' '}
-            화면 이동이나 요청 중단은 서버 Rollback을 의미하지 않습니다.
+            화면을 떠나거나 요청을 중단해도 서버의 저장이 취소되는 것은 아닙니다.
           </p>
           <Link to={reviewLink?.to ?? '/admin/accommodations'}>
             {reviewLink?.label ?? '숙소 목록에서 결과 확인'}

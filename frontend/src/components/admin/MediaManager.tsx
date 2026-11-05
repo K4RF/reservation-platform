@@ -14,6 +14,14 @@ import { adminErrorMessage, type AdminMutation } from './useAdminMutation'
 
 const emptyMetadata = { altText: '', source: '', rightsRecord: '' }
 type Operation = MediaAction['kind']
+const operationLabels: Record<Operation, string> = {
+  upload: '사진 추가',
+  metadata: '설명·출처·사용권 수정',
+  representative: '대표 지정',
+  order: '전체 순서 변경',
+  replace: '파일 교체',
+  delete: '사진 삭제',
+}
 
 /** Shares the page write gate. Every failure requires a fresh ADMIN GET and explicit review. */
 export function MediaManager({
@@ -76,7 +84,7 @@ export function MediaManager({
     setReviewed(false)
     setError(undefined)
     setLastAction(
-      `${owner.type === 'ROOM' ? '객실' : '숙소'} #${owner.id} · ${action.kind}${'mediaId' in action ? ` · 사진 #${action.mediaId}` : ''}`,
+      `${owner.type === 'ROOM' ? '객실' : '숙소'} #${owner.id} · ${operationLabels[action.kind]}${'mediaId' in action ? ` · 사진 #${action.mediaId}` : ''}`,
     )
     void mutation.run(
       async (signal) => {
@@ -161,6 +169,7 @@ export function MediaManager({
       )}
       {album && (
         <>
+          <h4>등록된 사진 · {album.images.length}장</h4>
           <ol className="admin-media-list" aria-label="관리 사진 목록">
             {album.images.map(({ image, source, rightsRecord }, i) => (
               <li key={image.mediaId}>
@@ -176,7 +185,10 @@ export function MediaManager({
             ))}
           </ol>
           {!album.images.length && <p>등록된 사진이 없습니다.</p>}
-          <MediaForm key={formKey} album={album} disabled={disabled} onSave={save} />
+          <details className="admin-disclosure">
+            <summary>사진 작업 준비</summary>
+            <MediaForm key={formKey} album={album} disabled={disabled} onSave={save} />
+          </details>
         </>
       )}
     </section>
@@ -298,6 +310,11 @@ function MediaForm({
             </select>
           </div>
         )}
+        {operation === 'delete' && (
+          <p className="admin-media-delete-note">
+            선택한 사진만 목록에서 삭제합니다. 숙소·객실과 예약은 삭제되지 않습니다.
+          </p>
+        )}
         {operation === 'order' && (
           <ol aria-label="변경할 사진 순서">
             {order.map((id, i) => (
@@ -358,7 +375,11 @@ function MediaForm({
           />
           대상·작업·사진 사용권을 확인했으며 한 번 제출합니다.
         </label>
-        <button type="submit" disabled={operation === 'upload' && album.images.length >= 20}>
+        <button
+          type="submit"
+          className={operation === 'delete' ? 'admin-media-delete' : undefined}
+          disabled={operation === 'upload' && album.images.length >= 20}
+        >
           사진 작업 실행
         </button>
       </fieldset>

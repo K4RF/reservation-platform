@@ -1,4 +1,9 @@
 import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
+import {
+  AdminBreadcrumb,
+  AdminDirectId,
+  AdminRoomTarget,
+} from '../../components/admin/AdminContext'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { getRoom } from '../../api/room'
@@ -7,7 +12,6 @@ import { createRoomDailyPrice, updateRoomDailyPrice } from '../../api/adminDaily
 import { DailyPriceForm } from '../../components/admin/DailyPriceForm'
 import { AdminMutationFeedback } from '../../components/admin/AdminMutationFeedback'
 import { adminErrorMessage, useAdminMutation } from '../../components/admin/useAdminMutation'
-import { RoomCard } from '../../components/room/RoomCard'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { formatMinorUnits, toMinorUnits } from '../../utils/money'
@@ -22,20 +26,18 @@ export function AdminDailyPricePage() {
   const query = readAdminDailyPriceQuery(params)
   return (
     <section aria-labelledby="admin-prices-heading">
+      <AdminBreadcrumb
+        items={[
+          { label: '객실 관리에서 선택', to: '/admin/rooms' },
+          ...(query?.roomId ? [{ label: `객실 #${query.roomId}` }] : []),
+          { label: '가격' },
+        ]}
+      />
       <AdminPageHeading
         id="admin-prices-heading"
         title="가격 관리"
         context="단일 객실 · 단일 숙박일"
       />
-      <p>
-        객실 하나와 숙박 날짜 하나의 적용 가격을 조회하고 날짜별 Override를 생성·수정합니다. 기간
-        Calendar·일괄 설정·삭제·기본값 복원 기능은 제공하지 않습니다.
-      </p>
-      <p>
-        기본 가격 수정은 객실 관리에서 수행합니다. 날짜별 가격 변경은 기존 예약 금액 Snapshot을
-        바꾸지 않습니다. API에 통화 정보가 없어 통화 기호나 단위를 추측하지 않고 금액만 표시합니다.
-      </p>
-      <Link to="/admin/rooms">객실 관리에서 선택</Link>
       <form
         key={`${params.get('roomId')}-${params.get('stayDate')}`}
         className="admin-form admin-query-form"
@@ -51,16 +53,18 @@ export function AdminDailyPricePage() {
           setParams(next)
         }}
       >
-        <div className="form-field">
-          <label htmlFor="price-room-id">가격 관리 객실 ID</label>
-          <input
-            id="price-room-id"
-            name="roomId"
-            inputMode="numeric"
-            required
-            defaultValue={params.get('roomId') ?? ''}
-          />
-        </div>
+        <AdminDirectId selected={!!query?.roomId}>
+          <div className="form-field">
+            <label htmlFor="price-room-id">가격 관리 객실 ID</label>
+            <input
+              id="price-room-id"
+              name="roomId"
+              inputMode="numeric"
+              required={!query?.roomId}
+              defaultValue={params.get('roomId') ?? ''}
+            />
+          </div>
+        </AdminDirectId>
         <div className="form-field">
           <label htmlFor="price-stay-date">가격 관리 숙박 날짜</label>
           <input
@@ -75,10 +79,6 @@ export function AdminDailyPricePage() {
         </div>
         <button type="submit">적용 가격 조회</button>
       </form>
-      <p>
-        저장 중 대상 변경·화면 이동·요청 중단은 서버 Rollback을 의미하지 않습니다. 새 요청 전에 저장
-        결과를 확인하세요.
-      </p>
       {!query ? (
         <ErrorState message="객실 ID 또는 숙박 날짜가 올바르지 않습니다." />
       ) : query.roomId === null || !query.stayDate ? (
@@ -122,58 +122,63 @@ function DailyPriceManager({ roomId, stayDate }: { roomId: number; stayDate: str
       )}
       {state.status === 'success' && (
         <>
-          <section className="admin-context-panel" aria-label="가격 관리 대상 객실">
-            <p className="admin-panel-label">조회 대상 · 객실</p>
-            <RoomCard room={state.data.room} />
-            <p>
-              객실 ID {roomId} · 숙소 ID {state.data.room.accommodationId}
-            </p>
-            <Link to={`/admin/rooms/${roomId}?accommodationId=${state.data.room.accommodationId}`}>
-              객실 기본 가격 관리
+          <AdminRoomTarget
+            room={state.data.room}
+            label="가격 관리 대상 객실"
+            linkLabel="객실 기본 가격 관리"
+          >
+            <Link
+              className="nav-link"
+              to={`/admin/inventories?roomId=${roomId}&startDate=${stayDate}&endDate=${stayDate}`}
+            >
+              같은 날짜 재고
             </Link>
-          </section>
-          <section className="admin-read-panel" aria-label="현재 적용 가격">
-            <p className="admin-panel-label">읽기 전용 · 직전 서버 조회</p>
-            <h3>서버 적용 가격</h3>
-            <dl className="admin-key-values">
-              <dt>숙박 날짜</dt>
-              <dd>{state.data.price.stayDate}</dd>
-              <dt>적용 1박 금액</dt>
-              <dd className="admin-money">
-                {formatMinorUnits(toMinorUnits(state.data.price.nightlyPrice))}
-              </dd>
-              <dt>출처</dt>
-              <dd>
-                <span className="admin-status-badge" data-status={state.data.price.source}>
-                  {state.data.price.source}
-                </span>
-              </dd>
-              <dt>날짜별 가격 ID</dt>
-              <dd>{state.data.price.roomDailyPriceId ?? '없음 (기본 가격 적용)'}</dd>
-            </dl>
-            {state.data.price.source === 'DEFAULT' ? (
-              <p>
-                이 날짜의 Override는 미등록입니다. 표시 금액은 서버가 결정한 기본 가격이며 가격
-                누락이나 조회 오류가 아닙니다.
-              </p>
-            ) : (
-              <p>이 날짜에 저장된 Override 가격입니다. 기본 가격과 별개입니다.</p>
-            )}
-          </section>
-          <DailyPriceForm
-            price={state.data.price}
-            disabled={mutation.disabled}
-            onSave={(nightlyPrice) => {
-              void mutation.run(
-                (signal) =>
-                  state.data.price.source === 'DEFAULT'
-                    ? createRoomDailyPrice(roomId, { stayDate, nightlyPrice }, signal)
-                    : updateRoomDailyPrice(roomId, stayDate, { nightlyPrice }, signal),
-                retry,
-                '날짜별 가격 저장 응답을 받았습니다. 최신 적용 가격을 다시 조회합니다.',
-              )
-            }}
-          />
+          </AdminRoomTarget>
+          <div className="admin-task-grid">
+            <section className="admin-read-panel" aria-label="현재 적용 가격">
+              <p className="admin-panel-label">읽기 전용 · 직전 서버 조회</p>
+              <h3>서버 적용 가격</h3>
+              <dl className="admin-key-values">
+                <dt>숙박 날짜</dt>
+                <dd>{state.data.price.stayDate}</dd>
+                <dt>적용 1박 금액</dt>
+                <dd className="admin-money">
+                  {formatMinorUnits(toMinorUnits(state.data.price.nightlyPrice))}
+                </dd>
+                <dt>출처</dt>
+                <dd>
+                  <span className="admin-status-badge" data-status={state.data.price.source}>
+                    {state.data.price.source}
+                  </span>
+                </dd>
+                <dt>날짜별 가격 ID</dt>
+                <dd>{state.data.price.roomDailyPriceId ?? '없음 (기본 가격 적용)'}</dd>
+              </dl>
+              {state.data.price.source === 'DEFAULT' ? (
+                <p>날짜별 가격이 없어 객실 기본 가격을 적용합니다.</p>
+              ) : (
+                <p>이 날짜에 저장된 Override 가격입니다. 기본 가격과 별개입니다.</p>
+              )}
+            </section>
+            <details className="admin-disclosure admin-price-edit">
+              <summary>날짜별 가격 편집</summary>
+              <p>새 가격은 이미 저장된 예약 금액을 바꾸지 않습니다.</p>
+              <DailyPriceForm
+                price={state.data.price}
+                disabled={mutation.disabled}
+                onSave={(nightlyPrice) => {
+                  void mutation.run(
+                    (signal) =>
+                      state.data.price.source === 'DEFAULT'
+                        ? createRoomDailyPrice(roomId, { stayDate, nightlyPrice }, signal)
+                        : updateRoomDailyPrice(roomId, stayDate, { nightlyPrice }, signal),
+                    retry,
+                    '날짜별 가격 저장 응답을 받았습니다. 최신 적용 가격을 다시 조회합니다.',
+                  )
+                }}
+              />
+            </details>
+          </div>
         </>
       )}
     </>
