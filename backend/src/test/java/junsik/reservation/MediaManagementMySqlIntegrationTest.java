@@ -3,6 +3,7 @@ package junsik.reservation;
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.AuthenticationTestSupport.bearerToken;
 import static junsik.reservation.support.MediaUploadFixture.*;
+import static junsik.reservation.support.RoomInventoryFixture.roomInventory;
 import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.*;
 
@@ -15,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +44,7 @@ import junsik.reservation.global.exception.BusinessException;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.CatalogMediaRepository;
 import junsik.reservation.repository.MediaFileCleanupRepository;
+import junsik.reservation.repository.RoomInventoryRepository;
 import junsik.reservation.repository.RoomRepository;
 import junsik.reservation.security.JwtTokenProvider;
 import junsik.reservation.service.accommodation.AccommodationService;
@@ -68,6 +72,7 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 	@LocalServerPort int port;
 	@Autowired AccommodationRepository accommodations;
 	@Autowired RoomRepository rooms;
+	@Autowired RoomInventoryRepository inventories;
 	@Autowired AccommodationService accommodationService;
 	@Autowired RoomService roomService;
 	@Autowired MediaManagementService management;
@@ -120,6 +125,73 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 		assertThat(roomCreated.statusCode()).isEqualTo(201);
 		assertThat(roomService.getById(room.getId()).images()).hasSize(1);
 		cleanup.processDue();
+	}
+
+	@Test
+	void realHttpRepresentativeMediaJourneyRechecksAvailabilityAndReadsOwnedBooking() throws Exception {
+		var owner = accommodations.saveAndFlush(accommodation("Integration284-" + UUID.randomUUID()));
+		var selectedRoom = rooms.saveAndFlush(room(owner));
+		LocalDate checkIn = LocalDate.now(ZoneId.of("Asia/Seoul")).plusDays(30);
+		LocalDate checkOut = checkIn.plusDays(1);
+		inventories.saveAndFlush(roomInventory(selectedRoom, checkIn, 1));
+		String catalog = "/api/v1/accommodations/" + owner.getId();
+		String roomPath = "/api/v1/rooms/" + selectedRoom.getId();
+		String album = catalog + "/media";
+		assertThat(body(sendAs("GET", catalog, null, null, null), 200).path("images").size()).isZero();
+
+		var first = sendUpload("POST", album, etag(send("GET", album, null, null)));
+		long firstId = body(first, 201).path("images").get(0).path("image").path("mediaId").longValue();
+		var second = sendUpload("POST", album, etag(first), image("png", 5, 3));
+		long secondId = body(second, 201).path("images").get(1).path("image").path("mediaId").longValue();
+		assertThat(secondId).isNotEqualTo(firstId);
+		var changed = body(send("PATCH", album + "/" + secondId + "/representative", etag(second), null), 200);
+		assertThat(changed.path("images").get(0).path("image").path("mediaId").longValue()).isEqualTo(secondId);
+		String roomAlbum = roomPath + "/media";
+		long roomMediaId = body(sendUpload("POST", roomAlbum, etag(send("GET", roomAlbum, null, null))), 201)
+				.path("images").get(0).path("image").path("mediaId").longValue();
+
+		String publicList = "/api/v1/accommodations?status=ACTIVE&sortBy=ID&direction=ASC&page=0&size=2";
+		assertThat(body(sendAs("GET", publicList, null, null, null), 200).path("content").size()).isBetween(1, 2);
+		// Scope the representative projection to this owner even when another test created earlier rows.
+		var card = body(sendAs("GET", publicList + "&name=" + owner.getName(), null, null, null), 200).path("content").get(0);
+		assertThat(card.path("accommodationId").longValue()).isEqualTo(owner.getId());
+		assertThat(card.path("representativeImage").path("mediaId").longValue()).isEqualTo(secondId);
+		assertThat(card.path("images").size()).isEqualTo(1);
+		var detail = body(sendAs("GET", catalog, null, null, null), 200);
+		assertThat(detail.path("images").get(0).path("mediaId").longValue()).isEqualTo(secondId);
+		assertThat(detail.path("images").get(1).path("mediaId").longValue()).isEqualTo(firstId);
+		var mediaContent = sendAs("GET", detail.path("images").get(0).path("url").asString(), null, null, null);
+		assertThat(mediaContent.statusCode()).isEqualTo(200);
+		assertThat(mediaContent.headers().firstValue("content-type")).contains("image/png");
+		assertThat(javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(mediaContent.body())).getWidth()).isEqualTo(5);
+		assertThat(body(sendAs("GET", roomPath, null, null, null), 200)
+				.path("representativeImage").path("mediaId").longValue()).isEqualTo(roomMediaId);
+
+		String available = catalog + "/rooms/available?checkInDate=" + checkIn + "&checkOutDate=" + checkOut + "&guestCount=2";
+		assertThat(body(sendAs("GET", available, null, null, null), 200).path("totalElements").longValue()).isEqualTo(1);
+		String credentials = """
+				{"email":"journey-%s@example.test","password":"Fixture-password-284"}
+				""".formatted(UUID.randomUUID());
+		assertThat(sendAs("POST", "/api/v1/members", null, credentials, null).statusCode()).isEqualTo(201);
+		String bearer = "Bearer " + body(sendAs("POST", "/api/v1/auth/login", null, credentials, null), 200)
+				.path("accessToken").asString();
+		assertThat(sendAs("GET", album, null, null, bearer).statusCode()).isEqualTo(403);
+		var refreshed = body(sendAs("GET", available, null, null, null), 200).path("content").get(0);
+		assertThat(refreshed.path("roomId").longValue()).isEqualTo(selectedRoom.getId());
+		assertThat(refreshed.path("representativeImage").path("mediaId").longValue()).isEqualTo(roomMediaId);
+		String reservationsPath = "/api/v1/reservations";
+		var booked = body(sendAs("POST", reservationsPath, null, """
+				{"roomId":%d,"guestCount":2,"checkInDate":"%s","checkOutDate":"%s",
+				 "representativeGuest":{"name":"Fixture Guest","email":"guest@example.test","phone":"010-0000-0000"}}
+				""".formatted(selectedRoom.getId(), checkIn, checkOut), bearer), 201);
+		long reservationId = booked.path("reservationId").longValue();
+		assertThat(booked.path("status").asString()).isEqualTo("CONFIRMED");
+		assertThat(body(sendAs("GET", reservationsPath, null, null, bearer), 200)
+				.path("content").get(0).path("reservationId").longValue()).isEqualTo(reservationId);
+		assertThat(body(sendAs("GET", reservationsPath + "/" + reservationId, null, null, bearer), 200)
+				.path("roomId").longValue()).isEqualTo(selectedRoom.getId());
+		assertThat(sendAs("GET", reservationsPath + "/" + reservationId, null, null, null).statusCode()).isEqualTo(401);
+		assertThat(body(sendAs("GET", available, null, null, null), 200).path("totalElements").longValue()).isZero();
 	}
 
 	@Test
@@ -204,8 +276,16 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 	private static String quote(String revision) { return "\"" + revision + "\""; }
 	private static String etag(HttpResponse<byte[]> response) { return response.headers().firstValue("ETag").orElseThrow(); }
 	private HttpResponse<byte[]> send(String method, String path, String etag, String json) throws Exception {
+		return sendAs(method, path, etag, json, bearerToken(tokens, MemberRole.ADMIN));
+	}
+	private tools.jackson.databind.JsonNode body(HttpResponse<byte[]> response, int expectedStatus) throws Exception {
+		assertThat(response.statusCode()).as("%s %s", response.request().method(), response.uri().getPath()).isEqualTo(expectedStatus);
+		return mapper.readTree(response.body());
+	}
+	private HttpResponse<byte[]> sendAs(String method, String path, String etag, String json, String authorization) throws Exception {
 		var request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
-				.header("Authorization", bearerToken(tokens, MemberRole.ADMIN));
+				.timeout(java.time.Duration.ofSeconds(15));
+		if (authorization != null) { request.header("Authorization", authorization); }
 		if (etag != null) { request.header("If-Match", etag); }
 		if (json != null) { request.header("Content-Type", "application/json"); }
 		try (var client = HttpClient.newHttpClient()) {
