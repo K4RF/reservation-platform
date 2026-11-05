@@ -61,7 +61,7 @@ describe('Admin shared layout and existing role guard', () => {
         .getAllByRole('link')
         .map((link) => link.getAttribute('href')),
     ).toEqual(sections.map(([path]) => path))
-    expect(screen.getByText('조회로 확인하고, 변경은 명시적으로 저장합니다.')).toBeTruthy()
+    expect(navigation().closest('aside')).toBeTruthy()
     expect(
       screen.getByRole('heading', { name: '관리 홈', level: 2 }).closest('header')?.className,
     ).toBe('admin-page-heading')
@@ -89,7 +89,7 @@ describe('Admin shared layout and existing role guard', () => {
         within(navigation()).getByRole('link', { name: '관리 홈' }).getAttribute('aria-current'),
       ).toBeNull()
       expect(within(navigation()).getAllByRole('link')).toHaveLength(5)
-      expect(screen.getByText('관리 메뉴').className).toBe('admin-menu-title')
+      expect(screen.getByRole('navigation', { name: '관리 경로' })).toBeTruthy()
       expect(navigation().querySelectorAll('[aria-current="page"]')).toHaveLength(1)
       expect(fetch).not.toHaveBeenCalled()
     },

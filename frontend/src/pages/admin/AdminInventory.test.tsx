@@ -121,6 +121,11 @@ describe('Inventory Calendar reads and uncreated dates', () => {
     expect(new Headers(fetch.mock.calls[0][1].headers).has('Authorization')).toBe(false) // Public Room read only.
     expect(new Headers(fetch.mock.calls[1][1].headers).get('Authorization')).toMatch(/^Bearer /)
     await selectDate('2030-07-21')
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: '2030-07-21 편집' }))
+    fireEvent.click(screen.getByRole('button', { name: '선택한 날짜로 돌아가기' }))
+    expect(document.activeElement).toBe(
+      within(calendar()).getByRole('button', { name: '2030-07-21' }),
+    )
     expect((screen.getByLabelText('설정할 총수량') as HTMLInputElement).value).toBe('')
     expect(screen.getByRole('button', { name: '날짜 재고 생성' })).toBeTruthy()
     expect(screen.queryByRole('combobox')).toBeNull()

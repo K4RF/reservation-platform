@@ -1,3 +1,4 @@
+import { openAdminPanel } from './adminWorkspace'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -76,10 +77,13 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     const api = adminManagementApi(true)
     open('/admin/accommodations/7')
     await login('숙소 관리 #7')
-    await screen.findByLabelText('숙소 이름')
+    await openAdminPanel('사진 관리')
     fireEvent.click(screen.getByRole('button', { name: '사진 관리 목록 새로 조회' }))
+    fireEvent.click(await screen.findByText('사진 작업 준비', { selector: 'summary' }))
     await screen.findByRole('form', { name: '사진 작업' })
+    await openAdminPanel('정보 편집')
     change('숙소 이름', '저장하지 않은 숙소 입력')
+    await openAdminPanel('사진 관리')
     async function run() {
       const before = writes(api).length
       const editor = form('사진 작업')
@@ -108,7 +112,9 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     }
     await upload('첫 사진')
     await upload('둘째 사진')
+    await openAdminPanel('정보 편집')
     expect(screen.getByLabelText('숙소 이름')).toHaveProperty('value', '저장하지 않은 숙소 입력')
+    await openAdminPanel('사진 관리')
     change('사진 작업 종류', 'metadata')
     change('사진 대체 텍스트', '첫 사진 수정')
     await run()
@@ -137,8 +143,9 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     expect(screen.getByRole('dialog').querySelector('img')?.getAttribute('alt')).toBe('교체된 사진')
     fireEvent.click(screen.getByRole('button', { name: '숙소 사진 전체 보기 닫기' }))
     fireEvent.click(screen.getByRole('button', { name: '사진 관리로 돌아가기' }))
-    await screen.findByLabelText('숙소 이름')
+    await openAdminPanel('사진 관리')
     fireEvent.click(screen.getByRole('button', { name: '사진 관리 목록 새로 조회' }))
+    fireEvent.click(await screen.findByText('사진 작업 준비', { selector: 'summary' }))
     await screen.findByRole('form', { name: '사진 작업' })
     change('사진 작업 종류', 'delete')
     await run()
@@ -159,7 +166,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     expect(
       within(nav)
         .getAllByRole('link')
-        .map((link) => link.textContent),
+        .map((link) => link.getAttribute('aria-label')),
     ).toEqual(['관리 홈', '숙소 관리', '객실 관리', '가격 관리', '재고 관리'])
     menu('숙소 관리')
     await screen.findByText('검색 조건에 맞는 숙소가 없습니다.')
@@ -178,17 +185,18 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       change(label, accommodationWrite[key])
     fireEvent.submit(form('숙소 생성'))
     await screen.findByRole('heading', { name: '숙소 관리 #7' })
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '숙소 정보 수정' })
     expectUiSemantics()
     change('숙소 이름', '관리 호텔')
     fireEvent.submit(form('숙소 정보 수정'))
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole('region', { name: '현재 숙소 정보' })).getByRole('heading')
-          .textContent,
-      ).toBe('관리 호텔'),
-    )
+    await openAdminPanel('숙소 요약')
+    expect(
+      within(screen.getByRole('region', { name: '현재 숙소 정보' })).getByRole('heading')
+        .textContent,
+    ).toBe('관리 호텔')
     // Policy forms deliberately require explicit POST/PUT; no current-policy GET exists.
+    await openAdminPanel('예약 정책 편집')
     for (const operation of ['POST', 'PUT']) {
       const policy = within(form('예약 정책 입력'))
       fireEvent.change(policy.getByLabelText('예약 정책 작업'), { target: { value: operation } })
@@ -207,6 +215,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       fireEvent.submit(form('예약 정책 입력'))
       await screen.findByRole('region', { name: '예약 정책 성공 응답' })
     }
+    await openAdminPanel('취소 정책 편집')
     for (const operation of ['POST', 'PUT']) {
       const policy = within(form('취소 정책 입력'))
       fireEvent.change(policy.getByLabelText('취소 정책 작업'), { target: { value: operation } })
@@ -223,11 +232,12 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       fireEvent.submit(form('취소 정책 입력'))
       await screen.findByRole('region', { name: '취소 정책 성공 응답' })
     }
+    await openAdminPanel('운영 상태')
     fireEvent.click(screen.getByLabelText('운영 상태 변경을 확인했습니다.'))
     fireEvent.submit(form('숙소 운영 상태 변경'))
     await waitFor(() =>
       expect(
-        within(screen.getByRole('region', { name: '현재 숙소 정보' })).getByText('운영 중지'),
+        within(screen.getByRole('region', { name: '선택한 숙소' })).getByText('운영 중지'),
       ).toBeTruthy(),
     )
     menu('숙소 관리')
@@ -237,15 +247,17 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       'http://localhost',
     ).searchParams
     expect(defaultQuery.has('status')).toBe(false)
+    fireEvent.click(screen.getByText('숙소 검색 · 필터 · 정렬'))
     change('운영 상태 필터', 'INACTIVE')
     fireEvent.submit(form('숙소 관리 검색'))
     fireEvent.click(await screen.findByRole('link', { name: '관리 호텔 (ID 7)' }))
+    await openAdminPanel('운영 상태')
     await screen.findByRole('form', { name: '숙소 운영 상태 변경' })
     fireEvent.click(screen.getByLabelText('운영 상태 변경을 확인했습니다.'))
     fireEvent.submit(form('숙소 운영 상태 변경'))
     await waitFor(() =>
       expect(
-        within(screen.getByRole('region', { name: '현재 숙소 정보' })).getByText('운영 중'),
+        within(screen.getByRole('region', { name: '선택한 숙소' })).getByText('운영 중'),
       ).toBeTruthy(),
     )
     fireEvent.click(await screen.findByRole('link', { name: '이 숙소의 객실 관리' }))
@@ -256,39 +268,43 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     change('전체 수용 인원', '2')
     change('기본 1박 가격', '100')
     fireEvent.submit(form('객실 생성'))
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expectUiSemantics()
     expect(screen.getByTestId('location').textContent).toBe('/admin/rooms/3?accommodationId=7')
     change('기본 1박 가격', '120')
     fireEvent.submit(form('객실 정보 수정'))
-    await waitFor(() =>
-      expect(
-        within(screen.getByRole('region', { name: '현재 객실 정보' })).getByText(
-          '기본 1박 가격: 120',
-        ),
-      ).toBeTruthy(),
-    )
+    await openAdminPanel('객실 요약')
+    expect(
+      within(screen.getByRole('region', { name: '현재 객실 정보' })).getByText(
+        '기본 1박 가격: 120',
+      ),
+    ).toBeTruthy()
+    await openAdminPanel('운영 상태')
     await screen.findByRole('form', { name: '객실 운영 상태 변경' })
     fireEvent.click(screen.getByLabelText('객실 상태 변경을 확인했습니다.'))
     fireEvent.submit(form('객실 운영 상태 변경'))
     await waitFor(() =>
       expect(
-        within(screen.getByRole('region', { name: '현재 객실 정보' })).getByText('운영 중지'),
+        within(screen.getByRole('region', { name: '선택한 객실' })).getByText('운영 중지'),
       ).toBeTruthy(),
     )
     fireEvent.click(await screen.findByRole('link', { name: '객실 관리 목록으로' }))
     await screen.findByRole('link', { name: '스탠다드 조회·편집 (ID 3)' })
+    fireEvent.click(screen.getByText('객실 검색 · 필터 · 정렬'))
     change('객실 상태 필터', 'INACTIVE')
     fireEvent.submit(form('객실 관리 검색'))
     fireEvent.click(await screen.findByRole('link', { name: '스탠다드 조회·편집 (ID 3)' }))
+    await openAdminPanel('운영 상태')
     await screen.findByRole('form', { name: '객실 운영 상태 변경' })
     fireEvent.click(screen.getByLabelText('객실 상태 변경을 확인했습니다.'))
     fireEvent.submit(form('객실 운영 상태 변경'))
     await waitFor(() =>
       expect(
-        within(screen.getByRole('region', { name: '현재 객실 정보' })).getByText('운영 중'),
+        within(screen.getByRole('region', { name: '선택한 객실' })).getByText('운영 중'),
       ).toBeTruthy(),
     )
+    await openAdminPanel('객실 요약')
     fireEvent.click(await screen.findByRole('link', { name: '이 객실의 날짜별 가격 관리' }))
     change('가격 관리 숙박 날짜', '2030-07-20')
     fireEvent.submit(form('가격 조회 대상 선택'))
@@ -297,6 +313,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
         within(screen.getByRole('region', { name: '현재 적용 가격' })).getByText('DEFAULT'),
       ).toBeTruthy(),
     )
+    fireEvent.click(screen.getByText('날짜별 가격 편집'))
     change('설정할 날짜별 1박 가격', '0')
     fireEvent.click(screen.getByLabelText('객실·숙박 날짜·가격과 생성/수정 작업을 확인했습니다.'))
     fireEvent.submit(form('날짜별 가격 입력'))
@@ -310,6 +327,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
         within(screen.getByRole('region', { name: '현재 적용 가격' })).getByText('DAILY'),
       ).toBeTruthy(),
     )
+    fireEvent.click(screen.getByText('날짜별 가격 편집'))
     change('설정할 날짜별 1박 가격', '160.50')
     fireEvent.click(screen.getByLabelText('객실·숙박 날짜·가격과 생성/수정 작업을 확인했습니다.'))
     fireEvent.submit(form('날짜별 가격 입력'))

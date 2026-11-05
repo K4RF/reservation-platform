@@ -7,11 +7,13 @@ import {
   reservationPage,
 } from '../../src/test/reservation'
 import { inventoryCalendar } from '../../src/test/inventory'
+import { bookingPolicy } from '../../src/test/adminAccommodation'
 import type { MediaResponse } from '../../src/api/media'
 
 export type AuditScenario =
   'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress' | 'comparison'
 export type AuditBooking = 'blocked' | 'success' | 'ambiguous'
+export type AuditAdmin = 'blocked' | 'policy-success' | 'policy-error'
 
 // Render fixtures only. Never forwards a request or mutates an actual reservation/catalog.
 export function auditResponse(
@@ -20,6 +22,7 @@ export function auditResponse(
   scenario: AuditScenario,
   mediaMode = 'missing',
   booking: AuditBooking = 'blocked',
+  admin: AuditAdmin = 'blocked',
 ): Response {
   const { pathname: path, searchParams: query } = new URL(url, 'http://127.0.0.1:5174')
   const failure = (status: number, code: string, message: string) =>
@@ -39,6 +42,16 @@ export function auditResponse(
     if (booking === 'success') return Response.json(reservationDetail, { status: 201 })
     if (booking === 'ambiguous')
       return failure(500, 'AUDIT_BOOKING_AMBIGUOUS', '격리된 예약 결과 불명 Fixture')
+  }
+  // This deliberately does not use the form body, alter a fixture, or implement policy GET.
+  if (method.toUpperCase() === 'POST' && path === '/api/v1/accommodations/7/booking-policy') {
+    if (admin === 'policy-success')
+      return Response.json(
+        { ...bookingPolicy, bookingPolicyId: 11, accommodationId: 7 },
+        { status: 201 },
+      )
+    if (admin === 'policy-error')
+      return failure(500, 'AUDIT_POLICY_UNCERTAIN', '예약 정책 저장 결과를 확인하지 못했습니다.')
   }
   if (method.toUpperCase() !== 'GET')
     return failure(405, 'AUDIT_READ_ONLY', 'UI 점검 도구에서는 모든 쓰기 요청을 차단합니다.')
@@ -188,11 +201,21 @@ export function auditResponse(
       endDate: query.get('endDate'),
       inventories: empty
         ? []
-        : inventoryCalendar.inventories.filter(
-            (row) =>
-              row.inventoryDate >= query.get('startDate')! &&
-              row.inventoryDate <= query.get('endDate')!,
-          ),
+        : inventoryCalendar.inventories
+            .filter(
+              (row) =>
+                row.inventoryDate >= query.get('startDate')! &&
+                row.inventoryDate <= query.get('endDate')!,
+            )
+            .map((row) =>
+              stress
+                ? {
+                    ...row,
+                    totalQuantity: 2147483647,
+                    availableQuantity: 2147483647 - row.reservedQuantity,
+                  }
+                : row,
+            ),
     })
   return failure(
     404,
