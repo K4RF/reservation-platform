@@ -59,17 +59,24 @@ describe('availability and selection lifecycle with real API client', () => {
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
     expect(screen.queryByText('총 예상 금액: 246,913.56')).toBeNull()
   })
-  it('uses the unselected Mobile action as a focus jump only, never a query or selection', () => {
+  it('jumps to stay input before a query and to room results after apply without selecting or reading again', async () => {
     const mock = mockApi()
     const scroll = vi.fn()
     const previous = HTMLElement.prototype.scrollIntoView
     HTMLElement.prototype.scrollIntoView = scroll
     try {
       render(<RoomAvailabilitySection accommodationId={7} />)
-      fireEvent.click(screen.getByRole('button', { name: '일정·객실 확인' }))
+      fireEvent.click(screen.getByRole('button', { name: '일정 입력' }))
       expect(document.activeElement?.id).toBe('availability-title')
       expect(scroll).toHaveBeenCalledWith({ block: 'start' })
       expect(mock).not.toHaveBeenCalled()
+      dates()
+      submit()
+      await screen.findByRole('button', { name: '스탠다드 선택' })
+      fireEvent.click(screen.getByRole('button', { name: '객실 확인' }))
+      expect(document.activeElement?.id).toBe('room-list-title')
+      expect(screen.queryByRole('status', { name: '선택한 객실' })).toBeNull()
+      expect(mock).toHaveBeenCalledOnce()
     } finally {
       HTMLElement.prototype.scrollIntoView = previous
     }

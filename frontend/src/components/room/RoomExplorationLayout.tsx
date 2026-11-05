@@ -9,6 +9,7 @@ export function RoomExplorationLayout({
   booking,
   selectedName,
   onContinue,
+  hasAppliedStay = false,
 }: {
   introduction?: ReactNode
   information?: ReactNode
@@ -18,6 +19,7 @@ export function RoomExplorationLayout({
   booking?: ReactNode
   selectedName?: string
   onContinue?: () => void
+  hasAppliedStay?: boolean
 }) {
   const action = useRef<HTMLDivElement>(null)
   const [actionHeight, setActionHeight] = useState(0)
@@ -77,20 +79,17 @@ export function RoomExplorationLayout({
           )}
         </aside>
       </div>
-      {booking}
       <div className="detail-mobile-action" ref={action} aria-label="예약 다음 행동">
         <p>{selectedName ?? '나에게 맞는 객실을 찾아보세요.'}</p>
         <button
           className="primary-action"
           type="button"
-          aria-label={
-            onContinue ? '선택 객실로 계속하기' : booking ? '예약 입력 계속' : '일정·객실 확인'
-          }
+          aria-label={onContinue ? '선택 객실로 계속하기' : undefined}
           onClick={
-            onContinue ?? (() => reveal(booking ? 'booking-stage-title' : 'availability-title'))
+            onContinue ?? (() => reveal(hasAppliedStay ? 'room-list-title' : 'availability-title'))
           }
         >
-          {onContinue ? '계속하기' : booking ? '입력 계속' : '객실 확인'}
+          {onContinue ? '계속하기' : hasAppliedStay ? '객실 확인' : '일정 입력'}
         </button>
       </div>
     </div>
