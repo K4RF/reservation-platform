@@ -91,7 +91,11 @@ describe('single-date price selection and public effective reads', () => {
     expect(current.getByText('DEFAULT')).toBeTruthy()
     expect(current.getByText('0.00')).toBeTruthy()
     expect(current.getByText('없음 (기본 가격 적용)')).toBeTruthy()
-    expect(current.getByText(/Override는 미등록/)).toBeTruthy()
+    expect(current.getByText(/객실 기본 가격을 적용합니다/)).toBeTruthy()
+    const disclosure = screen.getByText('날짜별 가격 편집').closest('details')!
+    expect(disclosure.open).toBe(false)
+    fireEvent.click(screen.getByText('날짜별 가격 편집'))
+    expect(disclosure.open).toBe(true)
     expect(screen.getByRole('button', { name: '날짜별 가격 생성' })).toBeTruthy()
     expect((screen.getByLabelText('설정할 날짜별 1박 가격') as HTMLInputElement).value).toBe('')
     expect(

@@ -1,4 +1,5 @@
 import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
+import { CatalogImage } from '../../components/media/CatalogImage'
 import { useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { searchAccommodations } from '../../api/accommodation'
@@ -25,10 +26,7 @@ export function AdminAccommodationListPage() {
         title="숙소 관리"
         context="카탈로그 · 조회 및 관리"
       />
-      <p>
-        공개 목록 API를 관리 조건으로 조회합니다. 기본값은 모든 운영 상태이며 삭제 기능은 없습니다.
-      </p>
-      <Link className="nav-link primary-action" to="/admin/accommodations/new">
+      <Link className="nav-link primary-action admin-create-link" to="/admin/accommodations/new">
         새 숙소 생성
       </Link>
       {!query ? (
@@ -38,73 +36,94 @@ export function AdminAccommodationListPage() {
         </>
       ) : (
         <>
-          <form
-            key={params.toString()}
-            className="admin-form admin-query-form"
-            aria-label="숙소 관리 검색"
-            onSubmit={(event) => {
-              event.preventDefault()
-              const data = new FormData(event.currentTarget),
-                next = new URLSearchParams()
-              for (const key of fields) {
-                if (key === 'page') continue
-                const value = String(data.get(key) ?? '').trim()
-                if (value) next.set(key, value)
-              }
-              next.set('page', '0')
-              setParams(next)
-            }}
-          >
-            {(['name', 'city', 'region'] as const).map((key, index) => (
-              <div className="form-field" key={key}>
-                <label htmlFor={`admin-search-${key}`}>
-                  {['숙소명 검색', '도시 (정확한 이름)', '지역 (정확한 이름)'][index]}
-                </label>
+          <details className="admin-disclosure admin-list-filters" key={params.toString()}>
+            <summary>
+              숙소 검색 · 필터 · 정렬
+              <span className="admin-filter-note">
+                {[
+                  query.name,
+                  query.city,
+                  query.region,
+                  query.status === 'ACTIVE'
+                    ? '운영 중'
+                    : query.status === 'INACTIVE'
+                      ? '운영 중지'
+                      : '전체 상태',
+                  query.sortBy === 'NAME' ? '이름순' : 'ID순',
+                  query.direction === 'DESC' ? '내림차순' : '오름차순',
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </summary>
+            <form
+              key={params.toString()}
+              className="admin-form admin-query-form"
+              aria-label="숙소 관리 검색"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const data = new FormData(event.currentTarget),
+                  next = new URLSearchParams()
+                for (const key of fields) {
+                  if (key === 'page') continue
+                  const value = String(data.get(key) ?? '').trim()
+                  if (value) next.set(key, value)
+                }
+                next.set('page', '0')
+                setParams(next)
+              }}
+            >
+              {(['name', 'city', 'region'] as const).map((key, index) => (
+                <div className="form-field" key={key}>
+                  <label htmlFor={`admin-search-${key}`}>
+                    {['숙소명 검색', '도시 (정확한 이름)', '지역 (정확한 이름)'][index]}
+                  </label>
+                  <input
+                    id={`admin-search-${key}`}
+                    name={key}
+                    maxLength={100}
+                    defaultValue={query[key]}
+                  />
+                </div>
+              ))}
+              <div className="form-field">
+                <label htmlFor="admin-search-status">운영 상태 필터</label>
+                <select id="admin-search-status" name="status" defaultValue={query.status ?? ''}>
+                  <option value="">전체 상태</option>
+                  <option value="ACTIVE">운영 중</option>
+                  <option value="INACTIVE">운영 중지</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label htmlFor="admin-search-sort">정렬 필드</label>
+                <select id="admin-search-sort" name="sortBy" defaultValue={query.sortBy}>
+                  <option value="ID">ID</option>
+                  <option value="NAME">숙소 이름</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label htmlFor="admin-search-direction">정렬 방향</label>
+                <select id="admin-search-direction" name="direction" defaultValue={query.direction}>
+                  <option value="ASC">오름차순</option>
+                  <option value="DESC">내림차순</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label htmlFor="admin-search-size">페이지 크기</label>
                 <input
-                  id={`admin-search-${key}`}
-                  name={key}
-                  maxLength={100}
-                  defaultValue={query[key]}
+                  id="admin-search-size"
+                  name="size"
+                  type="number"
+                  min="1"
+                  max="100"
+                  step="1"
+                  required
+                  defaultValue={query.size}
                 />
               </div>
-            ))}
-            <div className="form-field">
-              <label htmlFor="admin-search-status">운영 상태 필터</label>
-              <select id="admin-search-status" name="status" defaultValue={query.status ?? ''}>
-                <option value="">전체 상태</option>
-                <option value="ACTIVE">운영 중</option>
-                <option value="INACTIVE">운영 중지</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="admin-search-sort">정렬 필드</label>
-              <select id="admin-search-sort" name="sortBy" defaultValue={query.sortBy}>
-                <option value="ID">ID</option>
-                <option value="NAME">숙소 이름</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="admin-search-direction">정렬 방향</label>
-              <select id="admin-search-direction" name="direction" defaultValue={query.direction}>
-                <option value="ASC">오름차순</option>
-                <option value="DESC">내림차순</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label htmlFor="admin-search-size">페이지 크기</label>
-              <input
-                id="admin-search-size"
-                name="size"
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                required
-                defaultValue={query.size}
-              />
-            </div>
-            <button type="submit">숙소 검색</button>
-          </form>
+              <button type="submit">숙소 검색</button>
+            </form>
+          </details>
           <AccommodationResults
             query={query}
             onPage={(page) => {
@@ -140,8 +159,10 @@ function AccommodationResults({
       )}
       {state.status === 'success' && (
         <>
-          <p role="status">총 {state.data.totalElements}개 숙소</p>
-          <button onClick={retry}>숙소 목록 새로 조회</button>
+          <div className="admin-list-toolbar">
+            <p role="status">총 {state.data.totalElements}개 숙소</p>
+            <button onClick={retry}>숙소 목록 새로 조회</button>
+          </div>
           {!state.data.content.length ? (
             <EmptyState message="검색 조건에 맞는 숙소가 없습니다." />
           ) : (
@@ -149,17 +170,27 @@ function AccommodationResults({
               {state.data.content.map((row) => {
                 const card = toAccommodationCard(row)
                 return (
-                  <li key={card.id}>
-                    <Link to={`/admin/accommodations/${card.id}`}>
-                      {card.name} (ID {card.id})
+                  <li className="admin-catalog-row" key={card.id}>
+                    <CatalogImage
+                      image={row.representativeImage ?? null}
+                      className="admin-catalog-thumbnail"
+                    />
+                    <div className="admin-catalog-copy">
+                      <h3>
+                        <Link to={`/admin/accommodations/${card.id}`}>
+                          {card.name} (ID {card.id})
+                        </Link>
+                      </h3>
+                      <p>
+                        <span className="admin-status-badge" data-status={row.status}>
+                          {card.status}
+                        </span>{' '}
+                        · {card.location}
+                      </p>
+                    </div>
+                    <Link className="nav-link" to={adminRoomListPath(card.id)}>
+                      {card.name} 객실 관리
                     </Link>
-                    <p>
-                      <span className="admin-status-badge" data-status={row.status}>
-                        {card.status}
-                      </span>{' '}
-                      · {card.location}
-                    </p>
-                    <Link to={adminRoomListPath(card.id)}>{card.name} 객실 관리</Link>
                   </li>
                 )
               })}

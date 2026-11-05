@@ -56,11 +56,55 @@ export function AccommodationPolicyForm({
     <section className="admin-policy-section" aria-label={`${label} 관리`}>
       <p className="admin-panel-label">명시적 작업 선택 · 전체 값 입력</p>
       <h3>{label}</h3>
-      <p>
-        현재 정책 GET/DELETE API가 없어 기존 값·존재 여부를 불러올 수 없습니다.
-        생성(POST)/수정(PUT)을 직접 선택하고 전체 값을 입력하세요. 중복/미존재 오류로 작업이 자동
-        전환되지 않습니다.
-      </p>
+      <p>현재 정책은 여기서 조회할 수 없습니다. 작업을 고른 뒤 전체 값을 입력하세요.</p>
+      <details className="admin-disclosure">
+        <summary>생성과 수정의 차이</summary>
+        <p>
+          등록되지 않은 정책은 생성(POST), 등록된 정책은 수정(PUT)을 선택하세요. 오류가 나도 작업을
+          자동으로 바꾸거나 다시 보내지 않습니다.
+        </p>
+      </details>
+      {result && (
+        <section className="admin-last-write-result" aria-label={`${label} 성공 응답`}>
+          <p className="admin-panel-label">마지막 쓰기 결과 · 정책 조회 아님</p>
+          <h4>직전 성공 응답 — 현재 정책 재조회 결과가 아닙니다.</h4>
+          <dl>
+            <dt>숙소 ID</dt>
+            <dd>{result.accommodationId}</dd>
+            {'bookingPolicyId' in result ? (
+              <>
+                <dt>예약 정책 ID</dt>
+                <dd>{result.bookingPolicyId}</dd>
+                {bookingFields.map(([name, text]) => (
+                  <div key={name}>
+                    <dt>{text}</dt>
+                    <dd>{result[name]}</dd>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <dt>취소 정책 ID</dt>
+                <dd>{result.cancellationPolicyId}</dd>
+                <dt>무료 취소 기준일</dt>
+                <dd>{result.freeCancellationDaysBeforeCheckIn}</dd>
+                <dt>취소 마감 기준일</dt>
+                <dd>{result.cancellationDeadlineDaysBeforeCheckIn}</dd>
+                <dt>수수료 구간</dt>
+                <dd>
+                  <ul>
+                    {result.feeRules.map((rule) => (
+                      <li key={rule.minDaysBeforeCheckIn}>
+                        {rule.minDaysBeforeCheckIn}일 이상: {rule.feeRatePercent}%
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </>
+            )}
+          </dl>
+        </section>
+      )}
       <form
         className="admin-form"
         aria-label={`${label} 입력`}
@@ -192,47 +236,6 @@ export function AccommodationPolicyForm({
           </button>
         </fieldset>
       </form>
-      {result && (
-        <section className="admin-last-write-result" aria-label={`${label} 성공 응답`}>
-          <p className="admin-panel-label">마지막 쓰기 결과 · 정책 조회 아님</p>
-          <h4>직전 성공 응답 — 현재 정책 재조회 결과가 아닙니다.</h4>
-          <dl>
-            <dt>숙소 ID</dt>
-            <dd>{result.accommodationId}</dd>
-            {'bookingPolicyId' in result ? (
-              <>
-                <dt>예약 정책 ID</dt>
-                <dd>{result.bookingPolicyId}</dd>
-                {bookingFields.map(([name, text]) => (
-                  <div key={name}>
-                    <dt>{text}</dt>
-                    <dd>{result[name]}</dd>
-                  </div>
-                ))}
-              </>
-            ) : (
-              <>
-                <dt>취소 정책 ID</dt>
-                <dd>{result.cancellationPolicyId}</dd>
-                <dt>무료 취소 기준일</dt>
-                <dd>{result.freeCancellationDaysBeforeCheckIn}</dd>
-                <dt>취소 마감 기준일</dt>
-                <dd>{result.cancellationDeadlineDaysBeforeCheckIn}</dd>
-                <dt>수수료 구간</dt>
-                <dd>
-                  <ul>
-                    {result.feeRules.map((rule) => (
-                      <li key={rule.minDaysBeforeCheckIn}>
-                        {rule.minDaysBeforeCheckIn}일 이상: {rule.feeRatePercent}%
-                      </li>
-                    ))}
-                  </ul>
-                </dd>
-              </>
-            )}
-          </dl>
-        </section>
-      )}
     </section>
   )
 }

@@ -1,3 +1,4 @@
+import { openAdminPanel } from '../../test/adminWorkspace'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -295,6 +296,7 @@ describe('Room Admin create, full update and operating status', () => {
       (screen.getByLabelText('객실 이름').closest('fieldset') as HTMLFieldSetElement).disabled,
     ).toBe(true)
     await act(async () => resolve(Response.json(room, { status: 201 })))
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expect(screen.getByTestId('location').textContent).toBe('/admin/rooms/3?accommodationId=7')
     fireEvent.click(screen.getByRole('link', { name: '객실 관리 목록으로' }))
@@ -337,6 +339,7 @@ describe('Room Admin create, full update and operating status', () => {
     })
     vi.stubGlobal('fetch', fetch)
     open('/admin/rooms/3')
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expect(screen.getByRole('link', { name: '객실 관리 목록으로' }).getAttribute('href')).toBe(
       '/admin/rooms?accommodationId=7',
@@ -344,7 +347,7 @@ describe('Room Admin create, full update and operating status', () => {
     fireEvent.change(screen.getByLabelText('객실 이름'), { target: { value: '수정 객실' } })
     fireEvent.change(screen.getByLabelText('기본 1박 가격'), { target: { value: '200000.50' } })
     fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
-    await screen.findByRole('heading', { name: '수정 객실', level: 3 })
+    await screen.findByText('수정 객실', { selector: 'strong' })
     expect(writes(fetch)).toHaveLength(1)
     expect(JSON.parse(writes(fetch)[0][1].body)).toEqual({
       ...roomWrite,
@@ -369,6 +372,7 @@ describe('Room Admin create, full update and operating status', () => {
     })
     vi.stubGlobal('fetch', fetch)
     open('/admin/rooms/3?accommodationId=7')
+    await openAdminPanel('운영 상태')
     await screen.findByRole('form', { name: '객실 운영 상태 변경' })
     fireEvent.submit(screen.getByRole('form', { name: '객실 운영 상태 변경' }))
     expect(writes(fetch)).toHaveLength(0)
@@ -378,7 +382,10 @@ describe('Room Admin create, full update and operating status', () => {
       fireEvent.submit(screen.getByRole('form', { name: '객실 운영 상태 변경' }))
       await waitFor(() =>
         expect(
-          screen.getByText(status === 'INACTIVE' ? '운영 중지' : '운영 중', { exact: true }),
+          within(screen.getByRole('region', { name: '선택한 객실' })).getByText(
+            status === 'INACTIVE' ? '운영 중지' : '운영 중',
+            { exact: true },
+          ),
         ).toBeTruthy(),
       )
     }
@@ -407,6 +414,7 @@ describe('Room Admin create, full update and operating status', () => {
       )
     vi.stubGlobal('fetch', fetch)
     open('/admin/rooms/3')
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expect((screen.getByLabelText('기본 1박 가격') as HTMLInputElement).value).toBe('0')
     fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
@@ -449,16 +457,20 @@ describe('Room Admin auth and write safety', () => {
     )
     vi.stubGlobal('fetch', fetch)
     open('/admin/rooms/3?accommodationId=7')
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
-    fireEvent.click(screen.getByLabelText('객실 상태 변경을 확인했습니다.'))
     fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
-    fireEvent.submit(screen.getByRole('form', { name: '객실 운영 상태 변경' }))
+    const statusPanel = screen.getByRole('button', { name: '운영 상태' })
+    expect(statusPanel).toHaveProperty('disabled', true)
+    fireEvent.click(statusPanel)
+    expect(screen.queryByRole('form', { name: '객실 운영 상태 변경' })).toBeNull()
     fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
     await waitFor(() => expect(writes(fetch)).toHaveLength(1))
     expect(
       (screen.getByRole('button', { name: '객실 상세 새로 조회' }) as HTMLButtonElement).disabled,
     ).toBe(true)
     await act(async () => finish(Response.json(room)))
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expect(writes(fetch)).toHaveLength(1)
   })
@@ -503,6 +515,7 @@ describe('Room Admin auth and write safety', () => {
       })
       vi.stubGlobal('fetch', fetch)
       open('/admin/rooms/3?accommodationId=7')
+      await openAdminPanel('정보 편집')
       await screen.findByRole('form', { name: '객실 정보 수정' })
       fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
       await screen.findByRole('region', { name: '불명확한 저장 결과 확인' })
@@ -515,6 +528,7 @@ describe('Room Admin auth and write safety', () => {
         screen.getByRole('link', { name: '객실 목록에서 결과 확인' }).getAttribute('href'),
       ).toBe('/admin/rooms?accommodationId=7')
       fireEvent.click(screen.getByRole('button', { name: '객실 상세 새로 조회' }))
+      await openAdminPanel('정보 편집')
       await screen.findByRole('form', { name: '객실 정보 수정' })
       expect(
         (screen.getByLabelText('객실 이름').closest('fieldset') as HTMLFieldSetElement).disabled,

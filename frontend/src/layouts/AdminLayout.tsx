@@ -6,46 +6,50 @@ import { routePaths } from '../app/routePaths'
 export function AdminLayout() {
   return (
     <div className="admin-layout">
-      <header className="admin-header">
-        <p className="admin-workspace-label">ADMIN WORKSPACE</p>
-        <h1>관리자 영역</h1>
-        <p>숙소·객실·가격·재고 관리 화면의 공통 작업 공간입니다.</p>
-        <span className="admin-header-note">조회로 확인하고, 변경은 명시적으로 저장합니다.</span>
-      </header>
       <div className="admin-workspace">
         <aside className="admin-sidebar">
-          <p className="admin-menu-title">관리 메뉴</p>
+          <header className="admin-header">
+            <p className="admin-workspace-label" lang="en">
+              WORKSPACE
+            </p>
+            <h1>관리자 영역</h1>
+          </header>
           <nav aria-label="관리 메뉴">
             <ul>
               <li>
                 <NavLink
                   to={routePaths.admin}
                   end
+                  aria-label="관리 홈"
                   className={({ isActive }) => (isActive ? 'nav-link nav-link-active' : 'nav-link')}
                 >
-                  관리 홈
+                  <span className="admin-nav-wide">관리 홈</span>
+                  <span className="admin-nav-narrow" aria-hidden="true">
+                    홈
+                  </span>
                 </NavLink>
               </li>
               {adminSections.map((section) => (
                 <li key={section.path}>
                   <NavLink
                     to={adminSectionPath(section)}
+                    aria-label={section.label}
                     className={({ isActive }) =>
                       isActive ? 'nav-link nav-link-active' : 'nav-link'
                     }
                   >
-                    {section.label}
+                    <span className="admin-nav-wide">{section.label}</span>
+                    <span className="admin-nav-narrow" aria-hidden="true">
+                      {section.shortLabel}
+                    </span>
                   </NavLink>
                 </li>
               ))}
             </ul>
           </nav>
-          <p className="admin-sidebar-note">
-            본인 예약은 <Link to={routePaths.reservations}>내 예약으로 이동</Link>하여 관리합니다.
-          </p>
-          <p className="admin-sidebar-note">
-            이 화면의 역할 표시는 UI 안내이며, 실제 권한은 각 API에서 서버가 검증합니다.
-          </p>
+          <Link className="admin-personal-link" to={routePaths.reservations}>
+            내 예약으로 이동
+          </Link>
         </aside>
         <div className="admin-content">
           <Outlet />

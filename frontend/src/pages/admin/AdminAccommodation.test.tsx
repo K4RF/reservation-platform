@@ -1,3 +1,4 @@
+import { openAdminPanel } from '../../test/adminWorkspace'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -226,6 +227,7 @@ describe('Accommodation create and update', () => {
         screen.getByLabelText('숙소 이름').closest('fieldset')?.disabled,
     ).toBe(true)
     await act(async () => resolve(Response.json(accommodation, { status: 201 })))
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '숙소 정보 수정' })
     expect(screen.getByTestId('location').textContent).toBe('/admin/accommodations/7')
     expect(fetch.mock.calls[1][0]).toMatch(/\/accommodations\/7$/)
@@ -265,6 +267,7 @@ describe('Accommodation create and update', () => {
     )
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '숙소 정보 수정' })
     for (const label of ['국가', '도시', '지역', '체크인 시간', '체크아웃 시간'])
       expect((screen.getByLabelText(label, { exact: true }) as HTMLInputElement).value).toBe('')
@@ -281,10 +284,11 @@ describe('Accommodation create and update', () => {
     })
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '숙소 정보 수정' })
     fireEvent.change(screen.getByLabelText('숙소 이름'), { target: { value: '변경 호텔' } })
     fireEvent.submit(screen.getByRole('form', { name: '숙소 정보 수정' }))
-    await screen.findByRole('heading', { name: '변경 호텔', level: 3 })
+    await screen.findByText('변경 호텔', { selector: 'strong' })
     expect(fetch.mock.calls.map(([, init]) => init.method)).toEqual(['GET', 'PUT', 'GET'])
     expect((screen.getByLabelText('숙소 이름') as HTMLInputElement).value).toBe('변경 호텔')
   })
@@ -297,6 +301,7 @@ describe('Accommodation create and update', () => {
     })
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('운영 상태')
     const form = await screen.findByRole('form', { name: '숙소 운영 상태 변경' })
     fireEvent.submit(form)
     expect(fetch).toHaveBeenCalledOnce()
@@ -324,6 +329,25 @@ describe('Accommodation create and update', () => {
 })
 
 describe('Accommodation policy forms with no read endpoint', () => {
+  it('opens one record panel without a write, preserving its draft and allowing keyboard entry', async () => {
+    signIn()
+    const fetch = vi.fn().mockResolvedValue(Response.json(accommodation))
+    vi.stubGlobal('fetch', fetch)
+    open('/admin/accommodations/7')
+    await screen.findByRole('region', { name: '현재 숙소 정보' })
+    expect(screen.queryByRole('form')).toBeNull()
+    const panel = await openAdminPanel('예약 정책 편집')
+    const control = screen.getByRole('button', { name: '예약 정책 편집' })
+    expect(control.getAttribute('aria-controls')).toBe(panel.id)
+    fireEvent.keyDown(control, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(panel)
+    fireEvent.change(screen.getByLabelText('예약 정책 작업'), { target: { value: 'PUT' } })
+    await openAdminPanel('사진 관리')
+    expect(screen.queryByRole('form', { name: '예약 정책 입력' })).toBeNull()
+    await openAdminPanel('예약 정책 편집')
+    expect(screen.getByLabelText('예약 정책 작업')).toHaveProperty('value', 'PUT')
+    expect(fetch).toHaveBeenCalledOnce()
+  })
   it.each(['POST', 'PUT'])(
     'requires explicit %s and all booking fields, shows the success response without policy GET',
     async (operation) => {
@@ -338,12 +362,14 @@ describe('Accommodation policy forms with no read endpoint', () => {
         )
       vi.stubGlobal('fetch', fetch)
       open('/admin/accommodations/7')
+      await openAdminPanel('예약 정책 편집')
       await screen.findByRole('form', { name: '예약 정책 입력' })
       fireEvent.submit(policyForm('예약'))
       expect(fetch).toHaveBeenCalledOnce()
       fillPolicy('예약', operation)
       fireEvent.submit(policyForm('예약'))
       const result = await screen.findByRole('region', { name: '예약 정책 성공 응답' })
+      expect(document.activeElement).toBe(screen.getByRole('group', { name: '관리 저장 결과' }))
       expect(within(result).getByText('마지막 쓰기 결과 · 정책 조회 아님')).toBeTruthy()
       expect(fetch).toHaveBeenCalledTimes(2)
       expect(fetch.mock.calls[1][1].method).toBe(operation)
@@ -375,6 +401,7 @@ describe('Accommodation policy forms with no read endpoint', () => {
         )
       vi.stubGlobal('fetch', fetch)
       open('/admin/accommodations/7')
+      await openAdminPanel('취소 정책 편집')
       await screen.findByRole('form', { name: '취소 정책 입력' })
       fillPolicy('취소', operation)
       fireEvent.click(screen.getByRole('button', { name: '수수료 구간 추가' }))
@@ -410,6 +437,7 @@ describe('Accommodation policy forms with no read endpoint', () => {
       )
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('예약 정책 편집')
     await screen.findByRole('form', { name: '예약 정책 입력' })
     fillPolicy('예약', status === 404 ? 'PUT' : 'POST')
     fireEvent.submit(policyForm('예약'))
@@ -425,6 +453,7 @@ describe('Accommodation policy forms with no read endpoint', () => {
     const fetch = vi.fn().mockResolvedValue(Response.json(accommodation))
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('예약 정책 편집')
     await screen.findByRole('form', { name: '예약 정책 입력' })
     fillPolicy('예약')
     fireEvent.change(screen.getByLabelText('최소 사전 예약일'), { target: { value: '' } })
@@ -498,16 +527,18 @@ describe('Admin write failures, auth and lifetime safety', () => {
     )
     vi.stubGlobal('fetch', fetch)
     const view = open('/admin/accommodations/7')
+    await openAdminPanel('예약 정책 편집')
     await screen.findByRole('form', { name: '예약 정책 입력' })
     fillPolicy('예약')
     fireEvent.submit(policyForm('예약'))
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2))
-    fireEvent.submit(screen.getByRole('form', { name: '숙소 정보 수정' }))
+    fireEvent.click(screen.getByRole('button', { name: '정보 편집' }))
+    expect(screen.queryByRole('form', { name: '숙소 정보 수정' })).toBeNull()
     fireEvent.submit(policyForm('예약'))
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(
-      (screen.getByLabelText('숙소 이름').closest('fieldset') as HTMLFieldSetElement).disabled,
-    ).toBe(true)
+    expect((screen.getByRole('button', { name: '정보 편집' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    )
     view.unmount()
     const signal = fetch.mock.calls[1][1]?.signal // Fetch implementation deliberately ignores abort to exercise stale-result guard.
     expect(signal?.aborted).toBe(true)
@@ -558,16 +589,20 @@ describe('Admin write failures, auth and lifetime safety', () => {
       )
     vi.stubGlobal('fetch', fetch)
     open('/admin/accommodations/7')
+    await openAdminPanel('예약 정책 편집')
     await screen.findByRole('form', { name: '예약 정책 입력' })
     fillPolicy('예약')
     fireEvent.submit(policyForm('예약'))
     await screen.findByRole('region', { name: '불명확한 저장 결과 확인' })
     fireEvent.click(screen.getByRole('button', { name: '숙소 상세 새로 조회' }))
+    await openAdminPanel('예약 정책 편집')
     await screen.findByRole('form', { name: '예약 정책 입력' })
-    expect(
-      (screen.getByLabelText('숙소 이름').closest('fieldset') as HTMLFieldSetElement).disabled,
-    ).toBe(true)
-    fireEvent.submit(screen.getByRole('form', { name: '숙소 정보 수정' }))
+    expect((screen.getByRole('button', { name: '정보 편집' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    )
+    fireEvent.click(screen.getByRole('button', { name: '정보 편집' }))
+    expect(screen.queryByRole('form', { name: '숙소 정보 수정' })).toBeNull()
+    fireEvent.submit(policyForm('예약'))
     expect(fetch.mock.calls.map(([url]) => new URL(url, 'http://localhost').pathname)).toEqual([
       '/api/v1/accommodations/7',
       '/api/v1/accommodations/7/booking-policy',

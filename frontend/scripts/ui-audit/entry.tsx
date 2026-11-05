@@ -7,7 +7,7 @@ import { AuthProvider } from '../../src/state/AuthProvider'
 import { setTokenPair } from '../../src/state/accessToken'
 import { accessTokenWithExpiry } from '../../src/test/jwt'
 import { auditResponse } from './responses'
-import type { AuditScenario, AuditBooking } from './responses'
+import type { AuditScenario, AuditBooking, AuditAdmin } from './responses'
 import { startPerformanceProbe } from './performanceProbe'
 import '../../src/index.css'
 
@@ -22,6 +22,9 @@ const scenario = params.get('scenario') ?? 'ready'
 const textScale = params.get('textScale') ?? '100'
 const mediaMode = params.get('media') ?? 'missing'
 const booking = params.get('booking') ?? 'blocked'
+const admin = params.get('admin') ?? 'blocked'
+if (!['blocked', 'policy-success', 'policy-error'].includes(admin))
+  throw new Error('Unknown audit Admin outcome')
 const auth = params.get('auth') ?? 'blocked'
 if (
   !['blocked', 'signup-success', 'login-error', 'callback-pending', 'callback-error'].includes(auth)
@@ -101,7 +104,14 @@ window.fetch = (input, init) => {
       })
     })
   return Promise.resolve(
-    auditResponse(url, method, scenario as AuditScenario, mediaMode, booking as AuditBooking),
+    auditResponse(
+      url,
+      method,
+      scenario as AuditScenario,
+      mediaMode,
+      booking as AuditBooking,
+      role === 'ADMIN' ? (admin as AuditAdmin) : 'blocked',
+    ),
   )
 }
 

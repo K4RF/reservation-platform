@@ -1,5 +1,10 @@
 import { AdminPageHeading } from '../../components/admin/AdminPageHeading'
-import { useCallback, useState } from 'react'
+import {
+  AdminBreadcrumb,
+  AdminDirectId,
+  AdminRoomTarget,
+} from '../../components/admin/AdminContext'
+import { useCallback, useEffect, useRef, useState, type Ref } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { getRoom } from '../../api/room'
 import {
@@ -13,13 +18,13 @@ import { InventoryForm } from '../../components/admin/InventoryForm'
 import { inventoryCalendarDates } from '../../components/admin/inventoryValidation'
 import { AdminMutationFeedback } from '../../components/admin/AdminMutationFeedback'
 import { adminErrorMessage, useAdminMutation } from '../../components/admin/useAdminMutation'
-import { RoomCard } from '../../components/room/RoomCard'
 import { ErrorState } from '../../components/ui/ErrorState'
 import { LoadingState } from '../../components/ui/LoadingState'
 import { useAuth } from '../../state/useAuth'
 import { getSessionVersion } from '../../state/accessToken'
 import { useDetailQuery } from '../useDetailQuery'
 import { readAdminInventoryQuery } from './adminInventoryQuery'
+import { adminDailyPricePath } from './adminDailyPriceQuery'
 
 export function AdminInventoryPage() {
   const [params, setParams] = useSearchParams()
@@ -27,20 +32,18 @@ export function AdminInventoryPage() {
   const query = readAdminInventoryQuery(params)
   return (
     <section aria-labelledby="admin-inventories-heading">
+      <AdminBreadcrumb
+        items={[
+          { label: '객실 관리에서 선택', to: '/admin/rooms' },
+          ...(query?.roomId ? [{ label: `객실 #${query.roomId}` }] : []),
+          { label: '재고' },
+        ]}
+      />
       <AdminPageHeading
         id="admin-inventories-heading"
         title="재고 관리"
         context="날짜 범위 조회 · 단일 날짜 입력"
       />
-      <p>
-        객실의 날짜별 총수량과 OPEN/CLOSED 판매 상태를 관리합니다. 예약·가용 수량은 서버 조회 값이며
-        수정하지 않습니다.
-      </p>
-      <p>
-        시작일과 종료일을 모두 포함합니다. 최대 366일은 화면 표시 보호용 제한이며 Backend 예약
-        정책이 아닙니다. 일괄 설정·삭제는 제공하지 않습니다.
-      </p>
-      <Link to="/admin/rooms">객실 관리에서 선택</Link>
       <form
         key={`${params.get('roomId')}-${params.get('startDate')}-${params.get('endDate')}`}
         className="admin-form admin-query-form"
@@ -56,16 +59,18 @@ export function AdminInventoryPage() {
           setParams(next)
         }}
       >
-        <div className="form-field">
-          <label htmlFor="inventory-room-id">재고 관리 객실 ID</label>
-          <input
-            id="inventory-room-id"
-            name="roomId"
-            inputMode="numeric"
-            required
-            defaultValue={params.get('roomId') ?? ''}
-          />
-        </div>
+        <AdminDirectId selected={!!query?.roomId}>
+          <div className="form-field">
+            <label htmlFor="inventory-room-id">재고 관리 객실 ID</label>
+            <input
+              id="inventory-room-id"
+              name="roomId"
+              inputMode="numeric"
+              required={!query?.roomId}
+              defaultValue={params.get('roomId') ?? ''}
+            />
+          </div>
+        </AdminDirectId>
         {(['startDate', 'endDate'] as const).map((key) => (
           <div className="form-field" key={key}>
             <label htmlFor={`inventory-${key}`}>
@@ -84,10 +89,6 @@ export function AdminInventoryPage() {
         ))}
         <button type="submit">재고 Calendar 조회</button>
       </form>
-      <p>
-        저장 중 대상 변경·화면 이동·요청 중단은 서버 Rollback을 의미하지 않습니다. 새 요청 전에 저장
-        결과를 확인하세요.
-      </p>
       {!query ? (
         <ErrorState message="객실 ID 또는 날짜 범위를 확인해 주세요. 시작일 ≤ 종료일, 최대 366일이어야 합니다." />
       ) : query.roomId === null || !query.startDate || !query.endDate ? (
@@ -115,6 +116,11 @@ function InventoryManager({
 }) {
   const mutation = useAdminMutation()
   const [selectedDate, setSelectedDate] = useState('')
+  const editHeading = useRef<HTMLHeadingElement>(null)
+  const selectedDateButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (selectedDate) editHeading.current?.focus()
+  }, [selectedDate])
   const [writeCalendar, setWriteCalendar] = useState<RoomInventoryCalendarResponse>()
   const load = useCallback(
     async (signal: AbortSignal) => {
@@ -155,71 +161,94 @@ function InventoryManager({
       )}
       {state.status === 'success' && (
         <>
-          <section className="admin-context-panel" aria-label="재고 관리 대상 객실">
-            <p className="admin-panel-label">조회 대상 · 객실</p>
-            <RoomCard room={state.data.room} />
-            <p>
-              객실 ID {roomId} · 숙소 ID {state.data.room.accommodationId}
-            </p>
-            <Link to={`/admin/rooms/${roomId}?accommodationId=${state.data.room.accommodationId}`}>
-              객실 관리 상세
+          <AdminRoomTarget
+            room={state.data.room}
+            label="재고 관리 대상 객실"
+            linkLabel="객실 관리 상세"
+          >
+            <Link className="nav-link" to={adminDailyPricePath(roomId, selectedDate || undefined)}>
+              이 객실 가격
             </Link>
-            {state.data.room.status === 'INACTIVE' && (
-              <p role="status">
-                INACTIVE 객실은 재고 조회만 가능합니다. 생성·수정은 서버에서도 거절됩니다.
-              </p>
-            )}
-          </section>
-          <InventoryCalendar
-            calendar={state.data.calendar}
-            selectedDate={selectedDate}
-            onSelect={setSelectedDate}
-            disabled={mutation.pending}
-          />
-          {failed && (
-            <InventoryRecovery
-              key={freshRead ? 'fresh' : 'stale'}
-              allowed={freshRead}
-              onReview={mutation.resetAfterReview}
-            />
+          </AdminRoomTarget>
+          {state.data.room.status === 'INACTIVE' && (
+            <p role="status">
+              INACTIVE 객실은 재고 조회만 가능합니다. 생성·수정은 서버에서도 거절됩니다.
+            </p>
           )}
-          {selectedDate ? (
-            <InventoryForm
-              key={`${selectedDate}-${state.data.calendar.inventories.find((row) => row.inventoryDate === selectedDate)?.inventoryId ?? 'new'}-${failed}`}
-              roomId={roomId}
-              date={selectedDate}
-              inventory={state.data.calendar.inventories.find(
-                (row) => row.inventoryDate === selectedDate,
+          <div className="admin-inventory-work">
+            <section aria-label="재고 조회">
+              <InventoryCalendar
+                calendar={state.data.calendar}
+                selectedDate={selectedDate}
+                selectedButton={selectedDateButton}
+                onSelect={(date) => {
+                  if (date === selectedDate) editHeading.current?.focus()
+                  else setSelectedDate(date)
+                }}
+                disabled={mutation.pending}
+              />
+            </section>
+            <section className="admin-inventory-edit" aria-label="재고 편집">
+              {selectedDate && (
+                <div className="admin-list-toolbar">
+                  <h3 ref={editHeading} tabIndex={-1}>
+                    {selectedDate} 편집
+                  </h3>
+                  <button
+                    type="button"
+                    disabled={mutation.pending}
+                    onClick={() => selectedDateButton.current?.focus()}
+                  >
+                    선택한 날짜로 돌아가기
+                  </button>
+                </div>
               )}
-              disabled={mutation.disabled || failed || state.data.room.status !== 'ACTIVE'}
-              onSave={(totalQuantity, saleStatus) => {
-                if (mutation.disabled || failed || state.data.room.status !== 'ACTIVE') return
-                const existing = state.data.calendar.inventories.some(
-                  (row) => row.inventoryDate === selectedDate,
-                )
-                setWriteCalendar(state.data.calendar)
-                void mutation.run(
-                  (signal) =>
-                    existing
-                      ? updateRoomInventory(
-                          roomId,
-                          selectedDate,
-                          { totalQuantity, saleStatus },
-                          signal,
-                        )
-                      : createRoomInventory(
-                          roomId,
-                          { inventoryDate: selectedDate, totalQuantity },
-                          signal,
-                        ),
-                  retry,
-                  '재고 저장 응답을 받았습니다. 최신 Calendar를 다시 조회합니다.',
-                )
-              }}
-            />
-          ) : (
-            <p>Calendar에서 날짜를 선택하면 단일 날짜 재고를 생성하거나 수정할 수 있습니다.</p>
-          )}
+              {failed && (
+                <InventoryRecovery
+                  key={freshRead ? 'fresh' : 'stale'}
+                  allowed={freshRead}
+                  onReview={mutation.resetAfterReview}
+                />
+              )}
+              {selectedDate ? (
+                <InventoryForm
+                  key={`${selectedDate}-${state.data.calendar.inventories.find((row) => row.inventoryDate === selectedDate)?.inventoryId ?? 'new'}-${failed}`}
+                  roomId={roomId}
+                  date={selectedDate}
+                  inventory={state.data.calendar.inventories.find(
+                    (row) => row.inventoryDate === selectedDate,
+                  )}
+                  disabled={mutation.disabled || failed || state.data.room.status !== 'ACTIVE'}
+                  onSave={(totalQuantity, saleStatus) => {
+                    if (mutation.disabled || failed || state.data.room.status !== 'ACTIVE') return
+                    const existing = state.data.calendar.inventories.some(
+                      (row) => row.inventoryDate === selectedDate,
+                    )
+                    setWriteCalendar(state.data.calendar)
+                    void mutation.run(
+                      (signal) =>
+                        existing
+                          ? updateRoomInventory(
+                              roomId,
+                              selectedDate,
+                              { totalQuantity, saleStatus },
+                              signal,
+                            )
+                          : createRoomInventory(
+                              roomId,
+                              { inventoryDate: selectedDate, totalQuantity },
+                              signal,
+                            ),
+                      retry,
+                      '재고 저장 응답을 받았습니다. 최신 Calendar를 다시 조회합니다.',
+                    )
+                  }}
+                />
+              ) : (
+                <p>Calendar에서 날짜를 선택하면 단일 날짜 재고를 생성하거나 수정할 수 있습니다.</p>
+              )}
+            </section>
+          </div>
         </>
       )}
     </>
@@ -254,11 +283,13 @@ function InventoryRecovery({ allowed, onReview }: { allowed: boolean; onReview: 
 function InventoryCalendar({
   calendar,
   selectedDate,
+  selectedButton,
   onSelect,
   disabled,
 }: {
   calendar: RoomInventoryCalendarResponse
   selectedDate: string
+  selectedButton: Ref<HTMLButtonElement>
   onSelect: (date: string) => void
   disabled: boolean
 }) {
@@ -303,6 +334,7 @@ function InventoryCalendar({
                 >
                   <th scope="row">
                     <button
+                      ref={selectedDate === date ? selectedButton : undefined}
                       disabled={disabled}
                       aria-pressed={selectedDate === date}
                       onClick={() => onSelect(date)}

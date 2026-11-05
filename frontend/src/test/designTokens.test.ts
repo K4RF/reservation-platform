@@ -25,7 +25,7 @@ describe('design token and global stylesheet contracts', () => {
     expect(globalCss).not.toMatch(/scroll-behavior\s*:\s*smooth/)
   })
   it('scopes Admin work areas, read panels and write/status forms without hiding overflow', () => {
-    expect(globalCss).toMatch(/\.admin-layout\s*\{[^}]*var\(--content-catalog\)/)
+    expect(globalCss).toMatch(/\.admin-layout\s*\{[^}]*width: min\(100%, 80rem\)/)
     expect(globalCss).toMatch(/\.admin-header\s*\{[^}]*background: var\(--color-primary\)/)
     expect(globalCss).toMatch(/\.admin-header p\s*\{[^}]*color: inherit/)
     expect(globalCss).toContain('.admin-page-heading')
@@ -377,7 +377,7 @@ describe('design token and global stylesheet contracts', () => {
   })
 
   it('keeps Admin layout, status, recovery and Calendar styles scoped without clipping tables', () => {
-    expect(globalCss).toMatch(/\.admin-sidebar ul\s*\{[^}]*grid-template-columns: repeat\(3,/)
+    expect(globalCss).toMatch(/\.admin-sidebar nav\s*\{[^}]*overflow-x: auto;/)
     expect(globalCss).toMatch(/\.admin-query-form\s*\{[^}]*align-items: end;/)
     expect(globalCss).toMatch(/\.inventory-calendar\s*\{[^}]*overflow-x: auto;/)
     expect(globalCss).toMatch(/\.inventory-calendar table\s*\{[^}]*table-layout: auto;/)

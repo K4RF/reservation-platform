@@ -3,6 +3,32 @@ import { auditResponse } from '../../scripts/ui-audit/responses'
 import { startPerformanceProbe } from '../../scripts/ui-audit/performanceProbe'
 
 describe('isolated read-only UI audit fixtures', () => {
+  it('limits synthetic policy outcomes to the opted-in booking policy POST', async () => {
+    const path = '/api/v1/accommodations/7/booking-policy'
+    expect(auditResponse(path, 'POST', 'ready').status).toBe(405)
+    const success = auditResponse(path, 'POST', 'ready', 'missing', 'blocked', 'policy-success')
+    expect(success.status).toBe(201)
+    expect(await success.json()).toMatchObject({ bookingPolicyId: 11, accommodationId: 7 })
+    expect(auditResponse(path, 'POST', 'ready', 'missing', 'blocked', 'policy-error').status).toBe(
+      500,
+    )
+    expect(auditResponse(path, 'GET', 'ready', 'missing', 'blocked', 'policy-success').status).toBe(
+      404,
+    )
+    expect(auditResponse(path, 'PUT', 'ready', 'missing', 'blocked', 'policy-success').status).toBe(
+      405,
+    )
+    expect(
+      auditResponse(
+        '/api/v1/rooms/3/media',
+        'DELETE',
+        'ready',
+        'missing',
+        'blocked',
+        'policy-success',
+      ).status,
+    ).toBe(405)
+  })
   it('simulates only explicitly opted-in Booking outcomes without enabling other writes', async () => {
     expect(auditResponse('/api/v1/reservations', 'POST', 'ready').status).toBe(405)
     const result = auditResponse('/api/v1/reservations', 'POST', 'ready', 'present', 'success')
