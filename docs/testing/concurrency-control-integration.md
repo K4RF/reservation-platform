@@ -40,7 +40,7 @@ ReservationController
 
 | 범위 | 검증 Test / 환경 |
 | --- | --- |
-| 순차 예약 생성·조회·일정 변경·취소 | `BasicReservationMvpIntegrationTest`, H2 |
+| 순차 예약 생성·조회·일정 변경·취소 | `ReservationIntegrationTest`, H2 |
 | Booking Policy와 현지 날짜 | `BookingPolicyReservationIntegrationTest`, `AccommodationBookingPolicyTimeZoneTest`, H2 |
 | Cancellation Policy와 Snapshot | `CancellationPolicySnapshotIntegrationTest`, `ReservationCancellationPolicyTest`, H2 |
 | Daily Price와 숙박일별 가격 Snapshot | `RoomDailyPriceIntegrationTest`, `ReservationPriceSnapshotTest`, H2 |

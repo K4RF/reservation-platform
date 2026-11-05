@@ -125,101 +125,22 @@ Backend configuration and behavior are implemented and verified.
   a local `.codex` path, or the name "A1" alone.
 - Approved target: Home A1, Navy & Ivory, Search for comparison and Detail for
   accommodation/room exploration. A2 and other palettes are archived alternatives.
-- `SiteHeader` owns shared desktop/mobile navigation; `RootLayout` owns Auth/logout
-  and route-specific frames. Reuse these without moving mutation gates into the menu.
-  See `docs/ui/frontend-consumer-frame-274.md` for #274 evidence and capture limits;
-  the frame is not completed search, Media, Gallery, Booking or Auth redesign.
-- `CompactSearchBar` owns shared controls only; `SearchLayer` owns modal/popover
-  presentation. Keep editor drafts separate from applied and submitted conditions.
-  Preview/cancel must not fetch, invalidate selection or replay writes. See
-  `docs/ui/frontend-compact-search-275.md`; full Media/results/Gallery layouts remain
-  follow-up work, not implied by the shared controls.
-- Home A1 uses a decorative, explicitly AI-labelled architecture/coast Hero and a
-  bounded ID-ordered ACTIVE catalog read (page 0, size 2), not a recommendation or
-  price ranking. Exploration uses only actual response Media/name/location fields;
-  missing/failed photos never receive a fictional fallback. Home drafts are not
-  copied into photo links before submission. See `docs/ui/frontend-home-rebuild-277.md`
-  for #277 comparisons, provenance and Browser-fixture/HTTP/CI limits.
-- Search #278 separates Compact conditions, filter drafts and submitted URL state.
-  Each editor commits only its own draft against applied conditions; sort commits
-  applied state only. Reuse SearchLayer for the narrow filter Sheet; preview/reset/
-  cancel must not query. Keep legacy size/status in additional settings, ID/NAME
-  sorts, full description/address access and both title/Room-CTA return positions.
-  Cards use actual representative Media without per-card Room GETs or invented
-  prices. See `docs/ui/frontend-search-rebuild-278.md` for comparisons and limits.
-- Detail #279 renders one Room surface: read-only catalog before applied stay,
-  available results afterwards. RoomAvailabilitySection retains selection/gates;
-  RoomExplorationLayout owns presentation, a bounded sticky Rail and measured-height
-  Mobile fixed CTA (normal flow at low height, hidden for inputs/dialogs). Continue
-  is explicit. BookingPriceSession owns one price read across the Rail and the
-  separate Booking stage; do not duplicate price GETs or forms.
-  Gallery clicks only open the clicked photo and restore its focus, never select
-  a Room. See `docs/ui/frontend-detail-rebuild-279.md` for evidence and limits.
-- Booking #280 replaces the Detail body with a focused input/review stage on the
-  same URL, retaining selection and the price session. Journey summary uses actual
-  current Media/names, never historical photos or invented metadata. Pending and
-  ambiguous creation lock both edit/submit and the internal Room-return action.
-  The completion owner GET alone determines saved status/number/guest/amount;
-  optional public current-catalog reads and Media failures cannot change that result.
-  See `docs/ui/frontend-booking-rebuild-280.md` for Browser-fixture/HTTP/CI limits.
-- Reservation management #281 uses current public Room/Accommodation Media with
-  page-local catalog deduplication, separately from saved reservation snapshots.
-  Detail owns one active change/cancel preparation. Change editing and review are
-  separate presentations; editing resets price review/acknowledgement, never a write.
-  Keep the mutual mutation gates and also disable catalog recovery during pending
-  or locked outcomes. Cancellation always needs a fresh owner GET/new confirmation
-  after failure. Escape closes only an unlocked preparation and restores its trigger.
-  See `docs/ui/frontend-reservation-rebuild-281.md` for layout and verification limits.
-- Auth #282 uses the existing SiteHeader brand-only variant for unauthenticated
-  Login/Signup/Callback. `AuthPageLayout` owns task/notice presentation and heading
-  focus only. Signup success returns to Login with a status and validated `from`
-  Router state; no automatic sign-in, password transfer or write replay. Keep
-  public recovery distinct from protected return and verify fresh availability
-  before restoring a Room hint. See `docs/ui/frontend-authentication-rebuild-282.md`.
-- Admin #283 keeps query/draft/mutation ownership in the verified page scope.
-  Record panels are presentation-only and keep drafts and Media recovery mounted;
-  pending/uncertain/Media recovery blocks switching to other record operations.
-  Inherited IDs remain editable through a disclosure, and a selected inventory date
-  moves focus to its editor with a return action to the original row. See
-  `docs/ui/frontend-admin-workspace-283.md` for comparison and Mock/Browser/HTTP limits.
-- Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
-  #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
-  #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,
-  #283 Admin, and #284 integrated verification. Actual Media requires
-  v0.4.1 (Milestone #20) #272 public contracts and #273 ADMIN/file lifecycle first.
-- f0.5.2 (Milestone #19, historically also named f0.5.3) and #253–#260 are
-  developer implementation/regression evidence, not user visual approval.
-  Preserve historical naming in context; do not confuse it with new #21 or
-  globally rename history. Reuse #251 Navy & Ivory semantic tokens.
-- Rebuild information architecture and interactions, not only colors. Preserve
-  API/domain/Auth/mutation contracts, not old JSX/DOM or every help paragraph.
-  Home needs overlay Header/Hero-contained search/photo exploration; Search needs
-  compact conditions/media cards/filter Sheet; Detail needs asymmetric Gallery,
-  body/reservation Rail and Mobile fixed CTA. Prior intentional differences are
-  not automatically approved exceptions. Booking/reservations/Auth/Admin use the
-  new product plans in #271, not directly approved original screens.
-- Compare real 1440px/390px full-page and same-position Viewport renders, excluding
-  prototype Studio/demo controls. Verify Media-present normal, missing and failed
-  states. Large empty slots/long forms are not a substitute for normal completion.
-  Sticky/fixed layouts must solve safe-area, keyboard, zoom, focus and error
-  occlusion; a blanket static-only exception is insufficient. Report deviations,
-  equivalent accessible alternatives and DOM/Mock/Browser/HTTP/CI limits.
-- Keep consumer copy centered on destination/stay/room/price/next action. Move
-  API/DTO/Mock explanations and redundant help to docs/contextual help; retain
-  concise price basis, total-guest, fee and ambiguous-outcome safety messages.
-  Extend existing lifecycle suites for the rebuilt UI instead of freezing old
-  markup or duplicating whole flows. Unresolved Media/layout dependencies mean
-  the corresponding complete-screen implementation is not finished.
-- Prototype images/prices/metadata are fictional; do not use them as real catalog
-  data or invent unsupported fields. Final user UI/UX approval stays in f0.6.0.
-- Keep narrow/expanded layouts free of document overflow; price/inventory tables
-  deliberately scroll inside labelled, keyboard-focusable regions. Do not hide
-  document overflow to mask a layout error. Common Loading/Error/Empty components
-  own presentation only, never availability, retry or mutation gates. See
-  `docs/ui/frontend-responsive-accessibility-231.md` for verified widths and limits.
-- The f0.5.1 regression baseline and style responsibilities are recorded in
-  `docs/ui/frontend-ui-regression-232.md`. Trace dynamic status class generation
-  before removing apparently unused styles; reuse the existing lifecycle suites.
+- Use `docs/ui/frontend-guide.md` for screen ownership, query/selection state,
+  mutation safety and the f0.6.0 verification checklist. Rebuild information
+  architecture and interactions, not only colors. Preserve API/domain/Auth and
+  mutation contracts, not previous markup or pixel values.
+- Compare 1440/390 full-page and same-position Viewport renders without prototype
+  Studio controls, including Media present/missing/failed. Verify narrow and
+  enlarged reflow, keyboard/Focus, safe area and sticky/fixed occlusion. Keep
+  wide price/inventory tables in labelled, keyboard-focusable scroll regions;
+  do not mask document overflow. Attach one-off captures to the review, not Git.
+- Use only real response Media/metadata/prices. Keep consumer copy centered on
+  destination, stay, room, price and next action, including safety messages about
+  fees and ambiguous outcomes. Reuse the lifecycle suites for behavior and
+  distinguish Mock, isolated HTTP, Browser, remote CI and final user approval.
+- f0.5.2 (Milestone #19, historically also named f0.5.3) and the new f0.5.3
+  (Milestone #21) are distinct. The approved prototype is not approval of the
+  whole implementation; final user UI/UX approval remains in f0.6.0.
 
 ## Working Rules
 
@@ -293,8 +214,8 @@ Before completing a change:
   READ_COMMITTED reference checks. Never bulk-delete storage or replay Media writes.
   See docs/architecture/media-management.md for cleanup settings/recovery and SQL.
   Frontend API validation, CatalogImage/Gallery and ADMIN album management are
-  connected in #276. See `docs/ui/frontend-media-integration-276.md` for staged writes,
-  mandatory fresh ADMIN GET/review after failures and Browser/HTTP verification limits.
+  connected in #276. See `docs/ui/frontend-guide.md` for staged writes,
+  mandatory fresh ADMIN GET/review after failures and verification boundaries.
   Home layout is rebuilt in #277, Search in #278, Detail in #279 and Booking in #280;
   final user approval remains separate. See
   docs/architecture/catalog-media.md and docs/erd/mysql-catalog-media-upgrade.sql.

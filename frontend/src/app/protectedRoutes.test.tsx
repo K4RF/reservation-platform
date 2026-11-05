@@ -83,10 +83,8 @@ describe('protected and role routes', () => {
     fireEvent.change(screen.getByLabelText('이메일'), { target: { value: 'member@example.com' } })
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'Password123!' } })
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))
-    expect(await screen.findByRole('heading', { name: '접근 권한이 없습니다.' })).toBeTruthy()
-    expect(document.activeElement).toBe(
-      screen.getByRole('heading', { name: '접근 권한이 없습니다.' }),
-    )
+    const heading = await screen.findByRole('heading', { name: '접근 권한이 없습니다.' })
+    await waitFor(() => expect(document.activeElement).toBe(heading))
     expect(screen.getByRole('link', { name: '숙소 둘러보기' }).getAttribute('href')).toBe(
       '/accommodations',
     )

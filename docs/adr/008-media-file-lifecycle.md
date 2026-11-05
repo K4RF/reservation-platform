@@ -37,4 +37,4 @@ commit 전에 옛 파일을 삭제하면 DB rollback이 참조를 복구해도 �
 DB/파일의 원자성·영속 요청 멱등성/ABA history·Redis eviction과 DB의 원자성까지 제공한 것은 아니다.
 DB와 root를 함께 백업하고 공유 DB 인스턴스들은 같은 디스크를 사용해야 한다.
 수동/외부 도구의 intent 없는 파일은 자동 삭제 대상이 아니다.
-[API·운영·복구 계약](../architecture/media-management.md)과 [실제 검증](../testing/media-management-273.md)을 따른다.
+[API·운영·복구 계약과 격리 재현](../architecture/media-management.md)을 따른다.

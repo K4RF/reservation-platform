@@ -16,8 +16,7 @@
 | 원본 [Home 1440](prototypes/premium-travel/screenshots/a1-1440.png) / [390](prototypes/premium-travel/screenshots/a1-390.png) | 2026-10-22 독립 시안 캡처. 실제 제품/매물 증거가 아님 |
 | 원본 [Search 1440](prototypes/premium-travel/screenshots/search-1440.png) / [390](prototypes/premium-travel/screenshots/search-390.png) | 사진 카드·검색 요약·필터 진입의 참조. 가짜 가격/리뷰/상태 시연 UI는 제외 |
 | 원본 [Detail 1440](prototypes/premium-travel/screenshots/detail-1440.png) / [390](prototypes/premium-travel/screenshots/detail-390.png) | 비대칭 Gallery·객실·예약 Rail·고정 CTA의 참조 |
-| [#260 개발자 검증](frontend-visual-regression-260.md), [당시 캡처](evidence/260/) | **2026-10-28 과거 Viewport 증거**. Home/Search/Detail의 각 1440/390을 대조했다. Search는 스크롤된 카드 위치이며 전체 페이지/첫 결과 위치 측정 자료가 아님 |
-| 현재 소스 `2ca1821` | 위 캡처와 별도로 HomePage, RootLayout, AccommodationSearchForm, AccommodationDetailPage, RoomAvailabilitySection/RoomListSection 및 index.css·Response 타입을 확인 |
+| 현재 소스 `2ca1821` | 명세 작성 시점에 HomePage, RootLayout, AccommodationSearchForm, AccommodationDetailPage, RoomAvailabilitySection/RoomListSection 및 index.css·Response 타입을 확인 |
 | 아래 Booking/내 예약/Auth/Admin 구성안 | 전용 승인 원본이 없는 **새 제품 화면 제안/후속 구현 목표**. 기존 원본의 직접 승인 화면이라고 보고하지 않음 |
 
 ### 버전·승인 구분
@@ -98,7 +97,7 @@ Mobile fixed CTA의 Y는 Viewport 좌표이며 문서 스크롤 Y와 혼합하�
 
 ### 공통 레이어·시각 언어
 
-- Navy/Ivory semantic Token은 [#251](frontend-navy-ivory-tokens-251.md)을 재사용한다.
+- Navy/Ivory semantic Token은 [공통 토큰](../../frontend/src/styles/tokens.css)을 재사용한다.
   Display Serif/한글 UI Sans, 큰 제목→짧은 소개→내용/CTA 계층. 작은 원본 글자를 그대로 줄여 접근성을 희생하지 않는다.
   Coral은 절제된 장식이며 성공/오류/취소 의미 색과 구분한다.
 - 원본 날짜 Dialog는 W740/max(100vw−32), padding32, max-height90dvh, 2개월/gap28.
@@ -286,21 +285,5 @@ DOM/HTTP Mock 성공은 실제 Backend/사진 저장/Google/Redis/사용자 시�
 개발 DB/Volume을 삭제하거나 실계정/운영 파일을 테스트에 쓰지 않는다.
 의존성·실행 설정 변경이 있으면 GitHub Actions의 버전/서비스/env/빌드와 함께 검토한다.
 
-### #271 인계 범위
 
-이 명세·선행/수용 기준·문서 진입점 연결이 #271의 산출물이다. 이번에는 화면/의존성/실행 설정을 변경하지 않는다.
-2026-10-29 원본 Browser 실측은 새 관찰이고, #260 캡처/테스트는 과거 증거로 보존한다.
-후속 구현의 실제 Media·전체 화면 재현도·실제 HTTP·원격 CI·최종 사용자 검수는 각각 별도로 보고한다.
-
-### #271 실행한 검증 (2026-10-29)
-
-| 항목 | 결과 / 한계 |
-| --- | --- |
-| 원본 A1/Search/Detail Browser, 각 1440/390 | CSS/DOM 실측 및 원본 캡처·#260 과거 캡처와 현재 소스 대조. 제품 화면 변경/새 구현 검증은 아님 |
-| `pnpm test` | 76 files / 1,103 tests 통과. 기존 DOM/HTTP Mock 회귀 |
-| `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm build` | 모두 통과. 첫 format 검사에서 변경 README 표가 지적되어 기존 Prettier로 정리 후 재검사 통과 |
-| 문서 검사 | 변경 문서 5개의 로컬 링크 145개 존재 확인, `git diff --check` 통과 |
-| GitHub Actions 검토 | `.github/workflows/frontend-ci.yml`의 같은 검증 명령 확인. 의존성/lockfile/env/워크플로 변경 없음 |
-| 환경/미실행 | 로컬 Node 24.14.0 / pnpm 11.19.0, CI Node 24.19.0 / pnpm 11.19.0. 원격 CI·새 frozen install·Backend test/build·실제 HTTP는 이번 문서 변경에서 미실행 |
-
-원본 실측을 위해 사용한 computer-use는 문서 수치 확인에만 영향을 주었다. 새 UI나 Media 구현을 추가하지 않았다.
+[현재 화면 계약과 검수 절차](frontend-guide.md)에서 구현의 상태 책임과 후속 검수를 확인한다.

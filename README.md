@@ -51,11 +51,6 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 재고는 날짜 범위 Calendar 조회와 단일 날짜의 총수량·판매 상태 관리까지 연결되어 있습니다.
 미생성 날짜는 별도 표시하고 예약·가용 수량은 수정하지 않습니다. 가격·재고 일괄 설정과 삭제/복원은 지원하지 않습니다.
 정책 조회·삭제 API는 없어 정책은 명시적 생성/수정과 성공 응답 확인만 지원합니다.
-로그인→숙소→객실→가격→재고의 [통합 검증](docs/testing/frontend-admin-management-flow.md)은 HTTP Mock 기준입니다.
-실제 Backend Admin 전체 연동·Browser 수동 검수는 별도 확인 대상입니다.
-PR #223의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783049)·
-[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/39127783111)와
-병합된 develop의 [Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/39130734369)는 성공했습니다.
 전체 API의 Method·요청·응답·권한은 실행 후 [Swagger UI](http://localhost:8080/swagger-ui.html)에서 확인합니다.
 
 ## 핵심 설계
@@ -148,11 +143,10 @@ Gradle 프로젝트 루트는 `backend/`입니다. 프론트엔드는 `frontend/
 
 Media 파일은 `MEDIA_STORAGE_ROOT`(기본 Backend cwd의 `.local/media`)에 보관하며 Git에서 제외합니다.
 DB와 파일을 함께 영속 보관해야 합니다. 기존 DB의 [Media 테이블 추가 SQL](docs/erd/mysql-catalog-media-upgrade.sql)은
-대상/백업 검토 후 적용하세요. 이번 작업에서 개발 DB/Volume에 실행하지 않았습니다.
+대상과 백업을 검토한 뒤 적용하세요.
 공개 URL·용량/형식·캐시 v2는 [Media 읽기 계약](docs/architecture/catalog-media.md)을 참고하세요.
 ADMIN 관리 입력 예시·If-Match 재조회·정리 설정은 [Media 관리/파일 수명주기](docs/architecture/media-management.md)를 따릅니다.
 기존 DB의 [정리 테이블 추가 SQL](docs/erd/mysql-media-file-cleanup-upgrade.sql)도 대상/백업 검토 후 적용해야 합니다.
-이 작업은 테스트용 임시 DB/파일만 사용했으며 실제 시설 사진이나 개발 Compose 데이터는 변경하지 않았습니다.
 
 ### 1. 준비
 
@@ -320,7 +314,6 @@ pnpm build
 
 HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서로 다른 검증입니다.
 최근 예약관리 검증의 결과·한계는 [통합 검증 기록](docs/testing/frontend-reservation-management-flow.md)에 있습니다.
-중복·초기 Smoke 테스트의 정리 근거와 유지한 커버리지는 [테스트 정리 기록](docs/testing/test-suite-maintenance.md)에 있습니다.
 
 ## 상세 문서
 
@@ -349,45 +342,13 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [관리자 날짜별 가격 계약과 검증](docs/testing/frontend-admin-daily-prices.md)
 - [관리자 재고 Calendar 계약과 검증](docs/testing/frontend-admin-inventories.md)
 - [관리자 전체 흐름·구조·권한 검증 경계](docs/testing/frontend-admin-management-flow.md)
-- [Frontend UI Audit·증거·개선 우선순위 (#224)](docs/ui/frontend-ui-audit-224.md)
 - [승인 디자인 기준·A1/Navy & Ivory·독립 시안 및 작업 범위](docs/ui/approved-design.md)
 - [현재 UI 재구성 명세·실측·화면 구성안·후속 이슈 지도 (#271)](docs/ui/prototype-rebuild.md)
-- [소비자 Header·Footer·페이지 프레임과 Browser 검증 범위 (#274)](docs/ui/frontend-consumer-frame-274.md)
-- [Compact Search Bar·날짜 Dialog·인원 Popover와 검증 (#275)](docs/ui/frontend-compact-search-275.md)
-- [실제 Media 계약·이미지/Gallery·ADMIN 사진 관리와 검증 경계 (#276)](docs/ui/frontend-media-integration-276.md)
-- [Home A1 Hero·사진 탐색·1440/390 비교와 검증 (#277)](docs/ui/frontend-home-rebuild-277.md)
-- [Search 사진 카드·필터 Sheet·1440/390 비교와 검증 (#278)](docs/ui/frontend-search-rebuild-278.md)
-- [Detail Gallery·단일 객실 목록·예약 Rail·Mobile CTA와 검증 (#279)](docs/ui/frontend-detail-rebuild-279.md)
-- [Booking 입력·검토·여행 요약·저장 완료 결과와 검증 (#280)](docs/ui/frontend-booking-rebuild-280.md)
-- [내 예약 여행 카드·저장 상세·일정 변경·취소 흐름과 검증 (#281)](docs/ui/frontend-reservation-rebuild-281.md)
-- [로그인·가입·접근 안내와 탐색 복귀 검증 (#282)](docs/ui/frontend-authentication-rebuild-282.md)
-- [관리자 작업 공간·레코드 편집·사진/가격/재고 검증 (#283)](docs/ui/frontend-admin-workspace-283.md)
+- [현재 화면 계약·접근성·검수 절차](docs/ui/frontend-guide.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
-- [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)
-- [ADMIN Media 실제 HTTP·MySQL/Redis·동시성 검증 (#273)](docs/testing/media-management-273.md)
-- [Frontend Design Tokens·전역 스타일 기준 (#225)](docs/ui/frontend-design-tokens-225.md)
-- [공통 UI·Navigation 기준과 검증 (#226)](docs/ui/frontend-shared-ui-226.md)
-- [인증 화면 UI·Feedback과 검증 경계 (#227)](docs/ui/frontend-authentication-ui-227.md)
-- [숙소 탐색·객실 선택·예약 생성 UI와 검증 (#228)](docs/ui/frontend-search-booking-ui-228.md)
-- [본인 예약 조회·변경·취소 UI와 검증 (#229)](docs/ui/frontend-reservation-management-ui-229.md)
-- [관리자 탐색·입력·재고 Calendar UI와 검증 (#230)](docs/ui/frontend-admin-management-ui-230.md)
-- [통합 숙박 날짜 범위 UX·키보드·적용/취소 계약 (#241)](docs/testing/frontend-stay-date-range.md)
-- [전체 인원 Stepper·직접 입력·가용성 초기화와 검증 (#242)](docs/testing/frontend-guest-count-stepper.md)
 - [검색·Booking 복귀 Query와 Scroll/Focus 계약 (#243)](docs/testing/frontend-exploration-return-context.md)
 - [Room DTO 기반 상세·선택·키보드 및 반응형 검증 (#244)](docs/testing/frontend-room-detail-selection.md)
-- [횡단 Responsive·접근성·공통 UI State 개선과 검증 (#231)](docs/ui/frontend-responsive-accessibility-231.md)
-- [f0.5.1 UI 회귀·스타일 구조 정리·검증 경계 및 인계 (#232)](docs/ui/frontend-ui-regression-232.md)
-- [Navy & Ivory 전역 토큰·서체·대비 및 시안 적용 범위 (#251)](docs/ui/frontend-navy-ivory-tokens-251.md)
-- [공통 UI·Header/Navigation·달력/Sheet 외형과 회귀 검증 (#252)](docs/ui/frontend-shared-navigation-252.md)
-- [Home A1 Hero·브랜드 이미지 출처·검색 진입과 검증 (#253)](docs/ui/frontend-home-a1-253.md)
-- [숙소 Search 비교 화면·필터·Summary와 검증 (#254)](docs/ui/frontend-search-comparison-254.md)
-- [숙소 Detail·객실 비교/선택 패널·Modal과 검증 (#255)](docs/ui/frontend-detail-room-selection-255.md)
-- [Booking 입력·예상 요금·서버 결과 화면과 검증 (#256)](docs/ui/frontend-booking-redesign-256.md)
-- [내 예약 목록·상세·변경·취소 화면 리디자인과 검증 (#257)](docs/ui/frontend-reservation-redesign-257.md)
-- [인증·접근 거절·없는 경로 화면 리디자인과 검증 (#258)](docs/ui/frontend-authentication-redesign-258.md)
-- [관리자 작업 영역·조회/입력 구분·재고 표 리디자인과 검증 (#259)](docs/ui/frontend-admin-redesign-259.md)
-- [Visual Redesign 통합 회귀·접근성·시각 검증 및 f0.6.0 인계 (#260)](docs/ui/frontend-visual-regression-260.md)
 - [공개 탐색·비파괴 데모 준비](docs/testing/public-exploration-booking-flow.md)
 
 ## 로드맵과 남은 범위
@@ -395,40 +356,10 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 `v*`는 Backend/Platform, `f*`는 Frontend Track입니다. 아래는 소스·문서 기준의 구현 범위이며,
 GitHub Milestone의 병합·종료 상태와는 구분합니다.
 
-GitHub에서 Backend `v0.1.0`·`v0.1.1`·`v0.1.2`·`v0.1.3`·`v0.2.0`·`v0.3.0`·`v0.4.0`과
-Frontend `f0.1.0`·`f0.2.0`·`f0.3.0`·`f0.4.0`·`f0.5.0`은 **Completed**입니다.
-`f0.4.0 — Reservation Management`는 Issue #197–#203 7건과 PR #204–#210 7건을 통해
-생성 이후 본인 목록 → 상세 → 날짜 변경 → 저장 취소 정책 확인 → 취소 → 재조회를 연결했습니다.
-`f0.5.0 — Admin Management`는 Milestone #16의 Issue #211–#216 6건과 PR #218–#223 6건을 종료했습니다.
-공통 Layout·Route, 숙소·객실·가격·재고와 HTTP Mock 통합 회귀 검증을 구현했습니다.
-2026-10-18 문서 동기화에서 lint·format:check·typecheck·69 files / 968 tests·build를 직접 실행했습니다.
-Backend는 RoomInventoryTest·ReservationTest 12건만 재실행했으며 전체 Backend test/build는 실행하지 않았습니다.
-위 자동 테스트·원격 CI 성공은 실제 Admin HTTP·Browser 검증 완료를 뜻하지 않습니다.
-UI 정돈 단계 `f0.5.1`은 #224 Audit을 기준으로 #225–#230 화면 정돈과 #241–#244 UX,
-#231/#232 횡단 검증까지 구현했습니다. [승인 디자인](docs/ui/approved-design.md)은 A1·Navy & Ivory이며,
-`f0.5.2 — Frontend Visual Redesign`의 #251에서 Navy·Ivory 전역 토큰과 기본 서체를 적용했습니다.
-#253은 Home A1 Hero·하단 검색 진입과 별도 AI 브랜드 풍경을 적용했습니다. 실제 숙소 사진이 아니며,
-#254는 Search 2열/1열 비교 배치·필터·적용 조건 Summary를 정리했습니다. 사진 영역은 미제공 상태이며,
-#255는 Detail 소개·이용 안내·객실 비교·선택 확인 패널을 정리했습니다. 실제 Gallery/Media 연동은 후속 범위입니다.
-#256은 Booking 요약/입력·최종 확인과 완료 화면을 정리하고, 예상 요금과 서버 저장 금액을 구분했습니다.
-#257은 내 예약 목록·상세·변경/취소 확인의 정보 출처와 표현을 통일했습니다. 실제 Backend 전체 연동 검증은 별도입니다.
-#258은 Login/Signup/Google Callback·접근 거절/없는 경로 화면을 공통 디자인으로 정리했습니다. 인증 Lifecycle은 유지합니다.
-#259는 관리자 작업 영역과 숙소·정책·객실·가격·재고의 조회/입력 표현을 정리했습니다.
-기존 저장/복구 규칙은 유지하며 실제 Admin HTTP와 최종 사용자 검수는 별도입니다.
-#260에서 변경 화면의 통합 회귀·반응형·접근성과 로컬 이미지 성능 관찰을 정리했습니다.
-실제 사진/Metadata 연결, 전체 Backend 실연동과 최종 사용자 승인을 완료한 것은 아닙니다.
-당시 문맥의 f0.5.3은 Milestone #19의 이전 명칭입니다. 2026-10-29의 **새 f0.5.3(#21)**과는 다릅니다.
-[#271 재구성 명세](docs/ui/prototype-rebuild.md)는 현재 작업 기준이며, 기존 DOM/긴 폼/빈 사진 슬롯을
-고정하지 않고 승인 시안의 구성·밀도·상호작용을 옮깁니다. #253–#260은 사용자 시각 승인이 아닙니다.
-#272/#273 실제 Media 선행 후 #274–#283 화면 재구성, #284 실제 화면/회귀 검증으로 이어집니다.
-실제 사진·객실 추가 데이터는 `v0.4.1 — Accommodation Media & Room Metadata`에서 준비합니다.
-현재 Audit은 실제 Browser/Fixture 관찰이며 스타일 수정이나 최종 사용자 승인이 아닙니다.
-이후 `f0.6.0 — Frontend Integration & UX Completion`에서 실제 연동·Edge Case·최종 UX 검수를 진행할 계획입니다.
-`v0.5.0`·`v0.6.0`·`v1.0.0`은 Planned입니다. 같은 Monorepo에서 두 Track을 유지합니다.
-
-f0.6.0 마지막에는 사용자 직접 Color Palette·Typography·Spacing·Layout·Responsive·
-전체 UX를 수동 검수하는 Issue를 두는 계획을 유지합니다. 작은 수정은 f0.6.0에서,
-큰 재설계·추가 기능은 별도 후속 Frontend Milestone으로 분리합니다.
+Frontend는 [승인 시안](docs/ui/approved-design.md)을 기준으로 Home A1·Navy & Ivory,
+사진 중심 Search와 Detail을 구현했습니다. Backend Media 계약과 실제 업로드는 연결되어 있고,
+f0.6.0에서 실기기·외부 인증·서비스 자산과 최종 사용자 UX를 별도로 검수합니다.
+기존 f0.5.2(Milestone #19)의 과거 명칭 f0.5.3과 새 f0.5.3(Milestone #21)은 구분합니다.
 
 | 영역                 | 현재 범위                                                | 후속 개발                                         |
 | -------------------- | -------------------------------------------------------- | ------------------------------------------------- |

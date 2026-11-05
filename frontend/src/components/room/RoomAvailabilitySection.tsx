@@ -273,6 +273,7 @@ function AvailabilityResults({
         information={information}
         controls={controls}
         rooms={rooms}
+        hasAppliedStay
         summary={summary}
         selectedName={selected?.name}
         onContinue={selected && !bookingStarted ? proceed : undefined}

@@ -81,7 +81,7 @@ describe('booking submission', () => {
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
     expect(mock).toHaveBeenCalledTimes(1)
     expect(lock.mock.calls).toEqual([[true], [true]])
-    expect(document.activeElement).toBe(screen.getByRole('alert'))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('alert')))
     expect(screen.getByRole('link', { name: '내 예약에서 결과 확인' }).getAttribute('href')).toBe(
       '/reservations',
     )

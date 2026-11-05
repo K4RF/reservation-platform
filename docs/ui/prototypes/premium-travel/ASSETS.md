@@ -30,7 +30,7 @@ Use case: photorealistic-natural. Asset: concept-only hotel room photography for
 fixture only. The same real React components render synthetic catalog records there.
 They are never uploaded to a real catalog or used as property evidence.
 At #276 neither image was copied into the production bundle. See
-[Media verification](../../frontend-media-integration-276.md).
+[Media contract](../../../architecture/catalog-media.md).
 
 #277 promotes **coast-concept.png only** to a decorative Home brand Hero through
 800/1600 WebP derivatives. The issue expressly allows this change of purpose with

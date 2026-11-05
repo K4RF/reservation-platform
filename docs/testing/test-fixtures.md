@@ -20,7 +20,7 @@ The reusable support code lives under
 | `ReservationFixture` | Creates reservations with a default or explicit period |
 | `AuthenticationTestSupport` | Creates Bearer headers from raw or generated JWTs |
 | `RoomInventoryFixture` | Creates daily room inventory with default or explicit date and quantity |
-| `MvpTestFixture` | Creates the SQL-backed admin and date inventory required by the end-to-end MVP flow |
+| `MvpTestFixture` | Creates the SQL-backed admin and date inventory for the MySQL booking policy and catalog baseline |
 | `MySqlIntegrationTestSupport` | Provides one MySQL 8.4 Testcontainer and Spring datasource connection details |
 | `RedisIntegrationTestSupport` | Provides an ephemeral Redis 7.4 container for cache integration tests while regular persistence uses H2 |
 | `MySqlRedisIntegrationTestSupport` | Adds an ephemeral Redis 7.4 container and dynamic Redis connection details to the MySQL support |
