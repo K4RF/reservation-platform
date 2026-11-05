@@ -264,9 +264,6 @@ legend {
   .accommodation-card,
   .reservation-card,
   .booking-complete-page,
-  .signup-page,
-  .login-page,
-  .oauth-callback-page,
   .admin-sidebar,
   .admin-content,
   .empty-state,
@@ -542,114 +539,96 @@ legend {
 
 .auth-page {
   display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1fr);
-  grid-template-areas: 'introduction form';
-  width: min(100%, var(--content-wide));
+  width: min(100%, 60rem);
   min-width: 0;
-  padding: 0;
-  border: 1px solid var(--color-border);
-  border-radius: 0;
-  background: var(--color-surface);
-  text-align: left;
+  gap: var(--space-6);
   overflow-wrap: anywhere;
 }
-.auth-panel {
-  grid-area: form;
-  justify-self: center;
-  width: min(100%, var(--content-auth));
-  min-width: 0;
+.auth-page-form {
+  grid-template-columns: minmax(0, 1fr) minmax(0, var(--content-auth));
+  align-items: start;
+  gap: clamp(var(--space-6), 6vw, var(--space-16));
+  padding-block: var(--space-8);
+}
+.auth-page-notice {
+  width: min(100%, 34rem);
   padding: var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
 }
-.auth-introduction {
-  grid-area: introduction;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-content: center;
-  gap: var(--space-5);
+.auth-panel {
   min-width: 0;
-  padding: clamp(var(--space-6), 4vw, var(--space-12));
-  background: var(--color-primary);
-  color: var(--color-on-primary);
 }
-.auth-introduction > p {
+.auth-page-form .auth-panel {
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.auth-header {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+  min-width: 0;
+}
+.auth-page-form .auth-header {
+  padding-block: var(--space-6);
+  border-top: 2px solid var(--color-primary);
+}
+.auth-header :is(h1, p) {
   margin: 0;
-  color: var(--color-on-primary);
+  word-break: keep-all;
 }
-.auth-brand-title {
+.auth-header h1 {
   font-family: var(--font-family-display);
-  font-size: clamp(var(--font-size-2xl), 3vw, 3rem);
+  font-size: clamp(var(--font-size-2xl), 3.4vw, 3rem);
+  font-weight: var(--font-weight-display);
   line-height: var(--leading-heading);
 }
 .auth-eyebrow {
   color: var(--color-primary);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
 }
-.auth-introduction a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-min-height);
+.site-header.site-header-entry {
+  min-height: 0;
   padding-block: var(--space-2);
-  color: var(--color-on-primary);
-  font-weight: var(--font-weight-semibold);
-}
-.auth-introduction a:focus-visible {
-  outline-color: var(--color-on-primary);
-}
-.auth-public-note,
-.auth-note {
-  font-size: var(--font-size-sm);
-  line-height: var(--leading-description);
-}
-.auth-note {
-  margin-block: var(--space-3) 0;
-}
-.auth-session-note {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-}
-.auth-panel > .auth-return-link {
-  width: 100%;
 }
 @media (max-width: 48rem) {
-  .auth-page {
+  .auth-page-form {
+    width: min(100%, var(--content-auth));
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'form' 'introduction';
+    padding-block: 0;
+    gap: var(--space-5);
   }
-  .auth-panel {
-    padding: var(--space-5);
+  .auth-page-form .auth-header {
+    padding-block: 0;
+    border: 0;
   }
-  .auth-introduction {
-    padding: var(--space-5);
-    gap: var(--space-3);
+  .auth-page-form .auth-panel {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .auth-page-notice {
+    padding: var(--space-4);
+  }
+  .auth-page-notice h1 {
+    font-size: var(--font-size-xl);
   }
 }
-
-.auth-header {
-  display: grid;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-border);
-}
-
+/* Avoid squeezing the notice inside two layers of padding with enlarged text. */
 @media (max-width: 24rem) {
-  .auth-panel {
-    padding: var(--space-3);
+  .auth-page-notice {
+    padding-inline: var(--space-3);
   }
-  .auth-panel button {
-    padding-inline: var(--space-2);
-  }
-}
-
-.auth-header p {
-  margin: 0;
 }
 
 .auth-page :is(.login-form, .signup-form) {
   margin-top: 0;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .auth-page .auth-field-hint {
@@ -660,6 +639,7 @@ legend {
 
 .auth-page [role='alert'] {
   margin-block: 0 var(--space-4);
+  word-break: keep-all;
 }
 
 .auth-page .form-field [role='alert'] {
@@ -706,32 +686,38 @@ legend {
 
 .auth-page .google-login-button {
   margin-top: 0;
+  border-color: var(--color-border-control);
+  background: var(--color-surface);
+  color: var(--color-primary);
 }
-
-.auth-switch {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
+.auth-page .google-login-button:hover {
+  background: var(--color-secondary);
+}
+.auth-next {
+  display: grid;
+  justify-items: start;
   margin-block: var(--space-5) 0;
-  padding-top: var(--space-4);
+  padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
 }
-
-.auth-switch a,
+.auth-next p {
+  margin: 0;
+}
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-4);
+}
+.auth-next a,
 .auth-return-link {
   display: inline-flex;
   align-items: center;
   min-height: var(--control-min-height);
-  padding: var(--space-2);
   font-weight: var(--font-weight-semibold);
   text-underline-offset: var(--space-1);
-}
-
-.auth-return-link {
-  margin-top: var(--space-2);
 }
 
 .signup-form,
@@ -3797,9 +3783,6 @@ form[aria-label='대표 투숙객 정보'] {
   }
   .home-explore-caption h3 {
     font-size: var(--font-size-xl);
-  }
-  .auth-page {
-    padding: 0;
   }
 }
 @container (max-width: 22rem) {

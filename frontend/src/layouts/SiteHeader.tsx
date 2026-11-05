@@ -133,9 +133,11 @@ function SiteMenu({
 }
 
 export function SiteHeader({
+  focusedEntry = false,
   loggingOut,
   onLogout,
 }: {
+  focusedEntry?: boolean
   loggingOut: boolean
   onLogout: () => void
 }) {
@@ -149,7 +151,7 @@ export function SiteHeader({
     return () => media.removeEventListener('change', dismiss)
   }, [])
   return (
-    <header className="site-header">
+    <header className={`site-header${focusedEntry ? ' site-header-entry' : ''}`}>
       <Link className="site-brand" to={routePaths.home} aria-label="Reservation Platform">
         <span className="site-brand-mark" aria-hidden="true">
           R
@@ -158,30 +160,34 @@ export function SiteHeader({
           Reservation <span>Platform</span>
         </span>
       </Link>
-      <nav className="site-nav" aria-label="주요 탐색">
-        <NavigationLinks loggingOut={loggingOut} onLogout={onLogout} />
-      </nav>
-      <div className="site-mobile-actions">
-        <NavLink className="site-explore" to={routePaths.accommodations}>
-          둘러보기
-        </NavLink>
-        <button
-          type="button"
-          className="site-menu-trigger"
-          aria-expanded={menuOpen}
-          aria-controls={menuOpen ? 'site-menu' : undefined}
-          aria-haspopup="dialog"
-          onClick={() => setMenuOpen(true)}
-        >
-          메뉴
-        </button>
-      </div>
-      {menuOpen && (
-        <SiteMenu
-          onDismiss={() => setMenuOpen(false)}
-          loggingOut={loggingOut}
-          onLogout={onLogout}
-        />
+      {!focusedEntry && (
+        <>
+          <nav className="site-nav" aria-label="주요 탐색">
+            <NavigationLinks loggingOut={loggingOut} onLogout={onLogout} />
+          </nav>
+          <div className="site-mobile-actions">
+            <NavLink className="site-explore" to={routePaths.accommodations}>
+              둘러보기
+            </NavLink>
+            <button
+              type="button"
+              className="site-menu-trigger"
+              aria-expanded={menuOpen}
+              aria-controls={menuOpen ? 'site-menu' : undefined}
+              aria-haspopup="dialog"
+              onClick={() => setMenuOpen(true)}
+            >
+              메뉴
+            </button>
+          </div>
+          {menuOpen && (
+            <SiteMenu
+              onDismiss={() => setMenuOpen(false)}
+              loggingOut={loggingOut}
+              onLogout={onLogout}
+            />
+          )}
+        </>
       )}
     </header>
   )

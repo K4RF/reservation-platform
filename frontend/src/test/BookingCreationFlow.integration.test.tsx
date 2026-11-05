@@ -48,6 +48,10 @@ function mockApi(
   const mock = vi.fn((url: string, init: RequestInit) => {
     const parsed = new URL(url, 'http://localhost')
     const path = parsed.pathname
+    if (init.method === 'POST' && path === '/api/v1/members')
+      return Promise.resolve(
+        Response.json({ memberId: 7, email: 'member@example.com', role: 'USER' }, { status: 201 }),
+      )
     if (init.method === 'POST' && path === '/api/v1/auth/login')
       return Promise.resolve(
         Response.json({
@@ -143,7 +147,7 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(mock.mock.calls.every(([, init]) => init.method === 'GET')).toBe(true)
     expect(screen.queryByRole('form', { name: '대표 투숙객 정보' })).toBeNull()
   })
-  it('connects Home search, filter/page navigation, room detail and a fresh selection after login before creating one reservation', async () => {
+  it('connects Home search, room detail, signup and fresh selection after login before creating one reservation', async () => {
     const mock = mockApi()
     renderAt('/')
     expectUiSemantics()
@@ -196,6 +200,31 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     ).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '예약하려면 로그인' }))
     await screen.findByRole('heading', { name: '로그인' })
+    const exploreTarget = screen
+      .getByRole('link', { name: '보던 숙소로 돌아가기' })
+      .getAttribute('href')
+    fireEvent.click(screen.getByRole('link', { name: '회원가입' }))
+    await screen.findByRole('heading', { name: '회원가입' })
+    expect(screen.getByRole('link', { name: '보던 숙소로 돌아가기' }).getAttribute('href')).toBe(
+      exploreTarget,
+    )
+    fireEvent.click(screen.getByRole('link', { name: '로그인' }))
+    expect(screen.getByText('로그인 후 보던 숙소로 돌아갑니다.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: '회원가입' }))
+    fireEvent.change(screen.getByLabelText('이메일'), { target: { value: 'member@example.com' } })
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123!' } })
+    fireEvent.click(screen.getByRole('button', { name: '회원가입' }))
+    await screen.findByText('회원가입이 완료되었습니다. 가입한 이메일로 로그인해 주세요.')
+    expect(screen.getByLabelText('이메일')).toHaveProperty('value', '')
+    expect(screen.getByLabelText('비밀번호')).toHaveProperty('value', '')
+    expect(screen.getByRole('link', { name: '보던 숙소로 돌아가기' }).getAttribute('href')).toBe(
+      exploreTarget,
+    )
+    expect(
+      mock.mock.calls.filter(([, init]) => init.method === 'POST').map(([url]) => url),
+    ).toEqual(['/api/v1/members'])
+    expect(sessionStorage.length).toBe(0)
+    expect(localStorage.length).toBe(0)
     fireEvent.change(screen.getByLabelText('이메일'), { target: { value: 'member@example.com' } })
     fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password123!' } })
     fireEvent.click(screen.getByRole('button', { name: '로그인' }))

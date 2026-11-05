@@ -52,19 +52,27 @@ export function RootLayout() {
   // When a status replaces/precedes the Hero, never place an overlay over that message.
   const homeOverlay =
     location.pathname === routePaths.home && !loggingOut && state.status !== 'reauth_required'
+  const authEntry = [routePaths.login, routePaths.signup, routePaths.oauth2Callback].some(
+    (path) => path === location.pathname.toLowerCase().replace(/\/+$/, ''),
+  )
   return (
     <div className={`app-shell${homeOverlay ? ' app-shell-home' : ''}`}>
       <a className="skip-link" href="#main-content">
         본문으로 건너뛰기
       </a>
-      <SiteHeader key={location.key} loggingOut={loggingOut} onLogout={() => void handleLogout()} />
+      <SiteHeader
+        key={location.key}
+        focusedEntry={authEntry && state.status !== 'authenticated' && !loggingOut}
+        loggingOut={loggingOut}
+        onLogout={() => void handleLogout()}
+      />
       <main
         className="site-main"
         data-page-frame={pageFrame(location.pathname)}
         id="main-content"
         tabIndex={-1}
       >
-        {state.status === 'reauth_required' && (
+        {state.status === 'reauth_required' && !authEntry && (
           <p role="status">
             로그인이 만료되었습니다. 숙소는 계속 둘러볼 수 있으며 예약 시 다시 로그인해 주세요.
           </p>

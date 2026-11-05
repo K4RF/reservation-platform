@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
@@ -52,9 +52,7 @@ describe('Google callback page', () => {
       screen.getByRole('region', { name: 'Google 로그인' }).classList.contains('auth-page'),
     ).toBe(true)
     expect(exchangeGoogleLoginCode).toHaveBeenCalledOnce()
-    expect(
-      screen.getByRole('link', { name: '로그인 없이 숙소 둘러보기' }).getAttribute('href'),
-    ).toBe('/accommodations')
+    expect(screen.queryByRole('link', { name: '로그인으로 돌아가기' })).toBeNull()
     expect(getAccessToken()).toBeNull()
   })
   it('returns to the protected destination after the full-page Google flow', async () => {
@@ -113,6 +111,9 @@ describe('Google callback page', () => {
   })
 
   it('keeps the user signed out when code exchange fails', async () => {
+    const target =
+      '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3'
+    saveGoogleReturn(target)
     vi.mocked(exchangeGoogleLoginCode).mockRejectedValue(new Error('expired'))
     renderCallback(callbackEntry(`code=${'a'.repeat(43)}`))
 
@@ -121,5 +122,15 @@ describe('Google callback page', () => {
       'Google 로그인을 완료하지 못했습니다. 다시 시도해 주세요.',
     )
     expect(getAccessToken()).toBeNull()
+    expect(sessionStorage.length).toBe(0)
+    expect(screen.getByRole('link', { name: '보던 숙소로 돌아가기' }).getAttribute('href')).toBe(
+      target,
+    )
+    fireEvent.click(screen.getByRole('link', { name: '로그인으로 돌아가기' }))
+    expect(document.activeElement).toBe(await screen.findByRole('heading', { name: '로그인' }))
+    expect(screen.getByText('로그인 후 보던 숙소로 돌아갑니다.')).toBeTruthy()
+    expect(screen.getByRole('link', { name: '보던 숙소로 돌아가기' }).getAttribute('href')).toBe(
+      target,
+    )
   })
 })

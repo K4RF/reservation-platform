@@ -17,16 +17,17 @@ node scripts/ui-audit/server.mjs
 실제 Backend Proxy는 없고 앱의 fetch는 Fixture로 대체된다. 기본 쓰기는 405 AUDIT_READ_ONLY,
 미지원 API는 404를 반환하며 실제 서버로 전달하지 않는다. Google 버튼의 외부 이동/실제 OAuth2는 점검하지 않는다.
 
-| Query     | 값                                                                |
-| --------- | ----------------------------------------------------------------- |
-| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`                 |
-| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture            |
-| scenario  | ready / empty / error / loading / cancelled / stress / comparison |
-| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                |
-| metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록       |
-| media     | missing(기본) / present / failed / partial. 격리된 사진 상태      |
-| hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환      |
-| booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과     |
+| Query     | 값                                                                               |
+| --------- | -------------------------------------------------------------------------------- |
+| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`                                |
+| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture                           |
+| scenario  | ready / empty / error / loading / cancelled / stress / comparison                |
+| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                               |
+| metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록                      |
+| media     | missing(기본) / present / failed / partial. 격리된 사진 상태                     |
+| hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환                     |
+| booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과                    |
+| auth      | blocked(기본) / signup-success / login-error / callback-pending / callback-error |
 
 예:
 
@@ -64,6 +65,13 @@ Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매�
 요청 Body를 보관/반영하지 않으며 입력한 이름·날짜와 응답이 다를 수 있다. 이후 완료 GET도 고정 Fixture다.
 다른 쓰기는 이 옵션에서도405이며 기본 차단과 무Proxy 원칙은 유지한다. 실제 HTTP/재고/Commit 증거가 아니다.
 로컬 서버 재시작 뒤 Query를 지정하고 새로고침한다. 이 도구의 옵션을 제품 코드·환경변수에 옮기지 않는다.
+
+#282의 `auth=signup-success`는 Signup 요청 없이 `/login` Router 완료 상태와 가상 숙소 복귀를 연다.
+`path=%2Flogin&auth=login-error`에서 테스트 전용 이메일/비밀번호를 입력하면 로그인 POST에만 합성 `401 AUTH_003`을 반환한다.
+`auth=callback-pending`/`callback-error`는 가상 state/코드/복귀 경로로 Callback을 시작하며 코드 교환 POST에만
+대기(클라이언트 Timeout 이전) 또는 합성 401을 제공한다. 실제 계정 생성, Google 이동, Token 발급은 없다.
+코드 교환 직후 Callback의 URL 정리로 Audit Query가 사라질 수 있으므로 다시 보려면 원래 Audit URL로 이동한다.
+모든 옵션은 이 로컬 도구에서만 적용되며 요청 내용은 저장하거나 외부로 보내지 않는다.
 
 도구 검증:
 

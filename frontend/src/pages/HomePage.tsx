@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
 import { parseSearchQuery } from '../components/accommodation/searchQuery'
@@ -9,8 +9,6 @@ import heroLarge from '../assets/brand/home-a1-1600.webp'
 import heroSmall from '../assets/brand/home-a1-800.webp'
 
 export function HomePage() {
-  const location = useLocation()
-  const signupCompleted = location.state?.signupCompleted === true
   const { state } = useAuth()
   const navigate = useNavigate()
   const [error, setError] = useState('')
@@ -110,9 +108,6 @@ export function HomePage() {
         </div>
         <HomeCatalog />
       </section>
-      {signupCompleted && (
-        <p role="status">회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.</p>
-      )}
       {state.status === 'authenticated' && (
         <p className="sr-only" role="status">
           로그인 상태입니다.

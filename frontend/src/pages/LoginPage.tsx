@@ -4,8 +4,8 @@ import { createGoogleLoginStartUrl, googleOAuth2BackendUrl } from '../api/google
 import { routePaths } from '../app/routePaths'
 import { LoginForm } from '../components/login/LoginForm'
 import { useAuth } from '../state/useAuth'
-import { safeLoginReturn, saveGoogleReturn } from '../app/loginReturn'
-import { AuthPageLayout } from '../components/ui/AuthPageLayout'
+import { authReturnDestination, safeLoginReturn, saveGoogleReturn } from '../app/loginReturn'
+import { AuthExploreLink, AuthPageLayout } from '../components/ui/AuthPageLayout'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -13,6 +13,7 @@ export function LoginPage() {
   const { state } = useAuth()
   const [googleError, setGoogleError] = useState('')
   const returnPath = safeLoginReturn(location.state?.from)
+  const destination = authReturnDestination(returnPath)
 
   function startGoogleLogin() {
     try {
@@ -20,18 +21,24 @@ export function LoginPage() {
       saveGoogleReturn(returnPath)
       window.location.assign(url)
     } catch {
-      setGoogleError('Google 로그인을 시작하지 못했습니다. 설정을 확인하고 다시 시도해 주세요.')
+      setGoogleError(
+        'Google 로그인을 시작하지 못했습니다. 다시 시도하거나 이메일로 로그인해 주세요.',
+      )
     }
   }
 
   return (
     <AuthPageLayout
-      className="login-page"
       headingId="login-title"
       eyebrow="WELCOME BACK"
       title="로그인"
-      description="이메일과 비밀번호로 로그인하세요."
+      description={destination.purpose}
     >
+      {location.state?.signupCompleted === true && (
+        <p className="auth-success" role="status">
+          회원가입이 완료되었습니다. 가입한 이메일로 로그인해 주세요.
+        </p>
+      )}
       {state.status === 'reauth_required' && (
         <p role="alert">인증이 만료되었습니다. 다시 로그인해 주세요.</p>
       )}
@@ -59,16 +66,19 @@ export function LoginPage() {
       >
         Google로 로그인
       </button>
-      <p className="auth-note" id="google-login-hint">
+      <p className="sr-only" id="google-login-hint">
         Google 인증 화면으로 이동합니다.
       </p>
       {googleError && <p role="alert">{googleError}</p>}
-      <p className="auth-switch">
-        계정이 없나요? <Link to={routePaths.signup}>회원가입</Link>
-      </p>
-      <p className="auth-note auth-session-note">
-        인증 정보는 브라우저 메모리에만 유지됩니다. 새로고침 후에는 다시 로그인해야 합니다.
-      </p>
+      <div className="auth-next">
+        <p>
+          계정이 없나요?{' '}
+          <Link to={routePaths.signup} state={{ from: returnPath }}>
+            회원가입
+          </Link>
+        </p>
+        <AuthExploreLink to={destination.explore} />
+      </div>
     </AuthPageLayout>
   )
 }

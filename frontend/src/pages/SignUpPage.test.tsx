@@ -33,10 +33,10 @@ describe('signup flow', () => {
       true,
     )
     expect(screen.getByRole('form', { name: '이메일 회원가입' })).toBeTruthy()
-    expect(
-      screen.getByText('회원가입만으로 로그인되지는 않습니다. 가입 후 로그인해 주세요.'),
-    ).toBeTruthy()
-    expect(screen.getByRole('complementary', { name: '공개 탐색 안내' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '로그인' }).getAttribute('href')).toBe('/login')
+    expect(screen.getByRole('link', { name: '숙소 둘러보기' }).getAttribute('href')).toBe(
+      '/accommodations',
+    )
     expect(screen.getByLabelText('비밀번호').getAttribute('type')).toBe('password')
     expect(screen.getByLabelText('비밀번호').getAttribute('autocomplete')).toBe('new-password')
     expect(screen.getByText('비밀번호는 8자 이상 72자 이하로 입력하세요.')).toHaveProperty(
@@ -54,7 +54,7 @@ describe('signup flow', () => {
     expect(signUpMember).not.toHaveBeenCalled()
   })
 
-  it('submits once while pending, then navigates home with confirmation', async () => {
+  it('submits once while pending, then opens the login form with confirmation', async () => {
     let complete!: (value: { memberId: number; email: string; role: 'USER' }) => void
     vi.mocked(signUpMember).mockReturnValue(
       new Promise((resolve) => {
@@ -78,12 +78,11 @@ describe('signup flow', () => {
     expect(screen.getByRole('status').textContent).toContain('처리하고 있습니다')
 
     complete({ memberId: 7, email: 'member@example.com', role: 'USER' })
-    expect(
-      await screen.findByRole('heading', { name: 'Somewhere you can slow down.' }),
-    ).toBeTruthy()
+    const heading = await screen.findByRole('heading', { name: '로그인' })
+    expect(document.activeElement).toBe(heading)
     expect(
       screen
-        .getByText('회원가입이 완료되었습니다. 로그인 화면에서 계속 진행해 주세요.')
+        .getByText('회원가입이 완료되었습니다. 가입한 이메일로 로그인해 주세요.')
         .getAttribute('role'),
     ).toBe('status')
   })

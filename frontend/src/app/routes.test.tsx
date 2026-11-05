@@ -288,7 +288,12 @@ describe('AppRoutes', () => {
         .getByRole('region', { name: '페이지를 찾을 수 없습니다.' })
         .classList.contains('auth-page'),
     ).toBe(true)
-    expect(screen.getByRole('complementary', { name: '공개 탐색 안내' })).toBeTruthy()
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { name: '페이지를 찾을 수 없습니다.' }),
+    )
+    expect(screen.getByRole('link', { name: '숙소 둘러보기' }).getAttribute('href')).toBe(
+      '/accommodations',
+    )
     expect(screen.getByRole('link', { name: '홈으로 돌아가기' }).getAttribute('href')).toBe('/')
   })
 
