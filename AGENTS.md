@@ -182,6 +182,11 @@ Backend configuration and behavior are implemented and verified.
   Inherited IDs remain editable through a disclosure, and a selected inventory date
   moves focus to its editor with a return action to the original row. See
   `docs/ui/frontend-admin-workspace-283.md` for comparison and Mock/Browser/HTTP limits.
+- Verification #284 distinguishes same-condition prototype comparisons (Browser
+  Fixture) from the real isolated Backend Media-to-booking journey. The Mobile
+  Detail CTA focuses schedule entry before apply and available results after
+  apply, without querying or selecting. See
+  `docs/ui/frontend-ui-integration-verification-284.md` for the f0.6.0 handoff.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,

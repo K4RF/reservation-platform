@@ -138,6 +138,9 @@ Google 대기·오류, 접근 거절, 없는 경로는 각 상태에 맞는 안�
 날짜별 가격은 적용 금액 조회 뒤 편집을 열고, 재고는 날짜를 선택해 편집합니다.
 변경 후 복구·조회·권한 계약은 그대로입니다. 화면과 검증 한계는 [#283](../docs/ui/frontend-admin-workspace-283.md)을 참고하세요.
 
+[통합 검증 (#284)](../docs/ui/frontend-ui-integration-verification-284.md)에서 Home·Search·Detail의 1440/390px 비교,
+격리 Backend에서 사진 등록부터 본인 예약 조회까지의 결과, f0.6.0에서 다시 확인할 항목을 볼 수 있습니다.
+
 검색·상세·객실 선택·예약 입력/확인·완료 화면은 기존 API 계약을 유지하며 정보 계층을 정돈했습니다.
 요금 표는 내부 스크롤을 제공하고, 예상 합계와 서버 저장 금액을 구분합니다. 화면별 변경·
 Browser Fixture 증거·320px 후속 경계는 [Search & Booking UI (#228)](../docs/ui/frontend-search-booking-ui-228.md)를 따릅니다.
