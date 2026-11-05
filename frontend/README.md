@@ -133,6 +133,11 @@ Google 대기·오류, 접근 거절, 없는 경로는 각 상태에 맞는 안�
 현재 화면과 Browser/Mock 검증 경계는 [#282](../docs/ui/frontend-authentication-rebuild-282.md),
 이전 디자인은 [#258](../docs/ui/frontend-authentication-redesign-258.md)과 [#227](../docs/ui/frontend-authentication-ui-227.md)을 참고하세요.
 
+관리자 화면은 Desktop 작업 메뉴와 Mobile 한 줄 메뉴에서 숙소·객실·가격·재고를 전환합니다.
+숙소·객실은 요약부터 표시하고 정보·상태·정책·사진 중 선택한 작업만 엽니다.
+날짜별 가격은 적용 금액 조회 뒤 편집을 열고, 재고는 날짜를 선택해 편집합니다.
+변경 후 복구·조회·권한 계약은 그대로입니다. 화면과 검증 한계는 [#283](../docs/ui/frontend-admin-workspace-283.md)을 참고하세요.
+
 검색·상세·객실 선택·예약 입력/확인·완료 화면은 기존 API 계약을 유지하며 정보 계층을 정돈했습니다.
 요금 표는 내부 스크롤을 제공하고, 예상 합계와 서버 저장 금액을 구분합니다. 화면별 변경·
 Browser Fixture 증거·320px 후속 경계는 [Search & Booking UI (#228)](../docs/ui/frontend-search-booking-ui-228.md)를 따릅니다.

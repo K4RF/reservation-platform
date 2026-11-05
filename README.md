@@ -361,6 +361,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 - [Booking 입력·검토·여행 요약·저장 완료 결과와 검증 (#280)](docs/ui/frontend-booking-rebuild-280.md)
 - [내 예약 여행 카드·저장 상세·일정 변경·취소 흐름과 검증 (#281)](docs/ui/frontend-reservation-rebuild-281.md)
 - [로그인·가입·접근 안내와 탐색 복귀 검증 (#282)](docs/ui/frontend-authentication-rebuild-282.md)
+- [관리자 작업 공간·레코드 편집·사진/가격/재고 검증 (#283)](docs/ui/frontend-admin-workspace-283.md)
 - [Catalog Media 공개 읽기·로컬 저장소·캐시·업그레이드 (#272)](docs/architecture/catalog-media.md)
 - [Catalog Media 테스트·CI 검토 및 미검증 범위 (#272)](docs/testing/catalog-media-272.md)
 - [ADMIN Media 입력 예시·관리·파일 실패 복구 (#273)](docs/architecture/media-management.md)

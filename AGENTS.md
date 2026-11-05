@@ -176,6 +176,12 @@ Backend configuration and behavior are implemented and verified.
   Router state; no automatic sign-in, password transfer or write replay. Keep
   public recovery distinct from protected return and verify fresh availability
   before restoring a Room hint. See `docs/ui/frontend-authentication-rebuild-282.md`.
+- Admin #283 keeps query/draft/mutation ownership in the verified page scope.
+  Record panels are presentation-only and keep drafts and Media recovery mounted;
+  pending/uncertain/Media recovery blocks switching to other record operations.
+  Inherited IDs remain editable through a disclosure, and a selected inventory date
+  moves focus to its editor with a return action to the original row. See
+  `docs/ui/frontend-admin-workspace-283.md` for comparison and Mock/Browser/HTTP limits.
 - Current target (2026-10-29): new f0.5.3 (Milestone #21), #271 specification,
   #274 frame, #275 compact search/layers, #276 Media integration, #277 Home,
   #278 Search, #279 Detail, #280 Booking, #281 reservations, #282 Auth,

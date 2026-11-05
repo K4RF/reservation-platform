@@ -17,17 +17,18 @@ node scripts/ui-audit/server.mjs
 실제 Backend Proxy는 없고 앱의 fetch는 Fixture로 대체된다. 기본 쓰기는 405 AUDIT_READ_ONLY,
 미지원 API는 404를 반환하며 실제 서버로 전달하지 않는다. Google 버튼의 외부 이동/실제 OAuth2는 점검하지 않는다.
 
-| Query     | 값                                                                               |
-| --------- | -------------------------------------------------------------------------------- |
-| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`                                |
-| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture                           |
-| scenario  | ready / empty / error / loading / cancelled / stress / comparison                |
-| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                               |
-| metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록                      |
-| media     | missing(기본) / present / failed / partial. 격리된 사진 상태                     |
-| hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환                     |
-| booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과                    |
-| auth      | blocked(기본) / signup-success / login-error / callback-pending / callback-error |
+| Query     | 값                                                                                    |
+| --------- | ------------------------------------------------------------------------------------- |
+| path      | 실제 Route와 그 Query를 URL 인코딩한 값, 기본 `/`                                     |
+| role      | 생략=익명, `USER`, `ADMIN`의 서명 없는 UI Hint Fixture                                |
+| scenario  | ready / empty / error / loading / cancelled / stress / comparison                     |
+| textScale | 생략 또는 100 / 200. Audit 전용 root 글자·rem 확대                                    |
+| metrics   | 생략=꺼짐 / `1`=지원되는 성능 Entry를 로컬 Console에만 기록                           |
+| media     | missing(기본) / present / failed / partial. 격리된 사진 상태                          |
+| hero      | 생략=정상 / failed=장식용 Home WebP에만 Audit 서버가404 반환                          |
+| booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과                         |
+| auth      | blocked(기본) / signup-success / login-error / callback-pending / callback-error      |
+| admin     | blocked(기본) / policy-success / policy-error. `role=ADMIN`에서만 합성 예약 정책 POST |
 
 예:
 
@@ -72,6 +73,11 @@ Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매�
 대기(클라이언트 Timeout 이전) 또는 합성 401을 제공한다. 실제 계정 생성, Google 이동, Token 발급은 없다.
 코드 교환 직후 Callback의 URL 정리로 Audit Query가 사라질 수 있으므로 다시 보려면 원래 Audit URL로 이동한다.
 모든 옵션은 이 로컬 도구에서만 적용되며 요청 내용은 저장하거나 외부로 보내지 않는다.
+
+#283의 `role=ADMIN&admin=policy-success|policy-error`는 `POST /api/v1/accommodations/7/booking-policy`에만
+고정 201 응답 또는 결과 불명 500을 반환한다. 입력값이나 가상 카탈로그를 저장/수정하지 않는다.
+정책 GET, PUT, 사진 업로드·삭제 및 다른 관리자 쓰기를 활성화하지 않는다. `scenario=stress`의 재고 조회는
+기존 날짜와 OPEN/CLOSED 및 예약 수량을 보존하며 큰 총수량·가용 수량을 표시해 표 스크롤을 점검한다.
 
 도구 검증:
 
