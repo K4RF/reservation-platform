@@ -79,7 +79,7 @@ describe('signup flow', () => {
 
     complete({ memberId: 7, email: 'member@example.com', role: 'USER' })
     const heading = await screen.findByRole('heading', { name: '로그인' })
-    expect(document.activeElement).toBe(heading)
+    await waitFor(() => expect(document.activeElement).toBe(heading))
     expect(
       screen
         .getByText('회원가입이 완료되었습니다. 가입한 이메일로 로그인해 주세요.')

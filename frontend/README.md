@@ -62,5 +62,8 @@ Vitest/Testing Library는 화면 동작과 HTTP 경계 Mock을 검증합니다. 
 인증, 검색·예약 생성, 본인 예약 관리, 관리자 관리를 다룹니다. 실제 Backend/외부 인증,
 브라우저 레이아웃·기기 검증과는 구분합니다.
 
+[격리 Frontend/Backend 실행 및 API 계약](../docs/testing/frontend-backend-integration.md)에서
+실제 Vite 프록시, MySQL·Redis·Kafka·Media 및 테스트 계정 준비 방법을 확인하세요.
+
 `pnpm preview`는 빌드된 `dist/`의 로컬 확인용입니다. 실제 계정이나 개발 DB 없이 화면을
 확인하려면 [격리 UI Audit](scripts/ui-audit/README.md)을 사용하세요.

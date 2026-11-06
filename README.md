@@ -313,6 +313,8 @@ pnpm build
 로컬 테스트 통과와 원격 CI 성공은 별도로 확인합니다.
 
 HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서로 다른 검증입니다.
+[격리 Frontend/Backend 실행 및 API 계약](docs/testing/frontend-backend-integration.md)으로
+개발 데이터와 분리된 통합 스모크를 재현할 수 있습니다.
 최근 예약관리 검증의 결과·한계는 [통합 검증 기록](docs/testing/frontend-reservation-management-flow.md)에 있습니다.
 
 ## 상세 문서
