@@ -409,24 +409,41 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(mock.mock.calls.some(([url]) => url.includes('/prices/'))).toBe(false)
     expect(mock.mock.calls.some(([, init]) => init.method === 'POST')).toBe(false)
   })
-  it('keeps an ambiguous network failure out of completion and prevents another submit', async () => {
-    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
-    const mock = mockApi(false, { create: () => Promise.reject(new TypeError('offline')) })
-    renderAt('/accommodations')
-    await searchToDetail()
-    const draftPath = screen.getByTestId('location').textContent
-    await reachReview()
-    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
-    await waitFor(() =>
-      expect(screen.getByRole('alert').textContent).toContain(
-        '예약 생성 여부를 확인할 수 없습니다',
-      ),
-    )
-    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
-    expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
-    expect(screen.getByTestId('location').textContent).toBe(draftPath)
-    expect(new URL(draftPath!, 'http://localhost').pathname).toBe('/accommodations/7')
-  })
+  it.each(['network loss', '503 after a possible commit'])(
+    'keeps an ambiguous %s out of completion and prevents another submit',
+    async (failure) => {
+      setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
+      const mock = mockApi(false, {
+        create: () =>
+          failure === 'network loss'
+            ? Promise.reject(new TypeError('offline'))
+            : Promise.resolve(
+                Response.json(
+                  { status: 503, code: 'INVENTORY_013', message: 'Redis lock unavailable' },
+                  { status: 503 },
+                ),
+              ),
+      })
+      renderAt('/accommodations')
+      await searchToDetail()
+      const draftPath = screen.getByTestId('location').textContent
+      await reachReview()
+      fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+      await waitFor(() =>
+        expect(screen.getByRole('alert').textContent).toContain(
+          '예약 생성 여부를 확인할 수 없습니다',
+        ),
+      )
+      fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+      expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
+      expect(screen.queryByRole('button', { name: '예약 생성 다시 시도' })).toBeNull()
+      expect(screen.getByRole('link', { name: '내 예약에서 결과 확인' }).getAttribute('href')).toBe(
+        '/reservations',
+      )
+      expect(screen.getByTestId('location').textContent).toBe(draftPath)
+      expect(new URL(draftPath!, 'http://localhost').pathname).toBe('/accommodations/7')
+    },
+  )
   it('creates once, replaces draft route, and displays backend amount rather than estimate', async () => {
     const token = accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60)
     setTokenPair(token, 'refresh')
