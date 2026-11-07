@@ -64,7 +64,7 @@ Module Reload 검증은 실제 브라우저 새로고침을 대신한 메모리 
 RootLayout의 로그아웃 완료 이동이 경쟁해 `logoutResult` 안내가 사라졌습니다.
 RootLayout은 로그아웃 중 Outlet 대신 LoadingState를 표시하며 완료 Router 이동과 Loading 해제를
 같은 React Transition으로 묶습니다. 토큰 삭제 직후의 이전 보호 Route가 다시 마운트되어
-완료 Router State를 덮지 않게 했습니다. 성공과 실패 모두 실제 HTTP 경계 통합 테스트로 검증합니다.
+완료 Router State를 덮지 않게 했습니다. 성공과 실패 모두 HTTP Mock 통합 테스트로 검증합니다.
 
 ## 실행 및 CI
 
@@ -82,26 +82,27 @@ pnpm build
 Windows 로컬 실행 성공은 GitHub Ubuntu Runner의 실제 Check 성공과는 구분합니다.
 원격 브랜치 Push/PR 후 `Frontend Test and Build` Check를 확인해야 합니다.
 
-## 실제 Backend 연동 확인 — 미검증
+## 격리된 실제 인증 검증 (#300)
 
-#168 작업 환경에서 Docker Desktop Linux Engine Pipe가 없었고 8080 API Listener도 확인되지 않았습니다.
-실제 Backend/Redis/Google 연동과 원격 CI는 실행 완료로 표시하지 않습니다.
-개발 DB·Volume은 변경/삭제하지 않았습니다. 아래는 인프라가 준비된 뒤의 수동 검증 절차입니다.
+[격리 환경 실행 및 계약](frontend-backend-integration.md)의 JAR/Frontend 준비 후, 루트에서
+`node scripts/integration/run.mjs --auth`를 실행합니다. `--hold`를 붙이면 스모크 후
+브라우저 점검을 이어갈 수 있습니다. 수동 로그인용 임시 비밀번호는 런북의 마스킹 입력을 사용합니다.
+기본 개발 Compose, 제품 토큰 TTL, CI는 변경하지 않습니다. Browser 증거를 저장할 때 비밀번호,
+토큰, OAuth 코드/state, 투숙객 정보와 전체 요청/응답은 제외합니다.
 
-1. Docker Desktop을 실행하고 루트의 기존 `.env` 설정으로 `docker compose up -d`,
-   `docker compose ps`를 확인합니다. 비밀값은 문서/로그에 복사하지 않습니다.
-2. `backend/`에서 Gradle Wrapper `bootRun`, `frontend/`에서 `pnpm dev`를 실행합니다.
-   Vite Proxy와 Google Redirect 환경변수는 기존 README 설정을 사용합니다.
-3. `/signup`에서 전용 테스트 이메일로 가입 → 이메일 로그인 → `/reservations` 접근을 확인합니다.
-   이 수동 작업은 실제 개발 DB에 회원을 생성하므로 승인된 테스트 계정을 사용합니다.
-4. DevTools에서 보호 API의 Bearer Header와 공개 API의 무 Bearer를 확인하되 Token을 공유/기록하지 않습니다.
-   예약 목록 API는 읽기 요청으로 확인합니다. 접근 확인 화면 자체는 예약 API를 호출하지 않습니다.
-5. 별도 검증 환경에서 Access Token TTL을 짧게 설정해 만료·동시 요청 시 재발급 1회와 새 Token 적용을
-   확인합니다. Redis 실패는 운영/공용 인프라가 아닌 격리된 검증 환경에서만 재현합니다.
-6. Logout → 보호 URL 직접 접근 → Login 이동, 보호 화면 새로고침 → 익명/Login 이동을 확인합니다.
-7. 기존 승인된 ADMIN 테스트 계정으로 `/admin` 접근을 확인하고 USER 계정의 직접 접근은 차단되는지 확인합니다.
-   관리자 회원이나 권한을 임의로 DB에 추가/변경하지 않습니다.
-8. Google 로그인 성공/취소와 원래 경로 복귀를 실제 브라우저에서 확인합니다.
-   실제 Google 동의 페이지·Backend Session state·Redis 일회용 코드 처리는 Mock 테스트 범위가 아닙니다.
+| 경계 | 검증 |
+| --- | --- |
+| 실제 API와 DB | 기존 제품 API Client로 가입 201/중복 409/필드 오류 400, 이메일 로그인 200/401, 익명 예약 401·다른 USER/ADMIN 예약 403·본인 조회 200, ADMIN 재고 200/USER 403을 확인합니다. |
+| 만료와 재발급 | 격리 Access TTL만 12초입니다. 클라이언트 만료 이후 실제 Redis 재발급 200 → 보호 GET 200을 확인합니다. 서버의 JWT 시간 허용 범위와 클라이언트 만료 기준이 다를 수 있으므로, 반응형 401 재현에는 실제 로그인 응답에서 서명만 변경한 테스트 토큰을 씁니다. |
+| 실제 요청 기록 | 병렬 GET 401 두 건 → POST reissue 200 한 건 → GET 200 두 건. 일정 변경 PATCH 401 한 건은 갱신/재실행하지 않고, 새 GET으로 저장 날짜가 그대로인지 확인합니다. 실제 fetch 응답을 바꾸지 않으며 메서드·API 경로·상태만 집계합니다. |
+| 로그아웃·실패 | 로그아웃 후 Redis Refresh 재사용은 401입니다. 이미 발급된 유효 Access는 즉시 폐기되지 않습니다. 폐기된 Refresh로 GET 401 뒤 갱신이 실패하면 재시도 없이 메모리를 비우고 재로그인이 필요합니다. |
+| 로컬 OAuth 교환 | 전용 Redis에 짧은 TTL의 합성 일회용 코드를 넣어 만료/재사용 401, 유효 코드 교환과 보호 API를 검증합니다. Provider가 발급한 코드가 아니며 Google과 통신하지 않습니다. |
+| 실제 Browser | 가입 화면, 잘못된 로그인 안내, 본인 예약 복귀, 익명/USER/ADMIN 경로, 로그아웃·새로고침, 예약 조건/객실 복구, state 없는 로컬 콜백과 URL fragment 제거를 점검합니다. |
+| DOM/HTTP Mock | `AuthenticationFlow.integration.test.tsx`와 Callback/Client/AuthProvider Suite는 Provider 취소/실패·유실/불일치 state·복귀·무재전송을 검증합니다. |
 
-실제 Backend/Google 검증과 원격 CI 확인 전에는 f0.2.0의 모든 완료 조건이 충족됐다고 표시하지 않습니다.
+브라우저 수동 점검은 익명 `/reservations` 또는 `/admin` 직접 진입부터 시작합니다.
+USER는 본인 예약으로 돌아오지만 ADMIN 전용 경로는 차단되며, ADMIN은 관리자 화면에 진입합니다.
+보호 화면 새로고침은 메모리 토큰을 복원하지 않습니다. 공개 검색으로 돌아가거나 예약 복귀 URL을
+확인할 때는 날짜·인원·카탈로그 ID만 유지하고, 투숙객 입력이나 토큰은 포함하지 않습니다.
+실제 Google Provider 왕복은 이번 검증에서 제외했습니다. 전용 테스트 Client·계정 및 등록된 Backend callback을
+준비하는 별도 검증이 필요하며, 로컬 교환이나 Mock 통과를 Provider 성공으로 기록하지 않습니다.

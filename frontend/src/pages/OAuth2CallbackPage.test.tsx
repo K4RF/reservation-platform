@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router'
@@ -86,19 +86,32 @@ describe('Google callback page', () => {
     expect(sessionStorage.length).toBe(0)
   })
 
-  it('shows a cancellation without attempting a code exchange', async () => {
-    renderCallback(callbackEntry('error=cancelled'))
+  it.each([
+    ['cancelled', 'Google 로그인이 취소되었습니다.'],
+    ['failed', 'Google 인증에 실패했습니다. 다시 시도해 주세요.'],
+  ])('shows provider %s without attempting a code exchange', async (error, message) => {
+    renderCallback(callbackEntry(`error=${error}`))
 
-    expect(await screen.findByRole('alert')).toHaveProperty(
-      'textContent',
-      'Google 로그인이 취소되었습니다.',
-    )
+    expect(await screen.findByRole('alert')).toHaveProperty('textContent', message)
     expect(exchangeGoogleLoginCode).not.toHaveBeenCalled()
+    expect(getAccessToken()).toBeNull()
+    expect(sessionStorage.length).toBe(0)
     expect(
       screen
         .getByRole('link', { name: '로그인으로 돌아가기' })
         .classList.contains('auth-return-link'),
     ).toBe(true)
+  })
+
+  it('rejects a missing state even when a login attempt was started', async () => {
+    const entry = callbackEntry(`code=${'a'.repeat(43)}`)
+    renderCallback(entry.split('&state=')[0])
+    expect(await screen.findByRole('alert')).toHaveProperty(
+      'textContent',
+      '로그인 요청을 확인할 수 없습니다. 다시 시작해 주세요.',
+    )
+    expect(exchangeGoogleLoginCode).not.toHaveBeenCalled()
+    expect(sessionStorage.length).toBe(0)
   })
 
   it('rejects an unsolicited callback and displays exchange errors', async () => {
@@ -127,7 +140,8 @@ describe('Google callback page', () => {
       target,
     )
     fireEvent.click(screen.getByRole('link', { name: '로그인으로 돌아가기' }))
-    expect(document.activeElement).toBe(await screen.findByRole('heading', { name: '로그인' }))
+    const heading = await screen.findByRole('heading', { name: '로그인' })
+    await waitFor(() => expect(document.activeElement).toBe(heading))
     expect(screen.getByText('로그인 후 보던 숙소로 돌아갑니다.')).toBeTruthy()
     expect(screen.getByRole('link', { name: '보던 숙소로 돌아가기' }).getAttribute('href')).toBe(
       target,

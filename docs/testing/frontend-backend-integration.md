@@ -60,6 +60,8 @@ finally { Remove-Item Env:INTEGRATION_FIXTURE_PASSWORD -ErrorAction SilentlyCont
 
 `--hold`가 있으면 스모크 성공 후 브라우저에서 Home, `/accommodations`, 출력된 Detail 경로를 열 수 있다.
 Swagger UI는 `http://127.0.0.1:18099/swagger-ui.html`, JSON은 `/v3/api-docs`다.
+인증 수명주기 검증을 추가하려면 `--auth`를 지정한다.
+[실제 인증 검증](frontend-authentication-flow.md#격리된-실제-인증-검증-300)에서 짧은 TTL과 검증 경계를 확인할 수 있다.
 Enter로 종료한다. `--hold`가 없으면 스모크 직후 종료한다.
 실행기는 성공 시 자기 프로세스·Compose 프로젝트·Volume·전용 스크래치만 정리한다.
 
