@@ -37,6 +37,7 @@ export async function verifyContract({
   sql,
   fixturePassword,
   booking,
+  management,
 }) {
   async function request(
     path,
@@ -596,5 +597,22 @@ export async function verifyContract({
     reservationId,
     roomId,
     inspectBrowserBooking,
+    inspectBrowserManagement: management
+      ? await (
+          await import("./management.mjs")
+        ).verifyManagement({
+          request,
+          error,
+          check,
+          id,
+          businessDate,
+          sql,
+          hotelPath,
+          roomId,
+          admin,
+          foreign,
+          ownerCredentials: users[0],
+        })
+      : undefined,
   };
 }
