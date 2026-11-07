@@ -64,6 +64,8 @@ Swagger UI는 `http://127.0.0.1:18099/swagger-ui.html`, JSON은 `/v3/api-docs`�
 [실제 인증 검증](frontend-authentication-flow.md#격리된-실제-인증-검증-300)에서 짧은 TTL과 검증 경계를 확인할 수 있다.
 검색·예약과 별도 브라우저 일정을 준비하려면 `--booking`을 사용한다.
 [격리 검색·예약 검증](public-exploration-booking-flow.md#격리-검색예약-검증-301)을 참고한다.
+본인 예약 일정 변경·취소에는 `--management`를 사용한다.
+[격리 예약관리 검증](frontend-reservation-management-flow.md#격리-예약관리-검증-302)을 참고한다.
 Enter로 종료한다. `--hold`가 없으면 스모크 직후 종료한다.
 실행기는 성공 시 자기 프로세스·Compose 프로젝트·Volume·전용 스크래치만 정리한다.
 
