@@ -50,6 +50,7 @@ function mockLifecycle(
   options: {
     changeCode?: string
     cancelCode?: string
+    lostChange?: boolean
     lostCancel?: boolean
   } = {},
 ) {
@@ -80,7 +81,9 @@ function mockLifecycle(
           { status: 409 },
         )
       saved = structuredClone(changedReservationDetail)
-      return Response.json(saved)
+      return options.lostChange
+        ? Promise.reject(new TypeError('lost change acknowledgement'))
+        : Response.json(saved)
     }
     if (init.method === 'PATCH' && path === '/api/v1/reservations/42/cancel') {
       expect(init.body).toBeUndefined()
@@ -273,6 +276,32 @@ describe('Reservation Management lifecycle through real UI/router/auth/API clien
     expect(screen.getByText('385.10')).toBeTruthy()
     expect(screen.queryByRole('heading', { name: '예약 취소 완료' })).toBeNull()
     expect(writes(api.fetch)).toHaveLength(3)
+  })
+  it('blocks both writes after a lost change response until the owner reloads the saved result', async () => {
+    signIn()
+    const api = mockLifecycle({ lostChange: true })
+    renderAt()
+    await createAndOpenDetail()
+    await prepareChange()
+    expect((await screen.findByRole('alert')).textContent).toContain('서버에서 이미 변경됐을 수')
+    const submit = screen.getByRole('button', { name: '예약 일정 변경 확정' })
+    expect(submit).toHaveProperty('disabled', true)
+    const cancel = screen.getByRole('button', { name: '취소 정책 및 수수료 확인' })
+    expect(cancel.matches(':disabled')).toBe(true)
+    fireEvent.click(submit)
+    fireEvent.click(cancel)
+    const beforeRecovery = api.fetch.mock.calls.length
+    expect(writes(api.fetch)).toHaveLength(2)
+
+    fireEvent.click(screen.getByRole('button', { name: '예약 상세 다시 조회' }))
+    await screen.findByText('첫 숙박일 저장 요금: 250.15')
+    expect(screen.queryByRole('checkbox')).toBeNull()
+    expect(writes(api.fetch)).toHaveLength(2)
+    expect(
+      api.fetch.mock.calls
+        .slice(beforeRecovery)
+        .filter(([url, init]) => url.endsWith('/reservations/42') && init.method === 'GET'),
+    ).toHaveLength(1)
   })
   it('re-mounts a protected detail after reload with lost memory auth and no mutation or private GET', async () => {
     signIn()
