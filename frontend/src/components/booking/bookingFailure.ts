@@ -1,8 +1,7 @@
 import { ApiError } from '../../api/errors'
 
 export function bookingFailure(error: unknown): { message: string; retryable: boolean } {
-  if (error instanceof ApiError && error.status === 503 && error.code === 'INVENTORY_013')
-    return { message: `${error.message} 서비스 복구 후 직접 다시 시도하세요.`, retryable: true }
+  // A lock failure can happen during release, after the reservation committed.
   if (!(error instanceof ApiError) || error.kind !== 'http' || (error.status ?? 500) >= 500)
     return {
       message:

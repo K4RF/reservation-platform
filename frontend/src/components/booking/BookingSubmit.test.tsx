@@ -42,7 +42,6 @@ describe('booking submission', () => {
     [409, 'INVENTORY_005'],
     [409, 'INVENTORY_011'],
     [409, 'BOOKING_POLICY_005'],
-    [503, 'INVENTORY_013'],
   ])('keeps explicit retry for definite domain rejection %s %s', async (status, code) => {
     const mock = vi
       .fn()

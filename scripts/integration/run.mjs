@@ -23,7 +23,8 @@ const apiOrigin = "http://127.0.0.1:18099";
 const webOrigin = "http://127.0.0.1:15199";
 const hold = process.argv.slice(2).includes("--hold");
 const auth = process.argv.slice(2).includes("--auth");
-const allowedArgs = new Set(["--hold", "--auth"]);
+const booking = process.argv.slice(2).includes("--booking");
+const allowedArgs = new Set(["--hold", "--auth", "--booking"]);
 const allowedEnv =
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i;
 const hostEnv = Object.fromEntries(
@@ -189,7 +190,7 @@ let passed = false;
 try {
   if (process.argv.slice(2).some((arg) => !allowedArgs.has(arg)))
     throw new Error(
-      "Usage: node scripts/integration/run.mjs [--auth] [--hold]",
+      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--hold]",
     );
   const fixturePassword = process.env.INTEGRATION_FIXTURE_PASSWORD || undefined;
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
@@ -319,6 +320,7 @@ try {
     webOrigin,
     sql,
     fixturePassword,
+    booking,
   });
   if (auth) {
     const { verifyAuth } =
@@ -338,6 +340,7 @@ try {
     });
     try {
       await input.question("");
+      fixtures.inspectBrowserBooking?.();
     } finally {
       input.close();
     }
