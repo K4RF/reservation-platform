@@ -66,6 +66,8 @@ Swagger UI는 `http://127.0.0.1:18099/swagger-ui.html`, JSON은 `/v3/api-docs`�
 [격리 검색·예약 검증](public-exploration-booking-flow.md#격리-검색예약-검증-301)을 참고한다.
 본인 예약 일정 변경·취소에는 `--management`를 사용한다.
 [격리 예약관리 검증](frontend-reservation-management-flow.md#격리-예약관리-검증-302)을 참고한다.
+ADMIN 권한과 카탈로그·가격·재고·사진 쓰기에는 `--admin`을 사용한다.
+[격리 관리자 검증](frontend-admin-management-flow.md#격리-관리자-검증-303)을 참고한다.
 Enter로 종료한다. `--hold`가 없으면 스모크 직후 종료한다.
 실행기는 성공 시 자기 프로세스·Compose 프로젝트·Volume·전용 스크래치만 정리한다.
 
