@@ -36,6 +36,7 @@ export async function verifyContract({
   webOrigin,
   sql,
   fixturePassword,
+  booking,
 }) {
   async function request(
     path,
@@ -226,7 +227,7 @@ export async function verifyContract({
     checkInTime: "15:00:00",
     checkOutTime: "11:00:00",
     timeZone: "Asia/Seoul",
-    amenities: ["PARKING"],
+    amenities: booking ? ["PARKING", "BREAKFAST"] : ["PARKING"],
   };
   const accommodation = (
     await request("/accommodations", {
@@ -571,5 +572,29 @@ export async function verifyContract({
     "PASS Kafka Outbox published and Consumer processed all three fixture events",
   );
   console.log(`Public browser routes: /accommodations and ${hotelPath}`);
-  return { accounts: users, memberIds, reservationId, roomId };
+  const inspectBrowserBooking = booking
+    ? await (
+        await import("./booking.mjs")
+      ).verifyBooking({
+        request,
+        error,
+        check,
+        id,
+        businessDate,
+        sql,
+        hotel,
+        hotelPath,
+        roomId,
+        admin,
+        guest: foreign,
+        ownerId: memberIds[0],
+      })
+    : undefined;
+  return {
+    accounts: users,
+    memberIds,
+    reservationId,
+    roomId,
+    inspectBrowserBooking,
+  };
 }
