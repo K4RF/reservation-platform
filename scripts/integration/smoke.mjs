@@ -38,6 +38,7 @@ export async function verifyContract({
   fixturePassword,
   booking,
   management,
+  adminVerification,
 }) {
   async function request(
     path,
@@ -591,28 +592,46 @@ export async function verifyContract({
         ownerId: memberIds[0],
       })
     : undefined;
+  const inspectBrowserManagement = management
+    ? await (
+        await import("./management.mjs")
+      ).verifyManagement({
+        request,
+        error,
+        check,
+        id,
+        businessDate,
+        sql,
+        hotelPath,
+        roomId,
+        admin,
+        foreign,
+        ownerCredentials: users[0],
+      })
+    : undefined;
+  if (adminVerification) {
+    const { verifyAdmin } = await import("./admin.mjs");
+    await verifyAdmin({
+      request,
+      error,
+      check,
+      id,
+      businessDate,
+      sql,
+      picture,
+      admin,
+      foreign,
+      hotel,
+      reservationId,
+      ...adminVerification,
+    });
+  }
   return {
     accounts: users,
     memberIds,
     reservationId,
     roomId,
     inspectBrowserBooking,
-    inspectBrowserManagement: management
-      ? await (
-          await import("./management.mjs")
-        ).verifyManagement({
-          request,
-          error,
-          check,
-          id,
-          businessDate,
-          sql,
-          hotelPath,
-          roomId,
-          admin,
-          foreign,
-          ownerCredentials: users[0],
-        })
-      : undefined,
+    inspectBrowserManagement,
   };
 }
