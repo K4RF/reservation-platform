@@ -22,7 +22,8 @@ const frontend = join(root, "frontend");
 const apiOrigin = "http://127.0.0.1:18099";
 const webOrigin = "http://127.0.0.1:15199";
 const hold = process.argv.slice(2).includes("--hold");
-const allowedArgs = new Set(["--hold"]);
+const auth = process.argv.slice(2).includes("--auth");
+const allowedArgs = new Set(["--hold", "--auth"]);
 const allowedEnv =
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i;
 const hostEnv = Object.fromEntries(
@@ -86,6 +87,32 @@ function sql(statement) {
     ],
     { input: statement },
   );
+}
+
+function seedLoginCode(code, memberId, ttlMs) {
+  if (
+    !/^[A-Za-z0-9_-]{43}$/.test(code) ||
+    !Number.isSafeInteger(memberId) ||
+    memberId <= 0 ||
+    ![250, 30_000].includes(ttlMs)
+  )
+    throw new Error("Invalid isolated login code fixture");
+  const args = [
+    "SET",
+    "oauth2:login-code:" + code,
+    memberId + ":USER",
+    "PX",
+    String(ttlMs),
+  ];
+  const input =
+    "*5\r\n" +
+    args.map((arg) => `$${Buffer.byteLength(arg)}\r\n${arg}\r\n`).join("");
+  const result = compose(
+    ["exec", "-T", "redis", "redis-cli", "--pipe", "--pipe-timeout", "5"],
+    { input },
+  );
+  if (!result.includes("errors: 0, replies: 1"))
+    throw new Error("Could not seed an isolated Redis code");
 }
 
 function launch(command, args, cwd, env, name) {
@@ -161,7 +188,9 @@ function inside(parent, path) {
 let passed = false;
 try {
   if (process.argv.slice(2).some((arg) => !allowedArgs.has(arg)))
-    throw new Error("Usage: node scripts/integration/run.mjs [--hold]");
+    throw new Error(
+      "Usage: node scripts/integration/run.mjs [--auth] [--hold]",
+    );
   const fixturePassword = process.env.INTEGRATION_FIXTURE_PASSWORD || undefined;
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
   if (fixturePassword && (!hold || passwordBytes > 72 || passwordBytes < 12))
@@ -258,6 +287,7 @@ try {
       MEDIA_STORAGE_ROOT: join(scratch, "media"),
       JWT_SECRET: randomBytes(32).toString("base64"),
       JWT_ISSUER: project,
+      ...(auth ? { JWT_ACCESS_TOKEN_EXPIRATION: "12s" } : {}),
       GOOGLE_CLIENT_ID: "integration-placeholder",
       GOOGLE_CLIENT_SECRET: "integration-placeholder",
       OAUTH2_FRONTEND_BASE_URL: webOrigin,
@@ -284,7 +314,17 @@ try {
     "vite",
   );
   await ready(vite, `${webOrigin}/api/v1/accommodations`);
-  await verifyContract({ apiOrigin, webOrigin, sql, fixturePassword });
+  const fixtures = await verifyContract({
+    apiOrigin,
+    webOrigin,
+    sql,
+    fixturePassword,
+  });
+  if (auth) {
+    const { verifyAuth } =
+      await import("../../frontend/scripts/auth-integration.mjs");
+    await verifyAuth({ webOrigin, fixtures, seedLoginCode });
+  }
   if (hold) {
     console.log(
       `Browser: ${webOrigin}/   Swagger: ${apiOrigin}/swagger-ui.html`,

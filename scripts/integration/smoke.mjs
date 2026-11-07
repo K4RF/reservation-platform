@@ -571,4 +571,5 @@ export async function verifyContract({
     "PASS Kafka Outbox published and Consumer processed all three fixture events",
   );
   console.log(`Public browser routes: /accommodations and ${hotelPath}`);
+  return { accounts: users, memberIds, reservationId, roomId };
 }
