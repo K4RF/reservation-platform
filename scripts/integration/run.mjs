@@ -25,7 +25,14 @@ const hold = process.argv.slice(2).includes("--hold");
 const auth = process.argv.slice(2).includes("--auth");
 const booking = process.argv.slice(2).includes("--booking");
 const management = process.argv.slice(2).includes("--management");
-const allowedArgs = new Set(["--hold", "--auth", "--booking", "--management"]);
+const admin = process.argv.slice(2).includes("--admin");
+const allowedArgs = new Set([
+  "--hold",
+  "--auth",
+  "--booking",
+  "--management",
+  "--admin",
+]);
 const allowedEnv =
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i;
 const hostEnv = Object.fromEntries(
@@ -191,7 +198,7 @@ let passed = false;
 try {
   if (process.argv.slice(2).some((arg) => !allowedArgs.has(arg)))
     throw new Error(
-      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--hold]",
+      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--admin] [--hold]",
     );
   const fixturePassword = process.env.INTEGRATION_FIXTURE_PASSWORD || undefined;
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
@@ -323,6 +330,9 @@ try {
     fixturePassword,
     booking,
     management,
+    adminVerification: admin
+      ? { mediaFiles: () => readdirSync(join(scratch, "media")).sort() }
+      : undefined,
   });
   if (auth) {
     const { verifyAuth } =
