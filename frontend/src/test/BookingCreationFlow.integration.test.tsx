@@ -39,9 +39,9 @@ function renderAt(path = '/accommodations/7') {
 function mockApi(
   rejectFirst = false,
   options: {
-    emptyAvailability?: boolean
+    emptyAvailability?: boolean | (() => boolean)
     mixedPrices?: boolean
-    create?: () => Promise<Response>
+    create?: (signal: AbortSignal | null | undefined) => Promise<Response>
   } = {},
 ) {
   let attempts = 0
@@ -62,7 +62,7 @@ function mockApi(
       )
     if (init.method === 'POST' && path === '/api/v1/reservations') {
       attempts++
-      if (options.create) return options.create()
+      if (options.create) return options.create(init.signal)
       if (rejectFirst && attempts === 1)
         return Promise.resolve(
           Response.json(
@@ -95,7 +95,11 @@ function mockApi(
     if (path === '/api/v1/accommodations/7/rooms/available')
       return Promise.resolve(
         Response.json(
-          options.emptyAvailability
+          (
+            typeof options.emptyAvailability === 'function'
+              ? options.emptyAvailability()
+              : options.emptyAvailability
+          )
             ? roomPage({ content: [], totalElements: 0, totalPages: 0 })
             : roomPage(),
         ),
@@ -367,17 +371,21 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
   })
   it.each(['INVENTORY_005', 'INVENTORY_011', 'BOOKING_POLICY_005'])(
-    'retains input without automatic POST replay after integrated %s rejection',
+    'preserves the review on %s and requires a fresh availability read before choosing again',
     async (code) => {
       setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
+      let stale = false
       const mock = mockApi(false, {
-        create: () =>
-          Promise.resolve(
+        emptyAvailability: () => stale,
+        create: () => {
+          stale = true
+          return Promise.resolve(
             Response.json(
               { status: 409, code, message: '예약 조건 또는 재고 충돌' },
               { status: 409 },
             ),
-          ),
+          )
+        },
       })
       renderAt('/accommodations')
       await searchToDetail()
@@ -388,12 +396,58 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
       )
       expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
       expect(screen.queryByText('예약이 확정되었습니다.')).toBeNull()
-      fireEvent.click(screen.getByRole('button', { name: '투숙객 정보 수정' }))
-      expect((screen.getByLabelText('대표 투숙객 연락처') as HTMLInputElement).value).toBe(
-        bookingRequest.representativeGuest.phone,
-      )
+      expect(screen.getByText(`연락처: ${bookingRequest.representativeGuest.phone}`)).toBeTruthy()
+      expect(screen.getByRole('button', { name: '예약 생성' })).toHaveProperty('disabled', true)
+      expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(1)
+      fireEvent.click(screen.getByRole('button', { name: '가용 객실 다시 조회' }))
+      await screen.findByText('선택한 조건에 예약 가능한 객실이 없습니다.')
+      expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(2)
+      expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
+      expect(screen.queryByText('제출 전 최종 확인')).toBeNull()
+      expect(mock.mock.calls.filter(([, init]) => init.method === 'POST')).toHaveLength(1)
     },
   )
+  it('permits a new submission after 404 only from a freshly selected and reviewed room', async () => {
+    setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
+    let attempts = 0
+    const mock = mockApi(false, {
+      create: () =>
+        Promise.resolve(
+          ++attempts === 1
+            ? Response.json(
+                { status: 404, code: 'ROOM_001', message: '객실 없음' },
+                { status: 404 },
+              )
+            : Response.json(reservationResult, { status: 201 }),
+        ),
+    })
+    renderAt()
+    await reachReview()
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    fireEvent.click(await screen.findByRole('button', { name: '가용 객실 다시 조회' }))
+    const roomChoice = await screen.findByRole('button', { name: '스탠다드 선택' })
+    expect(roomChoice.getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByRole('button', { name: '예약 정보 입력' })).toBeNull()
+    fireEvent.click(roomChoice)
+    fireEvent.click(await screen.findByRole('button', { name: '예약 정보 입력' }))
+    const fields = {
+      이름: bookingRequest.representativeGuest.name,
+      이메일: bookingRequest.representativeGuest.email,
+      연락처: bookingRequest.representativeGuest.phone,
+    }
+    for (const [label, value] of Object.entries(fields)) {
+      const input = screen.getByLabelText(`대표 투숙객 ${label}`) as HTMLInputElement
+      expect(input.value).toBe('')
+      fireEvent.change(input, { target: { value } })
+    }
+    fireEvent.submit(screen.getByRole('form', { name: '대표 투숙객 정보' }))
+    expect(attempts).toBe(1)
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    await screen.findByText('예약이 확정되었습니다.')
+    expect(attempts).toBe(2)
+    expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(2)
+    expect(mock.mock.calls.filter(([url]) => url.includes('/prices/'))).toHaveLength(4)
+  })
   it('prevents selecting an ordinary listed room when availability is empty', async () => {
     setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
     const mock = mockApi(false, { emptyAvailability: true })
@@ -409,26 +463,42 @@ describe('authenticated booking creation flow (HTTP boundary mocks)', () => {
     expect(mock.mock.calls.some(([url]) => url.includes('/prices/'))).toBe(false)
     expect(mock.mock.calls.some(([, init]) => init.method === 'POST')).toBe(false)
   })
-  it.each(['network loss', '503 after a possible commit'])(
+  it.each(['network loss', 'timeout', 'malformed 201', '503 after a possible commit'])(
     'keeps an ambiguous %s out of completion and prevents another submit',
     async (failure) => {
       setTokenPair(accessTokenWithExpiry(Math.floor(Date.now() / 1000) + 60), 'refresh')
       const mock = mockApi(false, {
-        create: () =>
+        create: (signal) =>
           failure === 'network loss'
             ? Promise.reject(new TypeError('offline'))
-            : Promise.resolve(
-                Response.json(
-                  { status: 503, code: 'INVENTORY_013', message: 'Redis lock unavailable' },
-                  { status: 503 },
-                ),
-              ),
+            : failure === 'timeout'
+              ? new Promise<Response>((_, reject) =>
+                  signal?.addEventListener('abort', () => reject(signal.reason), { once: true }),
+                )
+              : failure === 'malformed 201'
+                ? Promise.resolve(new Response('{', { status: 201 }))
+                : Promise.resolve(
+                    Response.json(
+                      { status: 503, code: 'INVENTORY_013', message: 'Redis lock unavailable' },
+                      { status: 503 },
+                    ),
+                  ),
       })
       renderAt('/accommodations')
       await searchToDetail()
       const draftPath = screen.getByTestId('location').textContent
       await reachReview()
-      fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+      if (failure === 'timeout') {
+        vi.useFakeTimers()
+        try {
+          fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+          await act(async () => {
+            await vi.advanceTimersByTimeAsync(10_000)
+          })
+        } finally {
+          vi.useRealTimers()
+        }
+      } else fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
       await waitFor(() =>
         expect(screen.getByRole('alert').textContent).toContain(
           '예약 생성 여부를 확인할 수 없습니다',

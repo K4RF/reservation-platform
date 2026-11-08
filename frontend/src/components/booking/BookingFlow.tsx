@@ -18,11 +18,13 @@ export function BookingFlow({
   onComplete,
   price,
   onReturn,
+  onRecheck,
 }: {
   selection: BookingSelection | null
   onComplete?: (id: number) => void
   price?: BookingPriceQuery
   onReturn?: () => void
+  onRecheck?: () => void
 }) {
   const error = validateSelection(selection)
   if (error || !selection) return <ErrorState message={error ?? '예약 조건을 다시 선택하세요.'} />
@@ -34,6 +36,7 @@ export function BookingFlow({
       onComplete={onComplete}
       price={price}
       onReturn={onReturn}
+      onRecheck={onRecheck}
     />
   )
 }
@@ -43,11 +46,13 @@ function BookingInput({
   onComplete,
   price,
   onReturn,
+  onRecheck,
 }: {
   selection: BookingSelection
   onComplete?: (id: number) => void
   price?: BookingPriceQuery
   onReturn?: () => void
+  onRecheck?: () => void
 }) {
   const [state, dispatch] = useReducer(bookingReducer, initialBookingState)
   const [errors, setErrors] = useState<GuestErrors>({})
@@ -179,6 +184,7 @@ function BookingInput({
                 onComplete={onComplete}
                 onEdit={() => dispatch({ type: 'edit' })}
                 onLockChange={lockReturn}
+                onRecheck={onRecheck}
               />
             </section>
           )}

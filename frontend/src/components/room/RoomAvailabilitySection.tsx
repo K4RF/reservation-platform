@@ -130,13 +130,17 @@ function AvailabilityResults({
   const [page, setPage] = useState(initialContext?.roomPage ?? 0)
   const [selectedId, setSelectedId] = useState<number | null>(initialContext?.roomId ?? null)
   const [bookingStarted, setBookingStarted] = useState(false)
+  const focusAfterRecheck = useRef(false)
   const load = useCallback(
     (signal: AbortSignal) => getAvailableRooms(accommodationId, request, page, signal),
     [accommodationId, request, page],
   )
   const { state, retry } = useDetailQuery(load)
   useEffect(() => {
-    if (focusResults && state.status === 'success')
+    if (focusAfterRecheck.current && state.status !== 'loading') {
+      focusAfterRecheck.current = false
+      document.getElementById('room-list-title')?.focus()
+    } else if (focusResults && state.status === 'success')
       document.getElementById('room-list-title')?.focus()
   }, [focusResults, state.status])
   function choose(id: number | null) {
@@ -283,6 +287,11 @@ function AvailabilityResults({
             <section className="detail-booking-stage" aria-labelledby="booking-stage-title">
               <BookingFlow
                 price={price}
+                onRecheck={() => {
+                  focusAfterRecheck.current = true
+                  choose(null)
+                  retry()
+                }}
                 onReturn={() => {
                   setBookingStarted(false)
                   requestAnimationFrame(() =>
