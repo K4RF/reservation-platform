@@ -130,7 +130,8 @@ reservation-platform/
 │   ├── api/               # API 오류·요청 계약
 │   └── performance/       # 동시성·조회 전략 비교
 ├── .github/               # Issue/PR 템플릿·Backend/Frontend CI
-├── infra/                 # 인프라 관련 placeholder
+├── infra/                 # 격리 통합 검증용 Compose 및 인프라 폴더
+├── scripts/               # 격리 Frontend/Backend 통합 실행기
 ├── load-test/             # k6 관련 placeholder
 ├── docker-compose.yml     # 로컬 MySQL·Redis·Kafka
 ├── .env_sample            # 환경변수 예시 (비밀값 없음)
@@ -315,7 +316,8 @@ pnpm build
 HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서로 다른 검증입니다.
 [격리 Frontend/Backend 실행 및 API 계약](docs/testing/frontend-backend-integration.md)으로
 개발 데이터와 분리된 통합 스모크를 재현할 수 있습니다.
-최근 예약관리 검증의 결과·한계는 [통합 검증 기록](docs/testing/frontend-reservation-management-flow.md)에 있습니다.
+f0.6.0의 이슈별 증거, 최종 사용자 검수 절차와 다음 성능 테스트 후보는
+[프런트엔드 검수 인계](docs/testing/frontend-review-handoff.md)를 참고하세요.
 
 ## 상세 문서
 
