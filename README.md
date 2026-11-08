@@ -318,6 +318,7 @@ HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서
 개발 데이터와 분리된 통합 스모크를 재현할 수 있습니다.
 f0.6.0의 이슈별 증거, 최종 사용자 검수 절차와 다음 성능 테스트 후보는
 [프런트엔드 검수 인계](docs/testing/frontend-review-handoff.md)를 참고하세요.
+직접 화면을 검수할 때는 [최종 사용자 검수 순서](docs/testing/frontend-final-user-review.md)를 따릅니다.
 
 ## 상세 문서
 
