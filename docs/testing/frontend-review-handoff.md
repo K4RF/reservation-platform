@@ -78,6 +78,8 @@ Layout Shift 로그가 이 표본에서 관찰되지 않은 것은 CLS=0 또는 
 
 ## 최종 사용자 검수 시작
 
+실행 명령과 화면별 동선, 사용자 승인 기준은 [최종 사용자 검수 (#307)](frontend-final-user-review.md)에 있다.
+
 1. #306 PR의 검토 대상 SHA와 Checks를 확인한다. [화면 비교 재현표](../../frontend/scripts/ui-audit/README.md#화면-비교-재현-305)로
    1440/390의 원본과 제품을 같은 위치에서 본다. #305의 일회성 ZIP은 작업 환경의
    `.local/ui-audit-305-review.zip`에만 있으며 Git에 없다. 다른 Clone에서는 재현표를 사용한다.
