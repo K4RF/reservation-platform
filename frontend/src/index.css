@@ -530,13 +530,6 @@ legend {
   text-align: center;
 }
 
-.home-link {
-  display: inline-block;
-  margin-top: var(--space-3);
-  font-weight: var(--font-weight-strong);
-  margin-bottom: var(--space-8);
-}
-
 .auth-page {
   display: grid;
   width: min(100%, 60rem);
@@ -1080,14 +1073,6 @@ legend {
   font-weight: var(--font-weight-display);
   margin: 0;
 }
-.availability-guidance {
-  padding: var(--space-3) var(--space-4);
-  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
-  background: var(--color-secondary);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  line-height: var(--leading-description);
-}
 .search-result-count {
   margin-block: var(--space-4);
   color: var(--color-text);
@@ -1095,7 +1080,6 @@ legend {
 }
 
 .accommodation-search-page > p[role='status']:not(.search-result-count, .empty-state, .ui-state),
-.room-availability > p[role='status']:not(.ui-state),
 .booking-summary > p[role='status']:not(.booking-total, .ui-state),
 .booking-complete-page > p[role='status']:not(.ui-state) {
   padding: var(--space-4);
@@ -1235,12 +1219,6 @@ legend {
 .catalog-stay-card > .catalog-image:not(.catalog-image-empty) {
   height: 15rem;
   aspect-ratio: auto;
-}
-.accommodation-info > h2 {
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--color-border);
-  font-size: var(--font-size-lg);
 }
 :is(.accommodation-search-page, .accommodation-detail-page) .room-base-price {
   color: var(--color-text);
@@ -1562,11 +1540,6 @@ legend {
   padding: var(--space-4);
   border-color: var(--color-primary);
 }
-.room-availability > .accommodation-search-form {
-  padding: var(--space-4);
-  background: var(--color-background);
-}
-
 /* Detail: one exploration list and one booking rail, never a second catalogue. */
 .room-exploration {
   min-width: 0;
@@ -1995,7 +1968,7 @@ legend {
 }
 
 /* Section hierarchy is shared; heading levels, copy and domain state stay with callers. */
-:where(.search-page-header, .reservation-page-header, .reservation-detail-header, .admin-header) {
+:where(.search-page-header, .reservation-page-header, .admin-header) {
   padding-bottom: var(--space-5);
   border-bottom: 1px solid var(--color-border);
 }
@@ -2226,7 +2199,6 @@ legend {
   color: var(--color-primary);
   font-weight: var(--font-weight-bold);
 }
-.booking-accommodation,
 .booking-result-number {
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
@@ -2250,13 +2222,11 @@ legend {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
 }
-.booking-stay-details,
 .booking-guest-details {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
-.booking-stay-details > p,
 .booking-guest-details > p {
   margin: 0;
 }
@@ -3076,18 +3046,6 @@ form[aria-label='대표 투숙객 정보'] {
     padding: var(--space-2);
   }
 }
-.reservation-context-note {
-  margin-block: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-inline-start: var(--focus-ring-width) solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  background: var(--color-secondary);
-  font-size: var(--font-size-sm);
-  line-height: var(--leading-description);
-}
-.reservation-context-note p {
-  margin-block: var(--space-1);
-}
 .reservation-result-count {
   margin-top: var(--space-6);
   color: var(--color-text);
@@ -3902,12 +3860,6 @@ form[aria-label='대표 투숙객 정보'] {
   }
   .site-footer > span {
     flex-basis: 100%;
-  }
-  /* Avoid stacked card/form gutters consuming the enlarged date controls' width. */
-  .room-availability > .accommodation-search-form {
-    padding-inline: 0;
-    border-inline: 0;
-    border-radius: 0;
   }
   .home-hero {
     min-height: 45rem;
