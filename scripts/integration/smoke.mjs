@@ -39,6 +39,7 @@ export async function verifyContract({
   booking,
   management,
   adminVerification,
+  recovery,
 }) {
   async function request(
     path,
@@ -624,6 +625,22 @@ export async function verifyContract({
       hotel,
       reservationId,
       ...adminVerification,
+    });
+  }
+  if (recovery) {
+    const { verifyRecovery } = await import("./recovery.mjs");
+    await verifyRecovery({
+      request,
+      error,
+      check,
+      id,
+      businessDate,
+      hotelPath,
+      roomId,
+      admin,
+      foreign,
+      ownerCredentials: users[0],
+      ...recovery,
     });
   }
   return {
