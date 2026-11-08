@@ -12,11 +12,13 @@ export function BookingSubmit({
   onComplete,
   onEdit,
   onLockChange,
+  onRecheck,
 }: {
   request: BookingRequest
   onComplete?: (id: number) => void
   onEdit: () => void
   onLockChange?: (locked: boolean) => void
+  onRecheck?: () => void
 }) {
   const locked = useRef(false)
   const mounted = useRef(true)
@@ -52,8 +54,8 @@ export function BookingSubmit({
     } catch (error) {
       if (!mounted.current || session !== getSessionVersion()) return
       const next = bookingFailure(error)
-      locked.current = !next.retryable
-      onLockChange?.(!next.retryable)
+      locked.current = next.recovery !== 'edit'
+      onLockChange?.(locked.current)
       setFailure(next)
       setState('error')
     }
@@ -68,7 +70,14 @@ export function BookingSubmit({
           <p ref={failureFocus} role="alert" tabIndex={-1}>
             {failure.message}
           </p>
-          {!failure.retryable && <Link to={routePaths.reservations}>내 예약에서 결과 확인</Link>}
+          {failure.recovery === 'verify' && (
+            <Link to={routePaths.reservations}>내 예약에서 결과 확인</Link>
+          )}
+          {failure.recovery === 'recheck' && onRecheck && (
+            <button type="button" onClick={onRecheck}>
+              가용 객실 다시 조회
+            </button>
+          )}
         </>
       )}
       {state === 'success' ? (
@@ -80,7 +89,7 @@ export function BookingSubmit({
         <div className="action-group booking-submit-actions">
           <button
             type="button"
-            disabled={state === 'pending' || (state === 'error' && !failure?.retryable)}
+            disabled={state === 'pending' || (state === 'error' && failure?.recovery !== 'edit')}
             onClick={() => {
               if (!locked.current) onEdit()
             }}
@@ -89,12 +98,14 @@ export function BookingSubmit({
           </button>
           <button
             type="button"
-            disabled={state === 'pending' || (state === 'error' && !failure?.retryable)}
+            disabled={state === 'pending' || (state === 'error' && failure?.recovery !== 'edit')}
             onClick={() => void submit()}
             className="primary-action"
             aria-busy={state === 'pending'}
           >
-            {state === 'error' && failure?.retryable ? '예약 생성 다시 시도' : '예약 생성'}
+            {state === 'error' && failure?.recovery === 'edit'
+              ? '예약 생성 다시 시도'
+              : '예약 생성'}
           </button>
         </div>
       )}

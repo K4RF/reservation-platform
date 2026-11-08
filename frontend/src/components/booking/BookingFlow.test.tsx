@@ -170,9 +170,10 @@ describe('BookingFlow', () => {
     expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations'))).toHaveLength(1)
     expect(screen.getByRole('link', { name: '내 예약에서 결과 확인' })).toBeTruthy()
   })
-  it('unlocks the explicit return after a definite rejection, without creating again', async () => {
+  it('offers only a fresh availability read after a stale booking conflict', async () => {
     const mock = mockPrices()
     const back = vi.fn()
+    const recheck = vi.fn()
     mock.mockImplementation((url: string) =>
       Promise.resolve(
         url.endsWith('/reservations')
@@ -189,7 +190,7 @@ describe('BookingFlow', () => {
             }),
       ),
     )
-    render(<BookingFlow selection={selection} onReturn={back} />)
+    render(<BookingFlow selection={selection} onReturn={back} onRecheck={recheck} />)
     fill()
     review()
     fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
@@ -197,9 +198,12 @@ describe('BookingFlow', () => {
     expect(
       (screen.getByRole('button', { name: '객실 선택으로 돌아가기' }) as HTMLButtonElement)
         .disabled,
-    ).toBe(false)
+    ).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '객실 선택으로 돌아가기' }))
-    expect(back).toHaveBeenCalledTimes(1)
+    fireEvent.click(screen.getByRole('button', { name: '예약 생성' }))
+    fireEvent.click(screen.getByRole('button', { name: '가용 객실 다시 조회' }))
+    expect(back).not.toHaveBeenCalled()
+    expect(recheck).toHaveBeenCalledOnce()
     expect(mock.mock.calls.filter(([url]) => url.endsWith('/reservations'))).toHaveLength(1)
   })
 })

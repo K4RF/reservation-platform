@@ -37,12 +37,9 @@ describe('booking submission', () => {
     expect(onComplete).toHaveBeenCalledExactlyOnceWith(42)
     expect(screen.queryByRole('button', { name: '예약 생성' })).toBeNull()
   })
-  it.each([
-    [400, 'COMMON_001'],
-    [409, 'INVENTORY_005'],
-    [409, 'INVENTORY_011'],
-    [409, 'BOOKING_POLICY_005'],
-  ])('keeps explicit retry for definite domain rejection %s %s', async (status, code) => {
+  it('keeps explicit retry for a definite field validation rejection', async () => {
+    const status = 400
+    const code = 'COMMON_001'
     const mock = vi
       .fn()
       .mockResolvedValueOnce(
@@ -53,7 +50,7 @@ describe('booking submission', () => {
             message: 'Backend 도메인 오류',
             errors: [{ field: 'representativeGuest.email', message: '형식 오류' }],
           },
-          { status: status as number },
+          { status },
         ),
       )
       .mockResolvedValue(Response.json(reservationResult))
@@ -111,10 +108,10 @@ describe('booking submission', () => {
   it.each(['network', 'timeout', 'cancelled', 'unexpected_response'] as const)(
     'never marks ambiguous %s failures retryable',
     (kind) => {
-      expect(bookingFailure(new ApiError('failed', { kind })).retryable).toBe(false)
+      expect(bookingFailure(new ApiError('failed', { kind })).recovery).toBe('verify')
     },
   )
   it.each([401, 403, 500])('handles auth/server %i without replay', (status) => {
-    expect(bookingFailure(new ApiError('failed', { kind: 'http', status })).retryable).toBe(false)
+    expect(bookingFailure(new ApiError('failed', { kind: 'http', status })).recovery).toBe('verify')
   })
 })

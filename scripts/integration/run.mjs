@@ -26,12 +26,14 @@ const auth = process.argv.slice(2).includes("--auth");
 const booking = process.argv.slice(2).includes("--booking");
 const management = process.argv.slice(2).includes("--management");
 const admin = process.argv.slice(2).includes("--admin");
+const recovery = process.argv.slice(2).includes("--recovery");
 const allowedArgs = new Set([
   "--hold",
   "--auth",
   "--booking",
   "--management",
   "--admin",
+  "--recovery",
 ]);
 const allowedEnv =
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i;
@@ -198,7 +200,7 @@ let passed = false;
 try {
   if (process.argv.slice(2).some((arg) => !allowedArgs.has(arg)))
     throw new Error(
-      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--admin] [--hold]",
+      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--admin] [--recovery] [--hold]",
     );
   const fixturePassword = process.env.INTEGRATION_FIXTURE_PASSWORD || undefined;
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
@@ -332,6 +334,28 @@ try {
     management,
     adminVerification: admin
       ? { mediaFiles: () => readdirSync(join(scratch, "media")).sort() }
+      : undefined,
+    recovery: recovery
+      ? {
+          seedLockFault: (roomId) => {
+            if (!Number.isSafeInteger(roomId) || roomId < 1)
+              throw new Error("Expected positive fixture room ID");
+            // Compose targets only this run's Redis. NX and TTL never overwrite a lock.
+            return compose([
+              "exec",
+              "-T",
+              "redis",
+              "redis-cli",
+              "--raw",
+              "SET",
+              `reservation:lock:room:{${roomId}}`,
+              "fixture-wrong-type",
+              "NX",
+              "EX",
+              "30",
+            ]);
+          },
+        }
       : undefined,
   });
   if (auth) {
