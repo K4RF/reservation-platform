@@ -115,3 +115,28 @@ Resource body size=0은 실제 파일이 0바이트라는 뜻이 아니다. 캐�
 전송량을 파일 크기와 혼동하지 않는다. 관찰 없는 항목은 미관측으로 남긴다.
 
 공통 화면 계약과 검수 기준은 [Frontend 가이드](../../../docs/ui/frontend-guide.md)를 따른다.
+
+## 화면 비교 재현 (#305)
+
+1. 원본은 `/__reference/index.html?view=a1&palette=navy`에서 시작한다.
+   같은 URL의 `view`만 `search`, `detail`로 바꾸며 Studio와 시연 행이 보이지 않는지 확인한다.
+2. 제품은 아래 실제 라우트를 `path`로 전달한다. 기본 비교에는 `scenario=comparison&media=present`를
+   사용한다. Fixture는 경로·컴포넌트 비교용이고 원본과 동일한 매물·검색 결과가 아니다.
+
+   | 대상                   | 제품 `path`                                                                                                          | 추가 설정                                                 |
+   | ---------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+   | Home / Search / Detail | `/` / `/accommodations` / `/accommodations/7`                                                                        | 같은 조건에서 `media=missing`, `failed`, `partial`도 확인 |
+   | Booking                | `/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&roomId=3`                             | `role=USER`, 선택 객실로 계속하기, 기본 쓰기 차단         |
+   | 내 예약 / Auth         | `/reservations/42` / `/login`                                                                                        | 예약은 `role=USER`; 실제 계정 정보는 입력하지 않음        |
+   | ADMIN 가격 / 재고      | `/admin/prices?roomId=3&stayDate=2030-07-20` / `/admin/inventories?roomId=3&startDate=2030-07-20&endDate=2030-07-22` | `role=ADMIN&scenario=stress`                              |
+
+3. 1440×1000, 390×844에서 주소를 새로 열어 `scrollY=0`으로 맞춘다. 상태 텍스트와
+   사진의 `complete && naturalWidth > 0`을 확인한 뒤 첫 Viewport와 Full-page를 별도로 촬영한다.
+   전체 페이지 캡처의 Fixed 요소는 캡처 위치에 따라 다르게 보일 수 있으므로 첫 Viewport도 보존한다.
+4. 768×800, 320×568 및 짧은 높이에서도 확인한다. `scenario=stress&textScale=200`에서
+   문서 `scrollWidth`/ `clientWidth`와 이름 있는 내부 표 스크롤을 구분한다.
+   Tab/Enter/Space/Escape로 접근 이름·포커스 표시·복귀를 기록한다. 확대 Fixture는 브라우저 줌이나
+   실기기 검증이 아니다. 일회성 캡처는 Git에 추가하지 않는다.
+
+실제 API·Media와 Fixture의 비교 조건 및 결과는
+[반응형·접근성 Browser 검증](../../../docs/testing/frontend-browser-accessibility.md)에 기록한다.
