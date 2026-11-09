@@ -46,6 +46,11 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.securitySchemes.bearerAuth.bearerFormat").value("JWT"))
 				.andExpect(jsonPath("$.paths['/api/v1/members'].post.security").doesNotExist())
 				.andExpect(jsonPath("$.paths['/api/v1/accommodations'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/locations/suggestions'].get.security").doesNotExist())
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/locations/suggestions'].get.parameters[0].name").value("q"))
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/locations/suggestions'].get.parameters[0].schema.maxLength").value(100))
+				.andExpect(jsonPath("$.paths['/api/v1/accommodations/locations/suggestions'].get.responses['200'].content['application/json'].schema.items['$ref']")
+						.value("#/components/schemas/AccommodationLocationSuggestionResponse"))
 				.andExpect(jsonPath("$.paths['/api/v1/accommodations/{accommodationId}'].get.security").doesNotExist())
 				.andExpect(jsonPath("$.paths['/api/v1/accommodations/{accommodationId}/rooms'].get.security").doesNotExist())
 				.andExpect(jsonPath("$.paths['/api/v1/rooms/{roomId}'].get.security").doesNotExist())
@@ -74,6 +79,7 @@ class OpenApiIntegrationTest {
 								"city",
 								"region",
 								"destination",
+								"country",
 								"accommodationAmenities",
 								"roomAmenities",
 								"checkInDate",
