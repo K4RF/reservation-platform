@@ -1,10 +1,11 @@
 import * as searchLayers from '../test/searchLayers'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { AccommodationSearchPage } from './AccommodationSearchPage'
 import { accommodation, accommodationPage } from '../test/accommodation'
 import { roomPage } from '../test/room'
+import { gangnam, seoul } from '../test/locationSuggestions'
 import { AuthProvider } from '../state/AuthProvider'
 import { AccommodationDetailPage } from './AccommodationDetailPage'
 import { canonicalSearchQuery } from '../components/accommodation/searchQuery'
@@ -35,6 +36,8 @@ function renderAt(query: string) {
 }
 function mockApi() {
   const mock = vi.fn().mockImplementation((url: string) => {
+    if (url.startsWith('/api/v1/accommodations/locations/suggestions?'))
+      return Promise.resolve(Response.json([seoul, gangnam]))
     const page = Number(new URL(url, 'http://localhost').searchParams.get('page') ?? 0)
     return Promise.resolve(
       Response.json(
@@ -54,6 +57,83 @@ function mockApi() {
 const submit = () => fireEvent.submit(screen.getByRole('form', { name: '숙소 검색 조건' }))
 
 describe('search URL and pagination navigation', () => {
+  it('applies an explicit candidate, then discards its exact tuple on edit or clear without losing filters', async () => {
+    const mock = mockApi()
+    const searches = () =>
+      mock.mock.calls
+        .map(([url]) => new URL(url, 'http://localhost'))
+        .filter(({ pathname }) => pathname === '/api/v1/accommodations')
+        .map(({ searchParams }) => searchParams)
+    const current = () =>
+      new URLSearchParams(screen.getByLabelText('현재 검색 URL').textContent ?? '')
+    renderAt(
+      '?city=테스트시&region=기존&page=2&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI&name=호텔&checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2&status=INACTIVE',
+    )
+    await screen.findByRole('link', { name: '서울 호텔' })
+    const destination = () => screen.getByRole('combobox', { name: '여행지' })
+    act(() => destination().focus())
+    fireEvent.change(destination(), { target: { value: '서울' } })
+    await screen.findByRole('option', { name: /강남구/ })
+    fireEvent.keyDown(destination(), { key: 'ArrowUp' })
+    fireEvent.keyDown(destination(), { key: 'Escape' })
+    expect(current().get('city')).toBe('테스트시')
+    expect(searches()).toHaveLength(1)
+    fireEvent.click(destination())
+    await screen.findByRole('option', { name: /강남구/ })
+    fireEvent.keyDown(destination(), { key: 'ArrowUp' })
+    expect(fireEvent.keyDown(destination(), { key: 'Enter' })).toBe(false)
+    expect(current().get('page')).toBe('2')
+    expect(searches()).toHaveLength(1)
+    submit()
+    await screen.findByText('1 / 3 페이지')
+    expect(destination()).toHaveProperty('value', '강남구')
+    expect(screen.queryByLabelText('지역')).toBeNull()
+    expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain(
+      '대한민국 · 서울특별시 · 강남구',
+    )
+    const selected = {
+      country: '대한민국',
+      city: '서울특별시',
+      region: '강남구',
+      status: 'ACTIVE',
+      page: '0',
+      size: '10',
+      sortBy: 'NAME',
+      direction: 'DESC',
+      roomAmenities: 'WIFI',
+      name: '호텔',
+      checkInDate: '2030-07-20',
+      checkOutDate: '2030-07-22',
+      guestCount: '2',
+    }
+    expect(Object.fromEntries(current())).toEqual(selected)
+    expect(Object.fromEntries(searches().at(-1)!)).toEqual(selected)
+
+    fireEvent.change(destination(), { target: { value: '  서울\t  강남  ' } })
+    expect(current().get('region')).toBe('강남구')
+    submit()
+    await waitFor(() => expect(searches()).toHaveLength(3))
+    expect(destination()).toHaveProperty('value', '서울 강남')
+    expect(searches().at(-1)?.get('destination')).toBe('서울 강남')
+    for (const key of ['country', 'city', 'region']) expect(current().has(key)).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
+    await waitFor(() => expect(searches()).toHaveLength(4))
+    expect(destination()).toHaveProperty('value', '강남구')
+    fireEvent.click(screen.getByRole('button', { name: '앞으로가기' }))
+    await waitFor(() => expect(searches()).toHaveLength(5))
+    expect(destination()).toHaveProperty('value', '서울 강남')
+
+    fireEvent.click(screen.getByRole('button', { name: '뒤로가기' }))
+    await waitFor(() => expect(searches()).toHaveLength(6))
+    fireEvent.change(destination(), { target: { value: '' } })
+    submit()
+    await waitFor(() => expect(searches()).toHaveLength(7))
+    for (const key of ['country', 'city', 'region', 'destination'])
+      expect(current().has(key)).toBe(false)
+    expect(current().get('guestCount')).toBe('2')
+    expect(current().get('sortBy')).toBe('NAME')
+    expect(current().get('page')).toBe('0')
+  })
   it('keeps staged layers out of URL/history and preserves filters when committed conditions are submitted', async () => {
     const mock = mockApi()
     renderAt(
@@ -91,7 +171,7 @@ describe('search URL and pagination navigation', () => {
     'restores filters/page and only restores scroll/focus after the fresh search GET via %s',
     async (mode) => {
       const query =
-        '?name=호텔&city=서울특별시&region=강남구&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI&checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2'
+        '?name=호텔&country=대한민국&city=서울특별시&region=강남구&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI&checkInDate=2030-07-20&checkOutDate=2030-07-22&guestCount=2'
       let searches = 0
       let resolveReturn!: (response: Response) => void
       const mock = vi.fn((url: string) => {
@@ -151,7 +231,7 @@ describe('search URL and pagination navigation', () => {
       })
       expect(screen.getByText('2 / 3 페이지')).toBeTruthy()
       expect(screen.getByLabelText('숙소명')).toHaveProperty('value', '호텔')
-      expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '서울특별시')
+      expect(screen.getByLabelText('여행지')).toHaveProperty('value', '강남구')
       expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '2')
       expect(screen.getByLabelText('숙소 정렬')).toHaveProperty('value', 'NAME:DESC')
       expect(screen.getByLabelText('와이파이')).toHaveProperty('checked', true)
@@ -175,7 +255,7 @@ describe('search URL and pagination navigation', () => {
   it('restores filters and page from a deep link and from a remount (reload after authentication)', async () => {
     const mock = mockApi()
     const view = renderAt(
-      '?name=호텔&city=서울특별시&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI',
+      '?name=호텔&destination=서울%20강남&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI',
     )
     await screen.findByRole('link', { name: '서울 호텔' })
     expect((screen.getByLabelText('숙소명') as HTMLInputElement).value).toBe('호텔')
@@ -185,10 +265,11 @@ describe('search URL and pagination navigation', () => {
     const before = mock.mock.calls[0][0]
     view.unmount()
     renderAt(
-      '?name=호텔&city=서울특별시&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI',
+      '?name=호텔&destination=서울%20강남&page=1&size=10&sortBy=NAME&direction=DESC&roomAmenities=WIFI',
     )
     await screen.findByRole('link', { name: '서울 호텔' })
     expect(mock.mock.calls[1][0]).toBe(before)
+    expect(screen.getByLabelText('여행지')).toHaveProperty('value', '서울 강남')
   })
   it('preserves submitted filters on pagination and restores form/API on back and forward', async () => {
     const mock = mockApi()
