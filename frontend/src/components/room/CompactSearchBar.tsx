@@ -1,4 +1,8 @@
 import { StayDateFields } from './StayDateFields'
+import {
+  DestinationCombobox,
+  type DestinationComboboxOptions,
+} from '../accommodation/DestinationCombobox'
 import { GuestCountPicker } from './GuestCountPicker'
 import type { StayDates, StayDateField } from './stayDateRange'
 
@@ -19,30 +23,14 @@ export function CompactSearchBar({
   onDateChange: (field: StayDateField, value: string) => void
   guestCount: string
   onGuestChange: (value: string) => void
-  city?: { initial?: string; onChange?: (value: string) => void }
+  city?: DestinationComboboxOptions
   required?: boolean
   actionLabel: string
   error?: string
 }) {
   return (
     <div className={`compact-search-bar${city ? ' compact-search-with-city' : ''}`}>
-      {city && (
-        <div className="compact-city-field form-field">
-          <label htmlFor={`${prefix}-city`}>여행지 · 도시명</label>
-          <input
-            id={`${prefix}-city`}
-            name="city"
-            maxLength={100}
-            defaultValue={city.initial}
-            onChange={(event) => city.onChange?.(event.target.value)}
-            placeholder="도시 이름"
-            aria-describedby={`${prefix}-city-help`}
-          />
-          <span className="sr-only" id={`${prefix}-city-help`}>
-            도시의 정확한 이름으로 검색합니다.
-          </span>
-        </div>
-      )}
+      {city && <DestinationCombobox id={`${prefix}-city`} {...city} />}
       <StayDateFields
         prefix={prefix}
         labelPrefix={city ? '' : '숙박'}

@@ -7,6 +7,7 @@ import { AuthProvider } from '../state/AuthProvider'
 import { bookingCompletePath } from './routePaths'
 import { accommodation, accommodationPage } from '../test/accommodation'
 import { media } from '../test/media'
+import { gangnam, seoul } from '../test/locationSuggestions'
 import { explorationDetailPath } from './bookingContext'
 import { committedDates, directDates, setGuests, setStayDates } from '../test/searchLayers'
 
@@ -30,6 +31,38 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
+  it.each(['/', '/accommodations'])(
+    'shares destination suggestions without applying a search on %s',
+    async (path) => {
+      const fetch = vi.fn((url: string) =>
+        Promise.resolve(
+          Response.json(
+            url.startsWith('/api/v1/accommodations/locations/suggestions?')
+              ? [seoul, gangnam]
+              : accommodationPage(),
+          ),
+        ),
+      )
+      vi.stubGlobal('fetch', fetch)
+      renderAt(path)
+      const destination = screen.getByRole('combobox', { name: '여행지 · 도시명' })
+      act(() => destination.focus())
+      fireEvent.change(destination, { target: { value: '서울' } })
+      await screen.findByRole('option', { name: /강남구/ })
+      fireEvent.keyDown(destination, { key: 'ArrowUp' })
+      expect(fireEvent.keyDown(destination, { key: 'Enter' })).toBe(false)
+      expect(destination).toHaveProperty('value', '강남구')
+      expect(screen.queryByRole('listbox')).toBeNull()
+      const urls = fetch.mock.calls.map(([url]) => new URL(url, 'http://localhost'))
+      expect(urls.filter(({ pathname }) => pathname === '/api/v1/accommodations')).toHaveLength(1)
+      expect(
+        urls
+          .filter(({ pathname }) => pathname.endsWith('/locations/suggestions'))
+          .map(({ searchParams }) => searchParams.get('q')),
+      ).toEqual(['서울'])
+    },
+  )
+
   it('uses a decorative brand image and a bounded public catalog read without fabricated rankings', async () => {
     const fetch = vi
       .fn()
