@@ -160,7 +160,7 @@ class SearchQueryExecutionPlanIntegrationTest extends MySqlIntegrationTestSuppor
 	}
 
 	private List<Long> locationIds(String region, String destination) {
-		var request = new AccommodationSearchRequest(null, null, region, destination,
+		var request = new AccommodationSearchRequest(null, null, region, destination, null,
 				null, null, null, null, null, null, null, null, null, null, null, null, null);
 		return accommodationRepository.findAll(AccommodationSpecifications.withFilters(request, Map.of()))
 				.stream()

@@ -155,6 +155,10 @@ public final class AccommodationSpecifications {
 			Root<Accommodation> root,
 			AccommodationSearchRequest request
 	) {
+		boolean hasCountry = request.country() != null && !request.country().isBlank();
+		if (hasCountry) {
+			predicates.add(criteriaBuilder.equal(root.get("location").get("country"), request.country().trim()));
+		}
 		Expression<String> city = root.get("location").get("city");
 		if (request.city() != null && !request.city().isBlank()) {
 			predicates.add(criteriaBuilder.equal(
@@ -165,11 +169,17 @@ public final class AccommodationSpecifications {
 		if (request.region() == null || request.region().isBlank()) {
 			return;
 		}
-		String regionKeyword = request.region().trim().toLowerCase(Locale.ROOT);
 		Expression<String> region = root.get("location").get("region");
+		Predicate exactRegion = criteriaBuilder.equal(region, request.region().trim());
+		if (hasCountry) {
+			// A selected region identifies a structured tuple, not an address substring.
+			predicates.add(exactRegion);
+			return;
+		}
+		String regionKeyword = request.region().trim().toLowerCase(Locale.ROOT);
 		Expression<String> detailAddress = root.get("location").get("detailAddress");
 		predicates.add(criteriaBuilder.or(
-				criteriaBuilder.equal(region, request.region().trim()),
+				exactRegion,
 				criteriaBuilder.and(
 						criteriaBuilder.isNull(region),
 						criteriaBuilder.like(

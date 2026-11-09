@@ -273,6 +273,7 @@ class QueryCacheArchitectureIntegrationTest extends MySqlRedisIntegrationTestSup
 				"Seoul",
 				"Gangnam",
 				null,
+				null,
 				Set.of(AccommodationAmenity.PARKING, AccommodationAmenity.POOL),
 				Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER),
 				CHECK_IN_DATE,

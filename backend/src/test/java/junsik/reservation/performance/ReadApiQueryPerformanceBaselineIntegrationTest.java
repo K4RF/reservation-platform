@@ -118,6 +118,7 @@ class ReadApiQueryPerformanceBaselineIntegrationTest extends MySqlIntegrationTes
 				"Seoul",
 				"Gangnam",
 				null,
+				null,
 				Set.of(AccommodationAmenity.PARKING),
 				Set.of(RoomAmenity.WIFI),
 				CHECK_IN_DATE,
