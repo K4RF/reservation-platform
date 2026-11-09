@@ -6,6 +6,7 @@ import { createGoogleLoginStartUrl } from '../../src/api/googleOAuth2'
 import { AuthProvider } from '../../src/state/AuthProvider'
 import { setTokenPair } from '../../src/state/accessToken'
 import { accessTokenWithExpiry } from '../../src/test/jwt'
+import { seoul, gangnam } from '../../src/test/locationSuggestions'
 import { auditResponse } from './responses'
 import type { AuditScenario, AuditBooking, AuditAdmin } from './responses'
 import { startPerformanceProbe } from './performanceProbe'
@@ -19,6 +20,9 @@ if (params.get('metrics') === '1') {
 }
 const role = params.get('role')
 const scenario = params.get('scenario') ?? 'ready'
+const suggestions = params.get('suggestions') ?? 'ready'
+if (!['ready', 'empty', 'error', 'loading'].includes(suggestions))
+  throw new Error('Unknown audit location suggestion state')
 const textScale = params.get('textScale') ?? '100'
 const mediaMode = params.get('media') ?? 'missing'
 const booking = params.get('booking') ?? 'blocked'
@@ -64,6 +68,32 @@ window.fetch = (input, init) => {
   const method = init?.method ?? (input instanceof Request ? input.method : 'GET')
   const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined)
   const path = new URL(url, location.origin).pathname
+  if (method.toUpperCase() === 'GET' && path === '/api/v1/accommodations/locations/suggestions') {
+    if (suggestions === 'error') return Promise.reject(new TypeError('Audit network failure'))
+    if (suggestions === 'loading') {
+      return new Promise<Response>((_, reject) => {
+        const abort = () => reject(new DOMException('Aborted', 'AbortError'))
+        if (signal?.aborted) abort()
+        else signal?.addEventListener('abort', abort, { once: true })
+      })
+    }
+    const q = new URL(url, location.origin).searchParams.get('q') ?? ''
+    return Promise.resolve(
+      Response.json(
+        suggestions === 'empty'
+          ? []
+          : [seoul, gangnam].filter(({ searchParams }) =>
+              q
+                .split(' ')
+                .every(
+                  (token) =>
+                    searchParams.city.includes(token) ||
+                    ('region' in searchParams && searchParams.region.includes(token)),
+                ),
+            ),
+      ),
+    )
+  }
   if (method.toUpperCase() === 'POST') {
     if (auth === 'login-error' && path === '/api/v1/auth/login') {
       return Promise.resolve(
