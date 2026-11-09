@@ -33,7 +33,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
 - 숙소 검색 API는 기존 정확 지역 필터와 별도로 [자유 목적지 검색](docs/architecture/accommodation-integrated-search.md)을 지원합니다.
   [지역 자동완성 API](docs/architecture/accommodation-location-suggestions.md)는 활성 숙소의 도시·지역 후보와 정확 검색 파라미터를 반환합니다.
-  Home/Search 입력 연결은 별도 작업입니다.
+  Home/Search에서 [지역 후보를 조회·선택](docs/testing/frontend-location-combobox.md)할 수 있으며, 선택한 후보를 실제 검색 조건과 URL에 적용하는 작업은 별도입니다.
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
 - 숙소·객실 Media 읽기와 공통 이미지/Gallery, ADMIN 사진 관리 화면 연결
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회

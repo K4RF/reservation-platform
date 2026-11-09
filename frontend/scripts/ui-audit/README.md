@@ -30,6 +30,8 @@ node scripts/ui-audit/server.mjs
 | auth      | blocked(기본) / signup-success / login-error / callback-pending / callback-error      |
 | admin     | blocked(기본) / policy-success / policy-error. `role=ADMIN`에서만 합성 예약 정책 POST |
 
+`suggestions=ready|empty|error|loading`은 #319의 지역 후보 GET에만 적용합니다(기본 `ready`).
+
 예:
 
 - [익명 홈](http://127.0.0.1:5174/?path=%2F)
