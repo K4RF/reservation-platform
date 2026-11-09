@@ -73,6 +73,7 @@ class OpenApiIntegrationTest {
 								"name",
 								"city",
 								"region",
+								"destination",
 								"accommodationAmenities",
 								"roomAmenities",
 								"checkInDate",
@@ -87,6 +88,10 @@ class OpenApiIntegrationTest {
 								"sortBy",
 								"direction"
 						)
+				))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations'].get.parameters[?(@.name == 'destination')].schema.maxLength",
+						containsInAnyOrder(100)
 				))
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms'].get.parameters[*].name",

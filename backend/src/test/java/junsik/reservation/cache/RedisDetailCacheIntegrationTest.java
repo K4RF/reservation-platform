@@ -138,7 +138,7 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 		assertThat(accommodationService.getById(owner.getId()).images()).isEmpty();
 		var image = mediaRepository.saveAndFlush(image(owner, 0));
 		var request = new AccommodationSearchRequest(
-				owner.getName(), null, null, null, null, null, null, null,
+				owner.getName(), null, null, null, null, null, null, null, null,
 				null, null, null, null, 0, 100, null, null);
 		assertThat(accommodationService.getAll(request).content()).filteredOn(item -> item.accommodationId().equals(owner.getId()))
 				.singleElement().satisfies(item -> assertThat(item.representativeImage().mediaId()).isEqualTo(image.getId()));

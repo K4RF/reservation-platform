@@ -31,6 +31,8 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 - 회원가입, 이메일/비밀번호 로그인, Google OAuth2 로그인
 - JWT 인증, Redis 기반 Refresh Token 재발급, 로그아웃
 - 비로그인 숙소 검색·상세 조회, 날짜/인원별 가용 객실·적용 요금 조회
+- 숙소 검색 API는 기존 정확 지역 필터와 별도로 [자유 목적지 검색](docs/architecture/accommodation-integrated-search.md)을 지원합니다.
+  Home/Search 입력 연결은 별도 작업입니다.
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
 - 숙소·객실 Media 읽기와 공통 이미지/Gallery, ADMIN 사진 관리 화면 연결
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회

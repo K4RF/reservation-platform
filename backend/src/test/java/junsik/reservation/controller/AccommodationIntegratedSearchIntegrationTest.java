@@ -224,9 +224,11 @@ class AccommodationIntegratedSearchIntegrationTest {
 
 	@Test
 	void combinesAllSearchConditions() throws Exception {
-		Accommodation expected = saveAccommodation("Seoul Stay", "서울 강남구");
-		Accommodation wrongStatus = saveAccommodation("Seoul Residence", "서울 강남구");
-		Accommodation wrongPrice = saveAccommodation("Seoul House", "서울 강남구");
+		Set<AccommodationAmenity> amenities = Set.of(AccommodationAmenity.PARKING);
+		Accommodation expected = saveStructuredAccommodation("Seoul Stay", "서울특별시", "강남구", amenities);
+		Accommodation wrongStatus = saveStructuredAccommodation("Seoul Residence", "서울특별시", "강남구", amenities);
+		Accommodation wrongPrice = saveStructuredAccommodation("Seoul House", "서울특별시", "강남구", amenities);
+		Accommodation policyBlocked = saveStructuredAccommodation("Seoul Policy", "서울특별시", "강남구", amenities);
 		wrongStatus.changeStatus(AccommodationStatus.INACTIVE);
 		Room expectedRoom = saveRoom(expected, "Family", 4, "180000.00", RoomStatus.ACTIVE);
 		Room inactiveAccommodationRoom = saveRoom(
@@ -237,13 +239,19 @@ class AccommodationIntegratedSearchIntegrationTest {
 				RoomStatus.ACTIVE
 		);
 		Room expensiveRoom = saveRoom(wrongPrice, "Family", 4, "280000.00", RoomStatus.ACTIVE);
-		saveInventory(expectedRoom, CHECK_IN, CHECK_OUT, false);
-		saveInventory(inactiveAccommodationRoom, CHECK_IN, CHECK_OUT, false);
-		saveInventory(expensiveRoom, CHECK_IN, CHECK_OUT, false);
+		Room smallRoom = saveRoom(wrongPrice, "Single", 1, "180000.00", RoomStatus.ACTIVE);
+		Room policyRoom = saveRoom(policyBlocked, "Family", 4, "180000.00", RoomStatus.ACTIVE);
+		for (Room candidate : Set.of(expectedRoom, inactiveAccommodationRoom, expensiveRoom, smallRoom, policyRoom)) {
+			candidate.update(candidate.getName(), candidate.getCapacity(), candidate.getNightlyPrice(), Set.of(RoomAmenity.WIFI));
+			saveInventory(candidate, CHECK_IN, CHECK_OUT, false);
+		}
+		bookingPolicyRepository.saveAndFlush(AccommodationBookingPolicy.create(policyBlocked, 4, 10, 0, 90));
 
 		performSearch(
 				"name", "Seoul",
-				"region", "강남",
+				"destination", " 서울  강남 ",
+				"accommodationAmenities", "PARKING",
+				"roomAmenities", "WIFI",
 				"checkInDate", CHECK_IN.toString(),
 				"checkOutDate", CHECK_OUT.toString(),
 				"guestCount", "3",
@@ -255,6 +263,76 @@ class AccommodationIntegratedSearchIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
 				.andExpect(jsonPath("$.content[0].accommodationId").value(expected.getId()));
+	}
+
+	@Test
+	void keepsExplicitCityAndRegionFiltersExactForStructuredLocations() throws Exception {
+		Accommodation seoul = saveStructuredAccommodation("Seoul Hotel", "서울특별시", "강남구", Set.of());
+
+		performSearch("city", "서울")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(0));
+		performSearch("region", "강남")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalElements").value(0));
+		performSearch("city", " 서울특별시 ", "region", " 강남구 ")
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].accommodationId").value(seoul.getId()))
+				.andExpect(jsonPath("$.totalElements").value(1));
+	}
+
+	@Test
+	void findsCommonDestinationsAndCombinesTermsOnTheSameAccommodation() throws Exception {
+		Accommodation seoul = saveStructuredAccommodation("Seoul", "서울특별시", "강남구", Set.of());
+		Accommodation busan = saveStructuredAccommodation("Busan", "부산광역시", "해운대구", Set.of());
+		Accommodation sameRegion = saveStructuredAccommodation("Other Gangnam", "테스트시", "강남구", Set.of());
+		saveAccommodation("Legacy", "서울특별시 강남구");
+
+		for (String keyword : Set.of("서울", "서울특별시", "  서울특별시\u3000 \t강남구 ", "강남 서울 서울")) {
+			performSearch("destination", keyword)
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.totalElements").value(1))
+					.andExpect(jsonPath("$.content[0].accommodationId").value(seoul.getId()));
+		}
+		for (String keyword : Set.of("부산", "해운대")) {
+			performSearch("destination", keyword)
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.totalElements").value(1))
+					.andExpect(jsonPath("$.content[0].accommodationId").value(busan.getId()));
+		}
+		performSearch("destination", "강남")
+				.andExpect(jsonPath("$.totalElements").value(2));
+		performSearch("destination", "강남", "city", "테스트시", "region", "강남구")
+				.andExpect(jsonPath("$.totalElements").value(1))
+				.andExpect(jsonPath("$.content[0].accommodationId").value(sameRegion.getId()));
+		performSearch("destination", "강남", "city", "부산광역시")
+				.andExpect(jsonPath("$.totalElements").value(0));
+		performSearch("destination", "없는곳")
+				.andExpect(jsonPath("$.totalElements").value(0));
+		performSearch("destination", " \t\u00A0 ")
+				.andExpect(jsonPath("$.totalElements").value(4));
+		performSearch("destination", "서".repeat(101))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[0].field").value("destination"));
+	}
+
+	@Test
+	void destinationPaginationCountsAccommodationOnceAndUsesIdToBreakNameTies() throws Exception {
+		Accommodation first = saveStructuredAccommodation("Same", "서울특별시", "서울강남구", Set.of());
+		Accommodation second = saveStructuredAccommodation("Same", "서울특별시", "강남구", Set.of());
+		saveStructuredAccommodation("Ignored", "부산광역시", "해운대구", Set.of());
+
+		performSearch("destination", "서울", "sortBy", "NAME", "direction", "DESC", "size", "1", "page", "0")
+				.andExpect(jsonPath("$.content[0].accommodationId").value(first.getId()))
+				.andExpect(jsonPath("$.totalElements").value(2))
+				.andExpect(jsonPath("$.totalPages").value(2));
+		performSearch("destination", "서울", "sortBy", "NAME", "direction", "DESC", "size", "1", "page", "1")
+				.andExpect(jsonPath("$.content[0].accommodationId").value(second.getId()))
+				.andExpect(jsonPath("$.totalElements").value(2));
+		performSearch("destination", "서울", "sortBy", "ID", "direction", "DESC")
+				.andExpect(jsonPath("$.content[0].accommodationId").value(second.getId()))
+				.andExpect(jsonPath("$.content[1].accommodationId").value(first.getId()));
 	}
 
 	@Test

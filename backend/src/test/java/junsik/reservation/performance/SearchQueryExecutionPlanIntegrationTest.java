@@ -7,6 +7,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
@@ -17,7 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
+import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
+import junsik.reservation.entity.accommodation.Accommodation;
+import junsik.reservation.repository.AccommodationRepository;
+import junsik.reservation.repository.AccommodationSpecifications;
 import junsik.reservation.support.MySqlIntegrationTestSupport;
 
 class SearchQueryExecutionPlanIntegrationTest extends MySqlIntegrationTestSupport {
@@ -40,6 +46,9 @@ class SearchQueryExecutionPlanIntegrationTest extends MySqlIntegrationTestSuppor
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+
+	@Autowired
+	private AccommodationRepository accommodationRepository;
 
 	@Test
 	@Timeout(90)
@@ -64,11 +73,21 @@ class SearchQueryExecutionPlanIntegrationTest extends MySqlIntegrationTestSuppor
 			installOptimizedIndexes();
 			jdbcTemplate.execute("ANALYZE TABLE accommodations, rooms, room_inventories");
 			PlanRow accommodationAfter = explainAccommodationSearch(city, region);
+			PlanRow destinationOnly = explain("""
+					select id, name, status
+					from accommodations
+					where (lower(city) like ? escape '\\\\' or lower(region) like ? escape '\\\\')
+					  and status = 'ACTIVE'
+					order by id
+					limit 20
+					""", "%" + city.toLowerCase(Locale.ROOT) + "%", "%" + city.toLowerCase(Locale.ROOT) + "%")
+					.getFirst();
 			PlanRow roomAfter = explainRoomSearch(accommodationId);
 			List<PlanRow> availabilityAfter = explainAvailabilitySearch(accommodationId);
 
 			log.info("Accommodation search plan before: {}", accommodationBefore);
 			log.info("Accommodation search plan after: {}", accommodationAfter);
+			log.info("Accommodation destination-only plan: {}", destinationOnly);
 			log.info("Room search plan before: {}", roomBefore);
 			log.info("Room search plan after: {}", roomAfter);
 			log.info("Availability search plan before: {}", availabilityBefore);
@@ -106,6 +125,47 @@ class SearchQueryExecutionPlanIntegrationTest extends MySqlIntegrationTestSuppor
 			installOptimizedIndexes();
 			deleteFixture(fixtureKey);
 		}
+	}
+
+	@Test
+	@Transactional
+	void destinationUsesStructuredFieldsAndEscapesLikeMetacharactersOnMySql() {
+		Long literal = insertLocation("Literal", "New YORK 100%", "Zone_Name \\Lane", "plain");
+		insertLocation("Decoy", "New York 100X", "ZoneXName Lane", "plain");
+		Long regionOnly = insertLocation("Region only", null, "강남구", "서울특별시");
+		Long cityOnly = insertLocation("City only", "서울특별시", null, "강남구");
+		Long legacy = insertLocation("Legacy", null, null, "서울특별시 강남구");
+		String collation = jdbcTemplate.queryForObject("""
+				select collation_name from information_schema.columns
+				where table_schema = database() and table_name = 'accommodations' and column_name = 'city'
+				""", String.class);
+		log.info("Accommodation location fixture collation: {}", collation);
+		assertThat(collation).startsWith("utf8mb4_");
+		assertThat(locationIds(null, " nEW  yOrK  100%  zone_name  \\lane ")).containsExactly(literal);
+		assertThat(locationIds(null, "%")).containsExactly(literal);
+		assertThat(locationIds(null, "_")).containsExactly(literal);
+		assertThat(locationIds(null, "\\")).containsExactly(literal);
+		assertThat(locationIds(null, "서울")).containsExactly(cityOnly);
+		assertThat(locationIds(null, "강남")).containsExactly(regionOnly);
+		assertThat(locationIds(null, "서울 강남")).isEmpty();
+		assertThat(locationIds("강남", null)).containsExactlyInAnyOrder(cityOnly, legacy);
+	}
+
+	private Long insertLocation(String name, String city, String region, String address) {
+		jdbcTemplate.update("""
+				insert into accommodations (name, description, country, city, region, address, status, time_zone)
+				values (?, 'Destination fixture', 'KR', ?, ?, ?, 'ACTIVE', 'Asia/Seoul')
+				""", name, city, region, address);
+		return jdbcTemplate.queryForObject("select id from accommodations where name = ?", Long.class, name);
+	}
+
+	private List<Long> locationIds(String region, String destination) {
+		var request = new AccommodationSearchRequest(null, null, region, destination,
+				null, null, null, null, null, null, null, null, null, null, null, null, null);
+		return accommodationRepository.findAll(AccommodationSpecifications.withFilters(request, Map.of()))
+				.stream()
+				.map(Accommodation::getId)
+				.toList();
 	}
 
 	private Long createFixture(String fixtureKey, String city, String region) {
