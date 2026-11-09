@@ -1,6 +1,7 @@
 package junsik.reservation.controller;
 
 import java.net.URI;
+import java.util.List;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,13 +29,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import junsik.reservation.config.OpenApiConfig;
+import junsik.reservation.dto.accommodation.request.AccommodationLocationSuggestionRequest;
 import junsik.reservation.dto.accommodation.request.AccommodationSearchRequest;
 import junsik.reservation.dto.accommodation.request.CreateAccommodationRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationRequest;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
+import junsik.reservation.dto.accommodation.response.AccommodationLocationSuggestionResponse;
 import junsik.reservation.dto.accommodation.response.AccommodationResponse;
 import junsik.reservation.dto.common.response.PageResponse;
 import junsik.reservation.global.exception.ErrorResponse;
+import junsik.reservation.service.accommodation.AccommodationLocationSuggestionService;
 import junsik.reservation.service.accommodation.AccommodationService;
 
 @Tag(name = "Accommodations", description = "숙소 API")
@@ -60,9 +65,14 @@ import junsik.reservation.service.accommodation.AccommodationService;
 public class AccommodationController {
 
 	private final AccommodationService accommodationService;
+	private final AccommodationLocationSuggestionService locationSuggestionService;
 
-	public AccommodationController(AccommodationService accommodationService) {
+	public AccommodationController(
+			AccommodationService accommodationService,
+			AccommodationLocationSuggestionService locationSuggestionService
+	) {
 		this.accommodationService = accommodationService;
+		this.locationSuggestionService = locationSuggestionService;
 	}
 
 	@Operation(
@@ -107,13 +117,30 @@ public class AccommodationController {
 
 	@Operation(
 			summary = "숙소 통합 검색",
-			description = "숙소명·정확 도시/지역·자유 목적지(destination)·숙소/객실 편의시설·운영 상태와 예약 가능한 활성 객실의 기간·인원·기본 1박 가격을 조합해 검색합니다. 각 목적지 검색어와 복수 편의시설은 AND 조건입니다."
+			description = "숙소명·정확 국가/도시/지역·자유 목적지(destination)·숙소/객실 편의시설·운영 상태와 예약 가능한 활성 객실의 기간·인원·기본 1박 가격을 조합해 검색합니다. 각 목적지 검색어와 복수 편의시설은 AND 조건입니다."
 	)
 	@GetMapping
 	public ResponseEntity<PageResponse<AccommodationResponse>> getAll(
 			@Valid @ModelAttribute @ParameterObject AccommodationSearchRequest request
 	) {
 		return ResponseEntity.ok(accommodationService.getAll(request));
+	}
+
+	@Operation(
+			summary = "숙소 지역 자동완성 후보 조회",
+			description = "활성 숙소의 구조화된 도시와 지역을 최대 10개 반환합니다. 날짜별 예약 가능 여부를 보장하지 않습니다. 선택한 후보의 searchParams를 숙소 통합 검색에 전달합니다."
+	)
+	@ApiResponse(
+			responseCode = "200",
+			description = "지역 후보 목록 (최대 10개)",
+			content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE, array = @ArraySchema(
+					schema = @Schema(implementation = AccommodationLocationSuggestionResponse.class), maxItems = 10))
+	)
+	@GetMapping("/locations/suggestions")
+	public ResponseEntity<List<AccommodationLocationSuggestionResponse>> suggestLocations(
+			@Valid @ModelAttribute @ParameterObject AccommodationLocationSuggestionRequest request
+	) {
+		return ResponseEntity.ok(locationSuggestionService.suggest(request.q()));
 	}
 
 	@Operation(summary = "숙소 정보 수정")
