@@ -120,3 +120,26 @@ Result의 `system-out`에 기록된다.
 
 Query 수, Pagination 및 Cache 결과와 함께 재측정한 최종 비교는
 [`Query 및 Cache 최적화 전후 비교`](query-cache-optimization-comparison.md)에 기록했다.
+
+## 자유 목적지 검색 (#317)
+
+격리 MySQL 8.4 Testcontainers의 기존 숙소 200행 fixture에서 현재 인덱스를 유지한 채,
+같은 활성 도시 후보에 대한 단일 토큰 조건과 정확 도시·지역 조건을 비교했다.
+두 SQL 모두 `status = 'ACTIVE' ORDER BY id LIMIT 20`이다. 실행 계획을 비교하기 위해
+숙소 조건만 떼어낸 SQL이며, 전체 JPA 페이지/count 및 가용성 조회의 비용 측정은 아니다.
+
+| 조건 | Access | 선택 Index | EXPLAIN rows | Extra |
+| --- | --- | --- | ---: | --- |
+| `city = ? AND region = ?` | `ref` | `idx_accommodations_city_region_status_id` | 20 | `Using index condition` |
+| `LOWER(city) LIKE '%token%' OR LOWER(region) LIKE '%token%'` | `index` | `PRIMARY` | 20 | `Using where` |
+
+`PRIMARY`는 이 표본에서 ID 순서대로 인덱스를 순회해 필터링한 것이지,
+위치 B-tree로 목적지 후보를 탐색했다는 뜻이 아니다. 선행 `%`는 고정 접두어 범위를 만들 수
+없고 `LOWER` 표현식은 기존 일반 컬럼 인덱스와 다르다. `LIMIT`이 포함된 `rows` 추정치가
+같아도 실제 검사한 행 수나 비용이 같다고 해석하지 않는다. 정렬, 페이지 깊이, 토큰 수와
+선택도에 따라 플랜이 달라질 수 있다. 기존 정확 경로와 지역 인덱스를 유지하고,
+새 인덱스·정규화 모델은 도입하지 않았다. 실제 데이터 분포에서 페이지와 count 비용을
+따로 측정한 뒤 추가 최적화를 검토한다.
+
+같은 클래스의 JPA 회귀는 `utf8mb4_0900_ai_ci` 환경에서 혼합 대소문자, 리터럴 `%`/`_`/역슬래시,
+일부 위치 값만 있는 행, 정확 `region`의 기존 주소 fallback을 확인한다.
