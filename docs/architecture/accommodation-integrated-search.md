@@ -7,8 +7,9 @@
 | Parameter | Meaning |
 | --- | --- |
 | `name` | 숙소명의 대소문자 구분 없는 부분 일치 |
+| `country` | 구조화된 국가의 정확 일치(MySQL 문자열 Collation 적용) |
 | `city` | 구조화된 도시의 정확 일치(MySQL 문자열 Collation 적용) |
-| `region` | 구조화된 지역의 정확 일치(MySQL 문자열 Collation 적용). 구조화 이전 행은 기존 주소 부분 일치 |
+| `region` | 구조화된 지역의 정확 일치(MySQL 문자열 Collation 적용). `country`가 없을 때만 `region IS NULL`인 기존 행의 주소 부분 일치 허용 |
 | `destination` | 도시·지역 자유 검색. 공백으로 나눈 모든 토큰이 동일 숙소의 `city` 또는 `region`에 부분 일치해야 함 |
 | `accommodationAmenities` | 숙소가 모두 보유해야 하는 공용 편의시설(AND) |
 | `roomAmenities` | 한 활성 객실이 모두 보유해야 하는 객실 편의시설(AND) |
@@ -28,13 +29,16 @@
 `서울특별시 강남구`는 두 토큰이 동일 숙소의 구조화된 필드에 일치해야 합니다.
 별칭 사전·음역·오타 보정이나 국가·상세 주소 자유 검색은 제공하지 않습니다.
 
-동명 지역은 도시 토큰 또는 기존 정확 필터를 추가해 구분합니다. `destination`과
-`city`·`region`을 같이 보내면 **AND**이고 충돌 시 빈 결과를 반환합니다.
+동명 지역은 도시 토큰 또는 정확 국가·도시·지역 필터를 추가해 구분합니다.
+`destination`과 정확 필터를 같이 보내면 **AND**이고 충돌 시 빈 결과를 반환합니다.
 관리자 목록과 기존 호출의 `city`·`region` 동작은 그대로입니다.
 구조화 값 하나가 NULL이면 나머지 값만 자유 검색에 사용합니다. 둘 다 NULL이면 자유 검색으로
-찾을 수 없습니다. 기존 `region`의 상세 주소 fallback은 **`region IS NULL`인 행에만** 유지되며,
+찾을 수 없습니다. 기존 `region`의 상세 주소 fallback은 **국가 조건이 없고 `region IS NULL`인 행에만** 유지되며,
 상세 주소로 구조화된 값을 추정하거나 채우지 않습니다. #317은 Backend 계약만 변경하며,
 현재 Home/Search의 자유 입력을 이 파라미터로 보내는 UI 연결은 별도 작업입니다.
+
+[지역 자동완성](accommodation-location-suggestions.md)의 `searchParams`는 `destination`으로
+표시 이름을 재검색하지 않고 `country`·`city`·선택적 `region`·`status`를 직접 보냅니다.
 
 체크인과 체크아웃은 반드시 함께 전달하고 체크인이 체크아웃보다 빨라야 합니다.
 날짜만 전달하면 `available=true`로 처리합니다. `available`을 명시할 때도 기간은
