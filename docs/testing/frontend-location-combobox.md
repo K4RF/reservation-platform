@@ -1,5 +1,7 @@
 # Frontend 목적지 자동완성 (#319)
 
+이 문서는 #319의 브라우저 검증 기준입니다. 현재 제출 동작은 [#320 검색 상태](frontend-location-search-state.md)를 따릅니다.
+
 ## 동작과 범위
 
 Home과 Search의 `CompactSearchBar`만 `DestinationCombobox`를 표시합니다. Detail의

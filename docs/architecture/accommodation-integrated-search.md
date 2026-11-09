@@ -34,8 +34,8 @@
 관리자 목록과 기존 호출의 `city`·`region` 동작은 그대로입니다.
 구조화 값 하나가 NULL이면 나머지 값만 자유 검색에 사용합니다. 둘 다 NULL이면 자유 검색으로
 찾을 수 없습니다. 기존 `region`의 상세 주소 fallback은 **국가 조건이 없고 `region IS NULL`인 행에만** 유지되며,
-상세 주소로 구조화된 값을 추정하거나 채우지 않습니다. #317은 Backend 계약만 변경하며,
-현재 Home/Search의 자유 입력을 이 파라미터로 보내는 UI 연결은 별도 작업입니다.
+상세 주소로 구조화된 값을 추정하거나 채우지 않습니다. Backend는 이 필터들을 조합할 수 있지만,
+[Home/Search](../testing/frontend-location-search-state.md)는 자유 입력과 정확 위치를 별개 방식으로 적용합니다.
 
 [지역 자동완성](accommodation-location-suggestions.md)의 `searchParams`는 `destination`으로
 표시 이름을 재검색하지 않고 `country`·`city`·선택적 `region`·`status`를 직접 보냅니다.
