@@ -53,6 +53,24 @@ describe('accommodation URL query', () => {
       query: defaultSearchQuery,
     })
   })
+  it('canonicalizes free text and round-trips a country-qualified destination separately from legacy filters', () => {
+    const free = canonicalSearchQuery('destination=%20서울%20%20강남%20&page=02')!
+    expect(new URLSearchParams(free).get('destination')).toBe('서울 강남')
+    expect(canonicalSearchQuery(free)).toBe(free)
+    expect(parseSearchQuery(new URLSearchParams('destination=서'))).toMatchObject({
+      valid: true,
+      query: { destination: '서' },
+    })
+    const selected = canonicalSearchQuery('country=대한민국&city=서울특별시&region=강남구')!
+    expect(parseSearchQuery(new URLSearchParams(selected))).toMatchObject({
+      valid: true,
+      query: { country: '대한민국', city: '서울특별시', region: '강남구', status: 'ACTIVE' },
+    })
+    expect(canonicalSearchQuery(selected)).toBe(selected)
+    expect(canonicalSearchQuery('city=서울특별시&region=강남구&destination=%20')).toBe(
+      canonicalSearchQuery('city=서울특별시&region=강남구'),
+    )
+  })
   it.each([
     'page=-1',
     'page=1.5',
@@ -63,6 +81,15 @@ describe('accommodation URL query', () => {
     'guestCount=0',
     'guestCount=1e2',
     'name=a&name=b',
+    'destination=서울&destination=강남',
+    'country=KR&country=US&city=Seoul',
+    'country=KR&region=강남구',
+    'destination=서울&city=서울특별시',
+    'destination=서울&region=강남구',
+    'destination=서울&country=KR&city=Seoul',
+    `destination=${'서'.repeat(101)}`,
+    `country=${'A'.repeat(101)}&city=Seoul`,
+    'destination=서울&displayName=서울특별시',
     'sortBy=PRICE',
     'direction=down',
     'status=UNKNOWN',

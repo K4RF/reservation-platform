@@ -5,6 +5,7 @@ import {
 } from '../../api/accommodation'
 import { isCalendarDate } from '../../utils/calendarDate'
 import { MAX_GUEST_COUNT } from '../../api/availabilityValidation'
+import { locationQueryMaxLength, normalizeDestinationText } from '../../api/locationSuggestions'
 
 export type AccommodationSearchQuery = AccommodationSearchRequest & {
   page: number
@@ -37,6 +38,8 @@ export function parseSearchQuery(params: URLSearchParams): SearchQueryResult {
     'name',
     'city',
     'region',
+    'country',
+    'destination',
     'accommodationAmenities',
     'roomAmenities',
     'checkInDate',
@@ -58,11 +61,19 @@ export function parseSearchQuery(params: URLSearchParams): SearchQueryResult {
     if (!key.endsWith('Amenities') && params.getAll(key).length > 1)
       return invalid('중복된 검색 조건이 있습니다. 조건을 다시 입력하세요.')
   }
-  for (const key of ['name', 'city', 'region'] as const) {
+  for (const key of ['name', 'city', 'region', 'country'] as const) {
     const value = params.get(key)?.trim()
-    if (value && value.length > 100) return invalid('숙소명·도시·지역은 100자 이하여야 합니다.')
+    if (value && value.length > 100)
+      return invalid('숙소명·국가·도시·지역은 100자 이하여야 합니다.')
     if (value) query[key] = value
   }
+  const destination = params.get('destination') ?? ''
+  if (destination.length > locationQueryMaxLength) return invalid('여행지는 100자 이하여야 합니다.')
+  const normalized = normalizeDestinationText(destination)
+  if (normalized && (query.country || query.city || query.region))
+    return invalid('여행지 검색어와 정확한 위치 조건을 함께 사용할 수 없습니다.')
+  if (query.country && !query.city) return invalid('국가와 도시를 함께 입력하세요.')
+  if (normalized) query.destination = normalized
   for (const key of ['page', 'size', 'guestCount'] as const) {
     if (!params.has(key)) continue
     const value = params.get(key) ?? ''

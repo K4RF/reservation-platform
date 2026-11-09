@@ -129,8 +129,12 @@ describe('Accommodation Admin list and URL conditions', () => {
       )
     })
     vi.stubGlobal('fetch', fetch)
-    open('/admin/accommodations?page=2')
+    open('/admin/accommodations?page=2&country=KR&destination=서울')
     await screen.findByText('총 1개 숙소')
+    const initial = new URL(fetch.mock.calls[0][0], 'http://localhost').searchParams
+    expect(initial.has('destination')).toBe(false)
+    expect(initial.has('country')).toBe(false)
+    expect(screen.queryByRole('combobox', { name: '여행지' })).toBeNull()
     for (const [label, value] of [
       ['숙소명 검색', '호텔'],
       ['도시 (정확한 이름)', '서울특별시'],

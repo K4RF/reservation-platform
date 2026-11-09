@@ -64,7 +64,7 @@ describe('AccommodationSearchPage with the real API client', () => {
     expect(screen.getByRole('complementary', { name: '상세 검색 필터' })).toBeTruthy()
     expect(document.querySelector('.search-filters')?.tagName).toBe('ASIDE')
     const summary = screen.getByLabelText('적용된 검색 조건')
-    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), { target: { value: '부산광역시' } })
+    fireEvent.change(screen.getByLabelText('여행지'), { target: { value: '부산광역시' } })
     fireEvent.change(screen.getByLabelText('숙소명'), { target: { value: '미제출' } })
     expect(summary.textContent).toContain('서울특별시')
     expect(mock).toHaveBeenCalledOnce()
@@ -242,14 +242,14 @@ describe('AccommodationSearchPage with the real API client', () => {
       ),
     )
     renderPage('/?city=서울특별시&guestCount=2')
-    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), {
+    fireEvent.change(screen.getByLabelText('여행지'), {
       target: { value: '부산광역시' },
     })
     searchLayers.stepGuests('인원', true)
     expect(screen.getByText('숙소를 불러오고 있습니다.')).toBeTruthy()
     complete(Response.json(accommodationPage({ content: [], totalElements: 0, totalPages: 0 })))
     await screen.findByText('검색 조건에 맞는 숙소가 없습니다.')
-    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '부산광역시')
+    expect(screen.getByLabelText('여행지')).toHaveProperty('value', '부산광역시')
     expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '3')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('서울특별시')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('2명')
@@ -268,7 +268,7 @@ describe('AccommodationSearchPage with the real API client', () => {
     vi.stubGlobal('fetch', fetchMock)
     renderPage('/?city=서울특별시&guestCount=2')
     await screen.findByRole('alert')
-    fireEvent.change(screen.getByLabelText('여행지 · 도시명'), {
+    fireEvent.change(screen.getByLabelText('여행지'), {
       target: { value: '부산광역시' },
     })
     searchLayers.stepGuests('인원', true)
@@ -278,7 +278,7 @@ describe('AccommodationSearchPage with the real API client', () => {
     expect(new URL(fetchMock.mock.calls[1][0], 'http://localhost').searchParams.get('city')).toBe(
       '서울특별시',
     )
-    expect(screen.getByLabelText('여행지 · 도시명')).toHaveProperty('value', '부산광역시')
+    expect(screen.getByLabelText('여행지')).toHaveProperty('value', '부산광역시')
     expect(searchLayers.committedGuestInput('인원')).toHaveProperty('value', '3')
     expect(screen.getByLabelText('적용된 검색 조건').textContent).toContain('서울특별시')
   })

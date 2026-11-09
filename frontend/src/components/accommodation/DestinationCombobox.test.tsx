@@ -1,24 +1,38 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { gangnam, seoul } from '../../test/locationSuggestions'
 import { DestinationCombobox } from './DestinationCombobox'
+import { applyDestination, destinationDraft } from './searchLocation'
+import { toSearchParams } from './searchQuery'
 
 function renderForm() {
   const select = vi.fn()
   const search = vi.fn()
-  render(
-    <form
-      onSubmit={(event) => {
-        event.preventDefault()
-        search(Object.fromEntries(new FormData(event.currentTarget)))
-      }}
-    >
-      <DestinationCombobox id="test-city" onSelect={select} />
-      <button type="button">날짜</button>
-      <button type="submit">검색</button>
-    </form>,
-  )
-  const input = screen.getByRole<HTMLInputElement>('combobox', { name: '여행지 · 도시명' })
+  function Form() {
+    const [value, setValue] = useState(() => destinationDraft({}))
+    return (
+      <form
+        onSubmit={(event) => {
+          event.preventDefault()
+          search(Object.fromEntries(toSearchParams(applyDestination({}, value))))
+        }}
+      >
+        <DestinationCombobox
+          id="test-city"
+          value={value}
+          onChange={(next) => {
+            if (next.kind === 'selected') select(next.suggestion)
+            setValue(next)
+          }}
+        />
+        <button type="button">날짜</button>
+        <button type="submit">검색</button>
+      </form>
+    )
+  }
+  render(<Form />)
+  const input = screen.getByRole<HTMLInputElement>('combobox', { name: '여행지' })
   act(() => input.focus())
   return { input, select, search }
 }
@@ -97,12 +111,11 @@ describe('DestinationCombobox', () => {
     expect(input.getAttribute('aria-expanded')).toBe('false')
     expect(input.hasAttribute('aria-activedescendant')).toBe(false)
     expect(screen.queryByRole('listbox')).toBeNull()
-    // #319 emits selected params without changing the existing submitted city field.
     fireEvent.click(screen.getByRole('button', { name: '검색' }))
-    expect(search).toHaveBeenCalledExactlyOnceWith({ city: '서울' })
+    expect(search).toHaveBeenCalledExactlyOnceWith(gangnam.searchParams)
     change(input, '부산광역시')
     fireEvent.click(screen.getByRole('button', { name: '검색' }))
-    expect(search).toHaveBeenLastCalledWith({ city: '부산광역시' })
+    expect(search).toHaveBeenLastCalledWith({ destination: '부산광역시' })
   })
 
   it('dismisses on Escape, Tab focus movement and outside pointer, and accepts a pointer click', async () => {
@@ -153,7 +166,7 @@ describe('DestinationCombobox', () => {
       expect(screen.queryByRole('option')).toBeNull()
       expect(fireEvent.keyDown(input, { key: 'Enter' })).toBe(true)
       fireEvent.click(screen.getByRole('button', { name: '검색' }))
-      expect(search).toHaveBeenCalledExactlyOnceWith({ city: '직접 입력' })
+      expect(search).toHaveBeenCalledExactlyOnceWith({ destination: '직접 입력' })
     },
   )
 })

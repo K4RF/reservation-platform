@@ -3,6 +3,10 @@ import { ApiError } from './errors'
 
 export const locationQueryMaxLength = 100
 
+export function normalizeDestinationText(text: string): string {
+  return text.replace(/\p{White_Space}+/gu, ' ').trim()
+}
+
 type LocationSearchParams = { country: string; city: string; status: 'ACTIVE' }
 export type LocationSuggestion =
   | { type: 'CITY'; displayName: string; searchParams: LocationSearchParams & { region?: never } }
@@ -10,7 +14,7 @@ export type LocationSuggestion =
 
 export function normalizeLocationQuery(text: string): string | null {
   if (text.length > locationQueryMaxLength) return null
-  const query = text.replace(/\p{White_Space}+/gu, ' ').trim()
+  const query = normalizeDestinationText(text)
   return [...query].length >= 2 ? query : null
 }
 

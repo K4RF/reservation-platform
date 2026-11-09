@@ -1,5 +1,6 @@
 import { amenityLabels } from './accommodationView'
 import type { AccommodationSearchQuery } from './searchQuery'
+import { searchLocationLabel } from './searchLocation'
 
 export function filterValues(query: AccommodationSearchQuery) {
   const {
@@ -29,7 +30,7 @@ export function resetFilters(query: AccommodationSearchQuery): AccommodationSear
   return {
     ...query,
     name: undefined,
-    region: undefined,
+    region: query.country ? query.region : undefined,
     minPrice: undefined,
     maxPrice: undefined,
     available: undefined,
@@ -40,7 +41,7 @@ export function resetFilters(query: AccommodationSearchQuery): AccommodationSear
 export function filterLabels(query: AccommodationSearchQuery) {
   return [
     query.name && `숙소명 ${query.name}`,
-    query.region && `지역 ${query.region}`,
+    !query.country && query.region && `지역 ${query.region}`,
     query.minPrice !== undefined && `기본 1박 ${query.minPrice} 이상`,
     query.maxPrice !== undefined && `기본 1박 ${query.maxPrice} 이하`,
     query.available !== undefined && (query.available ? '기간 내 예약 가능' : '기간 내 예약 불가'),
@@ -50,7 +51,7 @@ export function filterLabels(query: AccommodationSearchQuery) {
 }
 export function searchContextLabel(query: AccommodationSearchQuery) {
   return [
-    query.city || '전체 지역',
+    searchLocationLabel(query),
     query.checkInDate ? `${query.checkInDate} → ${query.checkOutDate}` : '날짜 미지정',
     query.guestCount === undefined ? '인원 조건 없음' : `총 ${query.guestCount}명`,
   ].join(' · ')

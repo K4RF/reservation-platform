@@ -11,17 +11,19 @@ export function AccommodationFilters({
 }) {
   return (
     <div className="search-filter-grid">
-      {(['name', 'region'] as const).map((key, index) => (
-        <div className="form-field" key={key}>
-          <label htmlFor={`filter-${key}`}>{['숙소명', '지역'][index]}</label>
-          <input
-            id={`filter-${key}`}
-            maxLength={100}
-            value={draft[key] ?? ''}
-            onChange={(event) => onChange({ ...draft, [key]: event.target.value || undefined })}
-          />
-        </div>
-      ))}
+      {(['name', 'region'] as const)
+        .filter((key) => key === 'name' || (!draft.country && !draft.destination))
+        .map((key) => (
+          <div className="form-field" key={key}>
+            <label htmlFor={`filter-${key}`}>{key === 'name' ? '숙소명' : '지역'}</label>
+            <input
+              id={`filter-${key}`}
+              maxLength={100}
+              value={draft[key] ?? ''}
+              onChange={(event) => onChange({ ...draft, [key]: event.target.value || undefined })}
+            />
+          </div>
+        ))}
       <fieldset>
         <legend>기본 1박 가격</legend>
         <p className="search-filter-help">

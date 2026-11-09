@@ -877,8 +877,7 @@ legend {
   margin: 0;
   padding: var(--space-3);
 }
-.destination-popup small,
-.destination-selection-note {
+.destination-popup small {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   overflow-wrap: anywhere;

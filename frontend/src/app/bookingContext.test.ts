@@ -35,9 +35,12 @@ describe('public booking return context', () => {
       readBookingContext('?checkInDate=2030-01-10&checkOutDate=2030-01-15&roomId=-1&roomPage=NaN'),
     ).toMatchObject({ roomId: undefined, roomPage: 0 })
   })
-  it('round trips original search filters/page independently of changed booking stay and room page', () => {
-    const search =
-      'name=호텔&city=서울특별시&region=강남구&page=2&size=10&sortBy=NAME&direction=DESC&accommodationAmenities=POOL&roomAmenities=WIFI&minPrice=0&maxPrice=123.456&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2'
+  it.each([
+    'city=서울특별시&region=강남구',
+    'country=대한민국&city=서울특별시&region=강남구',
+    'destination=서울%20강남',
+  ])('round trips original %s and other filters independently of booking stay', (location) => {
+    const search = `name=호텔&${location}&page=2&size=10&sortBy=NAME&direction=DESC&accommodationAmenities=POOL&roomAmenities=WIFI&minPrice=0&maxPrice=123.456&checkInDate=2030-01-10&checkOutDate=2030-01-15&guestCount=2`
     const detail = new URL(explorationDetailPath(7, search), 'http://localhost')
     const context = readBookingContext(detail.search)!
     expect(context.stay.guestCount).toBe(2)
@@ -73,6 +76,8 @@ describe('public booking return context', () => {
     'token=secret',
     'representativeGuest.name=name',
     'search=page%3D2',
+    'destination=서울&city=서울특별시',
+    'country=KR&country=US&city=Seoul',
     'https://evil.test',
   ])('rejects invalid nested search %s without a recursive/external return', (saved) => {
     const query = '?' + new URLSearchParams({ search: saved })

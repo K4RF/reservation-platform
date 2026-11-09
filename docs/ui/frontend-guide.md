@@ -18,9 +18,10 @@
 
 날짜 범위는 최소 1박이며 필요한 경우 체크인 변경 시 체크아웃을 다음 날로 보정한다.
 인원은 성인·아동 구분 없는 양의 정수다. Home/Search에서는 생략할 수 있다.
-Home/Search의 공통 목적지 입력은 공개 API의 후보를 표시하고 선택 이벤트로 `displayName`과
-`searchParams`를 전달한다. 후보 미리보기·선택은 숙소 조회를 실행하지 않으며, #319에서는 기존
-`city` 제출을 유지한다. [지역 후보 검증](../testing/frontend-location-combobox.md) 참고.
+Home/Search의 공통 목적지 입력은 후보의 `displayName`을 표시하고 제출할 때만 `searchParams`를 적용한다.
+직접 입력은 `destination`, 선택은 국가·도시·선택적 지역이다. URL이 적용 조건의 원본이며, 선택·편집·취소만으로
+숙소 결과를 갱신하지 않는다. [지역 후보](../testing/frontend-location-combobox.md) ·
+[검색 상태 및 복귀 검증](../testing/frontend-location-search-state.md) 참고.
 미리보기는 선택을 바꾸지 않으며 Detail에서 다른 조건을 적용하면 기존 가용성·선택·요금은 무효다.
 [검색 복귀](../testing/frontend-exploration-return-context.md) 및
 [객실 상세와 선택](../testing/frontend-room-detail-selection.md)에서 URL·포커스 계약을 확인할 수 있다.

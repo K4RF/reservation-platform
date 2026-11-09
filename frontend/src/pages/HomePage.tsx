@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../state/useAuth'
 import { routePaths } from '../app/routePaths'
-import { parseSearchQuery } from '../components/accommodation/searchQuery'
+import { parseSearchQuery, toSearchParams } from '../components/accommodation/searchQuery'
+import { applyDestination, destinationDraft } from '../components/accommodation/searchLocation'
 import { CompactSearchBar } from '../components/room/CompactSearchBar'
 import { HomeCatalog } from '../components/accommodation/HomeCatalog'
 import heroLarge from '../assets/brand/home-a1-1600.webp'
@@ -15,18 +16,21 @@ export function HomePage() {
   const [dates, setDates] = useState({ checkInDate: '', checkOutDate: '' })
   const [guestCount, setGuestCount] = useState('1')
   const [imageFailed, setImageFailed] = useState(false)
+  const [destination, setDestination] = useState(() => destinationDraft({}))
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const query = new URLSearchParams()
-    for (const [key, value] of new FormData(event.currentTarget)) {
-      if (String(value).trim()) query.set(key, String(value).trim())
+    const form = new FormData(event.currentTarget)
+    const query = toSearchParams(applyDestination({}, destination))
+    for (const key of ['checkInDate', 'checkOutDate', 'guestCount']) {
+      const value = String(form.get(key) ?? '').trim()
+      if (value) query.set(key, value)
     }
     const parsed = parseSearchQuery(query)
     if (!parsed.valid) {
       setError(parsed.message)
       return
     }
-    navigate(`${routePaths.accommodations}?${query}`)
+    navigate(`${routePaths.accommodations}?${toSearchParams(parsed.query)}`)
   }
 
   return (
@@ -67,7 +71,7 @@ export function HomePage() {
           <form className="home-search" aria-label="여행 검색" onSubmit={search}>
             <CompactSearchBar
               prefix="home"
-              city={{}}
+              city={{ value: destination, onChange: setDestination }}
               required={false}
               dates={dates}
               onDateChange={(field, value) => {
