@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -30,6 +31,8 @@ import junsik.reservation.enums.RoomStatus;
 
 public final class AccommodationSpecifications {
 
+	private static final Pattern DESTINATION_SEPARATOR = Pattern.compile("\\s+", Pattern.UNICODE_CHARACTER_CLASS);
+
 	private AccommodationSpecifications() {
 	}
 
@@ -41,6 +44,7 @@ public final class AccommodationSpecifications {
 			List<Predicate> predicates = new ArrayList<>();
 			addContains(predicates, criteriaBuilder, root, "name", request.name());
 			addLocationFilters(predicates, criteriaBuilder, root, request);
+			addDestinationFilters(predicates, criteriaBuilder, root, request.destination());
 			for (AccommodationAmenity amenity : request.accommodationAmenities()) {
 				predicates.add(criteriaBuilder.isMember(
 						amenity,
@@ -175,6 +179,30 @@ public final class AccommodationSpecifications {
 						)
 				)
 		));
+	}
+
+	private static void addDestinationFilters(
+			List<Predicate> predicates,
+			CriteriaBuilder criteriaBuilder,
+			Root<Accommodation> root,
+			String destination
+	) {
+		if (destination == null) {
+			return;
+		}
+		Expression<String> city = criteriaBuilder.lower(root.get("location").get("city"));
+		Expression<String> region = criteriaBuilder.lower(root.get("location").get("region"));
+		// Every token must match a structured field on this same accommodation.
+		DESTINATION_SEPARATOR.splitAsStream(destination.toLowerCase(Locale.ROOT))
+				.filter(token -> !token.isEmpty())
+				.distinct()
+				.forEach(token -> {
+					String pattern = "%" + escapeLike(token) + "%";
+					predicates.add(criteriaBuilder.or(
+							criteriaBuilder.like(city, pattern, '\\'),
+							criteriaBuilder.like(region, pattern, '\\')
+					));
+				});
 	}
 
 	private static Predicate bookingPolicyAllows(

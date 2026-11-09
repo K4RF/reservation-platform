@@ -31,6 +31,11 @@ public record AccommodationSearchRequest(
 		@Schema(description = "구조화된 지역의 정확한 이름", example = "강남구")
 		String region,
 
+		@Size(max = 100, message = "목적지 검색어는 100자 이하여야 합니다.")
+		@Schema(description = "도시·지역 자유 입력. 공백으로 나눈 검색어를 모두 포함하고, city/region과 함께 사용하면 조건을 모두 만족해야 합니다.",
+				example = "서울특별시 강남구")
+		String destination,
+
 		@Schema(description = "모두 보유해야 하는 숙소 공용 편의시설(AND)")
 		Set<AccommodationAmenity> accommodationAmenities,
 
