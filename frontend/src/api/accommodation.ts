@@ -19,6 +19,8 @@ export interface AccommodationSearchRequest {
   name?: string
   city?: string
   region?: string
+  country?: string
+  destination?: string
   accommodationAmenities?: AccommodationAmenity[]
   roomAmenities?: RoomAmenity[]
   checkInDate?: string

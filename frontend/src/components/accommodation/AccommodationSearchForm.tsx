@@ -8,11 +8,13 @@ import {
   type ReactNode,
 } from 'react'
 import type { AccommodationSearchRequest } from '../../api/accommodation'
+import { normalizeDestinationText } from '../../api/locationSuggestions'
 import { parseSearchQuery, toSearchParams, type AccommodationSearchQuery } from './searchQuery'
 import { CompactSearchBar } from '../room/CompactSearchBar'
 import { SearchLayer } from '../room/SearchLayer'
 import { AccommodationFilters } from './AccommodationFilters'
 import { filterValues, filterLabels, resetFilters, searchContextLabel } from './searchFilters'
+import { applyDestination, destinationDraft } from './searchLocation'
 
 const narrowQuery = '(max-width: 64rem)'
 function subscribe(change: () => void) {
@@ -40,7 +42,8 @@ export function AccommodationSearchForm({
   )
   const [error, setError] = useState('')
   const [filterError, setFilterError] = useState('')
-  const [cityDraft, setCityDraft] = useState(initialQuery.city ?? '')
+  const [destination, setDestination] = useState(() => destinationDraft(initialQuery))
+  const nextLocation = applyDestination(initialQuery, destination)
   const [guestCount, setGuestCount] = useState(String(initialQuery.guestCount ?? ''))
   const [dates, setDates] = useState({
     checkInDate: initialQuery.checkInDate ?? '',
@@ -76,11 +79,9 @@ export function AccommodationSearchForm({
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const city = String(new FormData(event.currentTarget).get('city') ?? '').trim()
     // Commit this editor only, not another editor's unsubmitted draft.
     commit({
-      ...initialQuery,
-      city: city || undefined,
+      ...nextLocation,
       checkInDate: dates.checkInDate || undefined,
       checkOutDate: dates.checkOutDate || undefined,
       guestCount: guestCount ? Number(guestCount) : undefined,
@@ -88,7 +89,10 @@ export function AccommodationSearchForm({
   }
   const labels = filterLabels(initialQuery)
   const compactDirty =
-    cityDraft.trim() !== (initialQuery.city ?? '') ||
+    (['country', 'city', 'region', 'status'] as const).some(
+      (key) => nextLocation[key] !== initialQuery[key],
+    ) ||
+    normalizeDestinationText(nextLocation.destination ?? '') !== (initialQuery.destination ?? '') ||
     dates.checkInDate !== (initialQuery.checkInDate ?? '') ||
     dates.checkOutDate !== (initialQuery.checkOutDate ?? '') ||
     (guestCount === '' ? undefined : Number(guestCount)) !== initialQuery.guestCount
@@ -137,7 +141,7 @@ export function AccommodationSearchForm({
       >
         <CompactSearchBar
           prefix="search"
-          city={{ initial: initialQuery.city, onChange: setCityDraft }}
+          city={{ value: destination, onChange: setDestination }}
           required={false}
           dates={dates}
           onDateChange={(field, value) => {

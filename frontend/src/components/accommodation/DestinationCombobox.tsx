@@ -12,6 +12,7 @@ import {
   normalizeLocationQuery,
   type LocationSuggestion,
 } from '../../api/locationSuggestions'
+import { destinationInputValue, type DestinationDraft } from './searchLocation'
 
 const debounceMs = 250
 type Result = { query: string } & (
@@ -19,21 +20,19 @@ type Result = { query: string } & (
 )
 
 export type DestinationComboboxOptions = {
-  initial?: string
-  onChange?: (text: string) => void
-  onSelect?: (suggestion: LocationSuggestion) => void
+  value: DestinationDraft
+  onChange: (draft: DestinationDraft) => void
 }
 
 export function DestinationCombobox({
   id,
-  initial = '',
+  value,
   onChange,
-  onSelect,
 }: DestinationComboboxOptions & { id: string }) {
   const root = useRef<HTMLDivElement>(null)
   const popup = useRef<HTMLDivElement>(null)
-  const [text, setText] = useState(initial)
-  const [selected, setSelected] = useState<LocationSuggestion | null>(null)
+  const selected = value.kind === 'selected' ? value.suggestion : null
+  const text = destinationInputValue(value)
   const [open, setOpen] = useState(false)
   const [composing, setComposing] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -77,7 +76,7 @@ export function DestinationCombobox({
     setOpen(false)
     setActiveIndex(-1)
     setResult(null)
-  }, [])
+  }, [setOpen, setActiveIndex, setResult])
 
   useEffect(() => {
     if (!open) return
@@ -135,16 +134,12 @@ export function DestinationCombobox({
       setResult(null)
       setActiveIndex(-1)
     }
-    setSelected(null)
-    setText(value)
-    onChange?.(value)
+    onChange({ kind: 'text', text: value })
   }
 
   function choose(suggestion: LocationSuggestion) {
-    // Keep the legacy FormData text until the parent applies selected searchParams (#320).
-    setSelected(suggestion)
     dismiss()
-    onSelect?.(suggestion)
+    onChange({ kind: 'selected', suggestion })
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -175,8 +170,7 @@ export function DestinationCombobox({
 
   return (
     <div ref={root} className="compact-city-field form-field">
-      <label htmlFor={id}>여행지 · 도시명</label>
-      <input type="hidden" name="city" value={text} />
+      <label htmlFor={id}>여행지</label>
       <input
         id={id}
         role="combobox"
@@ -187,12 +181,15 @@ export function DestinationCombobox({
         aria-describedby={`${id}-help`}
         autoComplete="off"
         maxLength={locationQueryMaxLength}
-        value={selected?.displayName ?? text}
+        value={text}
         placeholder="도시 또는 지역 이름"
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
         onBlur={dismiss}
-        onChange={(event) => edit(event.currentTarget.value)}
+        onChange={(event) => {
+          if (document.activeElement === event.currentTarget) setOpen(true)
+          edit(event.currentTarget.value)
+        }}
         onCompositionStart={() => {
           setComposing(true)
           setResult(null)
@@ -200,15 +197,14 @@ export function DestinationCombobox({
         }}
         onCompositionEnd={(event) => {
           setComposing(false)
-          if (event.currentTarget.value !== (selected?.displayName ?? text))
-            edit(event.currentTarget.value)
+          if (event.currentTarget.value !== text) edit(event.currentTarget.value)
         }}
         onKeyDown={onKeyDown}
       />
-      <span id={`${id}-help`} className={selected ? 'destination-selection-note' : 'sr-only'}>
+      <span id={`${id}-help`} className="sr-only">
         {selected
-          ? `검색에는 직접 입력한 도시명(${text.trim()})이 사용됩니다.`
-          : '도시의 정확한 이름으로 검색합니다.'}
+          ? `${selected.searchParams.country} · ${selected.searchParams.city}. 검색 버튼으로 적용하세요.`
+          : '도시 또는 지역을 직접 입력하거나 후보를 선택하세요.'}
       </span>
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {status}
