@@ -3,13 +3,23 @@
 [검수 이슈 #307](https://github.com/K4RF/reservation-platform/issues/307) ·
 [기술 검증 인계 #306](frontend-review-handoff.md) · [승인 디자인](../ui/approved-design.md)
 
-**검수 대기 — 최종 판단은 사용자가 직접 남긴다.** 선행 #299–#306은 모두 종료됐다.
-제품 기준 revision은 #306 병합 `f4d0c2cd1b7dc9f533ee1a2af381f617555a700a`이며
-[선행 Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/42486125055)와
-[Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/42486125069)가 통과했다.
-병합된 기준의 [develop Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/42487934575)도 통과했다.
-다른 revision에서 검수하면 `git rev-parse HEAD`의 결과를 기록한다. CI, 개발자 검증,
-A1 디자인 방향 승인 중 어느 것도 전체 제품 승인으로 간주하지 않는다.
+**사용자 검수 대기.** #299–#306이 모두 완료됐으며, 최신 검수 기준은 #321 병합
+`4366e719c32367495a013c7a8920db95b646a8ab`이다. #306 당시 기준
+`f4d0c2cd1b7dc9f533ee1a2af381f617555a700a`의 [검증 기록](frontend-review-handoff.md)은
+그대로 유지한다. 최신 기준에는 지역 자동완성과 공유 검색 URL도 포함된다.
+
+- [#321 실제 HTTP·브라우저 회귀](frontend-location-search-regression.md): 지역 선택·자유 검색,
+  뒤로/앞으로·상세/로그인 복귀 및 격리 예약을 확인했다. 390px 에뮬레이션은 실기기가 아니다.
+- [#326 Frontend CI](https://github.com/K4RF/reservation-platform/actions/runs/42768393934)와
+  [Backend CI](https://github.com/K4RF/reservation-platform/actions/runs/42768393947)가 통과했다.
+  두 링크는 병합 전 PR 검증이며 사용자 승인이나 별도 `develop` 재실행을 뜻하지 않는다.
+- 검수 시에는 실제 실행한 `git rev-parse HEAD` 결과를 남긴다. 코드가 달라졌다면 비교 기록의
+  대상 SHA도 구분한다. CI, 개발자 확인, A1 디자인 방향 승인은 최종 제품 승인을 대신하지 않는다.
+
+#307 사전 확인에서는 `--locations --booking --hold` 스모크가 통과했다. 격리 사이트의
+Home·Search·Detail과 원본 시안을 Chromium 1440×1000 / 390×844에서 열었다. 실제 사이트의
+세 진입 화면에서 가로 넘침이 없었고, 종로 fixture의 예약 가능 객실도 조회했다. 사용자 조작 검수,
+실기기 및 이번 브라우저 세션의 예약 제출·관리 쓰기는 확인하지 않았다.
 
 ## 1. 실제 사이트 열기
 
@@ -28,14 +38,14 @@ pnpm install --frozen-lockfile
 Pop-Location
 ```
 
-각 작업이 성공한 뒤, 아래 세션 중 **한 번에 하나만** 시작한다. 예시는 예약 생성 검수다.
+각 작업이 성공한 뒤, 아래 세션 중 **한 번에 하나만** 시작한다. 예시는 지역 검색과 예약 생성 검수다.
 동일 포트를 사용하므로 다른 세션으로 넘어갈 때는 브라우저 탭을 닫고 이전 터미널에서 Enter를 누른다.
 마지막 정리 메시지가 나온 뒤 다음 실행으로 넘어간다.
 
 ```powershell
 $env:INTEGRATION_FIXTURE_PASSWORD = Read-Host -MaskInput '이번 검수에만 쓸 임시 비밀번호 (12~72바이트)'
 try {
-    node scripts/integration/run.mjs --booking --hold
+    node scripts/integration/run.mjs --locations --booking --hold
 } finally {
     Remove-Item Env:INTEGRATION_FIXTURE_PASSWORD -ErrorAction SilentlyContinue
 }
@@ -64,7 +74,7 @@ try {
 
 | 세션 | 사용자가 확인할 순서 |
 | --- | --- |
-| `--booking --hold` | 익명 Home에서 Hero, 글자/여백·헤더/메뉴를 본다. 검색 카드에서 실제 테스트 Media와 미제공 상태를 비교하고 필터를 조작한다. 터미널의 `Browser #301 fixture`에 출력된 도시·날짜·인원으로 가용성을 읽는다. Detail에서 Gallery·객실 상세·날짜/인원·예약 Rail/모바일 CTA를 확인하고 `Integration Fixture Room`을 선택한다. fixture-owner로 로그인 복귀와 새 가용성 조회를 따라가고, 가상 투숙객 입력→최종 확인→한 번 제출→서버 완료와 내 예약으로 이어지는지 본다. |
+| `--locations --booking --hold` | 익명 Home에서 Hero·헤더/메뉴를 본다. `서울`로 후보를 열고 대한민국/서울의 `강남구`를 선택한다. 부산 fixture는 객실이 없으므로 조건 없는 [`/accommodations`](http://127.0.0.1:15199/accommodations)에서 후보 없이 `부산`을 검색한다. 사진 있는 카드와 미제공 카드, URL 새로고침과 상세→검색 복귀를 비교한다. 예약은 터미널의 `Browser #301 fixture` 날짜·인원과 서울특별시의 `종로구`를 사용한다. Detail에서 Gallery·객실 상세·예약 Rail/모바일 CTA를 보고 `Integration Fixture Room`을 선택한다. fixture-owner로 로그인 복귀와 새 가용성 조회를 따라간 뒤, 가상 투숙객 입력→확인→한 번 제출→서버 완료와 내 예약으로 이어지는지 본다. |
 | `--management --hold` | fixture-owner로 내 예약에 들어가 `Browser #302 fixture`의 상세 경로를 연다. 저장된 박별 요금·취소 정책과 현재 화면 정보를 구분한다. 출력된 새 날짜로 일정 변경 후 다시 조회하고, 취소 전 정책 확인→명시적 동의→저장 결과를 확인한다. 테스트 변경·취소를 중간에 멈추면 실행기가 예상된 최종 상태와 다르다고 보고할 수 있다. 확인을 통과시키려고 취소하거나 쓰기를 반복하지 말고 아래 정리 절차를 따른다. |
 | `--admin --hold` | 익명·일반 회원의 `/admin` 차단과 ADMIN 메뉴 접근을 확인한다. `Browser #303 fixture`의 숙소·객실 ID와 날짜를 사용한다. 숙소·객실 대상 전환, 지원되는 관리 입력, 정책의 마지막 쓰기 결과, DEFAULT/DAILY 가격과 재고 Calendar를 본다. 사진은 가상 JPEG/PNG만 쓰고, 저장 후 관리 목록과 공개 대표 사진을 새로 읽는다. 결과 불명 또는 오래된 ETag는 새 목록 조회·재검토 전 재제출하지 않는다. |
 
@@ -73,6 +83,11 @@ try {
 출력 범위의 첫날은 DAILY와 CLOSED 재고, 중간 날짜는 DEFAULT와 미생성 재고를 비교할 수 있다.
 출력된 숙소에는 이미 정책이 있으므로 수정(PUT)을 선택한다. 정책 생성(POST)은 새로 등록한
 테스트 숙소에서 확인한다. 정책 GET이나 전체 예약 관리 메뉴는 이 범위에 없다.
+
+지역 후보가 나타난 것만으로 해당 날짜에 객실이 남았다고 판단하지 않는다. 키보드로 후보를 강조하거나
+닫을 때 결과가 바뀌지 않는지, 검색 버튼을 누른 후에는 선택 위치와 주소창이 일치하는지 확인한다.
+사진 비교에서는 `Integration Fixture Hotel`의 합성 테스트 사진과 사진 없는 `Location Seoul A`를
+구분한다. Home Hero는 장식 이미지이며 테스트 숙소의 사진이 아니다.
 
 각 화면에서 Desktop과 390px을 비교한다. 모바일 메뉴/필터/날짜·객실 Sheet, 작은 글씨,
 고정 버튼의 가림, 어색한 문구나 내부 정보 노출, 작업 흐름의 일관성을 중점적으로 본다.
@@ -97,3 +112,27 @@ Booking·내 예약·Auth·Admin은 [재구성 명세](../ui/prototype-rebuild.m
   전체 구조 변경·신규 기능·Backend 확장은 후속 작업으로 분류한다. 실제 발견 내용이 없으면 이슈를 미리 만들지 않는다.
 - 사용자 판단은 **최종 승인 / 수정 후 재검수 / 미검증 보류** 중 해당 상태를 명시한다.
   사용자 승인 전까지 #307은 Open 상태다. 이 준비 PR은 병합되더라도 이슈나 마일스톤을 자동 종료하지 않는다.
+
+### #307에 남길 검수 기록
+
+아래 양식을 복사해 **직접 확인한 항목만** 기록한다. 390px 브라우저 에뮬레이션은 실기기와 분리한다.
+승인 의견이 없거나 필수 항목을 검증하지 못했다면 미검증으로 남긴다.
+
+```text
+검수 SHA / 실행 옵션:
+환경: 브라우저·OS·실기기 또는 에뮬레이션·화면 폭
+
+Home / 탐색·정렬·가독성:
+Search·Detail / 후보·필터·사진·객실 선택:
+Auth·예약 / 로그인 복귀·입력·완료·내 예약 변경·취소:
+Admin / 접근 권한·숙소·객실·사진·정책·가격·재고:
+예외 화면 / Loading·Empty·Error·가로 넘침·키보드:
+
+발견 사항: 화면·재현 순서 / 기대 / 실제 / 스크린샷(민감 정보 제외)
+미검증 항목 및 이유:
+최종 판단: 최종 승인 / 수정 후 재검수 / 미검증 보류
+```
+
+발견 사항은 먼저 #307에 모은다. 같은 SHA에서 재현되는 소규모 문구·레이아웃·조작 문제는
+수정 후보, 신규 기능이나 큰 구조 변경은 후속 후보로 구분한다. 수정 후에는 변경한 SHA와 다시
+확인한 화면·기기를 기록한다. 검수 기록에 비밀번호나 토큰, 투숙객 데이터는 복사하지 않는다.
