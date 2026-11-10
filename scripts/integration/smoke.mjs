@@ -38,6 +38,7 @@ export async function verifyContract({
   fixturePassword,
   booking,
   management,
+  locations,
   adminVerification,
   recovery,
 }) {
@@ -111,6 +112,7 @@ export async function verifyContract({
     "/auth/oauth2/google/start": "get",
     "/auth/oauth2/exchange": "post",
     "/accommodations": "get post",
+    "/accommodations/locations/suggestions": "get",
     "/accommodations/{accommodationId}": "get put",
     "/accommodations/{accommodationId}/status": "patch",
     "/accommodations/{accommodationId}/rooms": "get post",
@@ -642,6 +644,10 @@ export async function verifyContract({
       ownerCredentials: users[0],
       ...recovery,
     });
+  }
+  if (locations) {
+    const { verifyLocations } = await import("./locations.mjs");
+    await verifyLocations({ request, error, check, id, sql, admin, hotel, businessDate });
   }
   return {
     accounts: users,
