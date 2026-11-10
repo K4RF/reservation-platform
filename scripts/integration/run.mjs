@@ -27,6 +27,7 @@ const booking = process.argv.slice(2).includes("--booking");
 const management = process.argv.slice(2).includes("--management");
 const admin = process.argv.slice(2).includes("--admin");
 const recovery = process.argv.slice(2).includes("--recovery");
+const locations = process.argv.slice(2).includes("--locations");
 const allowedArgs = new Set([
   "--hold",
   "--auth",
@@ -34,6 +35,7 @@ const allowedArgs = new Set([
   "--management",
   "--admin",
   "--recovery",
+  "--locations",
 ]);
 const allowedEnv =
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i;
@@ -94,7 +96,7 @@ function sql(statement) {
       "mysql",
       "sh",
       "-c",
-      'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql -u root -N -B "$MYSQL_DATABASE"',
+      'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" exec mysql --default-character-set=utf8mb4 -u root -N -B "$MYSQL_DATABASE"',
     ],
     { input: statement },
   );
@@ -200,7 +202,7 @@ let passed = false;
 try {
   if (process.argv.slice(2).some((arg) => !allowedArgs.has(arg)))
     throw new Error(
-      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--admin] [--recovery] [--hold]",
+      "Usage: node scripts/integration/run.mjs [--auth] [--booking] [--management] [--admin] [--recovery] [--locations] [--hold]",
     );
   const fixturePassword = process.env.INTEGRATION_FIXTURE_PASSWORD || undefined;
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
@@ -332,6 +334,7 @@ try {
     fixturePassword,
     booking,
     management,
+    locations,
     adminVerification: admin
       ? { mediaFiles: () => readdirSync(join(scratch, "media")).sort() }
       : undefined,
