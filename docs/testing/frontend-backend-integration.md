@@ -64,6 +64,8 @@ Swagger UI는 `http://127.0.0.1:18099/swagger-ui.html`, JSON은 `/v3/api-docs`�
 [실제 인증 검증](frontend-authentication-flow.md#격리된-실제-인증-검증-300)에서 짧은 TTL과 검증 경계를 확인할 수 있다.
 검색·예약과 별도 브라우저 일정을 준비하려면 `--booking`을 사용한다.
 [격리 검색·예약 검증](public-exploration-booking-flow.md#격리-검색예약-검증-301)을 참고한다.
+지역 검색은 `--locations`로 격리 데이터와 실제 HTTP를 검증한다. `--booking --hold`와 함께 사용하면
+[지역 검색 브라우저 회귀](frontend-location-search-regression.md)도 재현할 수 있다.
 본인 예약 일정 변경·취소에는 `--management`를 사용한다.
 [격리 예약관리 검증](frontend-reservation-management-flow.md#격리-예약관리-검증-302)을 참고한다.
 ADMIN 권한과 카탈로그·가격·재고·사진 쓰기에는 `--admin`을 사용한다.
@@ -101,7 +103,7 @@ Backend Security 및 Service, 아래 Client명은 `frontend/src/api/`의 파일�
 | --- | --- | --- |
 | 회원·로그인 | 공개 `POST /members`, `POST /auth/login`, `POST /auth/reissue`; Bearer `POST /auth/logout` | `member`, `auth`, `reissue`: 가입 201 + Location/USER. 로그인 200 Bearer pair, 재발급은 Access만, 로그아웃 204와 Redis Refresh 제거(Access 즉시 폐기는 아님). |
 | Google | 공개 `GET /auth/oauth2/google/start?state=…`, `POST /auth/oauth2/exchange` | `googleOAuth2`, `auth`: 서버 Redirect와 일회용 코드 교환. Browser의 실제 Provider 왕복은 별도다. |
-| 숙소 | 공개 `GET /accommodations`, `GET /accommodations/{id}`; ADMIN 목록 경로 POST·상세 PUT·`/{id}/status` PATCH | `accommodation`, `adminAccommodation`: `content/page/size/totalElements` 등 Offset 응답. 기존 city/region 정확 일치와 [API 자유 목적지 검색](../architecture/accommodation-integrated-search.md)을 구분한다. Home/Search는 아직 기존 필터를 보낸다. 편의시설 AND, ID/NAME 정렬. 공개 UI 기본 ACTIVE는 UI 조건이며 Admin은 전체 상태를 조회 가능. |
+| 숙소 | 공개 `GET /accommodations`, `GET /accommodations/{id}`, `GET /accommodations/locations/suggestions`; ADMIN 목록 경로 POST·상세 PUT·`/{id}/status` PATCH | `accommodation`, `locationSuggestions`, `adminAccommodation`: 공개 Home/Search는 [자유 입력과 정확 후보](frontend-location-search-state.md)를 구분한다. Offset 결과, 편의시설 AND, ID/NAME 정렬. 공개 UI 기본 ACTIVE는 UI 조건이며 Admin은 기존 정확 city/region 및 전체 상태를 조회할 수 있다. |
 | 객실 | 공개 `GET /accommodations/{id}/rooms`, `GET …/rooms/available`, `GET /rooms/{roomId}`; ADMIN 목록 POST·객실 PUT·`/status` PATCH | `room`, `adminRoom`: roomId·accommodationId·ACTIVE/capacity 검증. 가용성은 양의 전체 인원, `checkInDate/checkOutDate`, 해당 기간 모든 날짜 재고. 목록/가용 응답은 Offset. |
 | 요금 | 공개 `GET /rooms/{id}/prices/{stayDate}`; ADMIN `POST …/prices`, `PUT …/prices/{stayDate}` | `bookingPrice`, `adminDailyPrice`: `DAILY`는 override/양의 ID, `DEFAULT`는 객실 기본가/null ID. 화면 예상 합계와 서버 저장 확정 금액은 별개. |
 | 예약 | Bearer `POST/GET /reservations`, `GET/PATCH /reservations/{id}`, `PATCH …/{id}/cancel` | `reservation`, `reservationList`, `reservationDetail`, `reservationChange`, `reservationCancellation`: 생성 201, 본인만 목록·조회·변경·취소(ADMIN도 예외 없음). 생성 ID는 숫자 `reservationId`; 표시용 `reservationNumber`와 다름. 기본 UI는 Offset. Backend cursor 계약은 별도 노출. |
