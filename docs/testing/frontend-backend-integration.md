@@ -34,6 +34,10 @@ node scripts/integration/run.mjs --hold
 | Spring → Kafka 4.3.1 | `127.0.0.1:59399`, 이 실행 전용 Broker/Volume(기본 토픽과 그룹 이름을 공유 인프라에 사용하지 않음) |
 | Spring → 파일 | `MEDIA_STORAGE_ROOT`는 `.local/integration-…/media`; JAR는 그 실행의 빈 작업 디렉터리에서 시작 |
 
+Windows 예약 포트 등으로 `53399`를 사용할 수 없으면 실행 셸에서
+`$env:INTEGRATION_MYSQL_PORT = '54399'`처럼 사용 가능한 포트를 지정한다. 이 값은 격리 MySQL의
+loopback 매핑과 격리 Spring JDBC URL에만 적용된다. 실행 후 셸 변수를 지운다.
+
 실행기가 임의의 Compose 프로젝트 이름과 임시 DB 비밀번호, 실행별 JWT 키/issuer를 생성한다.
 [전용 Compose 파일](../../infra/integration/compose.yaml)은 개발 Compose와 병합하지 않는다.
 Spring에 전달하는 환경은 위 연결로 한정한다. 외부 OAuth는 더미 Client ID/Secret을 써서 **실행하지 않는다**.
@@ -45,6 +49,8 @@ Spring에 전달하는 환경은 위 연결로 한정한다. 외부 OAuth는 더
 이메일/비밀번호는 테스트용으로만 사용한다. 로그인 후 ADMIN HTTP로 숙소·객실, 두 정책, 날짜 재고 3건,
 날짜별 가격 1건, 합성 PNG(숙소·객실)를 생성한다. 날짜는 숙소 시간대의 오늘에서 30일 이후다.
 공개 예약 정책 GET은 등록 전 본문 없는 `204`, ADMIN 등록·수정 후 각각 저장된 값과 `no-store`를 확인한다.
+수정값은 익명·USER·ADMIN에서 읽는다. 공개 객실 상세는 사진 업로드 전후로 메타데이터를 유지하며,
+목록과 가용 객실은 대표 사진을 유지하되 메타데이터를 포함하지 않는지 확인한다.
 예약 생성·변경·취소를 마치면 재고와 최종 저장 상태를 다시 읽는다. Kafka는 활성화해 이 예약의
 Outbox 3건이 발행되고 같은 Event ID가 Consumer 원장에 기록됐는지 확인한다.
 

@@ -65,7 +65,7 @@ alt에는 토큰/연락처 등 비밀값을 넣지 않는다. 공개 이미지�
 위 숫자/설명은 **계약 설명 예시**이며 저장된 실제 매물 데이터가 아니다.
 `images`는 MediaResponse 객체 배열이고 첫 원소가 representativeImage와 같다.
 이미지 없는 기존 행은 `representativeImage: null`, `images: []`다.
-캐시의 누락된 images 역직렬화도 빈 불변 List로 정규화하지만, 배포 시에는 아래 v2 키를 사용한다.
+캐시의 누락된 images 역직렬화도 빈 불변 List로 정규화한다. 캐시 버전은 아래 Redis 호환 항목을 따른다.
 
 | 기존 API | images 상한 / 대표 |
 | --- | --- |

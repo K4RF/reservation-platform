@@ -353,10 +353,11 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 nullable 위치 컬럼, 검색 인덱스와 두 편의시설 관계 테이블을 추가할 수 있습니다.
 기존 주소는 상세 주소로 보존하고 국가·도시·지역은 검증 없이 추정하지 않습니다.
 
-객실 메타데이터 도입 전에는 앱 갱신 전에
+객실 메타데이터 도입 전 Schema는 새 앱을 기동하기 전에
 [`mysql-room-metadata-upgrade.sql`](mysql-room-metadata-upgrade.sql)을 한 번 적용합니다.
 기존 객실의 메타데이터는 NULL로 유지합니다. 적용 전후 확인 및 롤백 주의 사항은
 [객실 메타데이터 계약](../architecture/room-metadata.md#기존-mysql-업그레이드)을 참고합니다.
+예약 정책 GET은 기존 `accommodation_booking_policies`를 읽으므로 추가 DDL이나 백필이 필요 없습니다.
 
 공개 예약번호·대표 투숙객·숙소 운영시간 도입 전 Schema는
 [`mysql-reservation-details-upgrade.sql`](mysql-reservation-details-upgrade.sql)로
