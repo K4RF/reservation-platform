@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.entity.media.CatalogMedia;
 import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomMetadata;
 import junsik.reservation.repository.AccommodationRepository;
 import junsik.reservation.repository.CatalogMediaRepository;
 import junsik.reservation.repository.RoomRepository;
@@ -46,6 +47,7 @@ class CatalogMediaIntegrationTest {
 	void publicCatalogMapsOwnersAndBoundsGalleryWithStableTieBreaking() throws Exception {
 		Accommodation owner = accommodations.saveAndFlush(accommodation());
 		Room room = rooms.saveAndFlush(room(owner));
+		room.replaceMetadata(RoomMetadata.of(null, "퀸 1개", null, null));
 		CatalogMedia first = media.saveAndFlush(image(owner, 0));
 		CatalogMedia tied = media.saveAndFlush(image(owner, 0));
 		for (int i = 0; i < 23; i++) { media.save(image(owner, i + 1)); }
@@ -64,9 +66,11 @@ class CatalogMediaIntegrationTest {
 				.andExpect(status().isOk()).andExpect(jsonPath("$.content[0].images.length()").value(1));
 		mvc.perform(get("/api/v1/rooms/" + room.getId())).andExpect(status().isOk())
 				.andExpect(jsonPath("$.representativeImage.mediaId").value(roomImage.getId()))
+				.andExpect(jsonPath("$.metadata.bedConfiguration").value("퀸 1개"))
 				.andExpect(jsonPath("$.accommodationId").value(owner.getId()));
 		mvc.perform(get(path + "/rooms")).andExpect(status().isOk())
-				.andExpect(jsonPath("$.content[0].images[0].mediaId").value(roomImage.getId()));
+				.andExpect(jsonPath("$.content[0].images[0].mediaId").value(roomImage.getId()))
+				.andExpect(jsonPath("$.content[0].metadata").doesNotHaveJsonPath());
 		mvc.perform(get(path + "/rooms/available").param("checkInDate", "2030-01-10")
 				.param("checkOutDate", "2030-01-11").param("guestCount", "1"))
 				.andExpect(status().isOk()).andExpect(jsonPath("$.content[0].images[0].mediaId").value(roomImage.getId()));

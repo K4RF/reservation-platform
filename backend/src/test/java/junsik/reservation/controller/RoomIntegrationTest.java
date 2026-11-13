@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomMetadata;
 import junsik.reservation.enums.MemberRole;
 import junsik.reservation.enums.RoomAmenity;
 import junsik.reservation.enums.RoomStatus;
@@ -86,6 +88,7 @@ class RoomIntegrationTest {
 				.andExpect(jsonPath("$.status").value("ACTIVE"));
 
 		Room savedRoom = roomRepository.findAll().getFirst();
+		assertThat(savedRoom.getMetadata()).isNull();
 		assertThat(savedRoom.getAccommodation().getId()).isEqualTo(accommodation.getId());
 		assertThat(savedRoom.getName()).isEqualTo("Deluxe Twin Room");
 		assertThat(savedRoom.getCapacity()).isEqualTo(4);
@@ -95,6 +98,88 @@ class RoomIntegrationTest {
 				RoomAmenity.AIR_CONDITIONER
 		);
 		assertThat(savedRoom.getStatus()).isEqualTo(RoomStatus.ACTIVE);
+	}
+
+	@Test
+	void createsMetadataAndKeepsDetailSeparateFromLists() throws Exception {
+		Accommodation accommodation = saveAccommodation("Metadata Hotel");
+		String payload = withMetadata("""
+				{"description":"  창가에 테이블이 있습니다.  ","bedConfiguration":" 퀸 1개 ",
+				 "areaSquareMeters":28.50,"view":" 바다 전망 "}
+				""");
+		mockMvc.perform(post(roomsUrl(accommodation.getId()))
+					.header("Authorization", bearerToken(MemberRole.ADMIN))
+					.contentType(MediaType.APPLICATION_JSON).content(payload))
+				.andExpect(status().isCreated())
+				.andExpect(jsonPath("$.metadata.bedConfiguration").value("퀸 1개"));
+		Room saved = roomRepository.findAll().getFirst();
+		mockMvc.perform(get(ROOMS_URL + "/{roomId}", saved.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.roomId").value(saved.getId()))
+				.andExpect(jsonPath("$.metadata.description").value("창가에 테이블이 있습니다."))
+				.andExpect(jsonPath("$.metadata.areaSquareMeters").value(28.50))
+				.andExpect(jsonPath("$.metadata.view").value("바다 전망"))
+				.andExpect(jsonPath("$.images").isEmpty());
+		mockMvc.perform(get(roomsUrl(accommodation.getId())))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].metadata").doesNotHaveJsonPath());
+	}
+
+	@Test
+	void preservesOnOmissionOrNullAndReplacesOrClearsWithObject() throws Exception {
+		Room room = saveRoom(saveAccommodation("Metadata Hotel"), 1);
+		room.replaceMetadata(RoomMetadata.of("기존 설명", "싱글 2개", BigDecimal.TEN, "도시 전망"));
+		roomRepository.flush();
+		for (String payload : List.of(validCreateRequest(), withMetadata("null"))) {
+			mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+						.header("Authorization", bearerToken(MemberRole.ADMIN))
+						.contentType(MediaType.APPLICATION_JSON).content(payload))
+					.andExpect(status().isOk())
+					.andExpect(jsonPath("$.metadata.description").value("기존 설명"));
+		}
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN)).contentType(MediaType.APPLICATION_JSON)
+					.content(withMetadata("{\"view\":\"  정원 전망  \"}")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.metadata.view").value("정원 전망"))
+				.andExpect(jsonPath("$.metadata.description").doesNotExist());
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN)).contentType(MediaType.APPLICATION_JSON)
+					.content(withMetadata("{}")))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.metadata").doesNotHaveJsonPath());
+		assertThat(room.getMetadata()).isNull();
+	}
+
+	@Test
+	void rejectsInvalidMetadataAndKeepsExistingWriteBoundaries() throws Exception {
+		Room room = saveRoom(saveAccommodation("Metadata Hotel"), 1);
+		room.replaceMetadata(RoomMetadata.of(null, null, BigDecimal.TEN, "기존 전망"));
+		String payload = withMetadata("""
+				{"description":"%s","bedConfiguration":"%s","areaSquareMeters":1.001,"view":"%s"}
+				""".formatted("x".repeat(1001), "b".repeat(101), "v".repeat(101)));
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.ADMIN)).contentType(MediaType.APPLICATION_JSON)
+					.content(payload))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.code").value("COMMON_001"))
+				.andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("metadata.description",
+						"metadata.bedConfiguration", "metadata.areaSquareMeters", "metadata.view")));
+		String valid = withMetadata("{\"view\":\"새 전망\"}");
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.contentType(MediaType.APPLICATION_JSON).content(valid))
+				.andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("AUTH_001"));
+		mockMvc.perform(put(ROOMS_URL + "/{roomId}", room.getId())
+					.header("Authorization", bearerToken(MemberRole.USER)).contentType(MediaType.APPLICATION_JSON).content(valid))
+				.andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("AUTH_002"));
+		mockMvc.perform(put(ROOMS_URL + "/999999")
+					.header("Authorization", bearerToken(MemberRole.ADMIN)).contentType(MediaType.APPLICATION_JSON).content(valid))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("ROOM_001"));
+		assertThat(room.getMetadata().getView()).isEqualTo("기존 전망");
+	}
+
+	private String withMetadata(String json) {
+		return "{\"name\":\"Metadata Room\",\"capacity\":2,\"nightlyPrice\":10000,\"metadata\":" + json + "}";
 	}
 
 	@Test

@@ -254,6 +254,11 @@ class OpenApiIntegrationTest {
 				.andExpect(jsonPath("$.components.schemas.CreateReservationRequest.properties.guestCount.minimum")
 						.value(1))
 				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.nightlyPrice").exists())
+				.andExpect(jsonPath("$.components.schemas.RoomResponse.properties.metadata['$ref']")
+						.value(endsWith("/RoomMetadataResponse")))
+				.andExpect(jsonPath("$.components.schemas.RoomMetadataRequest.properties.description.maxLength").value(1000))
+				.andExpect(jsonPath("$.components.schemas.RoomMetadataRequest.properties.areaSquareMeters.minimum").value(0.01))
+				.andExpect(jsonPath("$.components.schemas.RoomMetadataRequest.properties.areaSquareMeters.maximum").value(9999.99))
 				.andExpect(jsonPath(
 						"$.components.schemas.CreateRoomDailyPriceRequest.required",
 						containsInAnyOrder("stayDate", "nightlyPrice")

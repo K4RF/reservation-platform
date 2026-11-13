@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static junsik.reservation.support.AccommodationFixture.accommodation;
 import static junsik.reservation.support.RoomFixture.room;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.entity.room.Room;
+import junsik.reservation.entity.room.RoomMetadata;
 import junsik.reservation.entity.room.RoomInventory;
 import junsik.reservation.enums.AccommodationStatus;
 import junsik.reservation.enums.MemberRole;
@@ -58,6 +60,7 @@ class AvailableRoomIntegrationTest {
 		Accommodation accommodation = saveAccommodation("Ocean View Hotel");
 		Accommodation otherAccommodation = saveAccommodation("Mountain Hotel");
 		Room firstAvailable = saveRoom(accommodation, "Available Twin", 2);
+		firstAvailable.replaceMetadata(RoomMetadata.of("객실 설명", null, BigDecimal.TEN, null));
 		Room secondAvailable = saveRoom(accommodation, "Remaining Inventory Room", 4);
 		Room tooSmall = saveRoom(accommodation, "Single Room", 1);
 		Room reserved = saveRoom(accommodation, "Reserved Suite", 4);
@@ -76,6 +79,7 @@ class AvailableRoomIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(1))
 				.andExpect(jsonPath("$.content[0].roomId").value(firstAvailable.getId()))
+				.andExpect(jsonPath("$.content[0].metadata").doesNotHaveJsonPath())
 				.andExpect(jsonPath("$.page").value(0))
 				.andExpect(jsonPath("$.size").value(1))
 				.andExpect(jsonPath("$.totalElements").value(2))
