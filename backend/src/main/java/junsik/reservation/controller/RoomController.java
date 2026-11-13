@@ -104,7 +104,7 @@ public class RoomController {
 				.body(response);
 	}
 
-	@Operation(summary = "객실 단건 조회")
+	@Operation(summary = "객실 단건 조회", description = "등록된 선택 객실 정보와 객실 사진을 함께 반환합니다.")
 	@ApiResponse(
 			responseCode = "404",
 			description = "객실을 찾을 수 없음",
@@ -152,7 +152,7 @@ public class RoomController {
 		return ResponseEntity.ok(roomService.getAvailableRooms(accommodationId, request, page, size));
 	}
 
-	@Operation(summary = "객실 정보 수정")
+	@Operation(summary = "객실 정보 수정", description = "metadata 생략 또는 null은 보존, 객체는 전체 교체, 빈 객체는 전체 삭제입니다.")
 	@ApiResponses({
 			@ApiResponse(
 					responseCode = "403",

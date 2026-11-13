@@ -10,6 +10,7 @@ import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -37,10 +38,16 @@ import junsik.reservation.enums.RoomStatus;
 				name = "idx_rooms_accommodation_status_id",
 				columnList = "accommodation_id, status, id"
 		),
-		check = @CheckConstraint(
+		check = {@CheckConstraint(
 				name = "chk_rooms_business_values",
 				constraint = "char_length(trim(name)) > 0 and capacity >= 1 and nightly_price >= 0"
-		)
+		), @CheckConstraint(
+				name = "chk_rooms_metadata_values",
+				constraint = "(metadata_description is null or char_length(trim(metadata_description)) > 0)"
+						+ " and (metadata_bed_configuration is null or char_length(trim(metadata_bed_configuration)) > 0)"
+						+ " and (metadata_area_square_meters is null or metadata_area_square_meters between 0.01 and 9999.99)"
+						+ " and (metadata_view is null or char_length(trim(metadata_view)) > 0)"
+		)}
 )
 public class Room {
 
@@ -65,6 +72,9 @@ public class Room {
 	@Column(nullable = false, precision = 12, scale = 2)
 	@ColumnDefault("0.00")
 	private BigDecimal nightlyPrice;
+
+	@Embedded
+	private RoomMetadata metadata;
 
 	@ElementCollection(fetch = FetchType.LAZY)
 	@BatchSize(size = 100)
@@ -153,6 +163,14 @@ public class Room {
 
 	public RoomStatus getStatus() {
 		return status;
+	}
+
+	public RoomMetadata getMetadata() {
+		return metadata;
+	}
+
+	public void replaceMetadata(RoomMetadata metadata) {
+		this.metadata = metadata;
 	}
 
 	public boolean isActive() {

@@ -139,10 +139,7 @@ class CacheReadPerformanceComparisonIntegrationTest extends MySqlRedisIntegratio
 
 	private void evictAccommodationDetail() {
 		accommodationDetailCache().evict(accommodationId);
-		String key = RedisCacheConfig.KEY_PREFIX
-				+ RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE
-				+ "::"
-				+ accommodationId;
+		String key = RedisCacheConfig.keyPrefix(RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE) + accommodationId;
 		long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
 		while (Boolean.TRUE.equals(redisTemplate.hasKey(key)) && System.nanoTime() < deadline) {
 			try {

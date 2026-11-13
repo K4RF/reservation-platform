@@ -203,7 +203,12 @@ Before completing a change:
   Public `GET /api/v1/media/{id}/content` serves immutable UUID-named local files
   under MEDIA_STORAGE_ROOT (default .local/media relative to backend cwd); no remote
   URL fetching or BLOB JSON. Keep files ignored and persist/back up DB and storage together.
-  Detail cache prefix is reservation:cache:v2:. Media write transactions must call
+  Detail cache prefixes are reservation:cache:v2: for Accommodation and v3: for Room.
+  #328 adds optional Room metadata (description, bed configuration, square meters,
+  view) to detail and management responses only. PUT omission/null preserves it;
+  a supplied object replaces it, and `{}` clears it. See docs/architecture/room-metadata.md
+  for the one-time MySQL upgrade. Frontend display/editor integration is separate.
+  Media write transactions must call
   CatalogMediaCacheEviction through its proxy; repository/SQL writes are not
   automatically detected. #273 implements ADMIN album GET/upload/metadata/order/
   representative/replacement/deletion with owner-row locks and mandatory strong

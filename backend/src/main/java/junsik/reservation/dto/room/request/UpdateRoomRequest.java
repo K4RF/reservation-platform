@@ -3,6 +3,7 @@ package junsik.reservation.dto.room.request;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -26,7 +27,11 @@ public record UpdateRoomRequest(
 		BigDecimal nightlyPrice,
 
 		@Schema(description = "객실 전용 편의시설")
-		Set<RoomAmenity> amenities
+		Set<RoomAmenity> amenities,
+
+		@Valid
+		@Schema(description = "생략 또는 null은 보존, 객체는 전체 교체, 빈 객체는 전체 삭제", nullable = true)
+		RoomMetadataRequest metadata
 ) {
 
 	public UpdateRoomRequest {

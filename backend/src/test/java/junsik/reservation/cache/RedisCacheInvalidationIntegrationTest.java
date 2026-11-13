@@ -6,6 +6,9 @@ import static junsik.reservation.support.RoomFixture.room;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.persistence.EntityManager;
@@ -23,6 +26,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 import junsik.reservation.config.RedisCacheConfig;
 import junsik.reservation.dto.accommodation.request.UpdateAccommodationStatusRequest;
 import junsik.reservation.dto.room.request.UpdateRoomStatusRequest;
+import junsik.reservation.dto.room.request.UpdateRoomRequest;
+import junsik.reservation.dto.room.request.RoomMetadataRequest;
+import junsik.reservation.dto.room.response.RoomResponse;
 import junsik.reservation.entity.accommodation.Accommodation;
 import junsik.reservation.entity.room.Room;
 import junsik.reservation.enums.AccommodationStatus;
@@ -34,6 +40,7 @@ import junsik.reservation.service.accommodation.AccommodationService;
 import junsik.reservation.service.room.RoomService;
 import junsik.reservation.service.media.CatalogMediaCacheEviction;
 import junsik.reservation.support.RedisIntegrationTestSupport;
+import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(properties = {
 		"reservation.cache.enabled=true",
@@ -73,11 +80,51 @@ class RedisCacheInvalidationIntegrationTest extends RedisIntegrationTestSupport 
 
 	private TransactionTemplate transactionTemplate;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
 	@BeforeEach
 	void setUp() {
 		transactionTemplate = new TransactionTemplate(transactionManager);
 		clearCache(RedisCacheConfig.ACCOMMODATION_DETAIL_CACHE);
 		clearCache(RedisCacheConfig.ROOM_DETAIL_CACHE);
+	}
+
+	@Test
+	void ignoresPreMetadataKeysAndRefreshesMetadataOnlyAfterCommit() {
+		CachedFixture fixture = createCachedFixture();
+		String oldKey = "reservation:cache:v2:room-detail::" + fixture.roomId();
+		String oldJson = redisTemplate.opsForValue().get(fixture.roomCacheKey());
+		assertThat(oldJson).isNotNull().doesNotContain("\"metadata\"");
+		assertThat(objectMapper.readValue(oldJson, RoomResponse.class).metadata()).isNull();
+		redisTemplate.opsForValue().set(oldKey, oldJson, Duration.ofMinutes(1));
+		try {
+			transactionTemplate.executeWithoutResult(status -> {
+				roomService.update(fixture.roomId(), metadataUpdate("새 전망"));
+				assertThat(redisTemplate.opsForValue().get(fixture.roomCacheKey())).isEqualTo(oldJson);
+			});
+			assertKeyEventuallyAbsent(fixture.roomCacheKey());
+			assertThat(redisTemplate.hasKey(oldKey)).isTrue();
+			assertThat(roomService.getById(fixture.roomId()).metadata().view()).isEqualTo("새 전망");
+			assertThat(redisTemplate.opsForValue().get(fixture.roomCacheKey())).contains("새 전망");
+
+			transactionTemplate.executeWithoutResult(status -> {
+				roomService.update(fixture.roomId(), metadataUpdate("롤백 전망"));
+				entityManager.flush();
+				status.setRollbackOnly();
+			});
+			assertThat(redisTemplate.opsForValue().get(fixture.roomCacheKey())).contains("새 전망");
+			String persistedView = transactionTemplate.execute(status ->
+					roomRepository.findById(fixture.roomId()).orElseThrow().getMetadata().getView());
+			assertThat(persistedView).isEqualTo("새 전망");
+		} finally {
+			redisTemplate.delete(oldKey);
+		}
+	}
+
+	private UpdateRoomRequest metadataUpdate(String view) {
+		return new UpdateRoomRequest("Updated Room", 2, BigDecimal.TEN, Set.of(),
+				new RoomMetadataRequest(null, null, null, view));
 	}
 
 	@Test
@@ -189,7 +236,7 @@ class RedisCacheInvalidationIntegrationTest extends RedisIntegrationTestSupport 
 	}
 
 	private String cacheKey(String cacheName, Long id) {
-		return RedisCacheConfig.KEY_PREFIX + cacheName + "::" + id;
+		return RedisCacheConfig.keyPrefix(cacheName) + id;
 	}
 
 	private void assertKeyEventuallyAbsent(String key) {

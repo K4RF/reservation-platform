@@ -109,6 +109,10 @@ erDiagram
         int capacity
         decimal_12_2 nightly_price
         enum status
+        varchar_1000 metadata_description "nullable"
+        varchar_100 metadata_bed_configuration "nullable"
+        decimal_6_2 metadata_area_square_meters "nullable"
+        varchar_100 metadata_view "nullable"
     }
 
     ROOM_AMENITIES {
@@ -180,7 +184,7 @@ erDiagram
 | `accommodation_booking_policies` | accommodation과 네 정책 경계값 | `uk_booking_policies_accommodation(accommodation_id)` | accommodation → accommodations | 최소 숙박일 ≥ 1, 최대 숙박일 ≥ 최소 숙박일, 최소 사전 예약일 ≥ 0, 최대 사전 예약일 ≥ 최소 사전 예약일 |
 | `accommodation_cancellation_policies` | accommodation, 무료 취소·취소 마감 기준 | `uk_cancellation_policies_accommodation(accommodation_id)` | accommodation → accommodations | 취소 마감 ≥ 0, 무료 취소 기준 > 취소 마감 |
 | `cancellation_policy_fee_rules` | 정책, 순서, 구간 시작일, 정수 요율 | policy+order | policy → accommodation cancellation policies | 구간 시작일 ≥ 0, 요율 1~100 |
-| `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)` | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0 |
+| `rooms` | accommodation/name/capacity/price/status, name 100, price `DECIMAL(12,2)`; 선택 metadata 4열은 NULL 허용 | - | accommodation → accommodations | name은 trim 후 비어 있지 않음, capacity ≥ 1, nightly price ≥ 0; 면적 0.01–9999.99㎡, 선택 텍스트는 공백만 저장 불가 |
 | `room_amenities` | room/amenity | room+amenity | room → rooms | enum 허용 값 |
 | `room_inventories` | room/date/total/reserved/version/sale status | `uk_room_inventories_room_date(room_id, inventory_date)` | room → rooms | total ≥ 0, reserved ≥ 0, reserved ≤ total |
 | `room_daily_prices` | room/stay date/price, price `DECIMAL(12,2)` | `uk_room_daily_prices_room_date(room_id, stay_date)` | room → rooms | nightly price > 0 |
@@ -348,6 +352,11 @@ Backfill합니다. 실행 전 조회 결과와 Backup을 확인해야 하며, �
 [`mysql-accommodation-catalog-upgrade.sql`](mysql-accommodation-catalog-upgrade.sql)로
 nullable 위치 컬럼, 검색 인덱스와 두 편의시설 관계 테이블을 추가할 수 있습니다.
 기존 주소는 상세 주소로 보존하고 국가·도시·지역은 검증 없이 추정하지 않습니다.
+
+객실 메타데이터 도입 전에는 앱 갱신 전에
+[`mysql-room-metadata-upgrade.sql`](mysql-room-metadata-upgrade.sql)을 한 번 적용합니다.
+기존 객실의 메타데이터는 NULL로 유지합니다. 적용 전후 확인 및 롤백 주의 사항은
+[객실 메타데이터 계약](../architecture/room-metadata.md#기존-mysql-업그레이드)을 참고합니다.
 
 공개 예약번호·대표 투숙객·숙소 운영시간 도입 전 Schema는
 [`mysql-reservation-details-upgrade.sql`](mysql-reservation-details-upgrade.sql)로

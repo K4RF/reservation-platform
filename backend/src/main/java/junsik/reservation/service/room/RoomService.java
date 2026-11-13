@@ -65,7 +65,10 @@ public class RoomService {
 				request.nightlyPrice(),
 				request.amenities()
 		);
-		return RoomResponse.from(roomRepository.save(room));
+		if (request.metadata() != null) {
+			room.replaceMetadata(request.metadata().toMetadata());
+		}
+		return RoomResponse.detail(roomRepository.save(room), List.of());
 	}
 
 	@Transactional(readOnly = true)
@@ -137,6 +140,9 @@ public class RoomService {
 				request.nightlyPrice(),
 				request.amenities()
 		);
+		if (request.metadata() != null) {
+			room.replaceMetadata(request.metadata().toMetadata());
+		}
 		return detailResponse(room);
 	}
 
@@ -155,7 +161,7 @@ public class RoomService {
 	private RoomResponse detailResponse(Room room) {
 		List<MediaResponse> images = mediaService.roomImages(
 				List.of(room.getId()), CatalogMediaReadService.GALLERY_LIMIT).getOrDefault(room.getId(), List.of());
-		return RoomResponse.from(room, images);
+		return RoomResponse.detail(room, images);
 	}
 
 	private PageResponse<RoomResponse> listResponse(Page<Room> rooms) {
