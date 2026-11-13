@@ -34,8 +34,13 @@ public class RedisCacheConfig implements CachingConfigurer {
 
 	public static final String ACCOMMODATION_DETAIL_CACHE = "accommodation-detail";
 	public static final String ROOM_DETAIL_CACHE = "room-detail";
-	// v2 adds bounded Media snapshots. Never serve a pre-Media cached response after deployment.
-	public static final String KEY_PREFIX = "reservation:cache:v2:";
+	private static final String MEDIA_KEY_PREFIX = "reservation:cache:v2:";
+	private static final String ROOM_METADATA_KEY_PREFIX = "reservation:cache:v3:";
+
+	public static String keyPrefix(String cacheName) {
+		return (ROOM_DETAIL_CACHE.equals(cacheName) ? ROOM_METADATA_KEY_PREFIX : MEDIA_KEY_PREFIX)
+				+ cacheName + "::";
+	}
 
 	@Bean
 	CacheManager cacheManager(
@@ -45,7 +50,7 @@ public class RedisCacheConfig implements CachingConfigurer {
 	) {
 		RedisCacheConfiguration defaults = RedisCacheConfiguration.defaultCacheConfig()
 				.disableCachingNullValues()
-				.computePrefixWith(cacheName -> KEY_PREFIX + cacheName + "::")
+				.computePrefixWith(RedisCacheConfig::keyPrefix)
 				.entryTtl(properties.detailTtl());
 		Map<String, RedisCacheConfiguration> cacheConfigurations = Map.of(
 				ACCOMMODATION_DETAIL_CACHE,

@@ -236,7 +236,7 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 						"Updated Room",
 						4,
 						new BigDecimal("150000.00"),
-						Set.of(RoomAmenity.WIFI)
+						Set.of(RoomAmenity.WIFI), null
 				)
 		);
 
@@ -282,7 +282,7 @@ class RedisDetailCacheIntegrationTest extends RedisIntegrationTestSupport {
 	}
 
 	private String cacheKey(String cacheName, Long id) {
-		return RedisCacheConfig.KEY_PREFIX + cacheName + "::" + id;
+		return RedisCacheConfig.keyPrefix(cacheName) + id;
 	}
 
 	private void assertKeyEventuallyAbsent(String key) {

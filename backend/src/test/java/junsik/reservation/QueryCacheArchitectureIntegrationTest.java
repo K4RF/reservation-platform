@@ -206,7 +206,7 @@ class QueryCacheArchitectureIntegrationTest extends MySqlRedisIntegrationTestSup
 						"Updated Query Room",
 						4,
 						new BigDecimal("110000.00"),
-						Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER)
+						Set.of(RoomAmenity.WIFI, RoomAmenity.AIR_CONDITIONER), null
 				)
 		);
 
@@ -306,7 +306,7 @@ class QueryCacheArchitectureIntegrationTest extends MySqlRedisIntegrationTestSup
 	}
 
 	private String cacheKey(String cacheName, Long id) {
-		return RedisCacheConfig.KEY_PREFIX + cacheName + "::" + id;
+		return RedisCacheConfig.keyPrefix(cacheName) + id;
 	}
 
 	private void assertKeyEventuallyAbsent(String key) {
