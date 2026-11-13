@@ -79,7 +79,8 @@ alt에는 토큰/연락처 등 비밀값을 넣지 않는다. 공개 이미지�
 페이지 크기 상한은 기존100이다. 목록의 images는 전체 Gallery가 아니라 **대표 1장 projection**이며,
 상세 역시 최대20장이다. 20장 초과의 별도 Gallery Pagination은 이번 범위가 아니다.
 #273은 소유자당 최대20장 등록을 검증한다. 관리 화면 구현은 #276 후속이다.
-Room Metadata/정책 GET/통화/후기/최저가/총액을 추가하지 않았다.
+#272는 Media만 추가했다. #328의 [선택 객실 메타데이터](room-metadata.md)는 상세·관리 응답에만 포함된다.
+정책 GET/통화/후기/최저가/총액은 이 계약에 포함되지 않는다.
 
 ### 조회 비용·페이로드
 
@@ -124,7 +125,7 @@ DB 행을 확인하고 UUID key만 root 아래에서 읽는다. 경로 입력/�
 ## Redis 호환·쓰기 무효화
 
 - 캐시 이름 `accommodation-detail` / `room-detail`, ID key·typed JSON·TTL·miss lock·transaction-aware 정책을 유지한다.
-  prefix만 **`reservation:cache:v2:`**로 변경해 pre-Media 응답과 분리한다.
+  #272에서 pre-Media 응답을 v2로 분리했다. #328부터 Room detail만 **`reservation:cache:v3:`**를 사용한다.
   옛 `reservation:cache:` 키를 flush하지 않고 기존 TTL로 만료시킨다. 롤백 배포 시 구 버전 키가 잠시 남을 수 있다.
 - 상세의 immutable MediaResponse 배열까지 같은 snapshot에 저장한다. 검색/목록/가용성/파일 bytes는 Redis 응답 캐시를 우회한다.
 - 기존 catalog 수정/status는 이전처럼 after-success eviction이다. 새 응답에서도 이미지가 누락되지 않도록 상세 projection을 사용한다.

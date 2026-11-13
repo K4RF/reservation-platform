@@ -109,14 +109,14 @@ on current Database state. They therefore read MySQL on every request.
 
 ### Key and TTL
 
-Issue #272 adds bounded Media snapshots to detail responses. The v2 prefix below
-isolates their JSON from old cache entries; old keys expire naturally, without a
-Redis flush. [Media read/storage contract](catalog-media.md) documents the new
+Issue #272 added bounded Media snapshots in v2. #328 introduces a Room-only v3
+prefix for [Room Metadata](room-metadata.md); Accommodation stays on v2. Old keys
+expire naturally, without a Redis flush. [Media read/storage contract](catalog-media.md) documents the
 page-batched query and the transaction-bound eviction hook for #273 Media writes.
 
 ```text
 reservation:cache:v2:accommodation-detail::{accommodationId}
-reservation:cache:v2:room-detail::{roomId}
+reservation:cache:v3:room-detail::{roomId}
 ```
 
 Both caches use `RESERVATION_DETAIL_CACHE_TTL`, default `10m`. Null results are
