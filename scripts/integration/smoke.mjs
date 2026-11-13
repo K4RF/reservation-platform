@@ -123,7 +123,7 @@ export async function verifyContract({
     "/rooms/{roomId}/prices/{stayDate}": "get put",
     "/rooms/{roomId}/inventories": "get post",
     "/rooms/{roomId}/inventories/{inventoryDate}": "put",
-    "/accommodations/{accommodationId}/booking-policy": "post put",
+    "/accommodations/{accommodationId}/booking-policy": "get post put",
     "/accommodations/{accommodationId}/cancellation-policy": "post put",
     "/reservations": "get post",
     "/reservations/cursor": "get",
@@ -291,19 +291,45 @@ export async function verifyContract({
     cancellationDeadlineDaysBeforeCheckIn: 1,
     feeRules: [{ minDaysBeforeCheckIn: 1, feeRatePercent: 30 }],
   };
-  for (const [path, body] of [
-    ["booking-policy", bookingPolicy],
-    ["cancellation-policy", cancellationPolicy],
-  ]) {
-    const policy = hotelPath + "/" + path;
-    await request(policy, {
-      method: "POST",
-      body,
-      token: admin,
-      expected: 201,
-    });
-    await request(policy, { method: "PUT", body, token: admin });
+  const bookingPolicyPath = hotelPath + "/booking-policy";
+  const unset = await request(bookingPolicyPath, { expected: 204 });
+  check(unset.data.byteLength === 0, "unconfigured booking policy has no body");
+  const createdPolicy = (await request(bookingPolicyPath, {
+    method: "POST",
+    body: bookingPolicy,
+    token: admin,
+    expected: 201,
+  })).data;
+  async function expectStoredBookingPolicy(limits) {
+    const { data: policy, headers } = await request(bookingPolicyPath);
+    check(
+      policy.accommodationId === accommodation.accommodationId &&
+        policy.bookingPolicyId === createdPolicy.bookingPolicyId &&
+        Object.entries(limits).every(([key, value]) => policy[key] === value) &&
+        headers.get("cache-control") === "no-store",
+      "anonymous booking policy read reflects committed limits",
+    );
   }
+  await expectStoredBookingPolicy(bookingPolicy);
+  const updatedBookingPolicy = { ...bookingPolicy, maxAdvanceBookingDays: 91 };
+  await request(bookingPolicyPath, {
+    method: "PUT",
+    body: updatedBookingPolicy,
+    token: admin,
+  });
+  await expectStoredBookingPolicy(updatedBookingPolicy);
+  const cancellationPolicyPath = hotelPath + "/cancellation-policy";
+  await request(cancellationPolicyPath, {
+    method: "POST",
+    body: cancellationPolicy,
+    token: admin,
+    expected: 201,
+  });
+  await request(cancellationPolicyPath, {
+    method: "PUT",
+    body: cancellationPolicy,
+    token: admin,
+  });
 
   const [first, second, third, fourth] = [30, 31, 32, 33].map(businessDate);
   const inventory = roomPath + "/inventories";
@@ -372,7 +398,7 @@ export async function verifyContract({
     "daily price update",
   );
   console.log(
-    "PASS catalog/room, policy writes, inclusive inventory and DAILY/DEFAULT prices",
+    "PASS catalog/room, policy reads/writes, inclusive inventory and DAILY/DEFAULT prices",
   );
 
   const albumPath = hotelPath + "/media";
