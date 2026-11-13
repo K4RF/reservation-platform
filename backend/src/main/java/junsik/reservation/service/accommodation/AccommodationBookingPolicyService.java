@@ -4,6 +4,7 @@ import junsik.reservation.service.reservation.ReservationDateProvider;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,6 +71,15 @@ public class AccommodationBookingPolicyService {
 				request.maxAdvanceBookingDays()
 		);
 		return AccommodationBookingPolicyResponse.from(policy);
+	}
+
+	@Transactional(readOnly = true)
+	public Optional<AccommodationBookingPolicyResponse> findByAccommodationId(Long accommodationId) {
+		var policy = bookingPolicyRepository.findByAccommodationId(accommodationId);
+		if (policy.isEmpty() && !accommodationRepository.existsById(accommodationId)) {
+			throw new BusinessException(AccommodationErrorCode.NOT_FOUND);
+		}
+		return policy.map(AccommodationBookingPolicyResponse::from);
 	}
 
 	@Transactional(readOnly = true)
