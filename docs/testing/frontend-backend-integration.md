@@ -44,6 +44,7 @@ Spring에 전달하는 환경은 위 연결로 한정한다. 외부 OAuth는 더
 스모크가 테스트 USER 2명과 ADMIN을 가입 API로 준비하고, 이 DB에서 마지막 fixture의 정확한 ID만 ADMIN으로 변경한다.
 이메일/비밀번호는 테스트용으로만 사용한다. 로그인 후 ADMIN HTTP로 숙소·객실, 두 정책, 날짜 재고 3건,
 날짜별 가격 1건, 합성 PNG(숙소·객실)를 생성한다. 날짜는 숙소 시간대의 오늘에서 30일 이후다.
+공개 예약 정책 GET은 등록 전 본문 없는 `204`, ADMIN 등록·수정 후 각각 저장된 값과 `no-store`를 확인한다.
 예약 생성·변경·취소를 마치면 재고와 최종 저장 상태를 다시 읽는다. Kafka는 활성화해 이 예약의
 Outbox 3건이 발행되고 같은 Event ID가 Consumer 원장에 기록됐는지 확인한다.
 
@@ -107,7 +108,7 @@ Backend Security 및 Service, 아래 Client명은 `frontend/src/api/`의 파일�
 | 객실 | 공개 `GET /accommodations/{id}/rooms`, `GET …/rooms/available`, `GET /rooms/{roomId}`; ADMIN 목록 POST·객실 PUT·`/status` PATCH | `room`, `adminRoom`: roomId·accommodationId·ACTIVE/capacity 검증. 가용성은 양의 전체 인원, `checkInDate/checkOutDate`, 해당 기간 모든 날짜 재고. 목록/가용 응답은 Offset. |
 | 요금 | 공개 `GET /rooms/{id}/prices/{stayDate}`; ADMIN `POST …/prices`, `PUT …/prices/{stayDate}` | `bookingPrice`, `adminDailyPrice`: `DAILY`는 override/양의 ID, `DEFAULT`는 객실 기본가/null ID. 화면 예상 합계와 서버 저장 확정 금액은 별개. |
 | 예약 | Bearer `POST/GET /reservations`, `GET/PATCH /reservations/{id}`, `PATCH …/{id}/cancel` | `reservation`, `reservationList`, `reservationDetail`, `reservationChange`, `reservationCancellation`: 생성 201, 본인만 목록·조회·변경·취소(ADMIN도 예외 없음). 생성 ID는 숫자 `reservationId`; 표시용 `reservationNumber`와 다름. 기본 UI는 Offset. Backend cursor 계약은 별도 노출. |
-| 정책 | ADMIN `POST/PUT /accommodations/{id}/booking-policy` 및 `/cancellation-policy` | `adminAccommodation`: 생성 201/수정 200. 정책 GET/DELETE·존재 자동 감지 없음. 성공 응답은 방금 저장한 값이지 서버 재조회가 아님. 취소 정책은 예약 Snapshot으로 표시. |
+| 정책 | 공개 `GET /accommodations/{id}/booking-policy`, ADMIN `POST/PUT /accommodations/{id}/booking-policy` 및 `/cancellation-policy` | `adminAccommodation`: 생성 201/수정 200. UI에서 정책 GET 연동·존재 자동 감지 없음. 성공 응답은 방금 저장한 값이지 서버 재조회가 아님. 취소 정책은 예약 Snapshot으로 표시. |
 | 재고 | ADMIN `GET/POST /rooms/{id}/inventories`, `PUT …/inventories/{inventoryDate}` | `adminInventory`: Calendar의 `startDate/endDate`는 양쪽 포함. 누락 날짜는 미생성. 총수량과 OPEN/CLOSED만 편집하며 예약/가용 수량·Version은 보내지 않음. |
 | 공개 Media | 공개 `GET /media/{mediaId}/content` 및 카탈로그 응답 | `media`, `CatalogImage`, Gallery: 대표 이미지는 순서 첫 장, 목록/가용 최대 1, 상세 최대 20. 미등록 기존 행은 null/[]; 사진 실패가 Room 선택·예약 결과를 바꾸지 않음. 가짜 매물 이미지·Room Bed/Size/View는 채우지 않음. |
 | 관리 Media | ADMIN 숙소/객실별 `…/{id}/media`와 하위 작업 | `adminMedia`: 최신 GET의 quoted strong ETag, 모든 쓰기 `If-Match`. POST/콘텐츠 교체는 file + application/json metadata multipart. 오래된 ETag는 409, 새 GET 후 검토. [관리 경로·형식·정리 계약](../architecture/media-management.md). |

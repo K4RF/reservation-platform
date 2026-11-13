@@ -118,7 +118,25 @@ class OpenApiIntegrationTest {
 						"$.paths['/api/v1/accommodations/{accommodationId}/rooms/available'].get.security"
 				).doesNotExist())
 				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].get.security"
+				).doesNotExist())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].get.responses['200'].content['application/json'].schema['$ref']"
+				).value(endsWith("/AccommodationBookingPolicyResponse")))
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].get.responses['204'].description"
+				).isString())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].get.responses['204'].content"
+				).doesNotExist())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].get.responses['404'].content['application/json'].schema['$ref']"
+				).value(endsWith("/ErrorResponse")))
+				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].post.security[0].bearerAuth"
+				).isArray())
+				.andExpect(jsonPath(
+						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].put.security[0].bearerAuth"
 				).isArray())
 				.andExpect(jsonPath(
 						"$.paths['/api/v1/accommodations/{accommodationId}/booking-policy'].post.requestBody.content['application/json'].schema['$ref']"

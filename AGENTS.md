@@ -246,7 +246,9 @@ Before completing a change:
   accommodation. Minimum/maximum stay nights and advance-booking days apply
   consistently to accommodation availability search, available-room queries,
   reservation creation, and schedule changes. Accommodations without a policy
-  retain the previous behavior.
+  retain the previous behavior. Public booking-policy GET returns current stored
+  limits (`200`), no content for an unconfigured policy (`204`), or the existing
+  accommodation-not-found error (`404`). It does not evaluate dates or inventory.
 - Room creation, information updates, and `ACTIVE/INACTIVE` status changes are
   restricted to `ADMIN`; new rooms are `ACTIVE` and creation requires a positive
   nightly price. Anonymous and authenticated users can read room details and filter
@@ -452,8 +454,9 @@ Before completing a change:
   public UI's ACTIVE filter, with name/city/region, status, pagination and ID/NAME
   sorting. ADMIN writes support create, full update and status PATCH, not deletion.
   Separate booking/cancellation policy forms require an explicit POST/PUT choice,
-  complete input and acknowledgement; there is no policy GET/DELETE or automatic
-  existence detection. Display successful policy responses as last-write results,
+  complete input and acknowledgement. The UI does not read the public booking
+  policy GET or automatically detect existence; there is no cancellation policy
+  GET or policy DELETE. Display successful policy responses as last-write results,
   never current-policy reads or reservation snapshots. All Admin writes disable
   automatic 401 replay and share a page-level submit gate; ambiguous outcomes lock
   writes until explicit outcome review. Detail reloads after catalog update/status

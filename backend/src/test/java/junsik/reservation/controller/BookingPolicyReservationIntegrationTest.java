@@ -81,6 +81,18 @@ class BookingPolicyReservationIntegrationTest {
 	}
 
 	@Test
+	void unconfiguredPolicyStillAllowsAvailabilityAndReservationUnderExistingRules() throws Exception {
+		TestCatalog catalog = saveCatalog();
+		mockMvc.perform(get("/api/v1/accommodations/{id}/booking-policy", catalog.accommodation().getId()))
+				.andExpect(status().isNoContent());
+		performAvailable(catalog, TODAY, TODAY.plusDays(1))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.content[0].roomId").value(catalog.room().getId()));
+		performCreate(catalog, TODAY, TODAY.plusDays(1))
+				.andExpect(status().isCreated());
+	}
+
+	@Test
 	void appliesSameMinimumStayRuleToAvailabilityAndReservationCreation() throws Exception {
 		TestCatalog catalog = saveCatalogWithPolicy(2, 4, 3, 30);
 		LocalDate oneNightCheckout = CHECK_IN.plusDays(1);
@@ -130,16 +142,21 @@ class BookingPolicyReservationIntegrationTest {
 	}
 
 	private TestCatalog saveCatalogWithPolicy(int minStay, int maxStay, int minAdvance, int maxAdvance) {
-		Member savedMember = memberRepository.saveAndFlush(member("booking-policy@example.com"));
-		Accommodation savedAccommodation = accommodationRepository.saveAndFlush(accommodation());
-		Room savedRoom = roomRepository.saveAndFlush(room(savedAccommodation));
+		TestCatalog catalog = saveCatalog();
 		bookingPolicyRepository.saveAndFlush(AccommodationBookingPolicy.create(
-				savedAccommodation,
+				catalog.accommodation(),
 				minStay,
 				maxStay,
 				minAdvance,
 				maxAdvance
 		));
+		return catalog;
+	}
+
+	private TestCatalog saveCatalog() {
+		Member savedMember = memberRepository.saveAndFlush(member("booking-policy@example.com"));
+		Accommodation savedAccommodation = accommodationRepository.saveAndFlush(accommodation());
+		Room savedRoom = roomRepository.saveAndFlush(room(savedAccommodation));
 		TODAY.datesUntil(TODAY.plusDays(40)).forEach(date ->
 				roomInventoryRepository.save(RoomInventory.create(savedRoom, date, 10)));
 		roomInventoryRepository.flush();

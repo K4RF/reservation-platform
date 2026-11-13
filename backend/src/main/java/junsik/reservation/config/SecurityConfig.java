@@ -69,6 +69,7 @@ public class SecurityConfig {
 								"/api/v1/media/*/content",
 								"/api/v1/accommodations", "/api/v1/accommodations/*",
 								"/api/v1/accommodations/locations/suggestions",
+								"/api/v1/accommodations/*/booking-policy",
 								"/api/v1/accommodations/*/rooms", "/api/v1/accommodations/*/rooms/available",
 								"/api/v1/rooms/*", "/api/v1/rooms/*/prices/*").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/v1/accommodations").hasRole("ADMIN")
