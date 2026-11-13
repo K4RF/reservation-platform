@@ -17,6 +17,42 @@
 등록하고, 같은 경로의 `PUT`으로 기존 정책을 수정합니다. 한 숙소에는 한 정책만
 허용하며 두 API 모두 `ADMIN` 역할이 필요합니다.
 
+## Public Read API
+
+`GET /api/v1/accommodations/{accommodationId}/booking-policy`는 토큰 없이 호출할 수
+있으며 로그인한 `USER`와 `ADMIN`도 동일한 응답을 받습니다. 숙소 상세와 마찬가지로
+숙소가 존재하면 `ACTIVE`/`INACTIVE` 모두 조회할 수 있습니다. POST/PUT 권한은 변경되지 않습니다.
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | `bookingPolicyId`, `accommodationId`, 저장된 네 경계값 |
+| `204 No Content` | 숙소는 존재하지만 정책 미설정. 본문과 가짜 기본값 없음 |
+| `400 Bad Request` | 0 이하 ID는 `COMMON_001`, 숫자로 변환할 수 없는 ID는 `COMMON_002` |
+| `404 Not Found` | 숙소가 존재하지 않음 (`ACCOMMODATION_001`) |
+
+예를 들어 등록된 정책은 다음과 같이 반환됩니다.
+
+```json
+{
+  "bookingPolicyId": 7,
+  "accommodationId": 42,
+  "minStayNights": 2,
+  "maxStayNights": 14,
+  "minAdvanceBookingDays": 1,
+  "maxAdvanceBookingDays": 365
+}
+```
+
+조회는 현재 DB 값을 사용하며 `200`과 `204`에 `Cache-Control: no-store`를 보냅니다.
+POST/PUT 성공 후 새 GET으로 저장 결과를 확인할 수 있습니다. 고객 숙소 상세와 관리자 정책
+화면 연동은 별도입니다. 연동 시 `204`와 `404`를 구분하고 `204`에 임의의 정책값을 표시하지
+않습니다. 관리자 쓰기 실패 시 GET은 상태 확인에만 사용하고 기존 쓰기를 재전송하거나
+생성·수정을 자동 전환하지 않습니다.
+
+GET은 경계값만 반환합니다. 날짜별 예약 가능 여부, 재고, 확정 가능 여부는 보장하지 않습니다.
+날짜 안내에 필요한 IANA `timeZone`은 기존 `GET /api/v1/accommodations/{accommodationId}`에서
+읽으며 브라우저의 로컬 날짜로 대체하지 않습니다.
+
 ## Date and Boundary Semantics
 
 예약 API가 시간을 받지 않고 `LocalDate`만 받으므로 최소 사전 예약 기준은 시간이
