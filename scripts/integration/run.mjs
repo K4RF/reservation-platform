@@ -21,6 +21,7 @@ const root = realpathSync(fileURLToPath(new URL("../../", import.meta.url)));
 const frontend = join(root, "frontend");
 const apiOrigin = "http://127.0.0.1:18099";
 const webOrigin = "http://127.0.0.1:15199";
+const mysqlPort = process.env.INTEGRATION_MYSQL_PORT ?? "53399";
 const hold = process.argv.slice(2).includes("--hold");
 const auth = process.argv.slice(2).includes("--auth");
 const booking = process.argv.slice(2).includes("--booking");
@@ -65,7 +66,7 @@ let started = false;
 function docker(args, options = {}) {
   const result = spawnSync("docker", args, {
     cwd: root,
-    env: { ...hostEnv, ...credentials },
+    env: { ...hostEnv, ...credentials, INTEGRATION_MYSQL_PORT: mysqlPort },
     encoding: "utf8",
     timeout: 180_000,
     windowsHide: true,
@@ -208,6 +209,15 @@ try {
   const passwordBytes = Buffer.byteLength(fixturePassword ?? "");
   if (fixturePassword && (!hold || passwordBytes > 72 || passwordBytes < 12))
     throw new Error("Manual fixture password requires --hold and 12–72 bytes");
+  if (
+    !/^[1-9][0-9]{3,4}$/.test(mysqlPort) ||
+    Number(mysqlPort) < 1024 ||
+    Number(mysqlPort) > 65535
+  )
+    throw new Error("INTEGRATION_MYSQL_PORT must be a port between 1024 and 65535");
+  const ports = [15199, 18099, Number(mysqlPort), 56399, 59399];
+  if (new Set(ports).size !== ports.length)
+    throw new Error("INTEGRATION_MYSQL_PORT conflicts with another isolated service");
   const java = spawnSync("java", ["-XshowSettings:properties", "-version"], {
     env: hostEnv,
     encoding: "utf8",
@@ -267,7 +277,7 @@ try {
     ])
   )
     throw new Error("The generated Compose project is not empty");
-  await Promise.all([15199, 18099, 53399, 56399, 59399].map(freePort));
+  await Promise.all(ports.map(freePort));
   const local = join(root, ".local");
   mkdirSync(local, { recursive: true });
   if (!inside(root, realpathSync(local)))
@@ -291,7 +301,7 @@ try {
     ],
     backendCwd,
     {
-      DB_URL: "jdbc:mysql://127.0.0.1:53399/reservation_integration",
+      DB_URL: `jdbc:mysql://127.0.0.1:${mysqlPort}/reservation_integration`,
       MYSQL_USER: credentials.MYSQL_USER,
       MYSQL_PASSWORD: credentials.MYSQL_PASSWORD,
       REDIS_HOST: "127.0.0.1",

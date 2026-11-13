@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -83,6 +84,7 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 	@Autowired CatalogMediaRepository media;
 	@Autowired LocalMediaStorage storage;
 	@Autowired CacheManager caches;
+	@Autowired StringRedisTemplate redis;
 	@Autowired JwtTokenProvider tokens;
 	@Autowired ObjectMapper mapper;
 	@Autowired PlatformTransactionManager transactions;
@@ -138,6 +140,10 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 		String roomPath = "/api/v1/rooms/" + selectedRoom.getId();
 		String album = catalog + "/media";
 		assertThat(body(sendAs("GET", catalog, null, null, null), 200).path("images").size()).isZero();
+		String roomKey = "reservation:cache:v3:room-detail::" + selectedRoom.getId();
+		var legacyRoom = body(sendAs("GET", roomPath, null, null, null), 200);
+		assertThat(legacyRoom.has("metadata")).isFalse();
+		assertThat(redis.opsForValue().get(roomKey)).isNotNull().doesNotContain("\"metadata\"");
 
 		var first = sendUpload("POST", album, etag(send("GET", album, null, null)));
 		long firstId = body(first, 201).path("images").get(0).path("image").path("mediaId").longValue();
@@ -149,6 +155,31 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 		String roomAlbum = roomPath + "/media";
 		long roomMediaId = body(sendUpload("POST", roomAlbum, etag(send("GET", roomAlbum, null, null))), 201)
 				.path("images").get(0).path("image").path("mediaId").longValue();
+		assertThat(redis.hasKey(roomKey)).isFalse();
+		var withImage = body(sendAs("GET", roomPath, null, null, null), 200);
+		assertThat(withImage.path("representativeImage").path("mediaId").longValue()).isEqualTo(roomMediaId);
+		assertThat(redis.hasKey(roomKey)).isTrue();
+		String roomUpdate = """
+				{"name":"Metadata and Media Room","capacity":2,"nightlyPrice":10000,"amenities":["WIFI"],
+				 "metadata":{"bedConfiguration":"Queen","areaSquareMeters":28.50,"view":"Garden"}}
+				""";
+		var updatedRoom = body(send("PUT", roomPath, null, roomUpdate), 200);
+		assertThat(redis.hasKey(roomKey)).isFalse();
+		var freshRoom = body(sendAs("GET", roomPath, null, null, null), 200);
+		assertThat(freshRoom.path("roomId").longValue()).isEqualTo(selectedRoom.getId());
+		assertThat(freshRoom.path("name").asString()).isEqualTo("Metadata and Media Room");
+		assertThat(freshRoom.path("nightlyPrice").decimalValue()).isEqualByComparingTo("10000");
+		for (var metadata : List.of(updatedRoom.path("metadata"), freshRoom.path("metadata"))) {
+			assertThat(metadata.path("view").asString()).isEqualTo("Garden");
+			assertThat(metadata.path("bedConfiguration").asString()).isEqualTo("Queen");
+			assertThat(metadata.path("areaSquareMeters").decimalValue()).isEqualByComparingTo("28.50");
+			assertThat(metadata.path("description").isNull()).isTrue();
+		}
+		assertThat(freshRoom.path("images")).isEqualTo(withImage.path("images"));
+		assertThat(redis.opsForValue().get(roomKey)).contains("Garden");
+		var roomCard = body(sendAs("GET", catalog + "/rooms", null, null, null), 200).path("content").get(0);
+		assertThat(roomCard.has("metadata")).isFalse();
+		assertThat(roomCard.path("representativeImage")).isEqualTo(freshRoom.path("representativeImage"));
 
 		String publicList = "/api/v1/accommodations?status=ACTIVE&sortBy=ID&direction=ASC&page=0&size=2";
 		assertThat(body(sendAs("GET", publicList, null, null, null), 200).path("content").size()).isBetween(1, 2);
@@ -164,8 +195,6 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 		assertThat(mediaContent.statusCode()).isEqualTo(200);
 		assertThat(mediaContent.headers().firstValue("content-type")).contains("image/png");
 		assertThat(javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(mediaContent.body())).getWidth()).isEqualTo(5);
-		assertThat(body(sendAs("GET", roomPath, null, null, null), 200)
-				.path("representativeImage").path("mediaId").longValue()).isEqualTo(roomMediaId);
 
 		String available = catalog + "/rooms/available?checkInDate=" + checkIn + "&checkOutDate=" + checkOut + "&guestCount=2";
 		assertThat(body(sendAs("GET", available, null, null, null), 200).path("totalElements").longValue()).isEqualTo(1);
@@ -179,6 +208,7 @@ class MediaManagementMySqlIntegrationTest extends MySqlRedisIntegrationTestSuppo
 		var refreshed = body(sendAs("GET", available, null, null, null), 200).path("content").get(0);
 		assertThat(refreshed.path("roomId").longValue()).isEqualTo(selectedRoom.getId());
 		assertThat(refreshed.path("representativeImage").path("mediaId").longValue()).isEqualTo(roomMediaId);
+		assertThat(refreshed.has("metadata")).isFalse();
 		String reservationsPath = "/api/v1/reservations";
 		var booked = body(sendAs("POST", reservationsPath, null, """
 				{"roomId":%d,"guestCount":2,"checkInDate":"%s","checkOutDate":"%s",

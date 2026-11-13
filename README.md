@@ -301,6 +301,7 @@ H2 기반 통합 테스트와 MySQL·Redis Testcontainers 검증을 구분합니
 테스트는 개발 Compose MySQL이나 그 Volume을 사용하지 않습니다.
 
 Fixture·격리 환경은 [테스트 구성](docs/testing/test-fixtures.md)을 참고하세요.
+객실 메타데이터·예약 정책·Media를 함께 검증하려면 [v0.4.1 회귀 검증](docs/testing/catalog-v041-regression.md)을 참고하세요.
 
 ### Frontend
 

@@ -243,6 +243,7 @@ export async function verifyContract({
     })
   ).data;
   const hotelPath = "/accommodations/" + id(accommodation.accommodationId);
+  const roomMetadata = { view: "Courtyard", areaSquareMeters: 28.5 };
   const room = (
     await request(hotelPath + "/rooms", {
       method: "POST",
@@ -253,6 +254,7 @@ export async function verifyContract({
         capacity: 2,
         nightlyPrice: 10000,
         amenities: ["WIFI"],
+        metadata: roomMetadata,
       },
     })
   ).data;
@@ -260,8 +262,16 @@ export async function verifyContract({
   const roomPath = "/rooms/" + roomId;
   check(
     room.accommodationId === accommodation.accommodationId &&
-      room.status === "ACTIVE",
-    "room parent and status",
+      room.status === "ACTIVE" &&
+      room.metadata?.view === roomMetadata.view &&
+      room.metadata.areaSquareMeters === roomMetadata.areaSquareMeters,
+    "room parent, status and saved metadata",
+  );
+  const roomBeforeMedia = (await request(roomPath)).data;
+  check(
+    roomBeforeMedia.metadata?.view === roomMetadata.view &&
+      roomBeforeMedia.images?.length === 0,
+    "public room detail before image upload",
   );
   const catalog = await request(
     "/accommodations?status=ACTIVE&sortBy=NAME&direction=ASC&page=0&size=2&city=" +
@@ -300,14 +310,14 @@ export async function verifyContract({
     token: admin,
     expected: 201,
   })).data;
-  async function expectStoredBookingPolicy(limits) {
-    const { data: policy, headers } = await request(bookingPolicyPath);
+  async function expectStoredBookingPolicy(limits, token) {
+    const { data: policy, headers } = await request(bookingPolicyPath, { token });
     check(
       policy.accommodationId === accommodation.accommodationId &&
         policy.bookingPolicyId === createdPolicy.bookingPolicyId &&
         Object.entries(limits).every(([key, value]) => policy[key] === value) &&
         headers.get("cache-control") === "no-store",
-      "anonymous booking policy read reflects committed limits",
+      "booking policy read reflects committed limits",
     );
   }
   await expectStoredBookingPolicy(bookingPolicy);
@@ -318,6 +328,8 @@ export async function verifyContract({
     token: admin,
   });
   await expectStoredBookingPolicy(updatedBookingPolicy);
+  await expectStoredBookingPolicy(updatedBookingPolicy, foreign);
+  await expectStoredBookingPolicy(updatedBookingPolicy, admin);
   const cancellationPolicyPath = hotelPath + "/cancellation-policy";
   await request(cancellationPolicyPath, {
     method: "POST",
@@ -456,6 +468,17 @@ export async function verifyContract({
     roomAlbum.headers.get("etag"),
     "Synthetic room color bars",
   );
+  const roomAfterMedia = (await request(roomPath)).data;
+  const roomCard = (await request(hotelPath + "/rooms")).data.content[0];
+  check(
+    roomAfterMedia.metadata?.view === roomMetadata.view &&
+      roomAfterMedia.images?.length === 1 &&
+      roomCard.roomId === roomId &&
+      roomCard.representativeImage?.mediaId ===
+        roomAfterMedia.representativeImage?.mediaId &&
+      !("metadata" in roomCard),
+    "room detail retains metadata after upload and room list stays compact",
+  );
   const detail = (await request(hotelPath)).data;
   check(
     detail.representativeImage?.mediaId === mediaId &&
@@ -488,8 +511,9 @@ export async function verifyContract({
   const available = await getAvailable();
   check(
     available[0]?.roomId === roomId &&
-      available[0]?.representativeImage?.mediaId,
-    "fresh availability and Room media",
+      available[0]?.representativeImage?.mediaId &&
+      !("metadata" in available[0]),
+    "fresh availability keeps Room media without metadata",
   );
   const create = (
     await request("/reservations", {

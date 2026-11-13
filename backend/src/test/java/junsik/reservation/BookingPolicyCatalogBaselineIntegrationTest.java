@@ -28,6 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.annotation.Transactional;
 
 import junsik.reservation.enums.ReservationStatus;
@@ -120,10 +121,21 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 		assertUnavailableAfterReservation(userToken, accommodationId, roomId);
 		assertReservationQuery(userToken, reservationId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT);
 
+		updateAndReadBookingPolicy(adminToken, accommodationId, 2, 3);
+		mockMvc.perform(changeScheduleRequest(userToken, reservationId))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("BOOKING_POLICY_006"));
+		assertReservedDates(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT);
+		assertInventory(roomId, CHANGED_CHECK_OUT.minusDays(1), 0);
+		assertReservationQuery(userToken, reservationId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT);
+
+		updateAndReadBookingPolicy(adminToken, accommodationId, 4, 5);
 		changeSchedule(userToken, reservationId);
 		assertScheduleInventoryChanged(roomId);
 		assertReservationQuery(userToken, reservationId, CHANGED_CHECK_IN, CHANGED_CHECK_OUT);
 
+		// Tightening the current booking rules must not prevent cancellation or alter its fee snapshot.
+		updateAndReadBookingPolicy(adminToken, accommodationId, 5, 5);
 		cancelReservation(userToken, reservationId);
 		var cancelledReservation = reservationRepository.findById(reservationId).orElseThrow();
 		assertThat(cancelledReservation.getStatus()).isEqualTo(ReservationStatus.CANCELLED);
@@ -199,6 +211,25 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 				.andExpect(jsonPath("$.accommodationId").value(accommodationId))
 				.andExpect(jsonPath("$.minStayNights").value(2))
 				.andExpect(jsonPath("$.maxStayNights").value(5));
+	}
+
+	private void updateAndReadBookingPolicy(String adminToken, Long accommodationId, int minStay, int maxStay)
+			throws Exception {
+		String url = ACCOMMODATIONS_URL + "/{accommodationId}/booking-policy";
+		mockMvc.perform(put(url, accommodationId)
+					.header("Authorization", bearer(adminToken))
+					.contentType(MediaType.APPLICATION_JSON)
+					.content("""
+							{"minStayNights":%d,"maxStayNights":%d,
+							 "minAdvanceBookingDays":1,"maxAdvanceBookingDays":365}
+							""".formatted(minStay, maxStay)))
+				.andExpect(status().isOk());
+		entityManager.flush();
+		entityManager.clear();
+		mockMvc.perform(get(url, accommodationId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.minStayNights").value(minStay))
+				.andExpect(jsonPath("$.maxStayNights").value(maxStay));
 	}
 
 	private void createCancellationPolicy(
@@ -453,16 +484,22 @@ class BookingPolicyCatalogBaselineIntegrationTest extends MySqlIntegrationTestSu
 		assertInventoryRange(roomId, ORIGINAL_CHECK_IN, ORIGINAL_CHECK_OUT, 1);
 	}
 
-	private void changeSchedule(String userToken, Long reservationId) throws Exception {
-		mockMvc.perform(patch(RESERVATIONS_URL + "/{reservationId}", reservationId)
-					.header("Authorization", bearer(userToken))
-					.contentType(MediaType.APPLICATION_JSON)
-					.content("""
+	private MockHttpServletRequestBuilder changeScheduleRequest(
+			String userToken, Long reservationId
+	) {
+		return patch(RESERVATIONS_URL + "/{reservationId}", reservationId)
+				.header("Authorization", bearer(userToken))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
 							{
 							  "checkInDate": "%s",
 							  "checkOutDate": "%s"
 							}
-							""".formatted(CHANGED_CHECK_IN, CHANGED_CHECK_OUT)))
+							""".formatted(CHANGED_CHECK_IN, CHANGED_CHECK_OUT));
+	}
+
+	private void changeSchedule(String userToken, Long reservationId) throws Exception {
+		mockMvc.perform(changeScheduleRequest(userToken, reservationId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.guestCount").value(4))
 				.andExpect(jsonPath("$.nightlyPriceSnapshot").value(140000.00))

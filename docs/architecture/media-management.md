@@ -1,9 +1,9 @@
 # ADMIN Media 관리·파일 수명주기 (#273)
 
 2026-10-29. 선행 [#272 읽기 계약](catalog-media.md), [#271 화면 명세](../ui/prototype-rebuild.md).
-현재 Backend는 업로드/metadata/대표/정렬/교체/삭제를 제공한다. Frontend 관리 Form/사진/Gallery는
-#276 후속이며 Room Metadata/정책 GET/숙소·객실 삭제 기능은 추가하지 않았다.
-이슈 본문의 “DTO에 이미지가 없음”은 선행 구현 전 설명이다. 현재 소스에는 #272 Media 필드가 있다.
+Backend는 업로드/metadata/대표/정렬/교체/삭제를 제공하며, Frontend 사진 표시·관리는 #276에서 연동했다.
+이 문서의 `metadata`는 이미지의 대체 텍스트·출처·권리다. [객실 메타데이터](room-metadata.md)와
+[예약 정책 조회](accommodation-booking-policy.md)는 별도 API 계약이며, 숙소·객실 삭제는 지원하지 않는다.
 
 ## 1. API와 재조회 계약
 
@@ -115,7 +115,7 @@ DB/파일을 하나의 원자적 트랜잭션으로 만든 것이 아니라 dura
 
 ## 4. 읽기·캐시·업그레이드
 
-공개 DTO/대표 규칙/목록1장·상세20장과 v2 prefix·TTL은 유지한다.
+공개 DTO/대표 규칙/목록 1장·상세 20장과 TTL은 유지한다. 상세 캐시 prefix는 숙소 v2, 객실 v3다.
 모든 관리 쓰기는 기존 CatalogMediaCacheEviction proxy를 **같은 Media 트랜잭션 안에서** 호출한다.
 commit 후 owner detail을 evict하고 rollback은 기존 cache snapshot을 유지한다.
 Search/Room 목록/가용성/ADMIN GET/파일은 response cache를 우회한다.

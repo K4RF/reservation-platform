@@ -8,7 +8,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?isolated password required}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?isolated password required}
     ports:
-      - "127.0.0.1:53399:3306"
+      - "127.0.0.1:${INTEGRATION_MYSQL_PORT:-53399}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
