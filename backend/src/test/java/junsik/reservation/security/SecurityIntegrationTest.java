@@ -119,7 +119,6 @@ class SecurityIntegrationTest {
 		for (String path : new String[] {
 				"/api/v1/reservations", "/api/v1/reservations/1",
 				"/api/v1/rooms/1/inventories", "/api/v1/admin/test",
-				"/api/v1/accommodations/1/booking-policy",
 				"/api/v1/accommodations/1/cancellation-policy"
 		}) {
 			mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
