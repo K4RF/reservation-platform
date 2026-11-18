@@ -15,8 +15,9 @@ Backend API/DB Schema/의존성을 추가하거나 권한을 변경하지 않았
 | 운영 상태 | `PATCH /rooms/{roomId}/status` | ADMIN, 명시적 확인 후 ACTIVE/INACTIVE 변경·상세 GET |
 
 삭제 API는 없다. Room은 하나의 Accommodation에 속하며 기존 객실의 숙소를 이동하는 API도 없다.
-Create/Update는 `name`, `capacity`, `nightlyPrice`, `amenities`만 전송한다.
-RoomResponse는 `roomId`, `accommodationId`, 위 네 필드와 `status`를 반환한다.
+Create/Update는 `name`, `capacity`, `nightlyPrice`, `amenities`와 선택 `metadata`만 전송한다.
+RoomResponse는 `roomId`, `accommodationId`, 기본 정보, `status`, 사진을 반환한다.
+저장된 `metadata`는 객실 상세와 관리 응답에서만 제공한다.
 숙소 관계와 운영 상태를 정보 수정 Body에 넣지 않는다.
 
 - name: 필수, 100자 이하.
@@ -71,14 +72,35 @@ Create/Update/Status Response도 요청의 객실 ID/숙소 ID와 대조한다.
 - 403: 서버 권한 거절을 표시하고 JWT Hint를 임의로 USER로 변경하지 않는다.
 - 404/409: 서버의 미존재/충돌 정보를 유지하며 다른 작업으로 자동 전환하지 않는다.
 - Network/Timeout/Abort/잘못된 성공 응답/5xx: Commit 후 오류일 수 있어 쓰기를 잠근다.
-  객실 목록/상세 재조회와 별도 결과 확인 후 체크·명시적 해제를 해야 새 요청이 가능하다.
+  기존 객실은 성공한 새 상세 GET 뒤 입력란에서 서버 값을 검토하고 명시적으로 해제해야 한다.
+  신규 객실의 생성 결과가 불명확하면 기존처럼 목록/상세에서 생성 여부를 먼저 확인한다.
   재조회만으로 잠금을 풀지 않으며 해제 자체도 HTTP 요청을 만들지 않는다.
 
 화면 이동·Abort는 서버 Rollback 증명이 아니다. 잠금은 페이지 메모리 범위이며 재진입 후에도 결과를 확인해야 한다.
 서버 요청 멱등성은 이번 범위가 아니다. 숙소 변경/Unmount/새 로그인 뒤 오래된 쓰기 응답은
 현재 페이지의 성공 처리·Navigation을 만들지 않는다. 새로고침은 기존처럼 재로그인이 필요하다.
 
-## 자동 검증
+## 객실 메타데이터 연동 (#334)
+
+- 객실 생성과 `정보 편집`에 설명·침대 구성·면적(㎡)·전망을 제공한다. 수정은 목록 행이 아닌
+  객실·숙소 ID가 일치하는 상세 GET의 저장값으로 시작한다. 미등록과 부분 `null`은 빈 입력으로 보인다.
+- 설명 1,000자, 침대 구성·전망 100자 제한을 공백 포함 UTF-16 원문에 적용한 뒤 서버와 같은
+  바깥 공백 처리를 한다. 면적은 `0.01–9999.99`의 소수 두 자리 이하를 반올림 없이 숫자로 보낸다.
+  로컬 오류와 `metadata.<필드명>` 서버 오류를 해당 입력란에 연결한다.
+- 생성에서 전부 비었거나 수정에서 값이 같으면 `metadata`를 생략한다. 일부 변경은 변경하지 않은 값까지
+  포함한 전체 객체로 제출하고, 비운 필드에는 `null`을 보낸다. 저장값을 모두 지웠을 때만 `{}`를 보낸다.
+  성공 후 새 상세 GET을 표시한다. 결괏값 불명 시 읽기·명시적 확인 전 자동 재제출하지 않는다.
+  기존 API에는 동시 관리자 수정 충돌을 감지할 객실 ETag가 없다. 사진 앨범 ETag는 별개다.
+- 기존 API/폼/관리자 연결 테스트를 보강했다. 격리 MySQL·Redis·Kafka 스모크
+  `node scripts/integration/run.mjs --admin`에서 ADMIN POST/PUT 뒤 공개 GET의 등록·보존·부분 수정·삭제,
+  과다 소수 자릿수 거절 및 기존 권한·사진 흐름을 확인했다. 개발 DB에는 쓰지 않았다.
+- 읽기 전용 [UI Audit](../../frontend/scripts/ui-audit/README.md)에서 관리자 객실 3번 `정보 편집`을
+  1440×1000/390×844로 확인했다. 데스크톱은 설명 전체 행과 나머지 3열, 모바일은 1열이며 문서 가로 넘침이 없었다.
+  390px 면적 오류·Tab 이동, 사진 없음의 신규 폼, 사진 실패 조건의 320px·글자 200%도 확인했다.
+  Admin 전용 승인 원본은 없으므로 #271의 관리자 구성안과 공통 Navy/Ivory를 적용했다.
+  브라우저는 합성 읽기 Fixture이고, 실제 저장은 위 HTTP 스모크의 검증이다. 실기기·최종 사용자 승인은 별도다.
+
+## 자동 검증 (#213 당시 기록)
 
 기존 공개 Room/가용성 API·Card·Admin Route·숙소 관리 테스트를 유지했다. 새 API/입력/화면 Suite는
 실제 Router/AuthProvider/API Client를 사용하며 HTTP 경계만 Mock한다.
@@ -103,7 +125,7 @@ Create/Update/Status Response도 요청의 객실 ID/숙소 ID와 대조한다.
 로컬 Node는 24.14.0, CI는 24.19.0이며 pnpm은 같은 11.19.0이다.
 동일 Major/지원 Engine에서 CI 명령을 실행했지만 원격 Runner의 OS·Patch 환경과 완전히 같지는 않다.
 
-## 실제 연동과 남은 검증
+## 실제 연동과 남은 검증 (#213 당시 기록)
 
 이번 환경의 `docker info`는 `dockerDesktopLinuxEngine` Pipe 부재로 실패했다.
 `127.0.0.1:6380` Redis TCP 연결 확인도 실패했다.

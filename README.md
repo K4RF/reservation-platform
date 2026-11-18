@@ -35,7 +35,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
   [지역 자동완성 API](docs/architecture/accommodation-location-suggestions.md)는 활성 숙소의 도시·지역 후보와 정확 검색 파라미터를 반환합니다.
   Home/Search에서 자유 입력과 후보 선택을 [검색 조건 및 공유 URL](docs/testing/frontend-location-search-state.md)에 적용할 수 있습니다.
 - 객실 상세 Modal/Mobile Sheet 조회와 가용 결과 기반 명시적 객실 선택
-- 객실 상세 API는 [선택 메타데이터](docs/architecture/room-metadata.md)를 제공합니다. 화면 표시·관리 입력 연동은 별도입니다.
+- 객실 상세 API는 [선택 메타데이터](docs/architecture/room-metadata.md)를 제공합니다. 관리자 생성·수정 화면에 연결했으며 고객 상세 표시는 별도입니다.
 - [숙소 예약 정책 조회 API](docs/architecture/accommodation-booking-policy.md)는 저장된 경계값을 공개합니다. 미설정은 `204`이며, 조회 화면 연동은 별도입니다.
 - 숙소·객실 Media 읽기와 공통 이미지/Gallery, ADMIN 사진 관리 화면 연결
 - 대표 투숙객 정보를 포함한 예약 생성과 완료 결과 조회

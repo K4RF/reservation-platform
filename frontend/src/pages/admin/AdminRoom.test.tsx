@@ -53,6 +53,16 @@ function fillRoom() {
   fireEvent.click(screen.getByLabelText('와이파이'))
   fireEvent.click(screen.getByLabelText('에어컨'))
 }
+function changeRoomField(label: string, value: string) {
+  fireEvent.change(screen.getByLabelText(label, { exact: true }), { target: { value } })
+}
+
+const storedMetadata = {
+  description: '창가 좌석',
+  bedConfiguration: '퀸 1개',
+  areaSquareMeters: 28.5,
+  view: null,
+}
 function selectAccommodation(id: string) {
   fireEvent.change(screen.getByLabelText('관리할 숙소 ID'), { target: { value: id } })
   fireEvent.submit(screen.getByRole('form', { name: '관리 숙소 선택' }))
@@ -272,6 +282,140 @@ describe('Room Admin scoped list', () => {
 })
 
 describe('Room Admin create, full update and operating status', () => {
+  it('creates with normalized optional values without rounding the area', async () => {
+    signIn()
+    const fetch = vi.fn().mockImplementation((url: string, init: RequestInit) =>
+      Promise.resolve(
+        Response.json(
+          init.method === 'POST' || url.endsWith('/rooms/3')
+            ? {
+                ...room,
+                metadata: {
+                  ...storedMetadata,
+                  description: '첫 줄\n둘째 줄',
+                  areaSquareMeters: 0.01,
+                },
+              }
+            : accommodation,
+        ),
+      ),
+    )
+    vi.stubGlobal('fetch', fetch)
+    open('/admin/rooms/new?accommodationId=7')
+    const form = await screen.findByRole('form', { name: '객실 생성' })
+    fillRoom()
+    changeRoomField('객실 설명', '　첫 줄\n둘째 줄  ')
+    changeRoomField('침대 구성', ' 퀸 1개 ')
+    changeRoomField('객실 면적 (㎡)', '0.01')
+    changeRoomField('전망', '　 ')
+    fireEvent.submit(form)
+    await openAdminPanel('정보 편집')
+    expect(screen.getByLabelText('객실 설명')).toHaveProperty('value', '첫 줄\n둘째 줄')
+    expect(JSON.parse(writes(fetch)[0][1].body).metadata).toEqual({
+      description: '첫 줄\n둘째 줄',
+      bedConfiguration: '퀸 1개',
+      areaSquareMeters: 0.01,
+      view: null,
+    })
+  })
+
+  it('uses fresh detail at edit, preserves untouched values, and supports individual and full clearing', async () => {
+    signIn()
+    let latest: typeof room = { ...room, metadata: storedMetadata }
+    const fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
+      if (init.method === 'PUT') {
+        const { metadata } = JSON.parse(init.body as string)
+        if (metadata) latest = { ...room, ...(Object.keys(metadata).length && { metadata }) }
+      }
+      const result = url.includes('/rooms?')
+        ? roomPage()
+        : url.endsWith('/rooms/3')
+          ? latest
+          : accommodation
+      return Promise.resolve(Response.json(result))
+    })
+    vi.stubGlobal('fetch', fetch)
+    open()
+    fireEvent.click(await screen.findByRole('link', { name: '스탠다드 조회·편집 (ID 3)' }))
+    await openAdminPanel('정보 편집')
+    expect(screen.getByLabelText('침대 구성')).toHaveProperty('value', '퀸 1개')
+    expect(screen.getByLabelText('전망')).toHaveProperty('value', '')
+    const save = async () => {
+      const before = fetch.mock.calls.length
+      fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
+      await waitFor(() =>
+        expect(fetch.mock.calls.slice(before).map(([, init]) => init.method)).toEqual([
+          'PUT',
+          'GET',
+          'GET',
+        ]),
+      )
+      await screen.findByRole('form', { name: '객실 정보 수정' })
+    }
+    changeRoomField('객실 면적 (㎡)', '28.50')
+    await save()
+    expect(JSON.parse(writes(fetch)[0][1].body)).not.toHaveProperty('metadata')
+    changeRoomField('전망', ' 정원 ')
+    await save()
+    expect(JSON.parse(writes(fetch)[1][1].body).metadata).toEqual({
+      ...storedMetadata,
+      view: '정원',
+    })
+    expect(screen.getByLabelText('전망')).toHaveProperty('value', '정원')
+    changeRoomField('침대 구성', '')
+    await save()
+    expect(JSON.parse(writes(fetch)[2][1].body).metadata).toEqual({
+      ...storedMetadata,
+      bedConfiguration: null,
+      view: '정원',
+    })
+    for (const label of ['객실 설명', '객실 면적 (㎡)', '전망']) changeRoomField(label, '')
+    await save()
+    expect(JSON.parse(writes(fetch)[3][1].body).metadata).toEqual({})
+    expect(screen.getByLabelText('객실 설명')).toHaveProperty('value', '')
+  })
+
+  it('rejects raw length and bad decimal input inline, and maps backend metadata errors to the field', async () => {
+    signIn()
+    const fetch = vi.fn().mockImplementation((_url: string, init: RequestInit) =>
+      Promise.resolve(
+        init.method === 'POST'
+          ? Response.json(
+              {
+                status: 400,
+                code: 'COMMON_001',
+                message: '입력 오류',
+                errors: [{ field: 'metadata.areaSquareMeters', message: '서버 면적 오류' }],
+              },
+              { status: 400 },
+            )
+          : Response.json(accommodation),
+      ),
+    )
+    vi.stubGlobal('fetch', fetch)
+    open('/admin/rooms/new?accommodationId=7')
+    const form = await screen.findByRole('form', { name: '객실 생성' })
+    fillRoom()
+    changeRoomField('객실 설명', ' ' + '가'.repeat(1000))
+    changeRoomField('침대 구성', ' '.repeat(101))
+    changeRoomField('전망', '😀'.repeat(51))
+    for (const area of ['0', '10000', '28.501', '1e2', '28,50']) {
+      changeRoomField('객실 면적 (㎡)', area)
+      fireEvent.submit(form)
+      for (const field of ['객실 설명', '침대 구성', '전망', '객실 면적 (㎡)'])
+        expect(screen.getByLabelText(field).getAttribute('aria-invalid')).toBe('true')
+    }
+    expect(writes(fetch)).toHaveLength(0)
+    for (const field of ['객실 설명', '침대 구성', '전망']) changeRoomField(field, '')
+    changeRoomField('객실 면적 (㎡)', '9999.99')
+    fireEvent.submit(form)
+    await screen.findByText('서버 면적 오류', { exact: true })
+    const area = screen.getByLabelText('객실 면적 (㎡)')
+    expect(area.getAttribute('aria-describedby')).toContain(
+      'admin-room-metadata-areaSquareMeters-error',
+    )
+    expect(JSON.parse(writes(fetch)[0][1].body).metadata.areaSquareMeters).toBe(9999.99)
+  })
   it('creates once for the verified parent, opens the returned detail and reloads the list on return', async () => {
     signIn()
     let resolve!: (response: Response) => void
@@ -519,6 +663,7 @@ describe('Room Admin auth and write safety', () => {
       await screen.findByRole('form', { name: '객실 정보 수정' })
       fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
       await screen.findByRole('region', { name: '불명확한 저장 결과 확인' })
+      expect(screen.queryByRole('button', { name: '확인 후 입력 잠금 해제' })).toBeNull()
       fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
       expect(writes(fetch)).toHaveLength(1)
       expect(

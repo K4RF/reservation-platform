@@ -6,6 +6,7 @@ import { MediaManager } from '../../components/admin/MediaManager'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
 import { getRoom } from '../../api/room'
+import type { RoomResponse } from '../../api/room'
 import { saveRoom, changeRoomStatus } from '../../api/adminRoom'
 import { ApiError } from '../../api/errors'
 import { RoomCard } from '../../components/room/RoomCard'
@@ -60,6 +61,7 @@ function RoomEditor({
   const mutation = useAdminMutation(),
     navigate = useNavigate()
   const [mediaBlocked, setMediaBlocked] = useState(false)
+  const [attemptedRoom, setAttemptedRoom] = useState<RoomResponse>()
   const load = useCallback(
     async (signal: AbortSignal) => {
       const room = id === null ? undefined : await getRoom(id, signal)
@@ -85,13 +87,17 @@ function RoomEditor({
     state.status === 'success' ? state.data.accommodation.accommodationId : expectedAccommodationId
   const listPath = accommodationId === null ? '/admin/rooms' : adminRoomListPath(accommodationId)
   const data = state.status === 'success' ? state.data : undefined
+  const needsFreshDetail =
+    id !== null && mutation.uncertain && (!data || data.room === attemptedRoom)
   const disabled = mutation.disabled || mediaBlocked
   const form = data && (
     <RoomForm
       initial={data.room}
       disabled={disabled}
+      serverError={mutation.error}
       onSave={(body) => {
         const ownerId = data.accommodation.accommodationId
+        setAttemptedRoom(data.room)
         void mutation.run(
           (signal) => saveRoom(ownerId, id, body, signal),
           (result) => {
@@ -130,9 +136,13 @@ function RoomEditor({
       />
       <AdminMutationFeedback
         mutation={mutation}
-        reviewControls={!mediaBlocked}
+        reviewControls={!mediaBlocked && !needsFreshDetail}
         reviewLink={{ to: listPath, label: '객실 목록에서 결과 확인' }}
-        reviewMessage="객실 목록·상세를 새로 조회해 저장 결과를 확인하세요. 확인 전 재제출하지 마세요."
+        reviewMessage={
+          id === null
+            ? '객실 목록·상세를 새로 조회해 저장 결과를 확인하세요. 확인 전 재제출하지 마세요.'
+            : '객실 상세를 새로 조회한 뒤 서버 값과 저장 결과를 확인하세요.'
+        }
       />
       {state.status === 'loading' && <LoadingState message="관리 객실 정보를 불러오고 있습니다." />}
       {state.status === 'error' && (
@@ -192,6 +202,7 @@ function RoomEditor({
                   disabled={disabled}
                   onSave={(status) => {
                     const room = data.room!
+                    setAttemptedRoom(room)
                     void mutation.run(
                       (signal) =>
                         changeRoomStatus(room.accommodationId, room.roomId, status, signal),

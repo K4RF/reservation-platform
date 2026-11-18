@@ -192,7 +192,9 @@ describe('isolated read-only UI audit fixtures', () => {
     const detail = await auditResponse('/api/v1/reservations/42', 'GET', 'stress').json()
     expect(catalog.name).toHaveLength(100)
     expect(catalog.description).toContain('\n')
-    expect(list.content[0]).toEqual(room)
+    expect(list.content[0]).toEqual({ ...room, metadata: undefined })
+    expect(list.content[0]).not.toHaveProperty('metadata')
+    expect(room.metadata).toMatchObject({ areaSquareMeters: 28.5, view: null })
     expect(room.nightlyPrice).toBe(9999999999.99)
     expect(
       detail.nights.every(

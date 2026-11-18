@@ -267,12 +267,16 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     change('객실 이름', '스탠다드')
     change('전체 수용 인원', '2')
     change('기본 1박 가격', '100')
+    change('침대 구성', '퀸 1개')
+    change('객실 면적 (㎡)', '28.50')
     fireEvent.submit(form('객실 생성'))
     await openAdminPanel('정보 편집')
     await screen.findByRole('form', { name: '객실 정보 수정' })
     expectUiSemantics()
     expect(screen.getByTestId('location').textContent).toBe('/admin/rooms/3?accommodationId=7')
+    expect(screen.getByLabelText('침대 구성')).toHaveProperty('value', '퀸 1개')
     change('기본 1박 가격', '120')
+    change('전망', '정원')
     fireEvent.submit(form('객실 정보 수정'))
     await openAdminPanel('객실 요약')
     expect(
@@ -347,6 +351,12 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       saleStatus: 'CLOSED',
     })
     expect(api.state.room?.nightlyPrice).toBe(120)
+    expect(api.state.room?.metadata).toEqual({
+      description: null,
+      bedConfiguration: '퀸 1개',
+      areaSquareMeters: 28.5,
+      view: '정원',
+    })
     expect(api.state.price?.nightlyPrice).toBe(160.5)
     expect(api.state.reservation).toEqual(reservationDetail)
     expect(
