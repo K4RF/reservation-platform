@@ -207,7 +207,7 @@ Before completing a change:
   #328 adds optional Room metadata (description, bed configuration, square meters,
   view) to detail and management responses only. PUT omission/null preserves it;
   a supplied object replaces it, and `{}` clears it. See docs/architecture/room-metadata.md
-  for the one-time MySQL upgrade. Frontend display/editor integration is separate.
+  for the one-time MySQL upgrade. #334 connects the ADMIN editor; customer display is separate.
   Media write transactions must call
   CatalogMediaCacheEviction through its proxy; repository/SQL writes are not
   automatically detected. #273 implements ADMIN album GET/upload/metadata/order/
@@ -467,6 +467,11 @@ Before completing a change:
   reset list filters/page/form state and ignore stale responses. Capacity is total
   guests; room PUT changes the base price, not daily overrides or stored reservations.
   Price input conservatively respects DECIMAL(12,2), without silent rounding.
+  Room metadata drafts start from a freshly verified detail GET, never a list row.
+  Omit unchanged metadata, preserve untouched fields in an intentional replacement,
+  and send `{}` only when clearing all saved fields. Ambiguous edits need a new
+  successful detail GET and explicit review before unlocking. See
+  `docs/testing/frontend-admin-rooms.md#객실-메타데이터-연동-334`.
   Daily-price management supports one Room/stayDate GET plus ADMIN POST/PUT.
   Reuse the effective-price response: DEFAULT/null ID is a valid base fallback,
   DAILY/positive ID is an override. Choose create/update from the last successful
