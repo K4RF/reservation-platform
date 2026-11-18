@@ -4160,6 +4160,7 @@ form[aria-label='대표 투숙객 정보'] {
   margin-bottom: var(--space-6);
 }
 .room-detail-name {
+  margin-block-start: var(--space-4);
   font-size: var(--font-size-2xl);
 }
 .room-detail-dialog .room-detail-facts {
@@ -4170,7 +4171,7 @@ form[aria-label='대표 투숙객 정보'] {
   border-radius: var(--radius-control);
   background: var(--color-background);
 }
-.room-detail-facts dt {
+:is(.room-detail-facts, .room-detail-features) dt {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
 }
@@ -4178,11 +4179,30 @@ form[aria-label='대표 투숙객 정보'] {
   margin: var(--space-1) 0 0;
   font-weight: var(--font-weight-semibold);
 }
-.room-detail-unavailable {
+.room-detail-dialog .room-detail-metadata {
+  margin-block: var(--space-5);
   padding: var(--space-4);
-  border: 1px dashed var(--color-border-control);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  color: var(--color-text-subtle);
+  background: var(--color-background);
+}
+.room-detail-metadata h4 {
+  margin: 0;
+}
+.room-detail-metadata > :not(h4) {
+  margin: var(--space-3) 0 0;
+}
+.room-detail-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.room-detail-dialog .room-detail-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: var(--space-3);
+}
+.room-detail-features dd {
+  white-space: pre-wrap;
 }
 /* A tall sticky header must not consume a narrow/short modal's scroll viewport. */
 @media (max-width: 24rem), (max-height: 36rem) {
