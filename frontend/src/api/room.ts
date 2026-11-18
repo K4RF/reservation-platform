@@ -3,6 +3,7 @@ import { ApiError } from './errors'
 import { hasCatalogMedia, type CatalogMedia } from './media'
 import { roomAmenities, type RoomAmenity } from './accommodation'
 import { validateAvailability, type AvailabilityRequest } from './availabilityValidation'
+import { isRoomMetadata, type RoomMetadata } from './roomMetadata'
 
 export interface RoomResponse extends CatalogMedia {
   roomId: number
@@ -12,6 +13,7 @@ export interface RoomResponse extends CatalogMedia {
   nightlyPrice: number
   amenities: RoomAmenity[]
   status: 'ACTIVE' | 'INACTIVE'
+  metadata?: RoomMetadata
 }
 export interface RoomPageResponse {
   content: RoomResponse[]
@@ -54,7 +56,8 @@ export function isRoomResponse(
     (room.status === 'ACTIVE' || room.status === 'INACTIVE') &&
     Array.isArray(room.amenities) &&
     room.amenities.every((item) => roomAmenities.includes(item)) &&
-    hasCatalogMedia(room, mediaLimit)
+    hasCatalogMedia(room, mediaLimit) &&
+    (room.metadata === undefined || isRoomMetadata(room.metadata))
   )
 }
 

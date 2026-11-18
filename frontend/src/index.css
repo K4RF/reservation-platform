@@ -3562,6 +3562,10 @@ form[aria-label='대표 투숙객 정보'] {
 .admin-fields-grid > .admin-field-wide {
   grid-column: 1 / -1;
 }
+.room-metadata-error {
+  color: var(--color-error);
+  overflow-wrap: anywhere;
+}
 .admin-form :is(button, .admin-check) {
   justify-self: start;
 }

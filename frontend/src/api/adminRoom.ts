@@ -3,6 +3,7 @@ import { ApiError } from './errors'
 import { isRoomResponse } from './room'
 import type { RoomResponse } from './room'
 import type { RoomAmenity } from './accommodation'
+import type { RoomMetadata } from './roomMetadata'
 
 // Accommodation is supplied by the create URL, not the body; update cannot move a room.
 export interface RoomWriteRequest {
@@ -10,6 +11,8 @@ export interface RoomWriteRequest {
   capacity: number
   nightlyPrice: number
   amenities: RoomAmenity[]
+  // Omitted preserves existing metadata on PUT; {} clears it.
+  metadata?: Partial<RoomMetadata>
 }
 function readWriteResponse(
   response: RoomResponse | undefined,
@@ -22,7 +25,7 @@ function readWriteResponse(
     (roomId !== null && response.roomId !== roomId)
   ) {
     throw new ApiError(
-      '객실 관리 응답의 ID 또는 숙소 관계가 올바르지 않습니다. 저장 결과를 확인해 주세요.',
+      '객실 관리 응답의 형식, ID 또는 숙소 관계가 올바르지 않습니다. 저장 결과를 확인해 주세요.',
       { kind: 'unexpected_response' },
     )
   }
