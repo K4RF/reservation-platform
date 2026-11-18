@@ -86,7 +86,15 @@ describe('availability and selection lifecycle with real API client', () => {
       Promise.resolve(
         Response.json(
           url === '/api/v1/rooms/3'
-            ? room
+            ? {
+                ...room,
+                metadata: {
+                  description: null,
+                  bedConfiguration: '퀸 1개',
+                  areaSquareMeters: null,
+                  view: null,
+                },
+              }
             : url.includes('/prices/')
               ? {
                   roomDailyPriceId: null,
@@ -110,8 +118,13 @@ describe('availability and selection lifecycle with real API client', () => {
         onLoginRequired={() => {}}
       />,
     )
-    fireEvent.click(await screen.findByRole('button', { name: '스탠다드 상세 보기' }))
+    const detailTrigger = await screen.findByRole('button', { name: '스탠다드 상세 보기' })
+    expect(mock.mock.calls.map(([url]) => url)).toHaveLength(1)
+    expect(screen.queryByText('퀸 1개')).toBeNull()
+    fireEvent.click(detailTrigger)
     await screen.findByRole('button', { name: '이 객실 선택' })
+    expect(screen.getByText('퀸 1개')).toBeTruthy()
+    expect(mock.mock.calls.filter(([url]) => url.includes('/prices/'))).toHaveLength(0)
     fireEvent.click(screen.getByRole('button', { name: '객실 상세 닫기' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(screen.getByRole('navigation', { name: '예약 가능 객실 페이지' }).textContent).toContain(
@@ -122,6 +135,11 @@ describe('availability and selection lifecycle with real API client', () => {
     fireEvent.click(screen.getByRole('button', { name: '스탠다드 상세 보기' }))
     fireEvent.click(await screen.findByRole('button', { name: '이 객실 선택' }))
     await screen.findByRole('button', { name: '예약하려면 로그인' })
+    expect(screen.getByText('총 예상 금액: 246,913.56')).toBeTruthy()
+    expect(mock.mock.calls.filter(([url]) => url === '/api/v1/rooms/3')).toHaveLength(2)
+    expect(
+      mock.mock.calls.filter(([url]) => url.includes('/prices/')).map(([url]) => url.slice(-10)),
+    ).toEqual(['2030-01-01', '2030-01-02'])
     expect(mock.mock.calls.filter(([url]) => url.includes('/rooms/available?'))).toHaveLength(1)
     expect(mock.mock.calls[0][0]).toContain('page=1')
     searchLayers.stepGuests('숙박 인원', true)

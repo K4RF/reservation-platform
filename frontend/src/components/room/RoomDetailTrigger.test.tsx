@@ -12,6 +12,12 @@ mockDialog()
 const stay = { checkInDate: '2030-01-01', checkOutDate: '2030-01-03', guestCount: 2 }
 const path =
   '/accommodations/7?checkInDate=2030-01-01&checkOutDate=2030-01-03&guestCount=2&search=city%3D서울'
+const metadata = {
+  description: '창가의 독서 공간\n' + '<b>일반 텍스트</b>'.repeat(60),
+  bedConfiguration: '퀸 1개, 싱글 1개',
+  areaSquareMeters: 28.55,
+  view: '정원',
+}
 
 function Harness({
   available = false,
@@ -88,7 +94,7 @@ afterEach(() => {
 describe('public room detail and history boundary', () => {
   it('renders fresh Media inside the existing dialog, and a photo failure never selects or invalidates a verified room', async () => {
     const images = [media(), media(2, 1)]
-    const fetch = mockResponse({ ...room, representativeImage: images[0], images })
+    const fetch = mockResponse({ ...room, representativeImage: images[0], images, metadata })
     view({ available: true })
     open()
     await screen.findByRole('heading', { name: room.name, level: 3 })
@@ -96,6 +102,12 @@ describe('public room detail and history boundary', () => {
     expect(screen.getAllByRole('dialog')).toHaveLength(1)
     fireEvent.click(within(dialog).getByRole('button', { name: '다음 사진' }))
     fireEvent.error(within(dialog).getByRole('img'))
+    const info = within(dialog).getByRole('region', { name: '객실 소개' })
+    expect(info.textContent).toContain(metadata.description)
+    expect(info.querySelector('b')).toBeNull()
+    for (const value of ['퀸 1개, 싱글 1개', '28.55 ㎡', '정원']) {
+      expect(within(info).getByText(value)).toBeTruthy()
+    }
     expect(within(dialog).getByRole('button', { name: '이 객실 선택' })).toHaveProperty(
       'disabled',
       false,
@@ -119,9 +131,7 @@ describe('public room detail and history boundary', () => {
       expect(within(dialog).getByText(label)).toBeTruthy()
     }
     expect(within(dialog).getByText('123,456.78')).toBeTruthy()
-    expect(
-      within(dialog).getByText(/객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다/),
-    ).toBeTruthy()
+    expect(within(dialog).queryByRole('region', { name: '객실 소개' })).toBeNull()
     expect(within(dialog).queryByRole('img')).toBeNull()
     expect(within(dialog).getByText('객실 사진 미제공')).toBeTruthy()
     expect(dialog.querySelector('img')).toBeNull()
@@ -137,6 +147,21 @@ describe('public room detail and history boundary', () => {
       roomDetail: { scope: 'catalog:7:0', roomId: 3, accommodationId: 7 },
     })
     expect(screen.getByTestId('selection').textContent).toBe('none')
+  })
+  it('shows just the provided field of partial metadata and never creates a selection in catalog mode', async () => {
+    const fetch = mockResponse({
+      ...room,
+      metadata: { description: null, bedConfiguration: null, areaSquareMeters: 0.01, view: ' ' },
+    })
+    view()
+    expect(fetch).not.toHaveBeenCalled()
+    open()
+    const info = await screen.findByRole('region', { name: '객실 소개' })
+    expect(within(info).getByText('0.01 ㎡')).toBeTruthy()
+    expect(within(info).queryByText('침대 구성')).toBeNull()
+    expect(within(info).queryByText('전망')).toBeNull()
+    expect(screen.queryByRole('button', { name: '이 객실 선택' })).toBeNull()
+    expect(fetch).toHaveBeenCalledOnce()
   })
   it('focuses close, locks scrolling, restores the trigger/position and preserves pre-existing overflow on close', async () => {
     mockResponse()
@@ -172,7 +197,7 @@ describe('public room detail and history boundary', () => {
     expect(screen.getByTestId('selection').textContent).toBe('none')
   })
   it('wraps Tab/Shift+Tab between enabled dialog actions without moving focus to the background', async () => {
-    mockResponse()
+    mockResponse({ ...room, metadata })
     view({ available: true })
     open()
     const select = await screen.findByRole('button', { name: '이 객실 선택' })
@@ -200,7 +225,7 @@ describe('public room detail and history boundary', () => {
   it.each([{ roomId: 9 }, { accommodationId: 8 }, { capacity: 0 }, { nightlyPrice: -1 }])(
     'rejects invalid detail/identity %j without enabling selection',
     async (override) => {
-      mockResponse({ ...room, ...override })
+      mockResponse({ ...room, metadata, ...override })
       view({ available: true })
       open()
       const dialog = screen.getByRole('dialog')

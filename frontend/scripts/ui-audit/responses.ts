@@ -158,10 +158,13 @@ export function auditResponse(
     return Response.json({
       ...catalogRoom,
       metadata: {
-        description: '창가에 작은 독서 공간이 있습니다.',
+        description: stress
+          ? '긴 객실 설명과 줄바꿈을 생략하지 않는지 확인합니다.\n' +
+            'FixtureRoomDescriptionWithoutSpaces'.repeat(28).slice(0, 930)
+          : '창가에 작은 독서 공간이 있습니다.',
         bedConfiguration: '퀸 1개',
         areaSquareMeters: 28.5,
-        view: null,
+        view: scenario === 'comparison' ? '정원' : null,
       },
     })
   if (['/api/v1/accommodations/7/media', '/api/v1/rooms/3/media'].includes(path)) {
