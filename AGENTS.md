@@ -207,7 +207,9 @@ Before completing a change:
   #328 adds optional Room metadata (description, bed configuration, square meters,
   view) to detail and management responses only. PUT omission/null preserves it;
   a supplied object replaces it, and `{}` clears it. See docs/architecture/room-metadata.md
-  for the one-time MySQL upgrade. #334 connects the ADMIN editor; customer display is separate.
+  for the one-time MySQL upgrade. #334 connects the ADMIN editor. #335 renders only
+  provided values in the customer's Room dialog/Sheet from its existing detail GET,
+  with no card prefetch and no effect on room selection or pricing.
   Media write transactions must call
   CatalogMediaCacheEviction through its proxy; repository/SQL writes are not
   automatically detected. #273 implements ADMIN album GET/upload/metadata/order/

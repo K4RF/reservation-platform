@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { getRoom, type RoomResponse } from '../../api/room'
+import type { RoomMetadata } from '../../api/roomMetadata'
 import { ApiError } from '../../api/errors'
 import { useDetailQuery } from '../../pages/useDetailQuery'
 import { ErrorState } from '../ui/ErrorState'
@@ -15,6 +16,40 @@ function sameRoom(left: RoomResponse, right: RoomResponse) {
     left.status === right.status &&
     left.amenities.length === right.amenities.length &&
     left.amenities.every((item) => right.amenities.includes(item))
+  )
+}
+
+function RoomDetailMetadata({ id, metadata }: { id: string; metadata: RoomMetadata }) {
+  const { description, bedConfiguration, areaSquareMeters, view } = metadata
+  const details = [
+    { label: '침대 구성', value: bedConfiguration?.trim() ? bedConfiguration : null },
+    {
+      label: '면적',
+      value:
+        areaSquareMeters === null
+          ? null
+          : `${areaSquareMeters.toLocaleString('ko-KR', { maximumFractionDigits: 2 })} ㎡`,
+    },
+    { label: '전망', value: view?.trim() ? view : null },
+  ].filter(({ value }) => value !== null)
+  const hasDescription = !!description?.trim()
+  if (!hasDescription && details.length === 0) return null
+
+  return (
+    <section className="room-detail-metadata" aria-labelledby={id}>
+      <h4 id={id}>객실 소개</h4>
+      {hasDescription && <p className="room-detail-description">{description}</p>}
+      {details.length > 0 && (
+        <dl className="room-detail-features">
+          {details.map(({ label, value }) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </section>
   )
 }
 
@@ -114,7 +149,9 @@ export function RoomDetailDialog({
       )}
       {room && (
         <>
-          <CatalogGallery images={room.images} label="객실 사진" inline />
+          <div className="room-detail-media">
+            <CatalogGallery images={room.images} label="객실 사진" inline />
+          </div>
           <h3 className="room-detail-name">{room.name}</h3>
           <dl className="room-detail-facts">
             <div>
@@ -142,6 +179,7 @@ export function RoomDetailDialog({
             기본 가격은 날짜별 적용 가격·투숙 총액·예약 금액 스냅샷이 아닙니다. API에 통화 정보는
             없습니다.
           </p>
+          {room.metadata && <RoomDetailMetadata id={`${id}-metadata`} metadata={room.metadata} />}
           <h4>객실 편의시설</h4>
           {room.amenities.length ? (
             <ul className="catalog-amenities" aria-label="상세 객실 편의시설">
@@ -152,9 +190,6 @@ export function RoomDetailDialog({
           ) : (
             <p>등록된 편의시설이 없습니다.</p>
           )}
-          <p className="room-detail-unavailable">
-            객실 설명·침대·면적·전망의 추가 정보는 제공하지 않습니다.
-          </p>
           {context.request && (
             <p>
               {context.request.checkInDate} ~ {context.request.checkOutDate} ·{' '}

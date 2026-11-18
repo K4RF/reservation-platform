@@ -30,6 +30,8 @@ Home/Search의 공통 목적지 입력은 후보의 `displayName`을 표시하�
 
 - [공개 Media 계약](../architecture/catalog-media.md)에 있는 사진만 표시한다. 사진 없음/실패를
   가짜 매물 사진으로 채우지 않는다. 목록 최저가·통화·리뷰·객실 Bed/Size/View는 추측하지 않는다.
+  [객실 상세 (#335)](../testing/frontend-room-detail-selection.md#고객-객실-메타데이터-335)의 설명·침대·면적·전망은
+  모달을 열 때의 저장값만 표시하며, 목록·가용성 조회·가격·선택에는 추가하지 않는다.
 - [ADMIN 앨범](../architecture/media-management.md)은 최신 GET의 강한 ETag로 쓰기를 준비한다.
   쓰기 실패·결과 불명 이후에는 GET으로 다시 확인하고 새 리뷰를 거친다. 자동으로 재전송하지 않는다.
 - 예약 생성·변경·취소·관리 쓰기는 401을 포함해 자동 재실행하지 않는다. 네트워크 오류나 이탈은
