@@ -128,7 +128,11 @@ export function adminManagementApi(seedCatalog = false) {
             : []
         return Response.json(
           accommodationPage({
-            content: rows.map((row) => ({ ...row, images: row.images.slice(0, 1) })),
+            content: rows.map((row) => ({
+              ...row,
+              images: row.images.slice(0, 1),
+              metadata: undefined,
+            })),
             totalElements: rows.length,
             totalPages: rows.length ? 1 : 0,
           }),
@@ -183,7 +187,13 @@ export function adminManagementApi(seedCatalog = false) {
         )
       }
       if (method === 'POST') {
-        expect(Object.keys(body).sort()).toEqual(['amenities', 'capacity', 'name', 'nightlyPrice'])
+        expect(Object.keys(body).sort()).toEqual([
+          'amenities',
+          'capacity',
+          ...(body.metadata === undefined ? [] : ['metadata']),
+          'name',
+          'nightlyPrice',
+        ])
         state.room = { ...room, ...body, status: 'ACTIVE' }
         return Response.json(state.room, { status: 201 })
       }

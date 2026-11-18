@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { searchAccommodationRooms } from './room'
+import { getRoom, searchAccommodationRooms } from './room'
 import { saveRoom, changeRoomStatus } from './adminRoom'
 import { room, roomPage, roomWrite } from '../test/room'
 import { accessTokenWithExpiry } from '../test/jwt'
@@ -11,6 +11,49 @@ function authenticate() {
   return token
 }
 describe('Room Admin API contracts', () => {
+  const metadata = {
+    description: null,
+    bedConfiguration: '퀸 1개',
+    areaSquareMeters: 28.5,
+    view: null,
+  }
+
+  it.each([null, 3])(
+    'sends optional metadata on room %s and accepts nullable response fields',
+    async (id) => {
+      authenticate()
+      const fetch = vi.fn().mockResolvedValue(Response.json({ ...room, metadata }))
+      vi.stubGlobal('fetch', fetch)
+      await expect(saveRoom(7, id, { ...roomWrite, metadata })).resolves.toMatchObject({ metadata })
+      expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({ ...roomWrite, metadata })
+    },
+  )
+
+  it('sends an explicit empty object on clear, and reads an omitted metadata field', async () => {
+    authenticate()
+    const fetch = vi.fn().mockResolvedValue(Response.json(room))
+    vi.stubGlobal('fetch', fetch)
+    await expect(saveRoom(7, 3, { ...roomWrite, metadata: {} })).resolves.not.toHaveProperty(
+      'metadata',
+    )
+    expect(JSON.parse(fetch.mock.calls[0][1].body).metadata).toEqual({})
+  })
+
+  it.each([
+    null,
+    {},
+    { ...metadata, view: 7 },
+    { ...metadata, areaSquareMeters: '28.50' },
+    { ...metadata, areaSquareMeters: 1.001 },
+  ])('rejects malformed metadata on detail and write response: %j', async (invalid) => {
+    const response = { ...room, metadata: invalid }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => Promise.resolve(Response.json(response))),
+    )
+    await expect(getRoom(3)).rejects.toMatchObject({ kind: 'unexpected_response' })
+    await expect(saveRoom(7, 3, roomWrite)).rejects.toMatchObject({ kind: 'unexpected_response' })
+  })
   it('reuses the public scoped list with supported filters and no availability/ACTIVE default', async () => {
     authenticate()
     const fetch = vi.fn().mockResolvedValue(Response.json(roomPage()))

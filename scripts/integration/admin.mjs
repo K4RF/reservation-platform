@@ -40,8 +40,16 @@ export async function verifyAdmin({
     nightlyPrice: 10000,
     amenities: ["WIFI"],
   };
+  const roomMetadata = {
+    description: null,
+    bedConfiguration: "Queen",
+    areaSquareMeters: 28.5,
+    view: null,
+  };
   const roomId = id(
-    (await write(parent + "/rooms", "POST", roomRequest, 201)).roomId,
+    (
+      await write(parent + "/rooms", "POST", { ...roomRequest, metadata: roomMetadata }, 201)
+    ).roomId,
   );
   const room = "/rooms/" + roomId;
   const booking = parent + "/booking-policy";
@@ -92,6 +100,18 @@ export async function verifyAdmin({
 
   const getHotel = () => read(parent);
   const getRoom = () => read(room);
+  async function checkRoomMetadata(expected) {
+    const current = await getRoom();
+    check(
+      current.roomId === roomId &&
+        current.accommodationId === accommodationId &&
+        (expected === undefined
+          ? !("metadata" in current)
+          : Object.entries(expected).every(([key, value]) => current.metadata?.[key] === value)),
+      "fresh public room detail reflects saved metadata",
+    );
+  }
+  await checkRoomMetadata(roomMetadata);
   const parentStatus = (status) =>
     write(parent + "/status", "PATCH", { status });
   const roomStatus = (status) => write(room + "/status", "PATCH", { status });
@@ -109,12 +129,30 @@ export async function verifyAdmin({
   );
   await write(parent, "PUT", { ...hotel, name: catalogName + " Updated" });
   await write(room, "PUT", { ...roomRequest, capacity: 3 });
+  await checkRoomMetadata(roomMetadata);
   check(
     (await getHotel()).name === catalogName + " Updated" &&
       (await getRoom()).capacity === 3 &&
       (await getRoom()).accommodationId === accommodationId,
     "fresh catalog reads preserve Room/Accommodation relationship",
   );
+  const updatedMetadata = { ...roomMetadata, view: "Garden" };
+  for (const metadata of [updatedMetadata, { ...updatedMetadata, bedConfiguration: null }, {}]) {
+    await write(room, "PUT", { ...roomRequest, capacity: 3, metadata });
+    await checkRoomMetadata(Object.keys(metadata).length ? metadata : undefined);
+  }
+  const invalidMetadata = await error(
+    room,
+    400,
+    "COMMON_001",
+    options("PUT", { ...roomRequest, capacity: 3, metadata: { areaSquareMeters: 28.501 } }),
+  );
+  check(
+    invalidMetadata.errors.some(({ field }) => field === "metadata.areaSquareMeters"),
+    "metadata validation path",
+  );
+  await checkRoomMetadata(undefined);
+  console.log("PASS ADMIN room metadata create, preserve, replace and clear with fresh public detail");
   const otherParent =
     "/accommodations/" +
     id(

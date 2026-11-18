@@ -154,7 +154,16 @@ export function auditResponse(
       ),
     )
   if (path === '/api/v1/accommodations/7') return Response.json(catalog)
-  if (path === '/api/v1/rooms/3') return Response.json(catalogRoom)
+  if (path === '/api/v1/rooms/3')
+    return Response.json({
+      ...catalogRoom,
+      metadata: {
+        description: '창가에 작은 독서 공간이 있습니다.',
+        bedConfiguration: '퀸 1개',
+        areaSquareMeters: 28.5,
+        view: null,
+      },
+    })
   if (['/api/v1/accommodations/7/media', '/api/v1/rooms/3/media'].includes(path)) {
     const roomOwner = path.includes('/rooms/')
     const revision = 'a'.repeat(64)
