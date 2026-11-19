@@ -8,7 +8,7 @@ import { setTokenPair } from '../../src/state/accessToken'
 import { accessTokenWithExpiry } from '../../src/test/jwt'
 import { seoul, gangnam } from '../../src/test/locationSuggestions'
 import { auditResponse } from './responses'
-import type { AuditScenario, AuditBooking, AuditAdmin } from './responses'
+import type { AuditScenario, AuditBooking, AuditAdmin, AuditPolicy } from './responses'
 import { startPerformanceProbe } from './performanceProbe'
 import '../../src/index.css'
 
@@ -27,6 +27,9 @@ const textScale = params.get('textScale') ?? '100'
 const mediaMode = params.get('media') ?? 'missing'
 const booking = params.get('booking') ?? 'blocked'
 const admin = params.get('admin') ?? 'blocked'
+const policy = params.get('policy') ?? 'ready'
+if (!['ready', 'unset', 'error', 'not-found'].includes(policy))
+  throw new Error('Unknown audit policy state')
 if (!['blocked', 'policy-success', 'policy-error'].includes(admin))
   throw new Error('Unknown audit Admin outcome')
 const auth = params.get('auth') ?? 'blocked'
@@ -141,6 +144,7 @@ window.fetch = (input, init) => {
       mediaMode,
       booking as AuditBooking,
       role === 'ADMIN' ? (admin as AuditAdmin) : 'blocked',
+      policy as AuditPolicy,
     ),
   )
 }

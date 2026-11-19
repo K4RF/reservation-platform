@@ -195,8 +195,9 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       within(screen.getByRole('region', { name: '현재 숙소 정보' })).getByRole('heading')
         .textContent,
     ).toBe('관리 호텔')
-    // Policy forms deliberately require explicit POST/PUT; no current-policy GET exists.
+    // Reading the current policy never selects or submits a write operation.
     await openAdminPanel('예약 정책 편집')
+    await screen.findByText('설정된 예약 정책이 없습니다.')
     for (const operation of ['POST', 'PUT']) {
       const policy = within(form('예약 정책 입력'))
       fireEvent.change(policy.getByLabelText('예약 정책 작업'), { target: { value: operation } })
@@ -214,6 +215,7 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
       )
       fireEvent.submit(form('예약 정책 입력'))
       await screen.findByRole('region', { name: '예약 정책 성공 응답' })
+      await within(screen.getByRole('region', { name: '현재 예약 정책' })).findByText(/최대 14박/)
     }
     await openAdminPanel('취소 정책 편집')
     for (const operation of ['POST', 'PUT']) {

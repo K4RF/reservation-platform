@@ -1,5 +1,5 @@
 import * as searchLayers from '../test/searchLayers'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { AccommodationDetailPage } from './AccommodationDetailPage'
@@ -7,6 +7,9 @@ import { accommodation } from '../test/accommodation'
 import { roomPage } from '../test/room'
 import { media } from '../test/media'
 import { AuthProvider } from '../state/AuthProvider'
+import { bookingPolicy } from '../test/adminAccommodation'
+
+const policyResponse = { ...bookingPolicy, bookingPolicyId: 5, accommodationId: 7 }
 
 function NavigateDetail() {
   const navigate = useNavigate()
@@ -25,17 +28,19 @@ function renderAt(path = '/accommodations/7') {
   )
 }
 function mockApi() {
-  const fetchMock = vi
-    .fn()
-    .mockImplementation((url: string) =>
-      Promise.resolve(
-        Response.json(
-          url.includes('/rooms?')
-            ? roomPage({ page: Number(new URL(url, 'http://localhost').searchParams.get('page')) })
-            : accommodation,
+  const fetchMock = vi.fn().mockImplementation((url: string) =>
+    url.endsWith('/booking-policy')
+      ? Promise.resolve(new Response(null, { status: 204 }))
+      : Promise.resolve(
+          Response.json(
+            url.includes('/rooms?')
+              ? roomPage({
+                  page: Number(new URL(url, 'http://localhost').searchParams.get('page')),
+                })
+              : accommodation,
+          ),
         ),
-      ),
-    )
+  )
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -64,17 +69,20 @@ describe('AccommodationDetailPage with the real API client', () => {
     const mock = mockApi()
     const images = [media(), media(2, 1)]
     mock.mockImplementation((url: string) =>
-      Promise.resolve(
-        Response.json(
-          url.includes('/rooms')
-            ? roomPage()
-            : { ...accommodation, representativeImage: images[0], images },
-        ),
-      ),
+      url.endsWith('/booking-policy')
+        ? Promise.reject(new TypeError('offline'))
+        : Promise.resolve(
+            Response.json(
+              url.includes('/rooms')
+                ? roomPage()
+                : { ...accommodation, representativeImage: images[0], images },
+            ),
+          ),
     )
     renderAt()
     await screen.findByRole('heading', { name: '서울 호텔' })
     await screen.findByRole('heading', { name: '스탠다드' })
+    expect(await screen.findByText('예약 정책을 불러오지 못했습니다.')).toBeTruthy()
     searchLayers.editStayDate('숙박 체크인', '2030-01-01')
     searchLayers.editStayDate('숙박 체크아웃', '2030-01-02')
     fireEvent.submit(screen.getByRole('form', { name: '객실 가용성 조건' }))
@@ -112,7 +120,7 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.queryByRole('button', { name: '스탠다드 선택' })).toBeNull()
     expect(mock.mock.calls.every(([url]) => !url.includes('/available'))).toBe(true)
   })
-  it('loads real-contract fields and rooms without requesting non-existent policy GET APIs', async () => {
+  it('loads operating facts and unconfigured policy without using any cancellation-policy GET', async () => {
     const fetchMock = mockApi()
     renderAt()
     expect(screen.getByText('숙소 상세를 불러오고 있습니다.')).toBeTruthy()
@@ -123,7 +131,7 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.getByText('15:00:00')).toBeTruthy()
     expect(screen.getByText('11:00:00')).toBeTruthy()
     expect(screen.getByText('Asia/Seoul')).toBeTruthy()
-    expect(screen.getByText('예약·취소 정책은 현재 이 화면에서 확인할 수 없습니다.')).toBeTruthy()
+    expect(await screen.findByText('설정된 예약 정책이 없습니다.')).toBeTruthy()
     expect(screen.getByText('숙소 사진 미제공')).toBeTruthy()
     expect(screen.queryByRole('img')).toBeNull()
     expect(screen.queryByRole('button', { name: /사진.*보기/ })).toBeNull()
@@ -138,7 +146,68 @@ describe('AccommodationDetailPage with the real API client', () => {
     fireEvent.click(screen.getByRole('link', { name: '객실 선택' }))
     // An in-page CTA only moves to the existing query controls; it never queries/selects/writes.
     expect(fetchMock.mock.calls.every(([url]) => !url.includes('/rooms/available'))).toBe(true)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(fetchMock.mock.calls.some(([url]) => url.endsWith('/cancellation-policy'))).toBe(false)
+  })
+  it('keeps a policy 404 local and retries just the read using stored limits, not computed dates', async () => {
+    let reads = 0
+    const fetch = vi.fn((url: string) =>
+      Promise.resolve(
+        url.endsWith('/booking-policy')
+          ? ++reads === 1
+            ? new Response(null, { status: 404 })
+            : Response.json(policyResponse)
+          : Response.json(
+              url.includes('/rooms?')
+                ? roomPage()
+                : { ...accommodation, timeZone: 'America/New_York' },
+            ),
+      ),
+    )
+    vi.stubGlobal('fetch', fetch)
+    renderAt()
+    const policyRegion = await screen.findByRole('region', { name: '예약 정책' })
+    const policy = within(policyRegion)
+    await policy.findByText('예약 정책을 조회할 숙소를 찾을 수 없습니다.')
+    expect(screen.getByRole('heading', { name: '서울 호텔' })).toBeTruthy()
+    expect(screen.getByText('America/New_York')).toBeTruthy()
+    fireEvent.click(policy.getByRole('button', { name: '다시 시도' }))
+    expect(await policy.findByText(/최소 1박/)).toBeTruthy()
+    expect(document.activeElement).toBe(policyRegion)
+    expect(policy.getByText('사전 예약일은 숙소 현지 날짜 기준입니다.')).toBeTruthy()
+    expect(fetch.mock.calls.filter(([url]) => url.endsWith('/booking-policy'))).toHaveLength(2)
+    expect(fetch.mock.calls.filter(([url]) => url.includes('/rooms?'))).toHaveLength(1)
+  })
+  it('aborts late policy reads and does not display another property’s policy on navigation', async () => {
+    let finish!: (response: Response) => void
+    let signal: AbortSignal | null | undefined
+    const fetch = vi.fn((url: string, init: RequestInit) => {
+      if (url.endsWith('/7/booking-policy')) {
+        signal = init.signal
+        return new Promise<Response>((resolve) => {
+          finish = resolve
+        })
+      }
+      if (url.endsWith('/8/booking-policy'))
+        return Promise.resolve(new Response(null, { status: 204 }))
+      if (url.includes('/rooms?')) return Promise.resolve(Response.json(roomPage({ content: [] })))
+      return Promise.resolve(
+        Response.json(
+          url.endsWith('/8')
+            ? { ...accommodation, accommodationId: 8, name: '다른 호텔' }
+            : accommodation,
+        ),
+      )
+    })
+    vi.stubGlobal('fetch', fetch)
+    renderAt()
+    await waitFor(() => expect(finish).toBeTypeOf('function'))
+    fireEvent.click(screen.getByRole('button', { name: '다른 숙소' }))
+    await screen.findByText('설정된 예약 정책이 없습니다.')
+    expect(signal?.aborted).toBe(true)
+    await act(async () => finish(Response.json(policyResponse)))
+    expect(screen.queryByText(/최소 1박/)).toBeNull()
+    expect(screen.getByRole('heading', { name: '다른 호텔' })).toBeTruthy()
   })
   it('does not guess legacy location or missing check-in/out times', async () => {
     vi.stubGlobal(
@@ -207,7 +276,7 @@ describe('AccommodationDetailPage with the real API client', () => {
     expect(screen.getByRole('heading', { name: '서울 호텔' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
     await screen.findByRole('heading', { name: '스탠다드' })
-    expect(mock.mock.calls.filter(([url]) => !url.includes('/rooms?'))).toHaveLength(1)
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/accommodations/7'))).toHaveLength(1)
   })
   it('paginates rooms without reloading accommodation details', async () => {
     const mock = mockApi()
@@ -219,10 +288,10 @@ describe('AccommodationDetailPage with the real API client', () => {
     renderAt()
     await screen.findByRole('heading', { name: '스탠다드' })
     fireEvent.click(screen.getByRole('button', { name: '다음 객실' }))
-    await waitFor(() => expect(mock).toHaveBeenCalledTimes(3))
-    expect(mock.mock.calls[2][0]).toContain('page=1')
+    await waitFor(() => expect(mock).toHaveBeenCalledTimes(4))
+    expect(mock.mock.calls.at(-1)![0]).toContain('page=1')
     await screen.findByRole('heading', { name: '스탠다드' })
-    expect(mock.mock.calls.filter(([url]) => !url.includes('/rooms?'))).toHaveLength(1)
+    expect(mock.mock.calls.filter(([url]) => url.endsWith('/accommodations/7'))).toHaveLength(1)
   })
   it('ignores old detail responses after route navigation', async () => {
     let resolveOld!: (response: Response) => void

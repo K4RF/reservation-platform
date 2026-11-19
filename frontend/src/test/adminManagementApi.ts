@@ -1,6 +1,7 @@
 import { expect, vi } from 'vitest'
 import type { AccommodationResponse } from '../api/accommodation'
 import type { RoomResponse } from '../api/room'
+import type { BookingPolicyResponse } from '../api/bookingPolicy'
 import type { RoomDailyPriceResponse } from '../api/bookingPrice'
 import type { RoomInventoryResponse } from '../api/adminInventory'
 import { accommodation, accommodationPage } from './accommodation'
@@ -17,6 +18,7 @@ export function adminManagementApi(seedCatalog = false) {
       ? structuredClone(accommodation)
       : (null as AccommodationResponse | null),
     room: seedCatalog ? structuredClone(room) : (null as RoomResponse | null),
+    bookingPolicy: null as BookingPolicyResponse | null,
     price: null as RoomDailyPriceResponse | null,
     inventories: [] as RoomInventoryResponse[],
     reservation: structuredClone(reservationDetail),
@@ -156,6 +158,10 @@ export function adminManagementApi(seedCatalog = false) {
       state.accommodation = { ...state.accommodation, status: body.status }
       return Response.json(state.accommodation)
     }
+    if (path === '/api/v1/accommodations/7/booking-policy' && method === 'GET')
+      return state.bookingPolicy
+        ? Response.json(state.bookingPolicy)
+        : new Response(null, { status: 204 })
     if (
       [
         '/api/v1/accommodations/7/booking-policy',
@@ -163,6 +169,8 @@ export function adminManagementApi(seedCatalog = false) {
       ].includes(path) &&
       ['POST', 'PUT'].includes(method)
     ) {
+      if (path.endsWith('/booking-policy'))
+        state.bookingPolicy = { ...body, accommodationId: 7, bookingPolicyId: 11 }
       return Response.json(
         {
           ...body,
