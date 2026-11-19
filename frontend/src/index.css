@@ -1555,6 +1555,35 @@ legend {
   white-space: pre-wrap;
 }
 
+.accommodation-detail-page .booking-policy-readout,
+.admin-content .booking-policy-readout {
+  margin-block: var(--space-4);
+  padding: var(--space-4) min(var(--space-4), 4vw);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-background);
+  overflow-wrap: anywhere;
+}
+.booking-policy-readout .ui-error,
+.booking-policy-readout button {
+  padding-inline: min(var(--space-3), 3vw);
+}
+.booking-policy-readout .booking-policy-limits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-3);
+}
+.booking-policy-limits dt {
+  color: var(--color-text-muted);
+}
+.booking-policy-limits dd {
+  margin: 0;
+  font-weight: var(--font-weight-semibold);
+}
+.booking-policy-readout > :last-child {
+  margin-block-end: 0;
+}
+
 .availability-room-item {
   display: flex;
   flex-direction: column;

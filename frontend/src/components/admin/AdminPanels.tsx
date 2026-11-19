@@ -4,7 +4,15 @@ type Panel = { id: string; label: string; shortLabel?: string; content: ReactNod
 
 // Panel changes are presentation only. Keep all current record forms, results and
 // Media recovery mounted; the owning page still controls every read and write.
-export function AdminPanels({ panels, locked }: { panels: Panel[]; locked: boolean }) {
+export function AdminPanels({
+  panels,
+  locked,
+  onSelect,
+}: {
+  panels: Panel[]
+  locked: boolean
+  onSelect?: (id: string) => void
+}) {
   const [selected, setSelected] = useState(panels[0].id)
   const prefix = useId()
   const panel = useRef<HTMLElement>(null)
@@ -20,7 +28,10 @@ export function AdminPanels({ panels, locked }: { panels: Panel[]; locked: boole
             aria-controls={`${prefix}-${id}`}
             disabled={locked && selected !== id}
             onClick={() => {
-              if (!locked && selected !== id) setSelected(id)
+              if (!locked && selected !== id) {
+                setSelected(id)
+                onSelect?.(id)
+              }
             }}
             onKeyDown={(event) => {
               if (event.key === 'ArrowDown' && selected === id) {

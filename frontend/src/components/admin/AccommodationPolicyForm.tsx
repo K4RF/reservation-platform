@@ -27,18 +27,26 @@ const number = (data: FormData, key: string) => {
   const value = String(data.get(key) ?? '')
   return value.trim() ? Number(value) : NaN
 }
+export const bookingPolicyMutationScope = 'booking-policy'
+
 export function AccommodationPolicyForm({
   id,
   kind,
   mutation,
+  bookingRead,
 }: {
   id: number
   kind: 'booking' | 'cancellation'
   mutation: AdminMutation
+  bookingRead?: { snapshot?: object; onStart: () => void; onSaved: () => void }
 }) {
   const label = kind === 'booking' ? '예약 정책' : '취소 정책'
   const [operation, setOperation] = useState<PolicyOperation | ''>('')
-  const [confirmed, setConfirmed] = useState(false)
+  const [confirmation, setConfirmation] = useState<{ snapshot?: object } | null>(null)
+  const snapshot = bookingRead?.snapshot
+  const confirmed = confirmation !== null && confirmation.snapshot === snapshot
+  const needsRead = kind === 'booking' && !snapshot
+  const setConfirmed = (checked: boolean) => setConfirmation(checked ? { snapshot } : null)
   const [rows, setRows] = useState<number[]>([0])
   const [nextRow, setNextRow] = useState(1)
   const [error, setError] = useState('')
@@ -56,7 +64,11 @@ export function AccommodationPolicyForm({
     <section className="admin-policy-section" aria-label={`${label} 관리`}>
       <p className="admin-panel-label">명시적 작업 선택 · 전체 값 입력</p>
       <h3>{label}</h3>
-      <p>현재 정책은 여기서 조회할 수 없습니다. 작업을 고른 뒤 전체 값을 입력하세요.</p>
+      <p>
+        {kind === 'booking'
+          ? '현재 정책을 확인한 뒤 작업을 직접 선택하고 전체 값을 입력하세요.'
+          : '현재 취소 정책은 여기서 조회할 수 없습니다. 작업을 고른 뒤 전체 값을 입력하세요.'}
+      </p>
       <details className="admin-disclosure">
         <summary>생성과 수정의 차이</summary>
         <p>
@@ -115,7 +127,7 @@ export function AccommodationPolicyForm({
         }}
         onSubmit={(event) => {
           event.preventDefault()
-          if (mutation.disabled) return
+          if (mutation.disabled || needsRead) return
           if (!operation || !confirmed) {
             setError('생성/수정 작업을 선택하고 전체 입력값을 확인해 주세요.')
             return
@@ -136,9 +148,16 @@ export function AccommodationPolicyForm({
             setConfirmed(false)
             setResult(undefined)
             void mutation.run(
-              (signal) => saveBookingPolicy(id, operation, body, signal),
-              setResult,
-              '예약 정책 저장 응답을 받았습니다.',
+              (signal) => {
+                bookingRead?.onStart()
+                return saveBookingPolicy(id, operation, body, signal)
+              },
+              (saved) => {
+                setResult(saved)
+                bookingRead?.onSaved()
+              },
+              '예약 정책 저장 응답을 받았습니다. 현재 정책을 다시 조회합니다.',
+              bookingPolicyMutationScope,
             )
           } else {
             const body = {
@@ -231,7 +250,8 @@ export function AccommodationPolicyForm({
             {label} 생성/수정 작업과 전체 입력값을 확인했습니다.
           </label>
           {error && <ErrorState message={error} />}
-          <button type="submit" disabled={!operation || !confirmed}>
+          {needsRead && <p>예약 정책을 조회한 뒤 저장할 수 있습니다. 입력값은 유지됩니다.</p>}
+          <button type="submit" disabled={!operation || !confirmed || needsRead}>
             {label} 저장
           </button>
         </fieldset>
