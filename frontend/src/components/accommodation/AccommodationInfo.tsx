@@ -1,4 +1,8 @@
+import { useCallback } from 'react'
 import type { AccommodationResponse } from '../../api/accommodation'
+import { getBookingPolicy } from '../../api/bookingPolicy'
+import { useDetailQuery } from '../../pages/useDetailQuery'
+import { BookingPolicyReadout } from './BookingPolicyReadout'
 import { toAccommodationCard } from './accommodationView'
 
 export function AccommodationTitle({ accommodation }: { accommodation: AccommodationResponse }) {
@@ -42,6 +46,9 @@ export function AccommodationOperatingInfo({
 }: {
   accommodation: AccommodationResponse
 }) {
+  const id = accommodation.accommodationId
+  const load = useCallback((signal: AbortSignal) => getBookingPolicy(id, signal), [id])
+  const { state, retry } = useDetailQuery(load)
   return (
     <section aria-labelledby="accommodation-operating-info">
       <h2 id="accommodation-operating-info" tabIndex={-1}>
@@ -62,8 +69,8 @@ export function AccommodationOperatingInfo({
           <dd>{accommodation.timeZone}</dd>
         </div>
       </dl>
-      <h3>예약·취소 정책</h3>
-      <p>예약·취소 정책은 현재 이 화면에서 확인할 수 없습니다.</p>
+      <BookingPolicyReadout state={state} retry={retry} />
+      <p>예약 정책 안내는 객실 재고나 예약 확정을 보장하지 않습니다.</p>
       <p className="detail-policy-note">
         기본 1박 가격·날짜별 예상 요금은 확정 금액이 아닙니다. 예약 시 최종 금액과 가용성을 다시
         확인합니다.

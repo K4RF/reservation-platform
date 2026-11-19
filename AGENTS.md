@@ -456,10 +456,14 @@ Before completing a change:
   public UI's ACTIVE filter, with name/city/region, status, pagination and ID/NAME
   sorting. ADMIN writes support create, full update and status PATCH, not deletion.
   Separate booking/cancellation policy forms require an explicit POST/PUT choice,
-  complete input and acknowledgement. The UI does not read the public booking
-  policy GET or automatically detect existence; there is no cancellation policy
-  GET or policy DELETE. Display successful policy responses as last-write results,
-  never current-policy reads or reservation snapshots. All Admin writes disable
+  complete input and acknowledgement. #336 uses the public booking policy GET
+  in customer operating info and ADMIN booking policy management. Show only saved
+  bounds; 204 means unconfigured and 404 is an error. The customer read never
+  gates calendar, availability or booking. ADMIN reads on entry and after saving
+  and keeps current values, drafts and last-write responses separate. Ambiguous
+  booking writes require a fresh successful GET and explicit review; never
+  infer or switch POST/PUT. There is no cancellation policy GET or policy
+  DELETE. All Admin writes disable
   automatic 401 replay and share a page-level submit gate; ambiguous outcomes lock
   writes until explicit outcome review. Detail reloads after catalog update/status
   success; lists reload on remount. Room management selects a parent accommodation

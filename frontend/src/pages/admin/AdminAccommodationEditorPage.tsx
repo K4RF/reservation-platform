@@ -5,9 +5,15 @@ import { useCallback, useState } from 'react'
 import { MediaManager } from '../../components/admin/MediaManager'
 import { Link, useNavigate, useParams } from 'react-router'
 import { getAccommodation } from '../../api/accommodation'
+import { getBookingPolicy } from '../../api/bookingPolicy'
+import type { BookingPolicyResponse } from '../../api/bookingPolicy'
 import { changeAccommodationStatus, saveAccommodation } from '../../api/adminAccommodation'
 import { AccommodationForm } from '../../components/admin/AccommodationForm'
-import { AccommodationPolicyForm } from '../../components/admin/AccommodationPolicyForm'
+import {
+  AccommodationPolicyForm,
+  bookingPolicyMutationScope,
+} from '../../components/admin/AccommodationPolicyForm'
+import { BookingPolicyReadout } from '../../components/accommodation/BookingPolicyReadout'
 import { CatalogStatusForm } from '../../components/admin/CatalogStatusForm'
 import { readPositiveId } from '../../components/admin/roomValidation'
 import { AdminMutationFeedback } from '../../components/admin/AdminMutationFeedback'
@@ -41,6 +47,14 @@ export function AdminAccommodationEditorPage({ create = false }: { create?: bool
 function AccommodationEditor({ id }: { id: number | null }) {
   const mutation = useAdminMutation()
   const [mediaBlocked, setMediaBlocked] = useState(false)
+  const [bookingOpened, setBookingOpened] = useState(false)
+  const [attemptedBookingRead, setAttemptedBookingRead] = useState<object>()
+  const loadBooking = useCallback((signal: AbortSignal) => getBookingPolicy(id!, signal), [id])
+  const booking = useDetailQuery(loadBooking, id !== null && bookingOpened)
+  const bookingRecovery = mutation.uncertain && mutation.scope === bookingPolicyMutationScope
+  const needsBookingReview =
+    bookingRecovery &&
+    (booking.state.status !== 'success' || booking.state === attemptedBookingRead)
   const navigate = useNavigate()
   return (
     <section aria-label="숙소 관리 편집">
@@ -54,7 +68,15 @@ function AccommodationEditor({ id }: { id: number | null }) {
         title={id === null ? '숙소 생성' : `숙소 관리 #${id}`}
         context="카탈로그 · 숙소"
       />
-      <AdminMutationFeedback mutation={mutation} reviewControls={!mediaBlocked} />
+      <AdminMutationFeedback
+        mutation={mutation}
+        reviewControls={!mediaBlocked && !needsBookingReview}
+        reviewMessage={
+          bookingRecovery
+            ? '예약 정책을 다시 조회한 뒤 현재 값과 입력값을 비교해 주세요.'
+            : undefined
+        }
+      />
       {id === null ? (
         <AccommodationForm
           disabled={mutation.disabled}
@@ -74,6 +96,12 @@ function AccommodationEditor({ id }: { id: number | null }) {
           mutation={mutation}
           mediaBlocked={mediaBlocked}
           setMediaBlocked={setMediaBlocked}
+          booking={booking}
+          openBooking={() => {
+            if (bookingOpened) booking.retry()
+            else setBookingOpened(true)
+          }}
+          beginBookingWrite={() => setAttemptedBookingRead(booking.state)}
         />
       )}
     </section>
@@ -84,11 +112,17 @@ function AccommodationDetail({
   mutation,
   mediaBlocked,
   setMediaBlocked,
+  booking,
+  openBooking,
+  beginBookingWrite,
 }: {
   id: number
   mutation: AdminMutation
   mediaBlocked: boolean
   setMediaBlocked: (value: boolean) => void
+  booking: ReturnType<typeof useDetailQuery<BookingPolicyResponse | null>>
+  openBooking: () => void
+  beginBookingWrite: () => void
 }) {
   const load = useCallback((signal: AbortSignal) => getAccommodation(id, signal), [id])
   const { state, retry } = useDetailQuery(load)
@@ -108,7 +142,14 @@ function AccommodationDetail({
             <Link className="nav-link" to={adminRoomListPath(id)}>
               이 숙소의 객실 관리
             </Link>
-            <button disabled={mutation.pending || mediaBlocked} onClick={retry}>
+            <button
+              disabled={
+                mutation.pending ||
+                mediaBlocked ||
+                (mutation.uncertain && mutation.scope === bookingPolicyMutationScope)
+              }
+              onClick={retry}
+            >
               숙소 상세 새로 조회
             </button>
           </div>
@@ -120,6 +161,9 @@ function AccommodationDetail({
       )}
       <AdminPanels
         locked={disabled || !data}
+        onSelect={(panel) => {
+          if (panel === 'booking') openBooking()
+        }}
         panels={[
           {
             id: 'overview',
@@ -208,11 +252,23 @@ function AccommodationDetail({
             label: '예약 정책 편집',
             shortLabel: '예약 정책',
             content: data && (
-              <AccommodationPolicyForm
-                id={id}
-                kind="booking"
-                mutation={{ ...mutation, disabled }}
-              />
+              <>
+                <BookingPolicyReadout
+                  state={booking.state}
+                  retry={mutation.pending || mediaBlocked ? undefined : booking.retry}
+                  admin
+                />
+                <AccommodationPolicyForm
+                  id={id}
+                  kind="booking"
+                  mutation={{ ...mutation, disabled }}
+                  bookingRead={{
+                    snapshot: booking.state.status === 'success' ? booking.state : undefined,
+                    onStart: beginBookingWrite,
+                    onSaved: booking.retry,
+                  }}
+                />
+              </>
             ),
           },
           {

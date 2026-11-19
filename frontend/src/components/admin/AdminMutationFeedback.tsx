@@ -17,7 +17,6 @@ export function AdminMutationFeedback({
   reviewMessage?: string
   reviewControls?: boolean
 }) {
-  const [reviewed, setReviewed] = useState(false)
   const feedback = useRef<HTMLDivElement>(null)
   const { error, success } = mutation
   const hasResult = error !== undefined || !!success
@@ -63,30 +62,28 @@ export function AdminMutationFeedback({
           <Link to={reviewLink?.to ?? '/admin/accommodations'}>
             {reviewLink?.label ?? '숙소 목록에서 결과 확인'}
           </Link>
-          {reviewControls && (
-            <>
-              <label className="admin-check">
-                <input
-                  type="checkbox"
-                  checked={reviewed}
-                  onChange={(event) => setReviewed(event.target.checked)}
-                />
-                저장 결과를 별도로 확인했으며 새 요청을 준비합니다.
-              </label>
-              <button
-                type="button"
-                disabled={!reviewed}
-                onClick={() => {
-                  setReviewed(false)
-                  mutation.resetAfterReview()
-                }}
-              >
-                확인 후 입력 잠금 해제
-              </button>
-            </>
-          )}
+          {reviewControls && <ReviewControls onConfirm={mutation.resetAfterReview} />}
         </section>
       )}
     </div>
+  )
+}
+
+function ReviewControls({ onConfirm }: { onConfirm: () => void }) {
+  const [reviewed, setReviewed] = useState(false)
+  return (
+    <>
+      <label className="admin-check">
+        <input
+          type="checkbox"
+          checked={reviewed}
+          onChange={(event) => setReviewed(event.target.checked)}
+        />
+        저장 결과를 별도로 확인했으며 새 요청을 준비합니다.
+      </label>
+      <button type="button" disabled={!reviewed} onClick={onConfirm}>
+        확인 후 입력 잠금 해제
+      </button>
+    </>
   )
 }

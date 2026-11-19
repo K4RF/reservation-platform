@@ -13,7 +13,7 @@ describe('isolated read-only UI audit fixtures', () => {
       500,
     )
     expect(auditResponse(path, 'GET', 'ready', 'missing', 'blocked', 'policy-success').status).toBe(
-      404,
+      200,
     )
     expect(auditResponse(path, 'PUT', 'ready', 'missing', 'blocked', 'policy-success').status).toBe(
       405,
@@ -167,10 +167,20 @@ describe('isolated read-only UI audit fixtures', () => {
       expect(await response.json()).toMatchObject({ code: 'AUDIT_READ_ONLY' })
     },
   )
-  it('does not treat unsupported API or policy reads as implemented', async () => {
-    expect(auditResponse('/api/v1/accommodations/7/booking-policy', 'GET', 'ready').status).toBe(
-      404,
-    )
+  it('keeps booking policy read states separate from unsupported routes', async () => {
+    const path = '/api/v1/accommodations/7/booking-policy'
+    expect(await auditResponse(path, 'GET', 'ready').json()).toMatchObject({
+      accommodationId: 7,
+      minAdvanceBookingDays: 0,
+    })
+    for (const [mode, status] of [
+      ['unset', 204],
+      ['not-found', 404],
+      ['error', 500],
+    ] as const)
+      expect(
+        auditResponse(path, 'GET', 'ready', 'missing', 'blocked', 'blocked', mode).status,
+      ).toBe(status)
     expect(auditResponse('/api/v1/admin/reservations', 'GET', 'ready').status).toBe(404)
   })
   it('keeps readiness, empty and error visually reproducible', async () => {

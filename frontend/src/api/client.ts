@@ -18,7 +18,7 @@ export interface ApiRequestOptions {
   signal?: AbortSignal
   includeAuth?: boolean
   retryOnUnauthorized?: boolean
-  onResponseHeaders?: (headers: Headers) => void
+  onResponseHeaders?: (headers: Headers, status: number) => void
 }
 
 export interface ApiClientOptions {
@@ -116,7 +116,7 @@ export function createApiClient(options: ApiClientOptions) {
             }
             throw toHttpApiError(response.status, body)
           }
-          request.onResponseHeaders?.(new Headers(response.headers))
+          request.onResponseHeaders?.(new Headers(response.headers), response.status)
           if (!rawBody) {
             if (response.status === 204 || response.status === 205) return undefined
             throw new ApiError('API returned an empty response', { kind: 'unexpected_response' })

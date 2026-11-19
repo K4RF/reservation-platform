@@ -1,6 +1,13 @@
 import { apiClient } from './client'
 import { ApiError } from './errors'
 import { isAccommodation } from './accommodation'
+import {
+  isBookingPolicy,
+  type BookingPolicyRequest,
+  type BookingPolicyResponse,
+} from './bookingPolicy'
+export { validBookingPolicy } from './bookingPolicy'
+export type { BookingPolicyRequest, BookingPolicyResponse } from './bookingPolicy'
 import type {
   AccommodationAmenity,
   AccommodationResponse,
@@ -19,16 +26,6 @@ export interface AccommodationWriteRequest {
   checkInTime: string
   checkOutTime: string
   timeZone: string
-}
-export interface BookingPolicyRequest {
-  minStayNights: number
-  maxStayNights: number
-  minAdvanceBookingDays: number
-  maxAdvanceBookingDays: number
-}
-export interface BookingPolicyResponse extends BookingPolicyRequest {
-  bookingPolicyId: number
-  accommodationId: number
 }
 export interface CancellationFeeRule {
   minDaysBeforeCheckIn: number
@@ -86,14 +83,6 @@ export async function changeAccommodationStatus(
 const integer = (value: unknown, min: number): value is number =>
   Number.isInteger(value) && (value as number) >= min && (value as number) <= 2147483647
 
-export function validBookingPolicy(body: BookingPolicyRequest): boolean {
-  return (
-    integer(body.minStayNights, 1) &&
-    integer(body.maxStayNights, body.minStayNights) &&
-    integer(body.minAdvanceBookingDays, 0) &&
-    integer(body.maxAdvanceBookingDays, body.minAdvanceBookingDays)
-  )
-}
 export function validCancellationPolicy(body: CancellationPolicyRequest): boolean {
   return (
     integer(body.cancellationDeadlineDaysBeforeCheckIn, 0) &&
@@ -132,14 +121,7 @@ export async function saveBookingPolicy(
       retryOnUnauthorized: false,
     },
   )
-  if (
-    !response ||
-    response.accommodationId !== id ||
-    !Number.isSafeInteger(response.bookingPolicyId) ||
-    response.bookingPolicyId < 1 ||
-    !validBookingPolicy(response)
-  )
-    invalidResponse()
+  if (!isBookingPolicy(response, id)) invalidResponse()
   return response
 }
 export async function saveCancellationPolicy(

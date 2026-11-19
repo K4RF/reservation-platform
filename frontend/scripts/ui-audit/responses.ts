@@ -14,6 +14,7 @@ export type AuditScenario =
   'ready' | 'empty' | 'error' | 'loading' | 'cancelled' | 'stress' | 'comparison'
 export type AuditBooking = 'blocked' | 'success' | 'ambiguous'
 export type AuditAdmin = 'blocked' | 'policy-success' | 'policy-error'
+export type AuditPolicy = 'ready' | 'unset' | 'error' | 'not-found'
 
 // Render fixtures only. Never forwards a request or mutates an actual reservation/catalog.
 export function auditResponse(
@@ -23,6 +24,7 @@ export function auditResponse(
   mediaMode = 'missing',
   booking: AuditBooking = 'blocked',
   admin: AuditAdmin = 'blocked',
+  policy: AuditPolicy = 'ready',
 ): Response {
   const { pathname: path, searchParams: query } = new URL(url, 'http://127.0.0.1:5174')
   const failure = (status: number, code: string, message: string) =>
@@ -43,7 +45,7 @@ export function auditResponse(
     if (booking === 'ambiguous')
       return failure(500, 'AUDIT_BOOKING_AMBIGUOUS', '격리된 예약 결과 불명 Fixture')
   }
-  // This deliberately does not use the form body, alter a fixture, or implement policy GET.
+  // This deliberately does not use the form body or alter the read fixture.
   if (method.toUpperCase() === 'POST' && path === '/api/v1/accommodations/7/booking-policy') {
     if (admin === 'policy-success')
       return Response.json(
@@ -56,6 +58,12 @@ export function auditResponse(
   if (method.toUpperCase() !== 'GET')
     return failure(405, 'AUDIT_READ_ONLY', 'UI 점검 도구에서는 모든 쓰기 요청을 차단합니다.')
   if (scenario === 'error') return failure(500, 'AUDIT_FIXTURE_ERROR', 'UI 점검용 오류 응답입니다.')
+  if (path === '/api/v1/accommodations/7/booking-policy') {
+    if (policy === 'unset') return new Response(null, { status: 204 })
+    if (policy === 'error') return failure(500, 'AUDIT_POLICY_ERROR', '격리된 예약 정책 조회 실패')
+    if (policy === 'not-found') return failure(404, 'ACCOMMODATION_001', '숙소를 찾을 수 없습니다.')
+    return Response.json({ ...bookingPolicy, bookingPolicyId: 11, accommodationId: 7 })
+  }
   const empty = scenario === 'empty'
   // Read-only layout probes, never actual catalog/guest data or a new API contract.
   const stress = scenario === 'stress'

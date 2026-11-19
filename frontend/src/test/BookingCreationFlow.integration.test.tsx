@@ -105,6 +105,8 @@ function mockApi(
         ),
       )
     if (path === '/api/v1/accommodations/7/rooms') return Promise.resolve(Response.json(roomPage()))
+    if (path === '/api/v1/accommodations/7/booking-policy')
+      return Promise.resolve(new Response(null, { status: 204 }))
     if (path === '/api/v1/accommodations/7') return Promise.resolve(Response.json(accommodation))
     if (path === '/api/v1/accommodations') {
       const page = Number(parsed.searchParams.get('page') ?? 0)

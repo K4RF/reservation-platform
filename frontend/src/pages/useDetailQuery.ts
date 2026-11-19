@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { ApiError } from '../api/errors'
 
-type QueryState<T> =
+export type QueryState<T> =
   | { status: 'loading' }
   | { status: 'success'; data: T }
   | { status: 'error'; notFound: boolean; error: unknown }
 
 // Caller supplies a stable callback. Responses belong only to that callback/retry.
-export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>) {
+export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>, enabled = true) {
   const [attempt, setAttempt] = useState(0)
   const [result, setResult] = useState<{
     load: typeof load
@@ -15,6 +15,7 @@ export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>) {
     state: QueryState<T>
   }>()
   useEffect(() => {
+    if (!enabled) return
     const controller = new AbortController()
     load(controller.signal).then(
       (data) => {
@@ -35,8 +36,10 @@ export function useDetailQuery<T>(load: (signal: AbortSignal) => Promise<T>) {
       },
     )
     return () => controller.abort()
-  }, [load, attempt])
+  }, [load, attempt, enabled])
   const state: QueryState<T> =
-    result?.load === load && result.attempt === attempt ? result.state : { status: 'loading' }
+    enabled && result?.load === load && result.attempt === attempt
+      ? result.state
+      : { status: 'loading' }
   return { state, retry: () => setAttempt((value) => value + 1) }
 }

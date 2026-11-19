@@ -29,6 +29,7 @@ node scripts/ui-audit/server.mjs
 | booking   | blocked(기본) / success / ambiguous. #280 전용 합성 POST 결과                         |
 | auth      | blocked(기본) / signup-success / login-error / callback-pending / callback-error      |
 | admin     | blocked(기본) / policy-success / policy-error. `role=ADMIN`에서만 합성 예약 정책 POST |
+| policy    | ready(기본) / unset / error / not-found. 고객 숙소 상세·ADMIN 예약 정책 GET 상태      |
 
 `suggestions=ready|empty|error|loading`은 #319의 지역 후보 GET에만 적용합니다(기본 `ready`).
 
@@ -78,7 +79,8 @@ Production 빌드에는 포함되지 않습니다. 원본의 가상 금액/매�
 
 #283의 `role=ADMIN&admin=policy-success|policy-error`는 `POST /api/v1/accommodations/7/booking-policy`에만
 고정 201 응답 또는 결과 불명 500을 반환한다. 입력값이나 가상 카탈로그를 저장/수정하지 않는다.
-정책 GET, PUT, 사진 업로드·삭제 및 다른 관리자 쓰기를 활성화하지 않는다. `scenario=stress`의 재고 조회는
+정책 GET은 독립적인 `policy` Fixture를 사용한다. 합성 쓰기 결과를 GET에 저장하지 않으며,
+PUT, 사진 업로드·삭제 및 다른 관리자 쓰기는 활성화하지 않는다. `scenario=stress`의 재고 조회는
 기존 날짜와 OPEN/CLOSED 및 예약 수량을 보존하며 큰 총수량·가용 수량을 표시해 표 스크롤을 점검한다.
 
 도구 검증:

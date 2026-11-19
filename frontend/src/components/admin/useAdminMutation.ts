@@ -24,6 +24,7 @@ export function useAdminMutation() {
     uncertain: boolean
     error?: unknown
     success?: string
+    scope?: string
   }>({ pending: false, uncertain: false })
   const gate = useRef(false)
   const lifetime = useRef<AbortController | null>(null)
@@ -37,17 +38,18 @@ export function useAdminMutation() {
     action: (signal: AbortSignal) => Promise<T>,
     onSuccess: (data: T) => void,
     message: string,
+    scope?: string,
   ) {
     if (gate.current || !lifetime.current || lifetime.current.signal.aborted) return
     gate.current = true
     const signal = lifetime.current.signal
     const version = getSessionVersion()
     const current = () => !signal.aborted && version === getSessionVersion()
-    setState({ pending: true, uncertain: false })
+    setState({ pending: true, uncertain: false, scope })
     try {
       const data = await action(signal)
       if (!current()) return
-      setState({ pending: false, uncertain: false, success: message })
+      setState({ pending: false, uncertain: false, success: message, scope })
       gate.current = false
       onSuccess(data)
     } catch (error) {
@@ -58,7 +60,7 @@ export function useAdminMutation() {
         error.status === undefined ||
         error.status >= 500
       gate.current = uncertain
-      setState({ pending: false, uncertain, error })
+      setState({ pending: false, uncertain, error, scope })
     }
   }
   function resetAfterReview() {

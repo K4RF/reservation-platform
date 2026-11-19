@@ -302,8 +302,12 @@ export async function verifyContract({
     feeRules: [{ minDaysBeforeCheckIn: 1, feeRatePercent: 30 }],
   };
   const bookingPolicyPath = hotelPath + "/booking-policy";
+  await error("/accommodations/2147483647/booking-policy", 404, "ACCOMMODATION_001");
   const unset = await request(bookingPolicyPath, { expected: 204 });
-  check(unset.data.byteLength === 0, "unconfigured booking policy has no body");
+  check(
+    unset.data.byteLength === 0 && unset.headers.get("cache-control") === "no-store",
+    "unconfigured booking policy has no body and is not cached",
+  );
   const createdPolicy = (await request(bookingPolicyPath, {
     method: "POST",
     body: bookingPolicy,
