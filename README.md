@@ -139,7 +139,7 @@ reservation-platform/
 ├── .github/               # Issue/PR 템플릿·Backend/Frontend CI
 ├── infra/                 # 격리 통합 검증용 Compose 및 인프라 폴더
 ├── scripts/               # 격리 Frontend/Backend 통합 실행기
-├── load-test/             # k6 관련 placeholder
+├── load-test/             # 전용 환경·시드·k6 Baseline·관측
 ├── docker-compose.yml     # 로컬 MySQL·Redis·Kafka
 ├── .env_sample            # 환경변수 예시 (비밀값 없음)
 └── AGENTS.md              # 저장소 작업 규칙
@@ -324,6 +324,10 @@ pnpm build
 HTTP Mock/UI 테스트, 격리된 실제 Backend HTTP 검증, Browser E2E는 서로 다른 검증입니다.
 [격리 Frontend/Backend 실행 및 API 계약](docs/testing/frontend-backend-integration.md)으로
 개발 데이터와 분리된 통합 스모크를 재현할 수 있습니다.
+
+[격리 k6 실행 안내](load-test/README.md)는 전용 스택의 Boot JAR를 대상으로 한 초기 HTTP Baseline을
+재현합니다. SQL 계층 비교 및 Vite를 포함한 기능 검증과 구분하며 운영 용량 목표를 제시하지 않습니다.
+
 f0.6.0의 이슈별 증거, 최종 사용자 검수 절차와 다음 성능 테스트 후보는
 [프런트엔드 검수 인계](docs/testing/frontend-review-handoff.md)를 참고하세요.
 직접 화면을 검수할 때는 [최종 사용자 검수 순서](docs/testing/frontend-final-user-review.md)를 따릅니다.
@@ -386,7 +390,7 @@ f0.6.0에서 실기기·외부 인증·서비스 자산과 최종 사용자 UX�
 - Access Token 블랙리스트, 추가 OAuth2 Provider, 서버 요청 멱등성
 - 변경·취소 재시도, Retry Backoff/Jitter, 분산 락 범위 확대
 - 외부 Kafka 후처리, 자동 DLT 재처리, Outbox/처리 이력 Cleanup
-- 정식 DB Migration 도구, Prometheus/Grafana, k6, CD·운영 배포
+- 정식 DB Migration 도구, Prometheus/Grafana, 운영 규모 단계별 부하 검증, CD·운영 배포
 
 현재 전략 비교는 전체 사용자 부하 테스트나 API SLO를 증명하지 않습니다.
 실제 Browser/Google E2E와 최종 반응형·시각 검수도 통합 테스트 기록과 구분해야 합니다.
