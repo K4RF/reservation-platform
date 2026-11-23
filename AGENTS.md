@@ -31,7 +31,7 @@ reservation-platform/
 ├── backend/       # Spring Boot application and Gradle project root
 ├── frontend/      # React/TypeScript/Vite browser application; pnpm project root
 ├── infra/         # Placeholder directories for Docker and monitoring
-├── load-test/     # Placeholder directory for k6 tests
+├── load-test/     # Guarded, isolated k6 runner, fixtures, metrics and checks
 ├── docs/          # Architecture, ADR, API, ERD, and performance documents
 ├── .github/       # Issue and pull request templates
 ├── docker-compose.yml
@@ -78,7 +78,7 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
 External Kafka post-processing, automatic DLT replay, raw deserialization-error recovery,
 Outbox/processed-event Cleanup,
 additional OAuth2
-providers, Access Token blacklisting, Prometheus, Grafana, k6, and CD
+providers, Access Token blacklisting, Prometheus, Grafana, and CD
 are planned but are not currently configured unless the repository is
 updated to include them.
 
@@ -115,6 +115,11 @@ Compose database or its volumes.
 `docker-compose.yml` defines MySQL 8.4, Redis 7.4, and Kafka 4.3.1 for local development.
 Do not report application integration as available until the corresponding
 Backend configuration and behavior are implemented and verified.
+
+For #342 HTTP performance work, follow `load-test/README.md`. Run k6 only
+through the manifest-verified runner on its own internal Compose network;
+do not target the development stack, override the endpoint, replay ambiguous
+writes, expose raw payloads/tokens, or treat the small Baseline as a capacity test.
 
 ## Frontend Design References
 
