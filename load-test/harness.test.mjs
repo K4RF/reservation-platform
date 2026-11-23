@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { argumentsFor, checkManifest, checkResource, checkStay, OWNED, projectOf, SERVICES } from "./config.mjs";
 import { plan } from "./k6/profiles.js";
 import { summarize } from "./metrics.mjs";
-import { checkInvariants } from "./verification.mjs";
+import { checkInvariants, checkMeasurement } from "./verification.mjs";
 
 const id = "b".repeat(24);
 const project = projectOf(id);
@@ -88,4 +88,16 @@ test("expected rejection remains in HTTP error rate and endpoint histograms", ()
     unlinkSync(path);
     rmdirSync(dir);
   }
+});
+
+test("only the open workload allows one end-boundary arrival, never a deficit or drop", () => {
+  const p = plan("read-heavy", "warm", "distributed");
+  const observed = { count: 100, dropped: 0, transportErrors: 0, operations: {},
+    offeredIterations: { read: 24, write: 0 }, scenarioIterations: { read: 25 } };
+  checkMeasurement(observed, p, 0);
+  throws(() => checkMeasurement({ ...observed, dropped: 1 }, p, 0));
+  throws(() => checkMeasurement({ ...observed, scenarioIterations: { read: 23 } }, p, 0));
+  throws(() => checkMeasurement({ ...observed, scenarioIterations: { read: 26 } }, p, 0));
+  throws(() => checkMeasurement(observed, plan("baseline", "warm", "distributed"), 0));
+  throws(() => checkMeasurement(observed, p, 1));
 });

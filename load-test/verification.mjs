@@ -57,3 +57,15 @@ export function checkInvariants(before, after, results, profile) {
   if (profile !== "exhaustion" && (creates !== changes || changes !== cancels))
     throw new Error("Reservation lifecycle did not complete");
 }
+
+export function checkMeasurement(result, workload, code) {
+  const wrongCount = Object.entries(result.offeredIterations).some(([name, nominal]) => {
+    const completed = result.scenarioIterations[name] ?? 0;
+    // k6 2.0 may start one iteration exactly at the arrival window's end.
+    // Keep nominal and actual counts separate; missing arrivals still fail.
+    return completed !== nominal && !(workload.rate && name === "read" && completed === nominal + 1);
+  });
+  if (code !== 0 || !result.count || result.dropped || result.transportErrors || wrongCount ||
+      Object.values(result.operations).some((value) => value.system_error || value.unconfirmed_write))
+    throw new Error("Generator did not complete the planned profile without unexpected failures");
+}

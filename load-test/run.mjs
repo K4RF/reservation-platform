@@ -13,7 +13,7 @@ import {
   projectOf, SERVICES, VOLUMES,
 } from "./config.mjs";
 import { kafkaLag, sample, summarize } from "./metrics.mjs";
-import { checkInvariants, counters } from "./verification.mjs";
+import { checkInvariants, checkMeasurement, counters } from "./verification.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -295,10 +295,8 @@ async function execute(run, m, path) {
     const result = summarize(safeReal(join(run.results, "raw.jsonl"), "file"), m.workload);
     report("summary.json", result);
     checkInvariants(pre.db, post.db, result, m.profile);
-    if (code !== 0 || !result.count || result.dropped || result.transportErrors ||
-        Object.values(result.operations).some((value) => value.system_error || value.unconfirmed_write) ||
-        Object.entries(result.offeredIterations).some(([name, count]) => count !== (result.scenarioIterations[name] ?? 0)))
-      throw new Error("Generator did not complete all planned iterations without unexpected failures");
+    run.resources(true);
+    checkMeasurement(result, m.workload, code);
     m.state = "passed";
     console.log("PASS: " + result.count + " measured requests; DB, inventory, snapshot and events verified");
   } catch (error) {
