@@ -243,7 +243,14 @@ export async function verifyContract({
     })
   ).data;
   const hotelPath = "/accommodations/" + id(accommodation.accommodationId);
-  const roomMetadata = { view: "Courtyard", areaSquareMeters: 28.5 };
+  const roomMetadata = {
+    description: "창가에 테이블이 있는 객실입니다. ".repeat(35).trim(),
+    bedConfiguration: "퀸 침대 1개, 싱글 침대 1개",
+    areaSquareMeters: 28.5,
+    view: "Courtyard-facingWindow".repeat(4),
+  };
+  const matchesRoomMetadata = (value) =>
+    Object.entries(roomMetadata).every(([key, expected]) => value?.[key] === expected);
   const room = (
     await request(hotelPath + "/rooms", {
       method: "POST",
@@ -263,14 +270,12 @@ export async function verifyContract({
   check(
     room.accommodationId === accommodation.accommodationId &&
       room.status === "ACTIVE" &&
-      room.metadata?.view === roomMetadata.view &&
-      room.metadata.areaSquareMeters === roomMetadata.areaSquareMeters,
+      matchesRoomMetadata(room.metadata),
     "room parent, status and saved metadata",
   );
   const roomBeforeMedia = (await request(roomPath)).data;
   check(
-    roomBeforeMedia.metadata?.view === roomMetadata.view &&
-      roomBeforeMedia.images?.length === 0,
+    matchesRoomMetadata(roomBeforeMedia.metadata) && roomBeforeMedia.images?.length === 0,
     "public room detail before image upload",
   );
   const catalog = await request(
@@ -475,7 +480,7 @@ export async function verifyContract({
   const roomAfterMedia = (await request(roomPath)).data;
   const roomCard = (await request(hotelPath + "/rooms")).data.content[0];
   check(
-    roomAfterMedia.metadata?.view === roomMetadata.view &&
+    matchesRoomMetadata(roomAfterMedia.metadata) &&
       roomAfterMedia.images?.length === 1 &&
       roomCard.roomId === roomId &&
       roomCard.representativeImage?.mediaId ===

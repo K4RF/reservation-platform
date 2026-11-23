@@ -171,6 +171,19 @@ export async function verifyAdmin({
     { ...roomRequest, name: "Second Verification Room" },
     201,
   );
+  const emptyRoom = await read("/rooms/" + id(second.roomId));
+  check(
+    emptyRoom.roomId === second.roomId &&
+      emptyRoom.accommodationId === accommodationId &&
+      !("metadata" in emptyRoom),
+    "public detail of a room created without metadata stays empty",
+  );
+  const emptyPolicy = await request(otherParent + "/booking-policy", { expected: 204 });
+  check(
+    emptyPolicy.data.byteLength === 0 &&
+      emptyPolicy.headers.get("cache-control") === "no-store",
+    "the other accommodation's unconfigured policy stays distinct",
+  );
   await parentStatus("INACTIVE");
   await roomStatus("INACTIVE");
   const filteredHotels = await read(
@@ -237,14 +250,29 @@ export async function verifyAdmin({
     await error(path, 404, code + "_001", options("PUT", body));
     await error(path, 400, "COMMON_001", options("POST", {}));
     const created = await write(path, "POST", body, 201);
+    async function checkCurrentPolicy(expected) {
+      for (const token of [undefined, admin]) {
+        const { data, headers } = await request(path, { token });
+        check(
+          data.bookingPolicyId === created[key] &&
+            data.accommodationId === accommodationId &&
+            Object.entries(expected).every(([name, bound]) => data[name] === bound) &&
+            headers.get("cache-control") === "no-store",
+          "fresh public and ADMIN booking reads agree with the committed policy",
+        );
+      }
+    }
+    if (path === booking) await checkCurrentPolicy(body);
     await error(path, 409, code + "_002", options("POST", body));
-    const updated = await write(path, "PUT", { ...body, [field]: value });
+    const next = { ...body, [field]: value };
+    const updated = await write(path, "PUT", next);
     check(
       id(created[key]) === updated[key] &&
         updated.accommodationId === accommodationId &&
         updated[field] === value,
       "explicit policy POST/PUT and saved result",
     );
+    if (path === booking) await checkCurrentPolicy(next);
   }
   console.log(
     "PASS catalog scope, update/status rereads and explicit policy operations",
@@ -388,5 +416,8 @@ export async function verifyAdmin({
   });
   console.log(
     `Browser #303 fixture: accommodation ${accommodationId}, room ${roomId}, dates ${first} through ${last}`,
+  );
+  console.log(
+    `Browser #337: ${parent} (max 3 nights, no metadata in room ${second.roomId}); ${otherParent} (no policy)`,
   );
 }

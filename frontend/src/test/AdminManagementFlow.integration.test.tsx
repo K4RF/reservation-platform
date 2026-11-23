@@ -19,6 +19,7 @@ function History() {
       <output data-testid="location">{location.pathname + location.search}</output>
       <button onClick={() => navigate('/reservations/43')}>타인 예약 직접 접근</button>
       <button onClick={() => navigate('/admin/accommodations/7')}>사진 관리로 돌아가기</button>
+      <button onClick={() => navigate('/accommodations/7')}>고객 숙소 상세 직접 접근</button>
     </>
   )
 }
@@ -208,14 +209,18 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
         ['최대 사전 예약일', 'maxAdvanceBookingDays'],
       ] as const)
         fireEvent.change(policy.getByLabelText(label), {
-          target: { value: String(bookingPolicy[key]) },
+          target: {
+            value: String(operation === 'PUT' && key === 'maxStayNights' ? 9 : bookingPolicy[key]),
+          },
         })
       fireEvent.click(
         policy.getByLabelText('예약 정책 생성/수정 작업과 전체 입력값을 확인했습니다.'),
       )
       fireEvent.submit(form('예약 정책 입력'))
       await screen.findByRole('region', { name: '예약 정책 성공 응답' })
-      await within(screen.getByRole('region', { name: '현재 예약 정책' })).findByText(/최대 14박/)
+      await within(screen.getByRole('region', { name: '현재 예약 정책' })).findByText(
+        operation === 'POST' ? /최대 14박/ : /최대 9박/,
+      )
     }
     await openAdminPanel('취소 정책 편집')
     for (const operation of ['POST', 'PUT']) {
@@ -361,6 +366,26 @@ describe('Admin Management connected flow (HTTP mocks, not Backend authorization
     })
     expect(api.state.price?.nightlyPrice).toBe(160.5)
     expect(api.state.reservation).toEqual(reservationDetail)
+
+    // The customer must see the saved values from fresh public reads of the same fixture.
+    const beforePublic = api.fetch.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '고객 숙소 상세 직접 접근' }))
+    const customerPolicy = within(await screen.findByRole('region', { name: '예약 정책' }))
+    await customerPolicy.findByText('최소 1박 · 최대 9박')
+    const trigger = await screen.findByRole('button', { name: '스탠다드 상세 보기' })
+    expect(screen.queryByText('퀸 1개')).toBeNull()
+    expect(screen.queryByText('정원', { selector: 'dd' })).toBeNull()
+    fireEvent.click(trigger)
+    const roomDialog = within(await screen.findByRole('dialog', { name: '객실 상세' }))
+    await roomDialog.findByRole('heading', { name: '스탠다드' })
+    await roomDialog.findByText('퀸 1개')
+    expect(roomDialog.getByText('28.5 ㎡')).toBeTruthy()
+    expect(roomDialog.getByText('정원', { selector: 'dd' })).toBeTruthy()
+    expect(roomDialog.queryByRole('button', { name: /이 객실 선택/ })).toBeNull()
+    const publicRequests = api.fetch.mock.calls.slice(beforePublic)
+    expect(publicRequests.filter(([url]) => url.endsWith('/booking-policy'))).toHaveLength(1)
+    expect(publicRequests.filter(([url]) => url.endsWith('/api/v1/rooms/3'))).toHaveLength(1)
+    expect(publicRequests.every(([, init]) => init.method === 'GET')).toBe(true)
     expect(
       writes(api).map(
         ([url, init]) => `${init.method} ${new URL(url, 'http://localhost').pathname}`,
