@@ -115,7 +115,7 @@ Backend Security 및 Service, 아래 Client명은 `frontend/src/api/`의 파일�
 | 객실 | 공개 `GET /accommodations/{id}/rooms`, `GET …/rooms/available`, `GET /rooms/{roomId}`; ADMIN 목록 POST·객실 PUT·`/status` PATCH | `room`, `adminRoom`: roomId·accommodationId·ACTIVE/capacity 검증. 가용성은 양의 전체 인원, `checkInDate/checkOutDate`, 해당 기간 모든 날짜 재고. 목록/가용 응답은 Offset. |
 | 요금 | 공개 `GET /rooms/{id}/prices/{stayDate}`; ADMIN `POST …/prices`, `PUT …/prices/{stayDate}` | `bookingPrice`, `adminDailyPrice`: `DAILY`는 override/양의 ID, `DEFAULT`는 객실 기본가/null ID. 화면 예상 합계와 서버 저장 확정 금액은 별개. |
 | 예약 | Bearer `POST/GET /reservations`, `GET/PATCH /reservations/{id}`, `PATCH …/{id}/cancel` | `reservation`, `reservationList`, `reservationDetail`, `reservationChange`, `reservationCancellation`: 생성 201, 본인만 목록·조회·변경·취소(ADMIN도 예외 없음). 생성 ID는 숫자 `reservationId`; 표시용 `reservationNumber`와 다름. 기본 UI는 Offset. Backend cursor 계약은 별도 노출. |
-| 정책 | 공개 `GET /accommodations/{id}/booking-policy`, ADMIN `POST/PUT /accommodations/{id}/booking-policy` 및 `/cancellation-policy` | `adminAccommodation`: 생성 201/수정 200. UI에서 정책 GET 연동·존재 자동 감지 없음. 성공 응답은 방금 저장한 값이지 서버 재조회가 아님. 취소 정책은 예약 Snapshot으로 표시. |
+| 정책 | 공개 `GET /accommodations/{id}/booking-policy`, ADMIN `POST/PUT /accommodations/{id}/booking-policy` 및 `/cancellation-policy` | `bookingPolicy`의 공개 GET은 고객 이용 안내와 ADMIN 현재 값에 연결된다. `adminAccommodation`의 생성 201/수정 200은 마지막 쓰기 결과이며 ADMIN은 별도 GET으로 현재 값을 읽는다. 자동 작업 선택·재전송은 없다. 숙소 취소 정책 GET은 없고 예약 화면에는 저장 Snapshot을 표시한다. |
 | 재고 | ADMIN `GET/POST /rooms/{id}/inventories`, `PUT …/inventories/{inventoryDate}` | `adminInventory`: Calendar의 `startDate/endDate`는 양쪽 포함. 누락 날짜는 미생성. 총수량과 OPEN/CLOSED만 편집하며 예약/가용 수량·Version은 보내지 않음. |
 | 공개 Media | 공개 `GET /media/{mediaId}/content` 및 카탈로그 응답 | `media`, `CatalogImage`, Gallery: 대표 이미지는 순서 첫 장, 목록/가용 최대 1, 상세 최대 20. 미등록 기존 행은 null/[]; 사진 실패가 Room 선택·예약 결과를 바꾸지 않음. 가짜 매물 이미지·Room Bed/Size/View는 채우지 않음. |
 | 관리 Media | ADMIN 숙소/객실별 `…/{id}/media`와 하위 작업 | `adminMedia`: 최신 GET의 quoted strong ETag, 모든 쓰기 `If-Match`. POST/콘텐츠 교체는 file + application/json metadata multipart. 오래된 ETag는 409, 새 GET 후 검토. [관리 경로·형식·정리 계약](../architecture/media-management.md). |
@@ -140,3 +140,37 @@ Backend Security 및 Service, 아래 Client명은 `frontend/src/api/`의 파일�
 - 기존 `MediaManagementMySqlIntegrationTest`는 테스트컨테이너의 독립 검증이다.
   UI Audit 및 네 Frontend lifecycle suite는 HTTP Fixture/Mock, 원격 CI는 별도 환경이다.
 - 이 실행은 기본 개발/운영 구성, 실기기, 외부 인증, 결제, 동시 부하, 시각 최종 승인을 보장하지 않는다.
+
+## 4. 객실 메타데이터·예약 정책 화면 회귀 (#337)
+
+2026-11-23, 기준 `develop` `5133035` (#335·#336 병합), Windows / Codex 인앱 Chromium.
+기존 여정과 테스트를 재사용했으며 신규 API, DB 스키마, 의존성, CI 설정은 없다.
+
+| 검증 경계 | 확인한 결과 |
+| --- | --- |
+| 실제 격리 HTTP | `node scripts/integration/run.mjs --booking --admin --hold` 통과. 관리자 HTTP의 객실 등록, PUT에서 메타데이터 생략·부분 변경·`{}`로 비우기를 새 공개 상세로 확인했다. 별도로 처음부터 입력하지 않은 객실도 메타데이터가 없고, 목록/가용 응답은 메타데이터를 포함하지 않는다. 정책은 두 숙소를 구분해 `200/204/404`, `200/204`의 `no-store`, POST/PUT 직후 익명·ADMIN의 최신값을 검증했다. 사진 대표/교체/삭제, 가용성 및 실제 예약 저장·재고도 기존 스모크가 확인한다. |
+| 실제 Browser + 격리 Backend | 동일 실행에서 저장한 객실과 정책을 공개 화면과 관리자 화면에서 대조했다. 관리자 폼에서 객실 설명·침대·전망을 저장한 뒤 전망만 바꿔 나머지 값이 유지되는지 확인했고, 전부 비운 뒤 고객 상세에 관련 행이 없음을 확인했다. 관리자의 예약 정책 PUT 후 새 조회와 고객 이용 안내에 동일한 6박·큰 사전 예약일 값이 표시됐다. 별도 미설정 숙소에서도 일정 입력을 사용할 수 있었다. |
+| 자동 Frontend / HTTP Mock | 기존 `AdminManagementFlow`의 관리자 POST/PUT과 고객 상세 모달이 같은 저장값을 읽는지 검증한다. `AdminRoom`·`AdminAccommodation`은 401에서 재발급·쓰기 재실행 없음, 저장을 반영하고 응답만 유실한 모의 상황에서 재조회·검토 전 잠금과 재실행 없음까지 확인한다. 기존 검색 복귀, Media, 가용 객실 선택과 Booking 회귀도 유지했다. 로컬 lint·format:check·typecheck·test(84개 파일, 1,221개)·build 통과. |
+| Browser / UI Audit Fixture | 320×568·root 32px(200%)에서 이미지/정책 실패가 객실 정보·일정 입력을 차단하지 않는지 확인했다. 긴 객실 설명은 Sheet 내부에서만 스크롤되며 닫기 버튼이 유지됐다. 관리자 폼의 960자 설명은 문서 가로 넘침 없이 textarea 안에서 스크롤됐다. 합성 실패이며 실제 HTTP 손실이나 저장 실패의 증거는 아니다. |
+| 원격 CI | #337을 연결한 PR의 Checks에서 확인한다. Frontend의 lint·format:check·typecheck·test·build와 Backend 시험/빌드는 기존 PR 워크플로를 사용하며, 격리 HTTP/대화형 브라우저는 CI에서 실행하지 않는다. |
+
+### 브라우저 재현과 차이
+
+1. 위 명령을 실행한 뒤 콘솔의 `Browser #337` 행을 따른다. 기본 스모크의 공개 숙소는
+   긴 설명을 저장한 객실과 업로드된 합성 PNG를, `--admin`의 별도 숙소는 설정 정책·빈 정책·
+   메타데이터 미입력 객실을 제공한다. 관리자 폼은 이 실행의 일회용 계정으로만 연다.
+   브라우저 검증을 마치면 Enter로 이 실행의 리소스만 정리한다.
+2. 1440×1000 / 390×844 (client 폭 1425 / 375)에서 [승인 시안](../ui/approved-design.md#참조-화면)과
+   고객 상세 상단(`scrollY=0`) 및 객실 상세·이용 안내를 비교했다. 시안 도구바를 제외했다.
+   제품은 한 장이면 한 장만 보여주고, 사진 없음·실패에서도 정보와 CTA를 유지한다.
+   시안의 가상 금액/일정 대신 서버 응답과 일정 선택 상태를 사용한다.
+   새 전체 페이지 캡처는 브라우저에서 시간 초과해, 저장소의 시안 전체 자료와
+   현재 뷰포트·섹션 스크롤·DOM 치수로 비교했다. 일회성 화면 캡처는 Git에 넣지 않는다.
+3. [UI Audit](../../frontend/scripts/ui-audit/README.md)에서 고객 상세에
+   `scenario=stress&media=failed&policy=error&textScale=200`을 지정한다.
+   320px에서 모바일 CTA가 글자 단위로 줄바뀌어 256px 높이를 사용하던 문제를
+   여백 제한과 단어 단위 줄바꿈으로 줄였다(같은 조건에서 137px).
+   일정 입력 → Tab에서 포커스된 날짜 버튼 하단은 y=383, CTA 상단은 y=431이었다.
+   모달 중 CTA 숨김, 키보드 스크롤, Escape 및 갤러리 트리거에 포커스 복귀도 확인했다.
+
+실제 계정, 운영 DB, 브라우저 자체 확대·실기기 safe-area, 외부 OAuth 및 최종 UI 승인은 미검증이다.
