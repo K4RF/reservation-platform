@@ -11,7 +11,7 @@ import { accessTokenWithExpiry } from './jwt'
 import { album, media } from './media'
 
 // Stateful HTTP fixture, NOT a substitute for Spring Security/DB verification.
-// Unknown URLs are recorded and rejected; no invented Admin or policy-read API is supported.
+// Unknown URLs are recorded and rejected; no invented Admin or cancellation-policy read API.
 export function adminManagementApi(seedCatalog = false) {
   const state = {
     accommodation: seedCatalog
@@ -160,8 +160,8 @@ export function adminManagementApi(seedCatalog = false) {
     }
     if (path === '/api/v1/accommodations/7/booking-policy' && method === 'GET')
       return state.bookingPolicy
-        ? Response.json(state.bookingPolicy)
-        : new Response(null, { status: 204 })
+        ? Response.json(state.bookingPolicy, { headers: { 'Cache-Control': 'no-store' } })
+        : new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
     if (
       [
         '/api/v1/accommodations/7/booking-policy',
@@ -188,7 +188,11 @@ export function adminManagementApi(seedCatalog = false) {
             : []
         return Response.json(
           roomPage({
-            content: rows.map((row) => ({ ...row, images: row.images.slice(0, 1) })),
+            content: rows.map((row) => ({
+              ...row,
+              images: row.images.slice(0, 1),
+              metadata: undefined,
+            })),
             totalElements: rows.length,
             totalPages: rows.length ? 1 : 0,
           }),

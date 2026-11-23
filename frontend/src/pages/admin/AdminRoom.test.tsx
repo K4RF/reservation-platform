@@ -646,21 +646,25 @@ describe('Room Admin auth and write safety', () => {
     'locks ambiguous %s update and status together, even after read refresh',
     async (failure) => {
       signIn()
+      let committed: typeof room | undefined
       const fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
-        if (init.method === 'PUT')
-          return failure === 'network'
-            ? Promise.reject(new TypeError('offline'))
-            : Promise.resolve(
-                failure === '500'
-                  ? errorResponse(500)
-                  : Response.json({ ...room, accommodationId: 8 }),
-              )
+        if (init.method === 'PUT') {
+          if (failure === 'network') {
+            committed = { ...room, ...JSON.parse(String(init.body)) }
+            return Promise.reject(new TypeError('response lost after commit'))
+          }
+          return Promise.resolve(
+            failure === '500' ? errorResponse(500) : Response.json({ ...room, accommodationId: 8 }),
+          )
+        }
+        if (committed && url.endsWith('/rooms/3')) return Promise.resolve(Response.json(committed))
         return Promise.resolve(Response.json(publicResponse(url)))
       })
       vi.stubGlobal('fetch', fetch)
       open('/admin/rooms/3?accommodationId=7')
       await openAdminPanel('정보 편집')
       await screen.findByRole('form', { name: '객실 정보 수정' })
+      fireEvent.change(screen.getByLabelText('전망'), { target: { value: '정원 전망' } })
       fireEvent.submit(screen.getByRole('form', { name: '객실 정보 수정' }))
       await screen.findByRole('region', { name: '불명확한 저장 결과 확인' })
       expect(screen.queryByRole('button', { name: '확인 후 입력 잠금 해제' })).toBeNull()
@@ -675,6 +679,8 @@ describe('Room Admin auth and write safety', () => {
       fireEvent.click(screen.getByRole('button', { name: '객실 상세 새로 조회' }))
       await openAdminPanel('정보 편집')
       await screen.findByRole('form', { name: '객실 정보 수정' })
+      if (failure === 'network')
+        expect(screen.getByLabelText('전망')).toHaveProperty('value', '정원 전망')
       expect(
         (screen.getByLabelText('객실 이름').closest('fieldset') as HTMLFieldSetElement).disabled,
       ).toBe(true)
@@ -686,22 +692,28 @@ describe('Room Admin auth and write safety', () => {
       expect(writes(fetch)).toHaveLength(1)
     },
   )
-  it('does not replay the create POST after 401 and routes to the shared login', async () => {
+  it.each([
+    ['POST', 'new', '객실 생성'],
+    ['PUT', '3', '객실 정보 수정'],
+  ])('does not replay metadata %s after 401 and routes to login', async (method, target, name) => {
     signIn()
-    const fetch = vi
-      .fn()
-      .mockImplementation((url: string, init: RequestInit) =>
-        Promise.resolve(
-          init.method === 'POST' ? errorResponse(401) : Response.json(publicResponse(url)),
-        ),
-      )
+    const fetch = vi.fn((url: string, init: RequestInit) =>
+      Promise.resolve(
+        init.method === method ? errorResponse(401) : Response.json(publicResponse(url)),
+      ),
+    )
     vi.stubGlobal('fetch', fetch)
-    open('/admin/rooms/new?accommodationId=7')
-    await screen.findByRole('form', { name: '객실 생성' })
-    fillRoom()
-    fireEvent.submit(screen.getByRole('form', { name: '객실 생성' }))
+    open(`/admin/rooms/${target}?accommodationId=7`)
+    if (method === 'PUT') await openAdminPanel('정보 편집')
+    const editor = await screen.findByRole('form', { name })
+    if (method === 'POST') fillRoom()
+    fireEvent.change(screen.getByLabelText('전망'), { target: { value: '정원 전망' } })
+    fireEvent.submit(editor)
     await screen.findByRole('heading', { name: '로그인' })
-    expect(writes(fetch)).toHaveLength(1)
+    const sent = writes(fetch)
+    expect(sent).toHaveLength(1)
+    expect(sent[0][1].method).toBe(method)
+    expect(JSON.parse(String(sent[0][1].body)).metadata).toMatchObject({ view: '정원 전망' })
     expect(fetch.mock.calls.some(([url]) => url.endsWith('/auth/reissue'))).toBe(false)
   })
   it('clears pending create input and ignores the old response when the accommodation changes', async () => {

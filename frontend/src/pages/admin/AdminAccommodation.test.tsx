@@ -598,6 +598,31 @@ describe('Admin write failures, auth and lifetime safety', () => {
     expect(fetch).toHaveBeenCalledOnce()
     expect(screen.queryByRole('form', { name: '숙소 생성' })).toBeNull()
   })
+  it('does not turn a booking policy PUT rejected with 401 into a replay or a create', async () => {
+    signIn()
+    const fetch = vi.fn((url: string, init: RequestInit) => {
+      if (init.method === 'PUT') return Promise.resolve(jsonError(401))
+      return Promise.resolve(
+        Response.json(
+          url.endsWith('/booking-policy')
+            ? { ...bookingPolicy, bookingPolicyId: 5, accommodationId: 7 }
+            : accommodation,
+        ),
+      )
+    })
+    vi.stubGlobal('fetch', fetch)
+    open('/admin/accommodations/7')
+    await openAdminPanel('예약 정책 편집')
+    await screen.findByRole('button', { name: '예약 정책 새로 조회' })
+    fillPolicy('예약', 'PUT')
+    fireEvent.submit(policyForm('예약'))
+    await screen.findByRole('heading', { name: '로그인' })
+    expect(fetch.mock.calls.map(([url, init]) => [url.split('/').at(-1), init.method])).toEqual([
+      ['7', 'GET'],
+      ['booking-policy', 'GET'],
+      ['booking-policy', 'PUT'],
+    ])
+  })
   it('discards an old create response after another ADMIN login instead of navigating the new session', async () => {
     signIn()
     let resolve!: (response: Response) => void
@@ -618,16 +643,21 @@ describe('Admin write failures, auth and lifetime safety', () => {
     expect(screen.getByTestId('location').textContent).toBe('/admin/accommodations/new')
     expect(fetch).toHaveBeenCalledOnce()
   })
-  it('keeps an uncertain policy write locked through a failed and successful GET until explicit review', async () => {
+  it('does not replay a committed policy POST with a lost response, even after fresh reads', async () => {
     signIn()
     let reads = 0
+    let committed: typeof bookingPolicy | undefined
     const fetch = vi.fn().mockImplementation((url: string, init: RequestInit) => {
       if (!url.endsWith('/booking-policy')) return Promise.resolve(Response.json(accommodation))
-      if (init.method !== 'GET' || ++reads === 2) return Promise.reject(new TypeError('offline'))
+      if (init.method === 'POST') {
+        committed = JSON.parse(String(init.body)) as typeof bookingPolicy
+        return Promise.reject(new TypeError('response lost after commit'))
+      }
+      if (++reads === 2) return Promise.reject(new TypeError('offline'))
       return Promise.resolve(
-        reads === 1
-          ? new Response(null, { status: 204 })
-          : Response.json({ ...bookingPolicy, bookingPolicyId: 5, accommodationId: 7 }),
+        committed
+          ? Response.json({ ...committed, bookingPolicyId: 5, accommodationId: 7 })
+          : new Response(null, { status: 204 }),
       )
     })
     vi.stubGlobal('fetch', fetch)
@@ -637,6 +667,7 @@ describe('Admin write failures, auth and lifetime safety', () => {
     fillPolicy('예약')
     fireEvent.submit(policyForm('예약'))
     await screen.findByRole('region', { name: '불명확한 저장 결과 확인' })
+    expect(committed).toEqual(bookingPolicy)
     expect(screen.queryByRole('button', { name: '확인 후 입력 잠금 해제' })).toBeNull()
     expect(screen.getByRole('button', { name: '숙소 상세 새로 조회' })).toHaveProperty(
       'disabled',
