@@ -1567,6 +1567,7 @@ legend {
 .booking-policy-readout .ui-error,
 .booking-policy-readout button {
   padding-inline: min(var(--space-3), 3vw);
+  word-break: keep-all;
 }
 .booking-policy-readout .booking-policy-limits {
   display: grid;
@@ -1779,7 +1780,8 @@ legend {
     z-index: 15;
     inset-inline: 0;
     bottom: 0;
-    padding: var(--space-3) var(--space-5) calc(var(--space-3) + env(safe-area-inset-bottom));
+    padding: var(--space-3) min(var(--space-5), 5vw)
+      calc(var(--space-3) + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-border);
     background: var(--color-surface);
   }
@@ -1798,6 +1800,8 @@ legend {
     max-width: 60%;
     flex-shrink: 0;
     font-size: var(--font-size-sm);
+    padding-inline: min(var(--space-5), 5vw);
+    word-break: keep-all;
   }
   body:has(dialog[open]) .accommodation-detail-page .detail-mobile-action,
   .accommodation-detail-page:has(:is(input, select, textarea):focus) .detail-mobile-action {
