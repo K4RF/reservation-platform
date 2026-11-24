@@ -56,9 +56,9 @@ export function sample({ compose, docker, sql, services, phase }) {
     if (!ids.length) throw new Error("No owned running containers");
     return docker(["stats", "--no-stream", "--format", "{{json .}}", ...ids])
       .split(/\r?\n/).map((line) => {
-        const { Name, CPUPerc, MemUsage, MemPerc, PIDs } = JSON.parse(line);
+        const { Name, CPUPerc, MemUsage, MemPerc, PIDs, BlockIO } = JSON.parse(line);
         return { service: Name.replace(/^reservation-load-[a-f0-9]{24}-/, ""), cpu: CPUPerc,
-          memory: MemUsage, memoryPercent: MemPerc, processes: PIDs };
+          memory: MemUsage, memoryPercent: MemPerc, processes: PIDs, blockIO: BlockIO };
       });
   });
   observe("jvm", () => {
@@ -118,7 +118,8 @@ export function summarize(rawPath, workload) {
     if (metric === "iterations") add(scenarioIterations, scenario, data.value);
   }
   const elapsedSeconds = latest > earliest ? (latest - earliest) / 1000 : null;
-  const offeredIterations = { read: workload.reads ?? (workload.rate ?? 0) * (workload.seconds ?? 0),
+  const offeredIterations = workload.stages ? Object.fromEntries(workload.stages.map(({ name, rate, seconds }) =>
+    [name, rate * seconds])) : { read: workload.reads ?? (workload.rate ?? 0) * (workload.seconds ?? 0),
     write: (workload.writers ?? 0) * (workload.writes ?? 0), ...(workload.smoke ? { smoke: workload.smoke } : {}) };
   function summarizeTimings(values) {
     values.sort((a, b) => a - b);
@@ -132,7 +133,12 @@ export function summarize(rawPath, workload) {
     durations[key] = { ...summarizeTimings(values), httpErrorRate: failures / values.length };
   }
   for (const [key, values] of Object.entries(outcomes)) outcomes[key] = summarizeTimings(values);
+  const stages = Object.fromEntries((workload.stages ?? []).map(({ name, seconds }) => {
+    const requests = Object.entries(durations).filter(([key]) => key.startsWith(name + "/"))
+      .reduce((total, [, stats]) => total + stats.n, 0);
+    return [name, { seconds, requests, rpsOverStageWindow: requests / seconds }];
+  }));
   return { count, elapsedSeconds, rpsOverRun: elapsedSeconds ? count / elapsedSeconds : null,
     offeredIterations, scenarioIterations, dropped, transportErrors, timeouts, transportCodes: errors,
-    durations, outcomes, http, operations, codes };
+    durations, outcomes, http, operations, codes, ...(workload.stages ? { stages } : {}) };
 }

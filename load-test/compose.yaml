@@ -111,6 +111,7 @@ services:
       LOAD_ID: ${LOAD_ID:?}
     volumes:
       - ./fixture.mjs:/fixture.mjs:ro
+      - ./k6/catalog-cases.js:/catalog-cases.mjs:ro
       - fixture-data:/private
   k6:
     image: grafana/k6:2.0.0@sha256:a33a0cfdc4d2483d6b7a3a22e726a499ff2831a671a49239104cd34a9937523c

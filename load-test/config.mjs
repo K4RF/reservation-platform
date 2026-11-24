@@ -20,7 +20,7 @@ export function checkStay(date, now = Date.now()) {
 export function argumentsFor([action, ...args]) {
   if (!["prepare", "run", "stop", "reset", "cleanup"].includes(action))
     throw new Error("Use prepare, run, stop, reset or cleanup (see load-test/README.md)");
-  const supported = action === "prepare" ? ["confirm", "seed", "stay", "profile", "cache", "room"] : ["confirm"];
+  const supported = action === "prepare" ? ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size"] : ["confirm"];
   const id = action === "prepare" ? null : validateId(args.shift());
   const values = {};
   while (args.length) {
@@ -35,7 +35,8 @@ export function argumentsFor([action, ...args]) {
   const { seed, stay, profile = "baseline", cache = "warm", room = "distributed" } = values;
   if (!/^[1-9]\d{0,5}$/.test(seed)) throw new Error("Expected integer --seed=1..999999");
   checkStay(stay);
-  return { action, seed: Number(seed), stay, profile, cache, room, workload: plan(profile, cache, room) };
+  const catalogSize = values["catalog-size"];
+  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, workload: plan(profile, cache, room, catalogSize) };
 }
 export function checkManifest(value, id, engine, requireIdentities = true) {
   if (!value || value.schema !== 1 || value.id !== id || value.project !== projectOf(id) ||
@@ -43,7 +44,7 @@ export function checkManifest(value, id, engine, requireIdentities = true) {
       !Number.isInteger(value.seed) || value.seed < 1 || value.seed > 999999 ||
       !/^\d{4}-\d{2}-\d{2}$/.test(value.stay) ||
       !["preparing", "prepared", "running", "passed", "failed"].includes(value.state) ||
-      JSON.stringify(plan(value.profile, value.cache, value.room)) !== JSON.stringify(value.workload))
+      JSON.stringify(plan(value.profile, value.cache, value.room, value.catalogSize)) !== JSON.stringify(value.workload))
     throw new Error("Invalid run manifest or wrong Docker engine");
   if (requireIdentities && ["prepared", "running", "passed"].includes(value.state) &&
       (!/^sha256:[a-f0-9]{64}$/.test(value.generatorImage) ||
@@ -67,7 +68,7 @@ export function checkResource(record, expectedId, kind) {
   if (kind === "container") {
     const service = labels["com.docker.compose.service"];
     const suffix = service === "k6" ? "k6" : service + "-1";
-    const bindTargets = { backend: ["/app.jar", "/Observe.java"], fixture: ["/fixture.mjs"], k6: ["/scripts", "/results"] };
+    const bindTargets = { backend: ["/app.jar", "/Observe.java"], fixture: ["/fixture.mjs", "/catalog-cases.mjs"], k6: ["/scripts", "/results"] };
     if (![...SERVICES, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
         record.HostConfig.NetworkMode !== project + "_default" ||
         Object.keys(record.HostConfig.PortBindings ?? {}).length ||
