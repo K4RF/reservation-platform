@@ -11,6 +11,8 @@ Index를 추가하지 않았다.
 시간은 Cache와 Docker 상태에 영향을 받으므로 절대 성능이나 운영 응답 시간을
 의미하지 않는다.
 
+최신 위치·카탈로그 조건의 HTTP 측정과 실제 JPA SQL은 [#343 검색·자동완성 Baseline](search-http-load-baseline.md)을 참고한다.
+
 ## 재현 데이터와 Query
 
 - 숙소 200개: 동일 지역 200개 중 목표 도시 40개, `ACTIVE/INACTIVE` 각 20개
