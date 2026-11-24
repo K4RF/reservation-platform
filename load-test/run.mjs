@@ -14,6 +14,8 @@ import {
 } from "./config.mjs";
 import { kafkaLag, sample, summarize } from "./metrics.mjs";
 import { checkInvariants, checkMeasurement, counters } from "./verification.mjs";
+import { seedCatalog } from "./catalog-seed.mjs";
+import { catalogSqlDelta, catalogSqlSnapshot, explainCatalog, verifyCatalogSql } from "./catalog-diagnostics.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -22,7 +24,8 @@ const group = "com.docker.compose.project";
 const hash = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");
 function harnessHash() {
   const files = ["compose.yaml", "config.mjs", "run.mjs", "metrics.mjs", "verification.mjs", "fixture.mjs",
-    "observe/Observe.java", "k6/baseline.js", "k6/profiles.js", "k6/requests.js"];
+    "observe/Observe.java", "k6/baseline.js", "k6/profiles.js", "k6/requests.js",
+    "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -219,7 +222,9 @@ function measured(run, m) {
   const result = spawn("docker", ["--context", run.context, ...run.composeArgs, "run",
     "--no-deps", "--pull", "never", "--rm", "--name", m.project + "-k6", "-T",
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
-    "k6", "run", "--quiet", "--out", "json=/results/raw.jsonl", "/scripts/baseline.js"],
+    ...(m.workload.catalog ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
+    "k6", "run", "--quiet", "--out", "json=/results/raw.jsonl",
+    m.workload.catalog ? "/scripts/catalog.js" : "/scripts/baseline.js"],
     { cwd: root, env: run.env, stdio: "ignore", windowsHide: true });
   const cancel = () => {
     try {
@@ -270,9 +275,19 @@ async function execute(run, m, path) {
       if (pre.db[key] !== value) throw new Error("Seed count mismatch: " + key);
     report("seed.json", seeded);
     run.fixture("smoke", m.cache);
+    if (m.workload.catalog) {
+      const catalog = seedCatalog(run.sql, m.seed, m.stay, m.catalogSize);
+      const afterSeed = JSON.parse(run.sql(counters));
+      for (const [key, value] of Object.entries(catalog.added))
+        if (afterSeed[key] !== pre.db[key] + value) throw new Error("Catalog seed count mismatch: " + key);
+      pre.db = afterSeed;
+      const contracts = JSON.parse(run.fixture("catalog-preflight", String(m.seed), m.catalogSize));
+      report("catalog-fixture.json", { ...catalog, ...contracts });
+    }
     if (m.cache === "cold") clearDetail(run);
     observe("before");
     if (existsSync(stop)) throw new Error("Stopped before starting k6");
+    const sqlBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
     m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
     json(path, m);
     const generator = measured(run, m);
@@ -281,6 +296,8 @@ async function execute(run, m, path) {
     try { code = await generator; } finally { clearInterval(interval); }
     m.measurement.endedAt = new Date().toISOString();
     m.measurement.generatorCode = code;
+    const sqlDelta = sqlBefore && catalogSqlDelta(sqlBefore, catalogSqlSnapshot(run.sql));
+    if (sqlDelta) report("catalog-sql.json", sqlDelta);
     const drainStarted = Date.now();
     let post;
     try {
@@ -297,6 +314,12 @@ async function execute(run, m, path) {
     checkInvariants(pre.db, post.db, result, m.profile);
     run.resources(true);
     checkMeasurement(result, m.workload, code);
+    if (m.workload.catalog) {
+      verifyCatalogSql(result, sqlDelta);
+      run.fixture("catalog-check");
+      if (m.workload.catalog !== "journey")
+        report("catalog-plans.json", explainCatalog(run, m.workload.catalog));
+    }
     m.state = "passed";
     console.log("PASS: " + result.count + " measured requests; DB, inventory, snapshot and events verified");
   } catch (error) {
@@ -340,7 +363,7 @@ try {
       }
       if (options.action === "reset") {
         run.resources();
-        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "workload"]
+        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "workload"]
           .map((key) => [key, m[key]])));
       }
     });

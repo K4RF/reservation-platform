@@ -2,6 +2,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
+import { catalogRows, matrix, matches } from "./catalog-cases.mjs";
 
 const origin = "http://backend:8080";
 const privateFile = "/private/input.json";
@@ -177,6 +178,40 @@ async function smoke(cache) {
   console.log(JSON.stringify({ passed: true, cache }));
 }
 
+const catalogFile = "/private/catalog.json";
+async function checkCatalogCase(test) {
+  const data = (await api(test.path, { tag: test.name })).data;
+  if (!matches(test, data))
+    throw new Error("Catalog contract failed: " + test.name);
+  return Array.isArray(data) ? data.length : data.totalElements;
+}
+
+async function catalogPreflight(seedNumber, size) {
+  const { days, runId: owner } = read(privateFile);
+  ensure(owner === runId, "Catalog fixture ownership mismatch");
+  const cases = matrix(catalogRows(seedNumber, size), days);
+  const totals = {};
+  for (const test of [...cases.search, ...cases.suggest, cases.control])
+    totals[test.name] = await checkCatalogCase(test);
+  for (const test of Object.values(cases.selections)) await checkCatalogCase(test);
+  save(catalogFile, { runId, size, cases });
+  console.log(JSON.stringify({ totals, selectionCount: Object.keys(cases.selections).length,
+    deepPage: cases.search.find((test) => test.name === "search.deep").expected.index }));
+}
+
+async function catalogCheck(name) {
+  const fixture = read(catalogFile);
+  ensure(fixture.runId === runId, "Catalog fixture ownership mismatch");
+  const choices = [...fixture.cases.search, ...fixture.cases.suggest, fixture.cases.control];
+  if (name) {
+    const test = ensure(choices.find((test) => test.name === name), "Unknown test case");
+    await checkCatalogCase(test);
+  } else {
+    for (const test of [...choices, ...Object.values(fixture.cases.selections)])
+      await checkCatalogCase(test);
+  }
+}
+
 try {
   ensure(/^[0-9a-f]{24}$/.test(runId), "Missing isolated runner identity");
   const [action, ...args] = process.argv.slice(2);
@@ -196,6 +231,10 @@ try {
     await seed(Number(args[0]), args[1]);
   } else if (action === "smoke") {
     await smoke(args[0]);
+  } else if (action === "catalog-preflight") {
+    await catalogPreflight(Number(args[0]), args[1]);
+  } else if (action === "catalog-check") {
+    await catalogCheck(args[0]);
   } else {
     throw new Error("Unknown fixture action");
   }

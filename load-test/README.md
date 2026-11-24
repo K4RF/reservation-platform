@@ -1,5 +1,8 @@
 # 격리 HTTP 부하 테스트 (#342)
 
+숙소 검색·자동완성을 각각 측정하려면 [#343 카탈로그 HTTP 검증](../docs/performance/search-http-load-baseline.md)을
+참고한다. 같은 소유권 가드를 사용하며, SQL 추적과 실행계획 진단은 HTTP 측정이 끝난 뒤 실행한다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와
@@ -70,6 +73,8 @@ ADMIN 1 + USER 8, 본인 확정 예약 4건을 생성한다. 고정 seed/날짜�
 
 `.local/load-test/<id>` 아래 JSON 파일을 보관한다(Git 제외). 요청·응답 본문, 토큰·투숙객 정보,
 원시 SQL 및 애플리케이션 로그는 저장·공유 대상이 아니다. 브로커 로그는 집계만 저장한다.
+예외로 #343의 사후 진단은 격리 합성 SELECT/바인딩과 실행계획만 `results/catalog-plans.json`에
+저장한다. 로그는 대표 요청에만 잠시 활성화하며, 원본 산출물은 Git에 추가하지 않는다.
 
 | 파일 | 범위 |
 | --- | --- |
