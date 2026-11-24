@@ -1,5 +1,8 @@
 # 격리 HTTP 부하 테스트 (#342)
 
+숙소 검색·자동완성을 각각 측정하려면 [#343 카탈로그 HTTP 검증](../docs/performance/search-http-load-baseline.md)을
+참고한다. 같은 소유권 가드를 사용하며, SQL 추적과 실행계획 진단은 HTTP 측정이 끝난 뒤 실행한다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와
