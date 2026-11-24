@@ -75,6 +75,7 @@ test("diagnostic classification and counter deltas keep actual SELECT types sepa
   equal(classifyCatalogSelect("SELECT COUNT ( a.id ) FROM `accommodations` a"), "count");
   equal(classifyCatalogSelect("select distinct a.time_zone from accommodations a"), "time_zone");
   equal(classifyCatalogSelect("SELECT DISTINCT a . `time_zone` FROM `accommodations` a"), "time_zone");
+  equal(classifyCatalogSelect("SELECT DISTINCTROW `a1_0` . `time_zone` FROM `accommodations` `a1_0`"), "time_zone");
   equal(classifyCatalogSelect("WITH active_locations AS (SELECT id FROM accommodations) SELECT id FROM active_locations"), "suggestion");
   equal(classifyCatalogSelect("select a.id from accommodations a"), "content");
   equal(classifyCatalogSelect("select r.id from reservation_outbox_events r"), null);

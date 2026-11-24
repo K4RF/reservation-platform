@@ -7,7 +7,8 @@ export function classifyCatalogSelect(statement) {
   if (!/^select\s/i.test(query)) return null;
   if (/\bfrom\s+accommodations\b/i.test(query)) {
     if (/^select\s+count\s*\(/i.test(query)) return "count";
-    if (/^select\s+distinct\s+(?:\w+\s*\.\s*)?time_zone\b/i.test(query)) return "time_zone";
+    // MySQL digest normalization spells DISTINCT as DISTINCTROW.
+    if (/^select\s+distinct(?:row)?\s+(?:\w+\s*\.\s*)?time_zone\b/i.test(query)) return "time_zone";
     return "content";
   }
   if (/\bfrom\s+(catalog_media|accommodation_amenities)\b/i.test(query)) return "catalog_enrichment";
@@ -57,7 +58,8 @@ export function verifyCatalogSql(result, delta) {
   const calls = (kind) => delta.totals[kind]?.calls ?? 0;
   if (searches !== calls("content") || searches !== calls("time_zone") || suggestions !== calls("suggestion") ||
       calls("count") > searches)
-    throw new Error("Catalog SELECT delta does not reconcile with measured HTTP calls");
+    throw new Error(`Catalog SELECT delta does not reconcile: HTTP search=${searches}, suggest=${suggestions}; ` +
+      `SQL content=${calls("content")}, time_zone=${calls("time_zone")}, count=${calls("count")}, suggestion=${calls("suggestion")}`);
 }
 
 const representative = {
