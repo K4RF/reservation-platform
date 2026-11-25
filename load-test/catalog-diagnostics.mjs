@@ -15,14 +15,14 @@ export function classifyCatalogSelect(statement) {
   return null;
 }
 
-export function catalogSqlSnapshot(sql) {
+export function catalogSqlSnapshot(sql, classify = classifyCatalogSelect) {
   const digests = parseLines(sql(`
 SELECT JSON_OBJECT('id',DIGEST,'text',DIGEST_TEXT,'calls',COUNT_STAR,'timerPs',SUM_TIMER_WAIT,
   'rowsExamined',SUM_ROWS_EXAMINED,'rowsSent',SUM_ROWS_SENT,'sortRows',SUM_SORT_ROWS)
 FROM performance_schema.events_statements_summary_by_digest
 WHERE SCHEMA_NAME='reservation_load' AND DIGEST IS NOT NULL;
 `)).flatMap(({ id, text, ...counters }) => {
-    const kind = classifyCatalogSelect(text);
+    const kind = classify(text);
     return kind ? [{ id, kind, ...counters }] : [];
   });
   const buffer = JSON.parse(sql(`
@@ -75,26 +75,7 @@ export function explainCatalog({ sql, fixture }, scope) {
     ...(scope === "search" ? [] : representative.suggest)];
   const output = {};
   for (const name of cases) {
-    const since = sql("SET GLOBAL general_log=ON; SELECT DATE_FORMAT(NOW(6),'%Y-%m-%d %H:%i:%s.%f');");
-    try {
-      if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/.test(since))
-        throw new Error("Invalid diagnostic boundary");
-      fixture("catalog-check", name);
-    } finally {
-      sql("SET GLOBAL general_log=OFF;");
-    }
-    const trace = parseLines(sql(`
-SELECT JSON_OBJECT('statement',CAST(argument AS CHAR CHARACTER SET utf8mb4))
-FROM mysql.general_log
-WHERE event_time >= '${since}' AND user_host LIKE 'reservation_load[%'
-  AND command_type IN ('Query', 'Execute')
-ORDER BY event_time;
-`)).flatMap(({ statement }) => {
-      const kind = classifyCatalogSelect(statement);
-      if (!kind) return [];
-      if (/[;\u0000]/u.test(statement)) throw new Error("Multi-statement diagnostic is not permitted");
-      return [{ kind, statement }];
-    });
+    const trace = captureSelects(sql, () => fixture("catalog-check", name), classifyCatalogSelect);
     const primary = name.startsWith("search.") ? "content" : "suggestion";
     if (name === "control.short" ? trace.length !== 0 : trace.filter(({ kind }) => kind === primary).length !== 1)
       throw new Error("Unexpected SQL count for " + name + ": " + trace.map(({ kind }) => kind).join(","));
@@ -104,4 +85,30 @@ ORDER BY event_time;
     }) };
   }
   return output;
+}
+
+// Capture only application SELECTs from one synthetic probe on the already verified DB.
+export function captureSelects(sql, invoke, classify) {
+  let since;
+  try {
+    since = sql("SET GLOBAL general_log=ON; SELECT DATE_FORMAT(NOW(6),'%Y-%m-%d %H:%i:%s.%f');");
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6}$/.test(since))
+      throw new Error("Invalid diagnostic boundary");
+    invoke();
+  } finally {
+    sql("SET GLOBAL general_log=OFF;");
+  }
+  return parseLines(sql(`
+SELECT JSON_OBJECT('statement',CAST(argument AS CHAR CHARACTER SET utf8mb4))
+FROM mysql.general_log
+WHERE event_time >= '${since}' AND user_host LIKE 'reservation_load[%'
+  AND command_type IN ('Query', 'Execute')
+ORDER BY event_time;
+`)).flatMap(({ statement }) => {
+    if (!/^\s*(?:select|with)\s/i.test(statement)) return [];
+    const kind = classify(statement);
+    if (!kind) return [];
+    if (/[;\u0000]/u.test(statement)) throw new Error("Multi-statement diagnostic is not permitted");
+    return [{ kind, statement }];
+  });
 }
