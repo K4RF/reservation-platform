@@ -118,8 +118,8 @@ export function summarize(rawPath, workload) {
     if (metric === "iterations") add(scenarioIterations, scenario, data.value);
   }
   const elapsedSeconds = latest > earliest ? (latest - earliest) / 1000 : null;
-  const offeredIterations = workload.stages ? Object.fromEntries(workload.stages.map(({ name, rate, seconds }) =>
-    [name, rate * seconds])) : { read: workload.reads ?? (workload.rate ?? 0) * (workload.seconds ?? 0),
+  const offeredIterations = workload.stages ? Object.fromEntries(workload.stages.map(({ name, rate, seconds, iterations }) =>
+    [name, iterations ?? rate * seconds])) : { read: workload.reads ?? (workload.rate ?? 0) * (workload.seconds ?? 0),
     write: (workload.writers ?? 0) * (workload.writes ?? 0), ...(workload.smoke ? { smoke: workload.smoke } : {}) };
   function summarizeTimings(values) {
     values.sort((a, b) => a - b);

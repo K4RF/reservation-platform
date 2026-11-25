@@ -17,6 +17,8 @@ HTTP, 인증 Filter, JSON 직렬화, Network 시간은 포함하지 않는다. �
 운영 API SLO나 TPS가 아니라 같은 로컬 환경에서 방향을 확인하는 표본이다. 본격적인
 다중 사용자 부하, p99, TPS와 장시간 안정성은 v0.5.0 범위다.
 
+현재 상세 JSON·Media·메타데이터가 포함된 HTTP 검증은 [#344 상세 Redis Cache Baseline](detail-cache-http-baseline.md)을 참고한다.
+
 ## 환경과 반복 조건
 
 - 측정일: 2026-09-19

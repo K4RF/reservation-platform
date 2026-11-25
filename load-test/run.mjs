@@ -16,6 +16,11 @@ import { kafkaLag, sample, summarize } from "./metrics.mjs";
 import { checkInvariants, checkMeasurement, counters } from "./verification.mjs";
 import { seedCatalog } from "./catalog-seed.mjs";
 import { catalogSqlDelta, catalogSqlSnapshot, explainCatalog, verifyCatalogSql } from "./catalog-diagnostics.mjs";
+import { detailTtlMs } from "./k6/detail-cases.js";
+import {
+  compareDetailReads, detailFinalTtls, detailSnapshot, detailSqlDelta, prepareDetail,
+  redisDetailCounters, redisDetailDelta, runDetailBursts, runDetailLifecycle, verifyDetailRecovery, withDetailOutage,
+} from "./detail-diagnostics.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -25,7 +30,8 @@ const hash = (file) => createHash("sha256").update(readFileSync(file)).digest("h
 function harnessHash() {
   const files = ["compose.yaml", "config.mjs", "run.mjs", "metrics.mjs", "verification.mjs", "fixture.mjs",
     "observe/Observe.java", "k6/baseline.js", "k6/profiles.js", "k6/requests.js",
-    "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js"];
+    "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js",
+    "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -66,6 +72,7 @@ function openRun(runtime, m) {
   const results = safeReal(join(dir, "results"), "directory");
   const env = { ...hostEnv, LOAD_ID: id, LOAD_RESULTS: results,
     LOAD_JAR: join(root, "backend", "build", "libs", m.jar), LOAD_CACHE: String(m.cache !== "off"),
+    ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     LOAD_OUTPUT_USER: (process.getuid?.() ?? 0) + ":" + (process.getgid?.() ?? 0),
     // Only used by 'up'; exec/run/down refer to the existing service environments.
     LOAD_DB_PASSWORD: randomBytes(24).toString("hex"),
@@ -224,7 +231,7 @@ function measured(run, m) {
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
     ...(m.workload.catalog ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
     "k6", "run", "--quiet", "--out", "json=/results/raw.jsonl",
-    m.workload.catalog ? "/scripts/catalog.js" : "/scripts/baseline.js"],
+    m.workload.catalog ? "/scripts/catalog.js" : m.workload.detail ? "/scripts/detail.js" : "/scripts/baseline.js"],
     { cwd: root, env: run.env, stdio: "ignore", windowsHide: true });
   const cancel = () => {
     try {
@@ -269,12 +276,12 @@ async function execute(run, m, path) {
         run.sql("UPDATE members SET role='ADMIN' WHERE id=" + adminId +
           " AND email='load-admin@example.test' AND role='USER'; SELECT ROW_COUNT();") !== "1")
       throw new Error("Cannot grant fixture admin in the isolated DB");
-    const seeded = JSON.parse(run.fixture("seed", String(m.seed), m.stay));
+    const seeded = JSON.parse(run.fixture("seed", String(m.seed), m.stay, m.profile));
     const pre = await drain(run);
     for (const [key, value] of Object.entries(seeded.counts))
       if (pre.db[key] !== value) throw new Error("Seed count mismatch: " + key);
     report("seed.json", seeded);
-    run.fixture("smoke", m.cache);
+    run.fixture("smoke", m.workload.detail ? "off" : m.cache);
     if (m.workload.catalog) {
       const catalog = seedCatalog(run.sql, m.seed, m.stay, m.catalogSize);
       const afterSeed = JSON.parse(run.sql(counters));
@@ -284,20 +291,54 @@ async function execute(run, m, path) {
       const contracts = JSON.parse(run.fixture("catalog-preflight", String(m.seed), m.catalogSize));
       report("catalog-fixture.json", { ...catalog, ...contracts });
     }
-    if (m.cache === "cold") clearDetail(run);
+    const detail = m.workload.detail;
+    const maxTtl = detail && detailTtlMs(m.profile);
+    let cases;
+    if (detail) {
+      const fixture = JSON.parse(run.fixture("detail-preflight", String(m.seed)));
+      cases = fixture.cases;
+      report("detail-fixture.json", {
+        payloads: fixture.probes.map(({ name, bytes }) => ({ name, bytes })),
+        ttlMs: maxTtl, cacheEnabled: m.cache !== "off",
+        ...prepareDetail(run, cases, m.cache, maxTtl),
+      });
+    } else if (m.cache === "cold") clearDetail(run);
     observe("before");
     if (existsSync(stop)) throw new Error("Stopped before starting k6");
-    const sqlBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
-    m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
-    json(path, m);
-    const generator = measured(run, m);
-    const interval = setInterval(() => observe("measurement"), 5000);
-    let code;
-    try { code = await generator; } finally { clearInterval(interval); }
-    m.measurement.endedAt = new Date().toISOString();
-    m.measurement.generatorCode = code;
-    const sqlDelta = sqlBefore && catalogSqlDelta(sqlBefore, catalogSqlSnapshot(run.sql));
+    if (detail === "lifecycle") {
+      report("detail-lifecycle.json", await runDetailLifecycle(run, cases, maxTtl, () => existsSync(stop)));
+      const post = await drain(run);
+      checkInvariants(pre.db, post.db, { operations: {} }, m.profile);
+      if (JSON.stringify(pre.db) !== JSON.stringify(post.db)) throw new Error("Lifecycle changed unrelated counts");
+      report("verification.json", { before: pre.db, after: post.db, lag: post.lag });
+      run.resources(true);
+      m.state = "passed";
+      console.log("PASS: natural TTL expiration, reload and after-commit eviction");
+      return;
+    }
+    const redisBefore = detail === "reads" && redisDetailCounters(run);
+    let sqlBefore, sqlAfter;
+    const measure = async () => {
+      if (existsSync(stop)) throw new Error("Stopped before starting k6");
+      if (detail) sqlBefore = detailSnapshot(run);
+      m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
+      json(path, m);
+      const generator = measured(run, m);
+      const interval = setInterval(() => observe("measurement"), 5000);
+      let code;
+      try { code = await generator; } finally { clearInterval(interval); }
+      m.measurement.endedAt = new Date().toISOString();
+      m.measurement.generatorCode = code;
+      if (detail) sqlAfter = detailSnapshot(run);
+      return code;
+    };
+    const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
+    const code = detail === "outage" ? await withDetailOutage(run, m.resources.redis, measure) : await measure();
+    const sqlDelta = catalogBefore && catalogSqlDelta(catalogBefore, catalogSqlSnapshot(run.sql));
     if (sqlDelta) report("catalog-sql.json", sqlDelta);
+    const detailSql = detail && detailSqlDelta(sqlBefore, sqlAfter);
+    const redisDelta = redisBefore && redisDetailDelta(redisBefore, redisDetailCounters(run));
+    if (detail) report("detail-metrics.json", { sql: detailSql, redis: redisDelta || null });
     const drainStarted = Date.now();
     let post;
     try {
@@ -319,6 +360,16 @@ async function execute(run, m, path) {
       run.fixture("catalog-check");
       if (m.workload.catalog !== "journey")
         report("catalog-plans.json", explainCatalog(run, m.workload.catalog));
+    }
+    if (detail) {
+      const counts = compareDetailReads(result, detailSql, m.cache, detail);
+      const finalTtl = detail === "outage" ? null : detailFinalTtls(run, cases, m.cache === "off" ? 0 : maxTtl);
+      report("detail-metrics.json", { sql: detailSql, redis: redisDelta || null, counts, finalTtl });
+      if (detail === "outage") report("detail-recovery.json", verifyDetailRecovery(run, cases, maxTtl));
+      if (detail === "reads" && m.cache === "cold") {
+        if (existsSync(stop)) throw new Error("Stopped before detail burst");
+        report("detail-bursts.json", runDetailBursts(run, cases, maxTtl));
+      }
     }
     m.state = "passed";
     console.log("PASS: " + result.count + " measured requests; DB, inventory, snapshot and events verified");

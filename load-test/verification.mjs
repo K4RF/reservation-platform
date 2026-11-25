@@ -63,7 +63,7 @@ export function checkMeasurement(result, workload, code) {
     const completed = result.scenarioIterations[name] ?? 0;
     // k6 2.0 may start one iteration exactly at the arrival window's end.
     // Keep nominal and actual counts separate; missing arrivals still fail.
-    const open = (workload.rate && name === "read") || workload.stages?.some((stage) => stage.name === name);
+    const open = (workload.rate && name === "read") || workload.stages?.some((stage) => stage.name === name && stage.rate);
     return completed !== nominal && !(open && completed === nominal + 1);
   });
   if (code !== 0 || !result.count || result.dropped || result.transportErrors || wrongCount ||
