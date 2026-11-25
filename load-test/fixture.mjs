@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { catalogRows, matrix, matches } from "./catalog-cases.mjs";
+import { detailBurstCases, detailCases, detailMatches } from "./detail-cases.mjs";
 
 const origin = "http://backend:8080";
 const privateFile = "/private/input.json";
@@ -23,7 +24,7 @@ function ensure(value, label) {
   return value;
 }
 
-async function api(path, { method = "GET", body, token, status = 200, tag, headers = {} } = {}) {
+async function api(path, { method = "GET", body, token, status = 200, tag, headers = {}, measureJson = false } = {}) {
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Invalid fixture path");
   const multipart = body instanceof FormData;
   let response;
@@ -45,6 +46,10 @@ async function api(path, { method = "GET", body, token, status = 200, tag, heade
   if (response.status !== status) {
     await response.body?.cancel();
     throw new Error((tag ?? method) + " returned HTTP " + response.status);
+  }
+  if (measureJson) {
+    const json = await response.text();
+    return { data: JSON.parse(json), bytes: Buffer.byteLength(json) };
   }
   const data = response.headers.get("content-type")?.includes("json")
     ? await response.json()
@@ -78,9 +83,11 @@ async function upload(path, token) {
   await api(path, { method: "POST", body, token, headers: { "If-Match": revision }, status: 201, tag: "media seed" });
 }
 
-async function seed(seedNumber, firstDay) {
+const detailAdminFile = "/private/detail-admin.json";
+async function seed(seedNumber, firstDay, keepDetailAdmin) {
   const admin = await login(read(adminFile));
   unlinkSync(adminFile);
+  if (keepDetailAdmin) save(detailAdminFile, { runId, admin });
   const days = Array.from({ length: 5 }, (_, n) =>
     new Date(Date.parse(firstDay + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10),
   );
@@ -212,6 +219,55 @@ async function catalogCheck(name) {
   }
 }
 
+const detailFile = "/private/detail.json";
+const detailState = () => {
+  const state = read(detailFile);
+  ensure(state.runId === runId, "Detail fixture ownership mismatch");
+  return state.cases;
+};
+async function detailProbe(test, expected = (data) => detailMatches(test, data)) {
+  const begin = performance.now();
+  const { data, bytes } = await api(test.path, { tag: test.name, measureJson: true });
+  ensure(expected(data), "Detail contract failed: " + test.name);
+  return { name: test.name, ms: performance.now() - begin, bytes };
+}
+async function detailPreflight(seedNumber) {
+  const fixture = read(privateFile);
+  ensure(fixture.runId === runId, "Base fixture ownership mismatch");
+  const cases = detailCases(fixture, seedNumber);
+  const probes = [];
+  for (const test of [...cases.hotels, ...cases.units, cases.list]) probes.push(await detailProbe(test));
+  save(detailFile, { runId, cases });
+  console.log(JSON.stringify({ cases, probes }));
+}
+async function detailPair(checkUpdated) {
+  const { hotels, units } = detailState();
+  const [hotel, room] = [hotels[0], units[0]];
+  const probes = checkUpdated ? await Promise.all([
+    detailProbe({ ...hotel, description: "Updated by isolated cache check" }),
+    detailProbe(room, (data) => data?.metadata?.view === "Updated view" && detailMatches(room,
+      { ...data, metadata: { ...data.metadata, view: "Courtyard" } })),
+  ]) : await Promise.all([detailProbe(hotel), detailProbe(room)]);
+  console.log(JSON.stringify(probes));
+}
+async function detailUpdate() {
+  const { hotels: [hotel], units: [room] } = detailState();
+  const saved = read(detailAdminFile);
+  ensure(saved.runId === runId, "Detail admin ownership mismatch");
+  unlinkSync(detailAdminFile); // A lost response is not permission to replay a write.
+  const oldHotel = await get(hotel.path), oldRoom = await get(room.path);
+  ensure(detailMatches(hotel, oldHotel) && detailMatches(room, oldRoom), "Before-update detail mismatch");
+  const { name, country, city, region, address, checkInTime, checkOutTime, timeZone, amenities } = oldHotel;
+  const response = await api(hotel.path, { method: "PUT", token: saved.admin, tag: "detail accommodation update",
+    body: { name, country, city, region, address, checkInTime, checkOutTime, timeZone, amenities,
+      description: "Updated by isolated cache check" } });
+  ensure(response.data.description === "Updated by isolated cache check", "Updated accommodation response mismatch");
+  const updated = await api(room.path, { method: "PUT", token: saved.admin, tag: "detail room update",
+    body: { name: oldRoom.name, capacity: oldRoom.capacity, nightlyPrice: oldRoom.nightlyPrice,
+      amenities: oldRoom.amenities, metadata: { bedConfiguration: "Queen", areaSquareMeters: 28.5, view: "Updated view" } } });
+  ensure(updated.data.metadata?.view === "Updated view", "Updated room response mismatch");
+}
+
 try {
   ensure(/^[0-9a-f]{24}$/.test(runId), "Missing isolated runner identity");
   const [action, ...args] = process.argv.slice(2);
@@ -228,13 +284,22 @@ try {
     save(adminFile, admin);
     console.log(ensure(member.memberId, "Missing fixture admin ID"));
   } else if (action === "seed") {
-    await seed(Number(args[0]), args[1]);
+    await seed(Number(args[0]), args[1], args[2] === "detail-lifecycle");
   } else if (action === "smoke") {
     await smoke(args[0]);
   } else if (action === "catalog-preflight") {
     await catalogPreflight(Number(args[0]), args[1]);
   } else if (action === "catalog-check") {
     await catalogCheck(args[0]);
+  } else if (action === "detail-preflight") {
+    await detailPreflight(Number(args[0]));
+  } else if (action === "detail-burst") {
+    const group = detailBurstCases(detailState(), args[0], args[1]);
+    console.log(JSON.stringify(await Promise.all(group.map((test) => detailProbe(test)))));
+  } else if (action === "detail-pair" || action === "detail-pair-updated") {
+    await detailPair(action === "detail-pair-updated");
+  } else if (action === "detail-update") {
+    await detailUpdate();
   } else {
     throw new Error("Unknown fixture action");
   }

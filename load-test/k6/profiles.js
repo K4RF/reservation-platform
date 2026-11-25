@@ -20,6 +20,21 @@ export function plan(profile, cache, roomMode, catalogSize) {
     ] };
   }
   if (catalogSize !== undefined) throw new Error("Catalog size is only supported by catalog profiles");
+  if (["detail-reads", "detail-outage", "detail-lifecycle"].includes(profile)) {
+    if (roomMode !== "distributed" || !(profile === "detail-reads" ? ["off", "cold", "warm"].includes(cache) : cache === "warm"))
+      throw new Error("Invalid detail cache profile settings");
+    const detail = profile.slice(7);
+    if (detail === "lifecycle") return { detail };
+    if (detail === "outage") return { detail, stages: [
+      { name: "outage", rate: 1, seconds: 12, at: 0, vus: 2 },
+    ] };
+    return { detail, stages: [
+      { name: "first", iterations: 8, seconds: 8, at: 0, vus: 1 },
+      { name: "hot", rate: 2, seconds: 6, at: 9, vus: 2 },
+      { name: "distributed", rate: 2, seconds: 6, at: 17, vus: 2 },
+      { name: "steady", rate: 3, seconds: 8, at: 25, vus: 3 },
+    ] };
+  }
   if (!Object.hasOwn(profiles, profile)) throw new Error("Unknown profile");
   if (!["cold", "warm", "off"].includes(cache)) throw new Error("Unknown cache mode");
   if (!["hot", "distributed"].includes(roomMode)) throw new Error("Unknown room mode");
