@@ -14,6 +14,9 @@ test("lifecycle plans are bounded; date changes share one night and preserve dis
   const spec = plan("lifecycle-write", "off", "distributed");
   assert.deepEqual(spec.stages.map(({ name, rate, seconds }) => [name, rate, seconds]),
     [["low", 1, 6], ["ramp", 2, 6], ["steady", 3, 8]]);
+  const history = plan("lifecycle-history", "off", "distributed");
+  assert.deepEqual(history.stages.map(({ vus }) => vus), [2, 4, 6]);
+  assert.deepEqual(history.stages.map(({ rate }) => rate), spec.stages.map(({ rate }) => rate));
   assert.throws(() => plan("lifecycle-write", "warm", "distributed"));
   assert.throws(() => plan("lifecycle-broker-down", "off", "hot"));
   assert.throws(() => plan("lifecycle-history", "off", "distributed", "expanded"));
@@ -80,6 +83,32 @@ test("Kafka verification compares actual keys, partitions and order but allows r
   assert.throws(() => matchEventOrder(events, messages.concat({ ...messages[0], offset: 16 }), false), /Outbox/);
   assert.deepEqual(matchEventOrder(events, messages.concat({ ...messages[0], offset: 16 }), true),
     [{ eventId: "event-0", count: 2 }]);
+});
+
+test("race evidence needs two overlapping HTTP windows and verifies at most one successful cancel", () => {
+  const cases = ["race_mixed", "race_cancel"].map((stage) => [raceInput(fixture, stage, 0), raceInput(fixture, stage, 1)]);
+  const original = cases.map(([a]) => ({ reservationId: a.id, freeDays: 7, deadlineDays: 1 }));
+  const current = cases.map(([a]) => ({ ...a.created, reservationId: a.id, stayNights: 2, status: "CANCELLED",
+    nightlyPriceSnapshot: a.created.nights[0].priceSnapshot, freeDays: 7, deadlineDays: 1,
+    cancelledAt: "2026-11-25T04:00:00Z", refund: a.created.totalAmount }));
+  const inventory = cases.flatMap(([a]) => a.created.nights.map(({ stayDate }) =>
+    ({ roomId: a.created.roomId, date: stayDate, reserved: 1, version: 1 })));
+  const events = cases.map(([a], i) => ({ id: i + 5, aggregateId: a.id, eventType: "CANCELLED" }));
+  const ledger = cases.flatMap(([a, b], i) => [a, b].flatMap((record, iteration) => {
+    const { ordinal, ownerIndex, op, id, stage: scenario } = record;
+    const winning = iteration === 1, ctx = { ordinal, ownerIndex, op, scenario, iteration };
+    return [{ ...ctx, event: "dispatch", id, at: 100 * (i + 1) + iteration * 2 },
+      { ...ctx, event: "response", at: 100 * (i + 1) + 15 + iteration, status: winning ? 200 : 409,
+        outcome: winning ? "success" : "expected_rejection", reservationId: winning ? id : null, code: winning ? "none_or_other" :
+          op === "change" ? "RESERVATION_006" : "RESERVATION_005" }];
+  }));
+  const result = { mode: "race", first: { fixture, watermarks: { reservation: 4 }, inventory },
+    previous: { reservations: original }, current: { reservations: current,
+      inventory: inventory.map((row) => ({ ...row, reserved: 0, version: 2 })) },
+    events, ledger, summary: { operations: { "lifecycle.cancel": { success: 2 } } } };
+  assert.deepEqual(reconcileLifecycle(result).errors, []);
+  ledger[2].at = 120;
+  assert.match(reconcileLifecycle(result).errors.join(), /concurrent HTTP windows did not overlap/);
 });
 
 test("publisher timings retain failed acknowledgements, rollback and signed timestamp differences separately", () => {

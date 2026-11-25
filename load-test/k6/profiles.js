@@ -22,10 +22,11 @@ export function plan(profile, cache, roomMode, catalogSize) {
       { name: "race_mixed", iterations: 2, seconds: 5, at: 0, vus: 2 },
       { name: "race_cancel", iterations: 2, seconds: 5, at: 8, vus: 2 },
     ] };
+    const headroom = lifecycle === "history" ? 2 : 1;
     return { lifecycle, stages: [
-      { name: "low", rate: 1, seconds: 6, at: 0, vus: 1 },
-      { name: "ramp", rate: 2, seconds: 6, at: 8, vus: 2 },
-      { name: "steady", rate: 3, seconds: 8, at: 16, vus: 3 },
+      { name: "low", rate: 1, seconds: 6, at: 0, vus: headroom },
+      { name: "ramp", rate: 2, seconds: 6, at: 8, vus: 2 * headroom },
+      { name: "steady", rate: 3, seconds: 8, at: 16, vus: 3 * headroom },
     ] };
   }
   if (["create-hot", "create-distributed", "create-exhaustion", "create-redis-down", "create-peer"].includes(profile)) {

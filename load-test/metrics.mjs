@@ -19,9 +19,9 @@ function redisInfo(raw) {
   return { info, commands };
 }
 
-export function kafkaLag(compose) {
+export function kafkaLag(compose, timeout = 50_000) {
   const raw = compose(["exec", "-T", "kafka", "/opt/kafka/bin/kafka-consumer-groups.sh",
-    "--bootstrap-server", "kafka:29092", "--describe", "--group", "reservation-load-consumer"]);
+    "--bootstrap-server", "kafka:29092", "--describe", "--group", "reservation-load-consumer"], { timeout });
   return raw.split(/\r?\n/).map((row) => row.trim().split(/\s+/))
     .filter(([group, topic, part]) => group === "reservation-load-consumer" && topic === "reservation.events.v1" && /^\d+$/.test(part))
     .map(([, , part, current, end, lag]) => ({
@@ -45,7 +45,7 @@ SELECT JSON_OBJECT(
       WHERE SCHEMA_NAME='reservation_load' AND DIGEST IS NOT NULL ORDER BY SUM_TIMER_WAIT DESC LIMIT 10) rows_by_timer)
 );`;
 
-export function sample({ compose, docker, sql, services, phase, peer }) {
+export function sample({ compose, docker, sql, services, phase, peer, brokerUnavailable }) {
   const start = Date.now();
   const out = { phase, at: new Date(start).toISOString(), unavailable: [] };
   function observe(key, fn) {
@@ -76,8 +76,8 @@ export function sample({ compose, docker, sql, services, phase, peer }) {
       'published',SUM(status='PUBLISHED'),'oldestPendingSeconds',
       TIMESTAMPDIFF(SECOND,MIN(IF(status='PENDING',created_at,NULL)),UTC_TIMESTAMP()),
       'processed',(SELECT COUNT(*) FROM processed_reservation_events)) FROM reservation_outbox_events;`)),
-    lag: kafkaLag(compose),
-    brokerWarningOrErrorLines: compose(["logs", "--no-color", "--since", "30s", "kafka"])
+    lag: brokerUnavailable ? null : kafkaLag(compose),
+    brokerWarningOrErrorLines: brokerUnavailable ? null : compose(["logs", "--no-color", "--since", "30s", "kafka"])
       .split(/\r?\n/).filter((line) => /\b(?:WARN|ERROR)\b/.test(line)).length,
   }));
   return { ...out, collectorMs: Date.now() - start };

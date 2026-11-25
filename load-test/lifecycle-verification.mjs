@@ -84,7 +84,7 @@ export function reconcileLifecycle({ mode, first, previous, current, events, led
       require(response[0].status === (op === "create" ? 201 : 200), label + ": unexpected status");
       acknowledgements[op].push(response[0].reservationId);
     } else require(mode === "race" && response[0]?.outcome === "expected_rejection", label + "/" + op + ": unconfirmed operation");
-    return { dispatched: dispatched[0]?.id, response: response[0] };
+    return { dispatched: dispatched[0]?.id, dispatchAt: dispatched[0]?.at, response: response[0] };
   };
   const checkEvents = (id, types, label) => {
     const stored = byAggregate.get(id) ?? [];
@@ -102,9 +102,13 @@ export function reconcileLifecycle({ mode, first, previous, current, events, led
           item.iteration === x.ordinal - (scenario === "race_mixed" ? 401 : 501)), scenario + ": attempt context mismatch");
         const entry = readAttempt(x.op, batch, scenario);
         require(entry.dispatched === x.id, scenario + ": target mismatch");
-        return entry.response;
+        return entry;
       };
-      const [firstOutcome, secondOutcome] = [attempt(a), attempt(b)];
+      const [firstAttempt, secondAttempt] = [attempt(a), attempt(b)];
+      const firstOutcome = firstAttempt.response, secondOutcome = secondAttempt.response;
+      const overlapMs = Math.min(firstOutcome?.at ?? 0, secondOutcome?.at ?? 0) -
+        Math.max(firstAttempt.dispatchAt ?? Infinity, secondAttempt.dispatchAt ?? Infinity);
+      require(overlapMs > 0, scenario + ": concurrent HTTP windows did not overlap");
       const stored = byAggregate.get(a.id) ?? [];
       const types = stored.map((e) => e.eventType);
       const changed = types.includes("CHANGED"), cancelled = types.includes("CANCELLED");
@@ -123,7 +127,8 @@ export function reconcileLifecycle({ mode, first, previous, current, events, led
       checkReservation(r, finalStay, cancelled ? "CANCELLED" : "CONFIRMED", scenario);
       for (const v of [firstOutcome, secondOutcome]) if (v?.outcome === "success" && v.closedAmount !== undefined)
         require(v.closedAmount === finalStay.totalAmount && v.fee === finalStay.fee, scenario + ": response cancellation snapshot differs");
-      records.push({ scenario, id: a.id, types, outcomes: [firstOutcome, secondOutcome].map((x) => x && ({ status: x.status, code: x.code })) });
+      records.push({ scenario, id: a.id, types, overlapMs,
+        outcomes: [firstOutcome, secondOutcome].map((x) => x && ({ status: x.status, code: x.code })) });
     }
   } else {
     require(newRows.length > 0 && newRows.length === byOrdinal.size, "Creation count differs from lifecycle ledger");

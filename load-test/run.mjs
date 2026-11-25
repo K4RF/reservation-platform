@@ -233,7 +233,7 @@ async function drain(run, budget = Infinity) {
   for (let attempts = 0; attempts < 50 && Date.now() < deadline; attempts++) {
     const db = JSON.parse(run.sql(counters));
     if (!db.pending && !db.unmatchedEvents && db.outbox === db.processed) {
-      const lag = kafkaLag(run.compose);
+      const lag = kafkaLag(run.compose, Math.max(1, Math.min(50_000, deadline - Date.now())));
       if (lag.length === 3 && lag.every(({ lag }) => lag === 0)) return { db, lag };
     }
     await delay(1000);
@@ -367,7 +367,9 @@ async function execute(run, m, path) {
   const report = (name, value) => json(join(run.results, name), value);
   const stop = join(run.dir, "stop.request");
   const observe = (phase) => appendFileSync(join(run.results, "observations.jsonl"),
-    JSON.stringify(sample({ ...run, phase, peer: m.workload.creation === "peer", services: () => lines(run.docker(["ps", "-q",
+    JSON.stringify(sample({ ...run, phase, peer: m.workload.creation === "peer",
+      brokerUnavailable: m.workload.lifecycle === "broker-down" && phase === "measurement",
+      services: () => lines(run.docker(["ps", "-q",
       "--filter", "label=" + group + "=" + m.project, "--filter", "label=" + OWNED + "=" + m.id])) })) + "\n");
   try {
     const start = Date.now();
