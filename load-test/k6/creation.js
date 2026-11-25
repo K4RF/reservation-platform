@@ -1,7 +1,7 @@
 import exec from "k6/execution";
 import { plan } from "./profiles.js";
 import { request } from "./requests.js";
-import { creationInput } from "./creation-cases.js";
+import { creationInput, creationMatches } from "./creation-cases.js";
 
 const p = plan(__ENV.LOAD_PROFILE, __ENV.LOAD_CACHE_MODE, __ENV.LOAD_ROOM_MODE);
 const fixture = JSON.parse(open("/private/input.json"));
