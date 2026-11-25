@@ -11,6 +11,22 @@ export const profiles = {
 };
 
 export function plan(profile, cache, roomMode, catalogSize) {
+  if (["create-hot", "create-distributed", "create-exhaustion", "create-redis-down", "create-peer"].includes(profile)) {
+    const creation = profile.slice(7);
+    if (catalogSize !== undefined || cache !== "off" || roomMode !== (creation === "distributed" ? "distributed" : "hot"))
+      throw new Error("Creation profiles require cache=off, the matching room mode and the fixed base fixture");
+    if (creation === "exhaustion" || creation === "peer" || creation === "redis-down") {
+      const vus = creation === "redis-down" ? 1 : 4;
+      return { creation, stages: [{ name: "burst", iterations: vus, seconds: 20, at: 0, vus }] };
+    }
+    return { creation, stages: [
+      { name: "low", rate: 1, seconds: 6, at: 0, vus: 1 },
+      { name: "shared", rate: 2, seconds: 5, at: 8, vus: 2 },
+      { name: "overlap", rate: 2, seconds: 5, at: 15, vus: 2 },
+      { name: "disjoint", rate: 2, seconds: 5, at: 22, vus: 2 },
+      { name: "steady", rate: 3, seconds: 8, at: 29, vus: 3 },
+    ] };
+  }
   if (["stay-availability", "stay-price", "stay-journey"].includes(profile)) {
     if (!Object.hasOwn(staySpecs, catalogSize) || cache !== "off" || roomMode !== "distributed")
       throw new Error("Stay profiles require small/expanded fixture, cache=off, and distributed mode");

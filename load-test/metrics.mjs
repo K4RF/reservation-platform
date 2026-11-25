@@ -45,7 +45,7 @@ SELECT JSON_OBJECT(
       WHERE SCHEMA_NAME='reservation_load' AND DIGEST IS NOT NULL ORDER BY SUM_TIMER_WAIT DESC LIMIT 10) rows_by_timer)
 );`;
 
-export function sample({ compose, docker, sql, services, phase }) {
+export function sample({ compose, docker, sql, services, phase, peer }) {
   const start = Date.now();
   const out = { phase, at: new Date(start).toISOString(), unavailable: [] };
   function observe(key, fn) {
@@ -61,12 +61,14 @@ export function sample({ compose, docker, sql, services, phase }) {
           memory: MemUsage, memoryPercent: MemPerc, processes: PIDs, blockIO: BlockIO };
       });
   });
-  observe("jvm", () => {
-    const pid = compose(["exec", "-T", "backend", "jcmd", "-l"]).split(/\r?\n/)
+  const jvm = (service) => {
+    const pid = compose(["exec", "-T", service, "jcmd", "-l"]).split(/\r?\n/)
       .find((line) => /^\d+ \/app\.jar(?:\s|$)/.test(line.trim()))?.split(" ")[0];
     if (!pid) throw new Error("Backend JVM PID not found");
-    return JSON.parse(compose(["exec", "-T", "backend", "java", "-cp", "/tmp", "Observe", pid]));
-  });
+    return JSON.parse(compose(["exec", "-T", service, "java", "-cp", "/tmp", "Observe", pid]));
+  };
+  observe("jvm", () => jvm("backend"));
+  if (peer) observe("peerJvm", () => jvm("backend-peer"));
   observe("mysql", () => JSON.parse(sql(mysqlSample)));
   observe("redis", () => redisInfo(compose(["exec", "-T", "redis", "redis-cli", "INFO", "all"])));
   observe("events", () => ({
