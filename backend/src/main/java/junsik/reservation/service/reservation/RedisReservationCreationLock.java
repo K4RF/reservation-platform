@@ -47,19 +47,43 @@ public class RedisReservationCreationLock implements ReservationCreationLock {
 
 	private <T> T execute(RLock lock, Supplier<T> operation) throws InterruptedException {
 		boolean acquired = false;
+		boolean ownedAtRelease = false;
+		boolean released = false;
+		boolean measure = ReservationCreationMeasurement.LOGGER.isTraceEnabled();
+		long waitStarted = measure ? System.nanoTime() : 0L;
+		long waitNanos = 0L;
+		long acquiredAt = 0L;
 		try {
-			acquired = lock.tryLock(
-					properties.waitTime().toMillis(),
-					properties.leaseTime().toMillis(),
-					TimeUnit.MILLISECONDS
-			);
+			try {
+				acquired = lock.tryLock(
+						properties.waitTime().toMillis(),
+						properties.leaseTime().toMillis(),
+						TimeUnit.MILLISECONDS
+				);
+			} finally {
+				if (measure) {
+					long now = System.nanoTime();
+					waitNanos = now - waitStarted;
+					acquiredAt = acquired ? now : 0L;
+				}
+			}
 			if (!acquired) {
 				throw new BusinessException(RoomInventoryErrorCode.LOCK_ACQUISITION_FAILED);
 			}
 			return operation.get();
 		} finally {
-			if (acquired && lock.isHeldByCurrentThread()) {
-				lock.unlock();
+			try {
+				if (acquired && (ownedAtRelease = lock.isHeldByCurrentThread())) {
+					lock.unlock();
+					released = true;
+				}
+			} finally {
+				if (measure) {
+					ReservationCreationMeasurement.LOGGER.trace(
+							"LOAD_CREATION_LOCK waitNs={} acquired={} holdNs={} owned={} released={}",
+							waitNanos, acquired, acquired ? System.nanoTime() - acquiredAt : 0L, ownedAtRelease, released
+					);
+				}
 			}
 		}
 	}

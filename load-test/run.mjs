@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import {
   argumentsFor, checkManifest, checkResource, checkStay, hostEnv, K6, OWNED,
-  projectOf, SERVICES, VOLUMES,
+  projectOf, SERVICES, servicesFor, VOLUMES,
 } from "./config.mjs";
 import { kafkaLag, sample, summarize } from "./metrics.mjs";
 import { checkInvariants, checkMeasurement, counters } from "./verification.mjs";
@@ -19,6 +19,9 @@ import { catalogSqlDelta, catalogSqlSnapshot, explainCatalog, verifyCatalogSql }
 import { detailTtlMs } from "./k6/detail-cases.js";
 import { seedStay } from "./stay-seed.mjs";
 import { explainStay, stayChecksums, stayDelta, staySnapshot, verifyStayRead } from "./stay-diagnostics.mjs";
+import {
+  creationDatabase, creationServerMetrics, prepareCreation, readCreationLedger, reconcileCreation,
+} from "./creation-verification.mjs";
 import {
   compareDetailReads, detailFinalTtls, detailSnapshot, detailSqlDelta, prepareDetail,
   redisDetailCounters, redisDetailDelta, runDetailBursts, runDetailLifecycle, verifyDetailRecovery, withDetailOutage,
@@ -34,7 +37,8 @@ function harnessHash() {
     "observe/Observe.java", "k6/baseline.js", "k6/profiles.js", "k6/requests.js",
     "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js",
     "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js",
-    "stay-seed.mjs", "stay-diagnostics.mjs", "k6/stay.js", "k6/stay-cases.js"];
+    "stay-seed.mjs", "stay-diagnostics.mjs", "k6/stay.js", "k6/stay-cases.js",
+    "creation-verification.mjs", "k6/creation.js", "k6/creation-cases.js"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -76,6 +80,7 @@ function openRun(runtime, m) {
   const env = { ...hostEnv, LOAD_ID: id, LOAD_RESULTS: results,
     LOAD_JAR: join(root, "backend", "build", "libs", m.jar), LOAD_CACHE: String(m.cache !== "off"),
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
+    ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
     LOAD_OUTPUT_USER: (process.getuid?.() ?? 0) + ":" + (process.getgid?.() ?? 0),
     // Only used by 'up'; exec/run/down refer to the existing service environments.
     LOAD_DB_PASSWORD: randomBytes(24).toString("hex"),
@@ -84,12 +89,13 @@ function openRun(runtime, m) {
   const emptyEnv = safeReal(join(dir, "empty.env"), "file");
   if (lstatSync(emptyEnv).size !== 0) throw new Error("The isolated Compose env file is not empty");
   const composeArgs = ["compose", "--project-name", project, "--project-directory", loadDir,
-    "--env-file", emptyEnv, "--file", join(loadDir, "compose.yaml")];
+    "--env-file", emptyEnv, "--file", join(loadDir, "compose.yaml"),
+    ...(m.workload.creation === "peer" ? ["--profile", "creation-peer"] : [])];
   const compose = (args, options = {}) => runtime.docker([...composeArgs, ...args],
     { label: "Compose " + args.slice(0, args[0] === "exec" ? 1 : 2).join(" "), ...options, env });
   const docker = runtime.docker;
 
-  function resources(required = false) {
+  function resources(required = false, expectedServices = servicesFor(m.workload)) {
     // Consider both ownership labels and all reserved names. An unexpected or foreign
     // resource must block even cleanup; never fall back to a broad Compose down/prune.
     const records = (kind, ids) => ids.length ? JSON.parse(docker([kind, "inspect", ...ids])) : [];
@@ -109,13 +115,13 @@ function openRun(runtime, m) {
     const networks = named("network", [project + "_default"]);
     const volumes = named("volume", VOLUMES.map((v) => project + "_" + v));
     for (const [kind, list] of [["container", unique], ["network", networks], ["volume", volumes]])
-      for (const row of list) checkResource(row, id, kind);
+      for (const row of list) checkResource(row, id, kind, servicesFor(m.workload));
     const services = Object.fromEntries(unique.map((c) => [c.Config.Labels["com.docker.compose.service"], c]));
     for (const n of networks)
       if (Object.keys(n.Containers ?? {}).some((container) => !unique.some((c) => c.Id === container)))
         throw new Error("Foreign attachment to the run network");
     if (required && (networks.length !== 1 || volumes.length !== VOLUMES.length ||
-        SERVICES.some((svc) => !services[svc]?.State.Running ||
+        expectedServices.some((svc) => !services[svc]?.State.Running ||
           (m.resources && m.resources[svc] !== services[svc].Id)) ||
         (m.network && m.network !== networks[0].Id) ||
         ["mysql", "redis", "kafka"].some((svc) => services[svc].State.Health?.Status !== "healthy")))
@@ -148,6 +154,8 @@ function withLock(run, fn) {
 }
 
 async function prepare(runtime, settings) {
+  if (settings.workload.creation === "peer" && (runtime.info.cpus < 6 || runtime.info.bytes < 7 * 1024 ** 3))
+    throw new Error("Peer probe requires a local engine with at least 6 CPUs and 7 GiB");
   safeReal(root, "directory");
   for (const path of [join(root, ".local"), scratch]) {
     if (!existsSync(path)) mkdirSync(path);
@@ -180,21 +188,31 @@ async function prepare(runtime, settings) {
       const scope = run.resources();
       if (Object.keys(scope.services).length || scope.volumes.length || scope.networks.length)
         throw new Error("Generated namespace is not empty");
-      run.compose(["up", "-d", "--wait", "--wait-timeout", "160"], { timeout: 210_000, label: "Isolated startup" });
+      run.compose(["up", "-d", "--wait", "--wait-timeout", "160", ...SERVICES], { timeout: 210_000, label: "Isolated startup" });
+      run.resources(true, SERVICES);
+      run.fixture("ready");
+      if (m.workload.creation === "peer") {
+        // Let the primary finish the initial Hibernate schema update before adding a peer.
+        run.compose(["up", "-d", "--no-deps", "backend-peer"], { label: "Isolated peer startup" });
+        run.resources(true);
+        run.fixture("ready-peer");
+      }
       const owned = run.resources(true);
-      m.resources = Object.fromEntries(SERVICES.map((name) => [name, owned.services[name].Id]));
+      m.resources = Object.fromEntries(servicesFor(m.workload).map((name) => [name, owned.services[name].Id]));
       m.network = owned.networks[0].Id;
-      m.images = Object.fromEntries(SERVICES.map((name) => [name, owned.services[name].Image]));
+      m.images = Object.fromEntries(servicesFor(m.workload).map((name) => [name, owned.services[name].Image]));
+      if (m.images["backend-peer"] && m.images["backend-peer"] !== m.images.backend)
+        throw new Error("Isolated peer image does not match the primary");
       try {
         m.generatorImage = run.docker(["image", "inspect", "--format", "{{.Id}}", K6]);
       } catch {
         run.docker(["pull", K6], { timeout: 180_000, label: "Pinned k6 image download" });
         m.generatorImage = run.docker(["image", "inspect", "--format", "{{.Id}}", K6]);
       }
-      run.fixture("ready");
       if (run.sql("SELECT DATABASE();") !== "reservation_load") throw new Error("Unexpected isolated DB");
-      run.compose(["exec", "-T", "backend", "sh", "-c",
-        'test ! -e /isolated/.env && test ! -e /.env && javac -d /tmp /Observe.java']);
+      for (const service of servicesFor(m.workload).filter((name) => name.startsWith("backend")))
+        run.compose(["exec", "-T", service, "sh", "-c",
+          'test ! -e /isolated/.env && test ! -e /.env && javac -d /tmp /Observe.java']);
       m.state = "prepared";
       json(path, m);
       console.log("Prepared. Next: run " + id + " --confirm=" + id);
@@ -233,8 +251,10 @@ function measured(run, m) {
     "--no-deps", "--pull", "never", "--rm", "--name", m.project + "-k6", "-T",
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
     ...(m.workload.catalog || m.workload.stayRead ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
-    "k6", "run", "--quiet", "--out", "json=/results/raw.jsonl",
-    m.workload.stayRead ? "/scripts/stay.js" : m.workload.catalog ? "/scripts/catalog.js" :
+    "k6", ...(m.workload.creation ? ["--log-format=raw"] : []), "run", "--quiet", "--out", "json=/results/raw.jsonl",
+    ...(m.workload.creation ? ["--console-output=/results/creation-ledger.jsonl"] : []),
+    m.workload.creation ? "/scripts/creation.js" : m.workload.stayRead ? "/scripts/stay.js" :
+      m.workload.catalog ? "/scripts/catalog.js" :
       m.workload.detail ? "/scripts/detail.js" : "/scripts/baseline.js"],
     { cwd: root, env: run.env, stdio: "ignore", windowsHide: true });
   const cancel = () => {
@@ -254,6 +274,28 @@ function measured(run, m) {
   });
 }
 
+async function settleCreation(run, m, report) {
+  const ledgerPath = join(run.results, "creation-ledger.jsonl");
+  const ledger = existsSync(ledgerPath) ? readCreationLedger(readFileSync(safeReal(ledgerPath, "file"), "utf8")) : [];
+  const dispatched = ledger.filter((row) => row.event === "dispatch").length;
+  const names = servicesFor(m.workload).filter((name) => name.startsWith("backend"));
+  const read = () => {
+    const instances = Object.fromEntries(names.map((name) => [name, run.docker([
+      "logs", "--since", m.measurement.startedAt, m.resources[name],
+    ], { label: "Isolated server observation" })]));
+    return { total: creationServerMetrics(Object.values(instances).join("\n")),
+      instances: Object.fromEntries(Object.entries(instances).map(([name, log]) => [name, creationServerMetrics(log)])) };
+  };
+  let observation = read();
+  const cutoff = Date.now() + 34_000;
+  while (observation.total.finished < dispatched && Date.now() < cutoff) {
+    await delay(1000);
+    observation = read();
+  }
+  report("creation-server.json", observation);
+  return { ledger, observation };
+}
+
 async function execute(run, m, path) {
   if (m.state !== "prepared") throw new Error("Run is not fresh; use reset for a new namespace");
   checkStay(m.stay);
@@ -270,7 +312,7 @@ async function execute(run, m, path) {
   const report = (name, value) => json(join(run.results, name), value);
   const stop = join(run.dir, "stop.request");
   const observe = (phase) => appendFileSync(join(run.results, "observations.jsonl"),
-    JSON.stringify(sample({ ...run, phase, services: () => lines(run.docker(["ps", "-q",
+    JSON.stringify(sample({ ...run, phase, peer: m.workload.creation === "peer", services: () => lines(run.docker(["ps", "-q",
       "--filter", "label=" + group + "=" + m.project, "--filter", "label=" + OWNED + "=" + m.id])) })) + "\n");
   try {
     const start = Date.now();
@@ -320,6 +362,13 @@ async function execute(run, m, path) {
         ...prepareDetail(run, cases, m.cache, maxTtl),
       });
     } else if (m.cache === "cold") clearDetail(run);
+    const creation = m.workload.creation;
+    const createSeed = creation && prepareCreation(run, creation);
+    if (createSeed) report("creation-fixture.json", {
+      initialMax: createSeed.initialMax, eligibleAccounts: createSeed.fixture.accounts.length,
+      days: createSeed.fixture.days, endDate: createSeed.fixture.endDate, inventory: createSeed.included,
+      lockWaitMs: 3000, leaseMs: 30000, maxAttempts: 3,
+    });
     observe("before");
     if (existsSync(stop)) throw new Error("Stopped before starting k6");
     if (detail === "lifecycle") {
@@ -352,7 +401,14 @@ async function execute(run, m, path) {
       return code;
     };
     const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
-    const code = detail === "outage" ? await withDetailOutage(run, m.resources.redis, measure) : await measure();
+    let code, measureError;
+    try {
+      code = detail === "outage" || creation === "redis-down" ?
+        await withDetailOutage(run, m.resources.redis, measure) : await measure();
+    } catch (error) {
+      if (!creation || !m.measurement?.startedAt) throw error;
+      measureError = error;
+    }
     const sqlDelta = catalogBefore && catalogSqlDelta(catalogBefore, catalogSqlSnapshot(run.sql));
     if (sqlDelta) report("catalog-sql.json", sqlDelta);
     const staySql = stayRead && stayDelta(staySqlBefore, staySqlAfter);
@@ -360,6 +416,15 @@ async function execute(run, m, path) {
     const detailSql = detail && detailSqlDelta(sqlBefore, sqlAfter);
     const redisDelta = redisBefore && redisDetailDelta(redisBefore, redisDetailCounters(run));
     if (detail) report("detail-metrics.json", { sql: detailSql, redis: redisDelta || null });
+    const settled = creation && await settleCreation(run, m, report);
+    const reconcile = () => {
+      run.resources();
+      const result = reconcileCreation({ mode: creation, fixture: createSeed.fixture, ledger: settled.ledger,
+        db: creationDatabase(run, createSeed.initialMax), beforeInventory: createSeed.inventory,
+        finished: settled.observation.total.finished });
+      report("creation-reconciliation.json", result);
+      return result;
+    };
     const drainStarted = Date.now();
     let post;
     try {
@@ -367,13 +432,25 @@ async function execute(run, m, path) {
     } catch (error) {
       report("verification.json", { before: pre.db, after: JSON.parse(run.sql(counters)),
         drainMs: Date.now() - drainStarted, drained: false });
+      if (creation) reconcile();
       throw error;
     }
     report("verification.json", { before: pre.db, after: post.db, lag: post.lag, drainMs: Date.now() - drainStarted });
+    const reconciled = creation && reconcile();
     observe("after");
+    if (measureError) throw measureError;
     const result = summarize(safeReal(join(run.results, "raw.jsonl"), "file"), m.workload);
     report("summary.json", result);
-    checkInvariants(pre.db, post.db, result, m.profile);
+    if (creation) {
+      const server = settled.observation.total;
+      const { counts, errors } = reconciled;
+      if (errors.length || server.beyondLease || server.notOwned || server.releaseFailed ||
+          server.returned !== counts.committed || server.attempts !== server.acquired + server.retryAttempts ||
+          (creation === "peer" && Object.values(settled.observation.instances).some((x) => !x.returned)) ||
+          result.count !== counts.dispatch || counts.success !== (result.operations["reservation.create"]?.success ?? 0))
+        throw new Error("Creation reconciliation failed; inspect the scoped artifacts, never retry writes");
+      checkInvariants(pre.db, post.db, { operations: { "reservation.create": { success: counts.committed } } }, m.profile);
+    } else checkInvariants(pre.db, post.db, result, m.profile);
     run.resources(true);
     checkMeasurement(result, m.workload, code);
     if (m.workload.catalog) {

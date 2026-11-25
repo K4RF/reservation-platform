@@ -2,6 +2,7 @@ import { plan } from "./k6/profiles.js";
 
 export const OWNED = "reservation.load.run";
 export const SERVICES = ["mysql", "redis", "kafka", "backend", "fixture"];
+export const servicesFor = (workload) => workload.creation === "peer" ? [...SERVICES, "backend-peer"] : SERVICES;
 export const VOLUMES = ["mysql-data", "kafka-data", "kafka-config", "kafka-secrets", "media", "fixture-data"];
 export const K6 = "grafana/k6:2.0.0@sha256:a33a0cfdc4d2483d6b7a3a22e726a499ff2831a671a49239104cd34a9937523c";
 export const hostEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
@@ -50,12 +51,12 @@ export function checkManifest(value, id, engine, requireIdentities = true) {
       (!/^sha256:[a-f0-9]{64}$/.test(value.generatorImage) ||
         !/^[a-f0-9]{64}$/.test(value.harnessSha256) ||
         !/^[a-f0-9]{64}$/.test(value.network) ||
-        SERVICES.some((service) => !/^[a-f0-9]{64}$/.test(value.resources?.[service]))))
+        servicesFor(value.workload).some((service) => !/^[a-f0-9]{64}$/.test(value.resources?.[service]))))
     throw new Error("Missing manifest resource identities");
   return value;
 }
 
-export function checkResource(record, expectedId, kind) {
+export function checkResource(record, expectedId, kind, services = SERVICES) {
   const project = projectOf(expectedId);
   const labels = kind === "container" ? record.Config.Labels : record.Labels;
   if (labels?.[OWNED] !== expectedId || labels?.["com.docker.compose.project"] !== project)
@@ -69,8 +70,10 @@ export function checkResource(record, expectedId, kind) {
     const service = labels["com.docker.compose.service"];
     const suffix = service === "k6" ? "k6" : service + "-1";
     const bindTargets = { backend: ["/app.jar", "/Observe.java"],
-      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs"], k6: ["/scripts", "/results"] };
-    if (![...SERVICES, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
+      "backend-peer": ["/app.jar", "/Observe.java"],
+      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs", "/creation-cases.mjs"],
+      k6: ["/scripts", "/results"] };
+    if (![...services, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
         record.HostConfig.NetworkMode !== project + "_default" ||
         Object.keys(record.HostConfig.PortBindings ?? {}).length ||
         record.HostConfig.Privileged || record.HostConfig.PublishAllPorts ||

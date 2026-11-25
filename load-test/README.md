@@ -11,6 +11,10 @@
 [#345 숙박 조회 Baseline](../docs/performance/stay-availability-price-http-baseline.md)을 참고한다.
 재고/요금 쓰기는 시드에서만 수행하며, 측정 전후 테이블 체크섬을 대조한다.
 
+예약 생성의 동일·분산 객실, 구간 충돌, 소진, Redis 단절은
+[#346 예약 생성 Baseline](../docs/performance/reservation-creation-http-baseline.md)을 참고한다.
+별도 요청 원장과 날짜별 DB 재고·예약·Outbox를 대조하며 모호한 쓰기는 재전송하지 않는다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와

@@ -5,6 +5,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { catalogRows, matrix, matches } from "./catalog-cases.mjs";
 import { detailBurstCases, detailCases, detailMatches } from "./detail-cases.mjs";
 import { localDay, stayMatches, stayMatrix, stayRows, zones } from "./stay-cases.mjs";
+import { creationAccounts } from "./creation-cases.mjs";
 
 const origin = "http://backend:8080";
 const privateFile = "/private/input.json";
@@ -25,12 +26,12 @@ function ensure(value, label) {
   return value;
 }
 
-async function api(path, { method = "GET", body, token, status = 200, tag, headers = {}, measureJson = false } = {}) {
+async function api(path, { method = "GET", body, token, status = 200, tag, headers = {}, measureJson = false, peer = false } = {}) {
   if (!path.startsWith("/") || path.startsWith("//")) throw new Error("Invalid fixture path");
   const multipart = body instanceof FormData;
   let response;
   try {
-    response = await fetch(origin + "/api/v1" + path, {
+    response = await fetch((peer ? "http://backend-peer:8080" : origin) + "/api/v1" + path, {
       method,
       redirect: "error",
       signal: AbortSignal.timeout(8000),
@@ -85,10 +86,10 @@ async function upload(path, token) {
 }
 
 const detailAdminFile = "/private/detail-admin.json";
-async function seed(seedNumber, firstDay, keepDetailAdmin) {
+async function seed(seedNumber, firstDay, profile) {
   const admin = await login(read(adminFile));
   unlinkSync(adminFile);
-  if (keepDetailAdmin) save(detailAdminFile, { runId, admin });
+  if (profile === "detail-lifecycle") save(detailAdminFile, { runId, admin });
   const days = Array.from({ length: 5 }, (_, n) =>
     new Date(Date.parse(firstDay + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10),
   );
@@ -140,7 +141,8 @@ async function seed(seedNumber, firstDay, keepDetailAdmin) {
       if (h % 2 === 0 && r === 0) await upload(roomPath + "/media", admin);
     }
   }
-  for (let i = 0; i < 8; i++) {
+  const accountCount = profile.startsWith("create-") ? creationAccounts : 8;
+  for (let i = 0; i < accountCount; i++) {
     const user = credentials(i);
     const member = await post("/members", user, undefined, "member seed");
     accounts.push({ memberId: member.memberId, token: await login(user) });
@@ -153,13 +155,14 @@ async function seed(seedNumber, firstDay, keepDetailAdmin) {
     ensure(reservation.totalAmount === room.firstPrice + room.price, "Seed price snapshot mismatch");
     accounts[i].reservationId = reservation.reservationId;
   }
-  const fixture = { runId, accommodations, rooms, accounts, days, guest };
+  const endDate = new Date(Date.parse(firstDay + "T00:00:00Z") + 5 * 86400000).toISOString().slice(0, 10);
+  const fixture = { runId, accommodations, rooms, accounts, days, endDate, guest };
   save(privateFile, fixture);
   // Fingerprint the deterministic input, excluding auth, IDs, timestamps and reservation numbers.
   console.log(JSON.stringify({
     seed: seedNumber, days, counts: { accommodations: 8, rooms: 24, media: 8,
       metadata: 8, bookingPolicies: 4, cancellationPolicies: 4, inventories: 120,
-      dailyPrices: 24, members: 9, reservations: 4 },
+      dailyPrices: 24, members: accountCount + 1, reservations: 4 },
     fingerprint: createHash("sha256").update(JSON.stringify({
       seedNumber, locations, days, prices: rooms.map(({ price }) => price),
     })).digest("hex"),
@@ -318,10 +321,10 @@ async function stayCheck(name) {
 try {
   ensure(/^[0-9a-f]{24}$/.test(runId), "Missing isolated runner identity");
   const [action, ...args] = process.argv.slice(2);
-  if (action === "ready") {
+  if (action === "ready" || action === "ready-peer") {
     let ready = false;
     for (let i = 0; i < 90 && !ready; i++) {
-      ready = await get("/accommodations?size=1").then(() => true, () => false);
+      ready = await api("/accommodations?size=1", { peer: action === "ready-peer" }).then(() => true, () => false);
       if (!ready) await delay(1000);
     }
     ensure(ready, "Backend readiness timed out");
@@ -331,7 +334,7 @@ try {
     save(adminFile, admin);
     console.log(ensure(member.memberId, "Missing fixture admin ID"));
   } else if (action === "seed") {
-    await seed(Number(args[0]), args[1], args[2] === "detail-lifecycle");
+    await seed(Number(args[0]), args[1], args[2] ?? "baseline");
   } else if (action === "smoke") {
     await smoke(args[0]);
   } else if (action === "catalog-preflight") {
@@ -351,6 +354,10 @@ try {
     await stayPreflight(Number(args[0]), args[1], args[2], JSON.parse(args[3]));
   } else if (action === "stay-check") {
     await stayCheck(args[0]);
+  } else if (action === "creation-fixture") {
+    const { runId: owner, accounts, rooms, days, endDate } = read(privateFile);
+    ensure(owner === runId, "Creation fixture ownership mismatch");
+    console.log(JSON.stringify({ rooms, days, endDate, accounts: accounts.map(({ memberId }) => ({ memberId })) }));
   } else {
     throw new Error("Unknown fixture action");
   }
