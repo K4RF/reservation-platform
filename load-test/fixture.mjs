@@ -6,6 +6,8 @@ import { catalogRows, matrix, matches } from "./catalog-cases.mjs";
 import { detailBurstCases, detailCases, detailMatches } from "./detail-cases.mjs";
 import { localDay, stayMatches, stayMatrix, stayRows, zones } from "./stay-cases.mjs";
 import { creationAccounts } from "./creation-cases.mjs";
+import { changeBody, createBody, historyDefinitions, historyMatches, historySeedCount,
+  historyPageSize, historyDeepPage, stay } from "./lifecycle-cases.mjs";
 
 const origin = "http://backend:8080";
 const privateFile = "/private/input.json";
@@ -90,6 +92,7 @@ async function seed(seedNumber, firstDay, profile) {
   const admin = await login(read(adminFile));
   unlinkSync(adminFile);
   if (profile === "detail-lifecycle") save(detailAdminFile, { runId, admin });
+  const lifecycle = profile.startsWith("lifecycle-");
   const days = Array.from({ length: 5 }, (_, n) =>
     new Date(Date.parse(firstDay + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10),
   );
@@ -134,10 +137,14 @@ async function seed(seedNumber, firstDay, profile) {
       const roomId = ensure(room.roomId, "Missing room ID");
       const roomPath = "/rooms/" + roomId;
       const lastUnit = h === 7 && r === 2;
-      rooms.push({ id: roomId, parent: accommodationId, price, firstPrice: price + 1000 });
+      rooms.push({ id: roomId, parent: accommodationId, price, firstPrice: price + 1000,
+        ...(lifecycle ? { thirdPrice: price + 1800 } : {}) });
       for (const inventoryDate of days)
-        await post(roomPath + "/inventories", { inventoryDate, totalQuantity: lastUnit ? 1 : 32 }, admin, "inventory seed");
+        await post(roomPath + "/inventories", { inventoryDate,
+          totalQuantity: lifecycle && h === 2 && r === 1 && inventoryDate === days[2] ? 0 : lastUnit ? 1 : 32,
+        }, admin, "inventory seed");
       await post(roomPath + "/prices", { stayDate: days[0], nightlyPrice: price + 1000 }, admin, "price seed");
+      if (lifecycle) await post(roomPath + "/prices", { stayDate: days[2], nightlyPrice: price + 1800 }, admin, "lifecycle override seed");
       if (h % 2 === 0 && r === 0) await upload(roomPath + "/media", admin);
     }
   }
@@ -155,16 +162,26 @@ async function seed(seedNumber, firstDay, profile) {
     ensure(reservation.totalAmount === room.firstPrice + room.price, "Seed price snapshot mismatch");
     accounts[i].reservationId = reservation.reservationId;
   }
+  // The four original reservations keep their earlier policies; new lifecycle writes pay 30%.
+  if (lifecycle) for (const [i, { id }] of accommodations.entries()) {
+    await api("/accommodations/" + id + "/cancellation-policy", {
+      method: i % 2 === 0 ? "PUT" : "POST", status: i % 2 === 0 ? 200 : 201, token: admin,
+      tag: "lifecycle current cancellation policy seed",
+      body: { freeCancellationDaysBeforeCheckIn: 180, cancellationDeadlineDaysBeforeCheckIn: 1,
+        feeRules: [{ minDaysBeforeCheckIn: 1, feeRatePercent: 30 }] },
+    });
+  }
   const endDate = new Date(Date.parse(firstDay + "T00:00:00Z") + 5 * 86400000).toISOString().slice(0, 10);
   const fixture = { runId, accommodations, rooms, accounts, days, endDate, guest };
   save(privateFile, fixture);
   // Fingerprint the deterministic input, excluding auth, IDs, timestamps and reservation numbers.
   console.log(JSON.stringify({
     seed: seedNumber, days, counts: { accommodations: 8, rooms: 24, media: 8,
-      metadata: 8, bookingPolicies: 4, cancellationPolicies: 4, inventories: 120,
-      dailyPrices: 24, members: accountCount + 1, reservations: 4 },
+      metadata: 8, bookingPolicies: 4, cancellationPolicies: lifecycle ? 8 : 4, inventories: 120,
+      dailyPrices: lifecycle ? 48 : 24, members: accountCount + 1, reservations: 4 },
     fingerprint: createHash("sha256").update(JSON.stringify({
       seedNumber, locations, days, prices: rooms.map(({ price }) => price),
+      ...(lifecycle ? { lifecycle: { fee: 30, freeAt: 180, thirdDayOffset: 1800 } } : {}),
     })).digest("hex"),
   }));
 }
@@ -318,6 +335,60 @@ async function stayCheck(name) {
   else for (const test of choices) await stayProbe(test);
 }
 
+const lifecycleFixture = () => {
+  const f = read(privateFile);
+  ensure(f.runId === runId, "Lifecycle fixture ownership mismatch");
+  return f;
+};
+async function seedHistory() {
+  const f = lifecycleFixture(), owner = f.accounts[0];
+  const expected = stay(f, f.rooms[0], owner.memberId, 0, 2, 30);
+  const ids = [owner.reservationId];
+  for (let i = 0; i < historySeedCount; i++) {
+    const created = await post("/reservations", createBody(expected, f.guest, 1001 + i), owner.token, "history seed");
+    ensure(created.memberId === owner.memberId && created.totalAmount === expected.totalAmount, "History seed mismatch");
+    ids.push(created.reservationId);
+  }
+  ids.sort((a, b) => b - a);
+  const query = "status=CONFIRMED&checkInFrom=" + f.days[0] + "&checkInTo=" + f.days[0] + "&size=" + historyPageSize;
+  let deepCursor;
+  for (let i = 0; i < historyDeepPage; i++) {
+    const page = await get("/reservations/cursor?" + query + (deepCursor ? "&cursor=" + deepCursor : ""), owner.token);
+    ensure(page.hasNext && page.nextCursor === ids[(i + 1) * historyPageSize - 1], "History cursor preparation mismatch");
+    deepCursor = page.nextCursor;
+  }
+  const cases = historyDefinitions(ids, owner.memberId, f.days[0], deepCursor);
+  for (const test of cases) ensure(historyMatches(test, await get(test.path, owner.token)), "History contract: " + test.name);
+  await api(cases.at(-1).path, { token: f.accounts[1].token, status: 403, tag: "history control" });
+  save("/private/history.json", { runId, cases });
+  console.log(JSON.stringify({ rows: ids.length, size: historyPageSize, deepPage: historyDeepPage,
+    status: "CONFIRMED", sort: "ID DESC", filters: { checkInFrom: f.days[0], checkInTo: f.days[0] } }));
+}
+async function lifecycleControls(reservationId, ownerIndex) {
+  const f = lifecycleFixture(), owner = f.accounts[ownerIndex];
+  ensure(Number.isSafeInteger(reservationId) && reservationId > 0 && owner, "Invalid lifecycle control scope");
+  const path = "/reservations/" + reservationId;
+  const current = await get(path, owner.token);
+  ensure(current.status === "CANCELLED" && current.memberId === owner.memberId, "Lifecycle owner detail mismatch");
+  const controls = [
+    ["GET", path, 403, "RESERVATION_004", f.accounts[(ownerIndex + 1) % f.accounts.length]],
+    ["PATCH", path + "/cancel", 409, "RESERVATION_005", owner],
+    ["PATCH", path, 409, "RESERVATION_006", owner, changeBody(current)],
+    ["PATCH", "/reservations/" + f.accounts[0].reservationId, 409, "BOOKING_POLICY_006", f.accounts[0],
+      { checkInDate: f.days[0], checkOutDate: f.endDate }],
+    ["PATCH", "/reservations/" + f.accounts[2].reservationId, 409, "INVENTORY_005", f.accounts[2],
+      { checkInDate: f.days[1], checkOutDate: f.days[3] }],
+  ];
+  const done = [];
+  for (const [method, route, status, code, actor, body] of controls) {
+    const began = performance.now();
+    const response = await api(route, { method, status, token: actor.token, body, tag: code });
+    ensure(response.data.code === code, "Unexpected lifecycle control code");
+    done.push({ method, status, code, ms: performance.now() - began });
+  }
+  console.log(JSON.stringify(done));
+}
+
 try {
   ensure(/^[0-9a-f]{24}$/.test(runId), "Missing isolated runner identity");
   const [action, ...args] = process.argv.slice(2);
@@ -358,6 +429,14 @@ try {
     const { runId: owner, accounts, rooms, days, endDate } = read(privateFile);
     ensure(owner === runId, "Creation fixture ownership mismatch");
     console.log(JSON.stringify({ rooms, days, endDate, accounts: accounts.map(({ memberId }) => ({ memberId })) }));
+  } else if (action === "lifecycle-fixture") {
+    const { rooms, days, endDate, accounts } = lifecycleFixture();
+    console.log(JSON.stringify({ rooms, days, endDate, accounts: accounts.map(({ memberId, reservationId }) =>
+      ({ memberId, reservationId: reservationId ?? null })) }));
+  } else if (action === "lifecycle-history") {
+    await seedHistory();
+  } else if (action === "lifecycle-controls") {
+    await lifecycleControls(Number(args[0]), Number(args[1]));
   } else {
     throw new Error("Unknown fixture action");
   }

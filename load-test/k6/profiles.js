@@ -11,6 +11,24 @@ export const profiles = {
 };
 
 export function plan(profile, cache, roomMode, catalogSize) {
+  if (["lifecycle-write", "lifecycle-history", "lifecycle-race", "lifecycle-broker-down"].includes(profile)) {
+    if (catalogSize !== undefined || cache !== "off" || roomMode !== "distributed")
+      throw new Error("Lifecycle profiles require the fixed fixture, cache=off and distributed mode");
+    const lifecycle = profile.slice(10);
+    if (lifecycle === "broker-down") return { lifecycle, stages: [
+      { name: "burst", iterations: 1, seconds: 15, at: 0, vus: 1 },
+    ] };
+    if (lifecycle === "race") return { lifecycle, stages: [
+      { name: "race_mixed", iterations: 2, seconds: 5, at: 0, vus: 2 },
+      { name: "race_cancel", iterations: 2, seconds: 5, at: 8, vus: 2 },
+    ] };
+    const headroom = lifecycle === "history" ? 2 : 1;
+    return { lifecycle, stages: [
+      { name: "low", rate: 1, seconds: 6, at: 0, vus: headroom },
+      { name: "ramp", rate: 2, seconds: 6, at: 8, vus: 2 * headroom },
+      { name: "steady", rate: 3, seconds: 8, at: 16, vus: 3 * headroom },
+    ] };
+  }
   if (["create-hot", "create-distributed", "create-exhaustion", "create-redis-down", "create-peer"].includes(profile)) {
     const creation = profile.slice(7);
     if (catalogSize !== undefined || cache !== "off" || roomMode !== (creation === "distributed" ? "distributed" : "hot"))

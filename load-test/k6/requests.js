@@ -7,10 +7,11 @@ const operations = new Counter("load_operations");
 const bad = new Rate("load_system_error");
 const outcomeLatency = new Trend("load_outcome_duration", true);
 const knownCodes = ["INVENTORY_005", "INVENTORY_011", "INVENTORY_012", "INVENTORY_013",
-  "BOOKING_POLICY_005", "AUTH_001", "AUTH_002", "COMMON_001", "COMMON_002"];
+  "BOOKING_POLICY_005", "BOOKING_POLICY_006", "RESERVATION_004", "RESERVATION_005", "RESERVATION_006",
+  "AUTH_001", "AUTH_002", "COMMON_001", "COMMON_002"];
 
 export function request(method, path, endpoint, expected, {
-  body, owner, exhausted, validate, expectedFailure, onResult, peer = false, timeout = "5s",
+  body, owner, exhausted, validate, expectedFailure, expectedFailures, onResult, peer = false, timeout = "5s",
 } = {}) {
   if (!path.startsWith("/") || path.startsWith("//")) exec.test.abort("Unexpected route");
   const response = http.request(method, (peer ? "http://backend-peer:8080/api/v1" : origin) + path,
@@ -31,7 +32,8 @@ export function request(method, path, endpoint, expected, {
     try { correct = !validate || validate(data); } catch { validatorError = true; }
   }
   const rejection = (exhausted && response.status === 409 && data?.code === "INVENTORY_005") ||
-    (expectedFailure && response.status === expectedFailure.status && data?.code === expectedFailure.code);
+    (expectedFailure && response.status === expectedFailure.status && data?.code === expectedFailure.code) ||
+    expectedFailures?.some((r) => response.status === r.status && data?.code === r.code);
   const unknown = write && !rejection && (!response.status || response.status >= 500 ||
     (response.status >= 200 && response.status < 400 && !correct));
   const outcome = correct ? "success" : rejection ? "expected_rejection" :
@@ -43,7 +45,7 @@ export function request(method, path, endpoint, expected, {
   bad.add(outcome === "system_error" || unknown, { name: endpoint });
   onResult?.({ status: response.status, code: tags.domain, outcome,
     ...(validatorError ? { validatorError: true } : {}),
-    reservationId: correct && write ? data.reservationId : null });
+    reservationId: correct && write ? data.reservationId : null }, correct ? data : null);
   if (unknown || (onResult && outcome === "system_error"))
     exec.test.abort("Unexpected write response: stop and verify DB; no retry");
   return correct ? data : null;

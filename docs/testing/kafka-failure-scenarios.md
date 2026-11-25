@@ -13,11 +13,19 @@
 | Producer가 Future를 반환하기 전에 동기 오류 발생 | `ReservationOutboxPublisherTest`, `KafkaReservationEventProducerTest` | 예외가 예약 경로에 전파되지 않고 Outbox Publisher가 기록하여 해당 Event를 `PENDING`으로 보존합니다. |
 | Consumer의 일시적 처리 오류 | `ReservationEventRetryDltIntegrationTest` | 같은 Record가 제한 횟수만큼 재시도되고 처리 성공 뒤 Event ID ledger가 기록됩니다. |
 | Consumer 오류가 제한 횟수 내 복구되지 않음 | `ReservationEventRetryDltIntegrationTest` | Event가 원래 Key와 Payload 및 실패 Header를 보존해 같은 번호의 DLT Partition으로 이동합니다. 실패 Event의 ledger는 생성되지 않고 이후 Record 처리가 계속됩니다. |
+| DLT 발행 실패 | `ReservationEventRetryDltIntegrationTest` | 실패를 주입한 동안 Source Group의 commit offset이 해당 Record를 지나지 않으며, 같은 Partition의 후속 Record도 처리되지 않습니다. DLT 발행이 다시 가능해지면 후속 Record를 처리합니다. |
 | 재시작 후 같은 Event 재전달 | `ReservationEventConsumerIntegrationTest`, `ReservationEventIdempotencyIntegrationTest` | H2/Embedded Kafka 경로에서 Consumer 멱등 Service를 다시 구성해도 영속 Event ID가 중복 Handler 실행을 막습니다. MySQL Testcontainers 테스트는 재시작·동시성·Handler Rollback을 추가 검증합니다. Handler가 실패하면 ledger가 Rollback되어 재전달로 재시도할 수 있습니다. |
 | 동일 Reservation lifecycle 순서 | `ReservationEventPartitionOrderingIntegrationTest` | 같은 Reservation의 Created, Changed, Cancelled가 한 Partition에서 연속 offset으로 발행되고 Consumer Handler 순서도 유지됩니다. |
 | 실제 예약 생명주기에서 Kafka 후처리까지 | `ReservationLifecycleEventIntegrationTest` | 세 예약 Command가 각각 Commit한 Outbox Snapshot을 발행하고, 순서대로 Consumer Handler와 영속 Event ID 처리 이력에 도달합니다. 최종 예약 취소·재고 복구는 Consumer 실행 전부터 확정됩니다. |
 
 ## 범위와 한계
+
+실제 Docker Kafka 중단·재시작, HTTP 쓰기 정합성, broker offset 및 중복 전달 검증은
+[#347 예약 생명주기·Kafka Baseline](../performance/reservation-lifecycle-kafka-http-baseline.md)을
+참고합니다. 위 Embedded Kafka 검증과 Docker 장애 계측은 서로 다른 실험입니다.
+정상 발행 경로의 순서 테스트가 Outbox 재시도까지 동일 예약의 DB 커밋 순서를
+보장하지는 않습니다. #347의 제한된 복구 실험에서는 먼저 실패한 생성 이벤트보다
+변경·취소 이벤트가 Source Topic에 먼저 기록됐습니다.
 
 Broker 미가용 동작은 Integration Test에서 Producer의 완료된 실패 Future로 재현하고, 이어서
 같은 Outbox 행을 Embedded Kafka로 성공 발행해 복구를 검증합니다. 이는 Outbox의 오류 처리와

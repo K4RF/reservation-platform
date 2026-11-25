@@ -54,7 +54,8 @@ export function checkInvariants(before, after, results, profile) {
   if (profile === "exhaustion" && (creates !== 1 ||
       results.operations["reservation.create"].expected_rejection !== 3))
     throw new Error("Last-unit outcome mismatch");
-  if (profile !== "exhaustion" && !profile.startsWith("create-") && (creates !== changes || changes !== cancels))
+  if (profile !== "exhaustion" && profile !== "lifecycle-race" && !profile.startsWith("create-") &&
+      (creates !== changes || changes !== cancels))
     throw new Error("Reservation lifecycle did not complete");
 }
 

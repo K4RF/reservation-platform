@@ -1,6 +1,9 @@
 package junsik.reservation.event.reservation.consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -11,11 +14,19 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +44,7 @@ import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import junsik.reservation.event.reservation.ReservationCreatedEvent;
 import junsik.reservation.event.reservation.ReservationCreatedPayload;
@@ -58,6 +70,9 @@ class ReservationEventRetryDltIntegrationTest {
 	private static final String TOPIC = "reservation.events.v1";
 	private static final String DLT_TOPIC = "reservation.events.v1.dlt";
 	private static final String CONSUMER_GROUP = "reservation-platform-retry-dlt-integration-test";
+
+	@MockitoSpyBean(name = "kafkaTemplate")
+	private KafkaTemplate<?, ?> producerTemplateSpy;
 
 	@Autowired
 	private KafkaTemplate<Object, Object> kafkaTemplate;
@@ -145,6 +160,43 @@ class ReservationEventRetryDltIntegrationTest {
 			assertThat(headerValue(deadLetter, KafkaHeaders.DLT_EXCEPTION_MESSAGE))
 					.contains("invalid event contract");
 		}
+	}
+
+	@Test
+	void doesNotAdvanceTheSourcePartitionWhileDltPublicationFails() throws Exception {
+		ReservationCreatedEvent failing = createdEvent(401L);
+		ReservationCreatedEvent next = createdEvent(401L);
+		AtomicBoolean blockDlt = new AtomicBoolean(true);
+		CountDownLatch failedDltSend = new CountDownLatch(1);
+		doThrow(new IllegalArgumentException("deterministic handler failure"))
+				.when(auditLogService).recordCreated(failing);
+		doAnswer(call -> {
+			if (!blockDlt.get()) {
+				return call.callRealMethod();
+			}
+			failedDltSend.countDown();
+			return CompletableFuture.failedFuture(new IllegalStateException("deterministic DLT acknowledgement failure"));
+		}).when(kafkaTemplate).send(argThat((ProducerRecord<Object, Object> r) -> r != null && DLT_TOPIC.equals(r.topic())));
+
+		var metadata = kafkaTemplate.send(TOPIC, failing.partitionKey(), failing)
+				.get(10, TimeUnit.SECONDS).getRecordMetadata();
+		send(next.partitionKey(), next);
+		try (Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG,
+				embeddedKafkaBroker.getBrokersAsString()))) {
+			assertThat(failedDltSend.await(10, TimeUnit.SECONDS)).isTrue();
+			verify(auditLogService, after(300).never()).recordCreated(next);
+			OffsetAndMetadata committed = admin.listConsumerGroupOffsets(CONSUMER_GROUP)
+					.partitionsToOffsetAndMetadata().get(5, TimeUnit.SECONDS)
+					.get(new TopicPartition(TOPIC, metadata.partition()));
+			if (committed != null) {
+				assertThat(committed.offset()).isLessThanOrEqualTo(metadata.offset());
+			}
+			assertThat(processedEventRepository.existsByEventId(failing.metadata().eventId())).isFalse();
+		} finally {
+			blockDlt.set(false);
+		}
+		await(() -> processedEventRepository.existsByEventId(next.metadata().eventId()));
+		assertThat(processedEventRepository.existsByEventId(failing.metadata().eventId())).isFalse();
 	}
 
 	private Consumer<String, ReservationEvent> createDltConsumer() {
