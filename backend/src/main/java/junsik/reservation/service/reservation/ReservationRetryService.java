@@ -23,10 +23,16 @@ public class ReservationRetryService implements ReservationCreator {
 
 	@Override
 	public ReservationResponse create(Long memberId, CreateReservationRequest request) {
+		boolean measure = ReservationCreationMeasurement.LOGGER.isTraceEnabled();
 		for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+			long started = measure ? System.nanoTime() : 0L;
+			String outcome = "error";
 			try {
-				return reservationService.create(memberId, request);
+				ReservationResponse response = reservationService.create(memberId, request);
+				outcome = "returned";
+				return response;
 			} catch (ObjectOptimisticLockingFailureException exception) {
+				outcome = "conflict";
 				if (attempt == MAX_ATTEMPTS) {
 					throw exception;
 				}
@@ -37,6 +43,13 @@ public class ReservationRetryService implements ReservationCreator {
 						memberId,
 						request.roomId()
 				);
+			} finally {
+				if (measure) {
+					ReservationCreationMeasurement.LOGGER.trace(
+							"LOAD_CREATION_TX attempt={} elapsedNs={} result={}",
+							attempt, System.nanoTime() - started, outcome
+					);
+				}
 			}
 		}
 		throw new IllegalStateException("Reservation retry loop completed without a result");
