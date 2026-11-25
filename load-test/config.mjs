@@ -69,7 +69,7 @@ export function checkResource(record, expectedId, kind) {
     const service = labels["com.docker.compose.service"];
     const suffix = service === "k6" ? "k6" : service + "-1";
     const bindTargets = { backend: ["/app.jar", "/Observe.java"],
-      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs"], k6: ["/scripts", "/results"] };
+      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs"], k6: ["/scripts", "/results"] };
     if (![...SERVICES, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
         record.HostConfig.NetworkMode !== project + "_default" ||
         Object.keys(record.HostConfig.PortBindings ?? {}).length ||

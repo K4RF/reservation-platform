@@ -7,6 +7,10 @@
 [#344 상세 Redis Cache 검증](../docs/performance/detail-cache-http-baseline.md)을 참고한다.
 장애 주입은 해당 run의 Redis만 대상으로 하며, 정상 부하나 예약 쓰기 시나리오와 섞지 않는다.
 
+가용 객실·일별 적용 요금의 독립 측정과 가용 응답 기반 조합은
+[#345 숙박 조회 Baseline](../docs/performance/stay-availability-price-http-baseline.md)을 참고한다.
+재고/요금 쓰기는 시드에서만 수행하며, 측정 전후 테이블 체크섬을 대조한다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와

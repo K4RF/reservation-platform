@@ -17,6 +17,8 @@ import { checkInvariants, checkMeasurement, counters } from "./verification.mjs"
 import { seedCatalog } from "./catalog-seed.mjs";
 import { catalogSqlDelta, catalogSqlSnapshot, explainCatalog, verifyCatalogSql } from "./catalog-diagnostics.mjs";
 import { detailTtlMs } from "./k6/detail-cases.js";
+import { seedStay } from "./stay-seed.mjs";
+import { explainStay, stayChecksums, stayDelta, staySnapshot, verifyStayRead } from "./stay-diagnostics.mjs";
 import {
   compareDetailReads, detailFinalTtls, detailSnapshot, detailSqlDelta, prepareDetail,
   redisDetailCounters, redisDetailDelta, runDetailBursts, runDetailLifecycle, verifyDetailRecovery, withDetailOutage,
@@ -31,7 +33,8 @@ function harnessHash() {
   const files = ["compose.yaml", "config.mjs", "run.mjs", "metrics.mjs", "verification.mjs", "fixture.mjs",
     "observe/Observe.java", "k6/baseline.js", "k6/profiles.js", "k6/requests.js",
     "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js",
-    "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js"];
+    "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js",
+    "stay-seed.mjs", "stay-diagnostics.mjs", "k6/stay.js", "k6/stay-cases.js"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -229,9 +232,10 @@ function measured(run, m) {
   const result = spawn("docker", ["--context", run.context, ...run.composeArgs, "run",
     "--no-deps", "--pull", "never", "--rm", "--name", m.project + "-k6", "-T",
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
-    ...(m.workload.catalog ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
+    ...(m.workload.catalog || m.workload.stayRead ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
     "k6", "run", "--quiet", "--out", "json=/results/raw.jsonl",
-    m.workload.catalog ? "/scripts/catalog.js" : m.workload.detail ? "/scripts/detail.js" : "/scripts/baseline.js"],
+    m.workload.stayRead ? "/scripts/stay.js" : m.workload.catalog ? "/scripts/catalog.js" :
+      m.workload.detail ? "/scripts/detail.js" : "/scripts/baseline.js"],
     { cwd: root, env: run.env, stdio: "ignore", windowsHide: true });
   const cancel = () => {
     try {
@@ -291,6 +295,19 @@ async function execute(run, m, path) {
       const contracts = JSON.parse(run.fixture("catalog-preflight", String(m.seed), m.catalogSize));
       report("catalog-fixture.json", { ...catalog, ...contracts });
     }
+    const stayRead = m.workload.stayRead;
+    let stayContracts, stayBefore;
+    if (stayRead) {
+      const added = seedStay(run.sql, m.seed, m.stay, m.catalogSize);
+      const afterSeed = JSON.parse(run.sql(counters));
+      for (const [key, value] of Object.entries(added.added))
+        if (afterSeed[key] !== pre.db[key] + value) throw new Error("Stay seed count mismatch: " + key);
+      pre.db = afterSeed;
+      stayContracts = JSON.parse(run.fixture("stay-preflight", String(m.seed), m.stay, m.catalogSize,
+        JSON.stringify(added.boundary)));
+      report("stay-fixture.json", { ...added, ...stayContracts, fixtureSpec: m.workload.stayFixture });
+      stayBefore = stayChecksums(run.sql);
+    }
     const detail = m.workload.detail;
     const maxTtl = detail && detailTtlMs(m.profile);
     let cases;
@@ -317,10 +334,11 @@ async function execute(run, m, path) {
       return;
     }
     const redisBefore = detail === "reads" && redisDetailCounters(run);
-    let sqlBefore, sqlAfter;
+    let sqlBefore, sqlAfter, staySqlBefore, staySqlAfter;
     const measure = async () => {
       if (existsSync(stop)) throw new Error("Stopped before starting k6");
       if (detail) sqlBefore = detailSnapshot(run);
+      if (stayRead) staySqlBefore = staySnapshot(run.sql);
       m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
       json(path, m);
       const generator = measured(run, m);
@@ -330,12 +348,15 @@ async function execute(run, m, path) {
       m.measurement.endedAt = new Date().toISOString();
       m.measurement.generatorCode = code;
       if (detail) sqlAfter = detailSnapshot(run);
+      if (stayRead) staySqlAfter = staySnapshot(run.sql);
       return code;
     };
     const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
     const code = detail === "outage" ? await withDetailOutage(run, m.resources.redis, measure) : await measure();
     const sqlDelta = catalogBefore && catalogSqlDelta(catalogBefore, catalogSqlSnapshot(run.sql));
     if (sqlDelta) report("catalog-sql.json", sqlDelta);
+    const staySql = stayRead && stayDelta(staySqlBefore, staySqlAfter);
+    if (staySql) report("stay-sql.json", staySql);
     const detailSql = detail && detailSqlDelta(sqlBefore, sqlAfter);
     const redisDelta = redisBefore && redisDetailDelta(redisBefore, redisDetailCounters(run));
     if (detail) report("detail-metrics.json", { sql: detailSql, redis: redisDelta || null });
@@ -370,6 +391,16 @@ async function execute(run, m, path) {
         if (existsSync(stop)) throw new Error("Stopped before detail burst");
         report("detail-bursts.json", runDetailBursts(run, cases, maxTtl));
       }
+    }
+    if (stayRead) {
+      const totals = verifyStayRead(stayRead, result, staySql, stayContracts.responseTypes);
+      report("stay-outcomes.json", totals);
+      run.fixture("stay-check");
+      const after = stayChecksums(run.sql);
+      if (JSON.stringify(stayBefore) !== JSON.stringify(after) || JSON.stringify(pre.db) !== JSON.stringify(post.db))
+        throw new Error("Read-only stay fixture changed");
+      report("stay-readonly.json", { before: stayBefore, after });
+      if (stayRead !== "journey") report("stay-plans.json", explainStay(run, stayRead));
     }
     m.state = "passed";
     console.log("PASS: " + result.count + " measured requests; DB, inventory, snapshot and events verified");

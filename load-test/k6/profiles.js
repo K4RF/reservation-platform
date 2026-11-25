@@ -1,4 +1,6 @@
 // Measured bounds, not throughput targets. No arbitrary VUs or URLs on the CLI.
+import { stayNights, stayPageSizes, staySpecs } from "./stay-cases.js";
+
 export const profiles = {
   smoke: { smoke: 1 },
   baseline: { reads: 8, writers: 2, writes: 2 },
@@ -9,6 +11,17 @@ export const profiles = {
 };
 
 export function plan(profile, cache, roomMode, catalogSize) {
+  if (["stay-availability", "stay-price", "stay-journey"].includes(profile)) {
+    if (!Object.hasOwn(staySpecs, catalogSize) || cache !== "off" || roomMode !== "distributed")
+      throw new Error("Stay profiles require small/expanded fixture, cache=off, and distributed mode");
+    return { stayRead: profile.slice(5), catalogSize,
+      stayFixture: { ...staySpecs[catalogSize], nights: stayNights, pageSizes: stayPageSizes }, stages: [
+        { name: "low", rate: 1, seconds: 8, at: 0, vus: 1 },
+        { name: "popular", rate: 2, seconds: 6, at: 10, vus: 2 },
+        { name: "dispersed", rate: 2, seconds: 6, at: 18, vus: 2 },
+        { name: "steady", rate: 3, seconds: 8, at: 26, vus: 3 },
+      ] };
+  }
   if (["catalog-search", "catalog-suggest", "catalog-journey"].includes(profile)) {
     if (!["small", "expanded"].includes(catalogSize) || cache !== "off" || roomMode !== "distributed")
       throw new Error("Catalog profiles require small/expanded fixture, cache=off, and distributed mode");
@@ -19,7 +32,7 @@ export function plan(profile, cache, roomMode, catalogSize) {
       { name: "steady", rate: 3, seconds: 12, at: 34, vus: 3 },
     ] };
   }
-  if (catalogSize !== undefined) throw new Error("Catalog size is only supported by catalog profiles");
+  if (catalogSize !== undefined) throw new Error("Catalog size is only supported by catalog and stay profiles");
   if (["detail-reads", "detail-outage", "detail-lifecycle"].includes(profile)) {
     if (roomMode !== "distributed" || !(profile === "detail-reads" ? ["off", "cold", "warm"].includes(cache) : cache === "warm"))
       throw new Error("Invalid detail cache profile settings");

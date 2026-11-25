@@ -4,6 +4,7 @@ import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
 import { catalogRows, matrix, matches } from "./catalog-cases.mjs";
 import { detailBurstCases, detailCases, detailMatches } from "./detail-cases.mjs";
+import { localDay, stayMatches, stayMatrix, stayRows, zones } from "./stay-cases.mjs";
 
 const origin = "http://backend:8080";
 const privateFile = "/private/input.json";
@@ -268,6 +269,52 @@ async function detailUpdate() {
   ensure(updated.data.metadata?.view === "Updated view", "Updated room response mismatch");
 }
 
+const stayFile = "/private/stay.json";
+function checkStayBoundary(boundary) {
+  const now = Date.now();
+  ensure(boundary.west === localDay(now, zones.west) && boundary.east === localDay(now, zones.east),
+    "Fixture time-zone date changed; use a fresh run");
+}
+async function stayProbe(test) {
+  const start = performance.now();
+  const { data } = await api(test.path, { status: test.status, tag: test.name });
+  ensure(stayMatches(test, data), "Stay fixture response mismatch: " + test.name);
+  return { name: test.name, status: test.status, ...(test.code ? { code: test.code } : {}),
+    ms: performance.now() - start };
+}
+async function stayPreflight(seed, stay, size, boundary) {
+  checkStayBoundary(boundary);
+  const cases = stayMatrix(stayRows(seed, stay, size, boundary));
+  for (const test of [...cases.availability, ...cases.price]) await stayProbe(test);
+  for (const { test, byRoom } of cases.journeys) {
+    await stayProbe(test);
+    for (const price of Object.values(byRoom).flat()) await stayProbe(price);
+  }
+  const controls = [];
+  for (const test of cases.controls) controls.push(await stayProbe(test));
+  checkStayBoundary(boundary);
+  save(stayFile, { runId, size, boundary, cases });
+  console.log(JSON.stringify({
+    controls,
+    pages: Object.fromEntries(cases.availability.map(({ name, expected: e }) =>
+      [name, { total: e.total, page: e.page, size: e.size, returned: e.rooms.length }])),
+    responseTypes: Object.fromEntries([
+      ...cases.availability.map(({ name }) => [name, "page"]),
+      ...[...cases.price, ...cases.journeys.flatMap(({ byRoom }) => Object.values(byRoom).flat())]
+        .map(({ name, expected }) => [name, expected.source]),
+    ]),
+  }));
+}
+async function stayCheck(name) {
+  const fixture = read(stayFile);
+  ensure(fixture.runId === runId, "Stay fixture ownership mismatch");
+  checkStayBoundary(fixture.boundary);
+  const { availability, price, controls } = fixture.cases;
+  const choices = [...availability, ...price, ...controls];
+  if (name) await stayProbe(ensure(choices.find((test) => test.name === name), "Unknown stay test"));
+  else for (const test of choices) await stayProbe(test);
+}
+
 try {
   ensure(/^[0-9a-f]{24}$/.test(runId), "Missing isolated runner identity");
   const [action, ...args] = process.argv.slice(2);
@@ -300,6 +347,10 @@ try {
     await detailPair(action === "detail-pair-updated");
   } else if (action === "detail-update") {
     await detailUpdate();
+  } else if (action === "stay-preflight") {
+    await stayPreflight(Number(args[0]), args[1], args[2], JSON.parse(args[3]));
+  } else if (action === "stay-check") {
+    await stayCheck(args[0]);
   } else {
     throw new Error("Unknown fixture action");
   }
