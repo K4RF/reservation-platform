@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { plan } from "./k6/profiles.js";
 import { cycleInput, historyDefinitions, historyMatches, matchesCancellation, raceInput } from "./k6/lifecycle-cases.js";
-import { lifecycleTimings, matchEventOrder } from "./lifecycle-kafka.mjs";
+import { lifecycleTimings, matchEventOrder, verifyBroker } from "./lifecycle-kafka.mjs";
 import { readLifecycleLedger, reconcileLifecycle } from "./lifecycle-verification.mjs";
 
 const days = ["2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02", "2027-01-03"];
@@ -83,6 +83,31 @@ test("Kafka verification compares actual keys, partitions and order but allows r
   assert.throws(() => matchEventOrder(events, messages.concat({ ...messages[0], offset: 16 }), false), /Outbox/);
   assert.deepEqual(matchEventOrder(events, messages.concat({ ...messages[0], offset: 16 }), true),
     [{ eventId: "event-0", count: 2 }]);
+});
+
+test("a broker ordering failure preserves offset evidence without payload and still fails the run", async () => {
+  const topic = "reservation.events.v1";
+  const events = ["CREATED", "CHANGED"].map((eventType, i) => ({ aggregateId: 5, eventId: "event-" + i, eventType,
+    status: "PUBLISHED", processedAt: "2026-11-25 00:00:00", processedMs: 10, publishedMs: 5 }));
+  const source = [...events].reverse().map((e, i) => [
+    "Partition:0", "Offset:" + (1 + i),
+    "__TypeId__:junsik.reservation.event.reservation.Reservation" + (i ? "Created" : "Changed") + "Event", "5",
+    JSON.stringify({ metadata: { ...e, eventType: "RESERVATION_" + e.eventType }, payload: { hidden: true } }),
+  ].join("\t")).join("\n");
+  const run = { resources() {}, compose(args) {
+    if (args[3].includes("console-consumer")) return source;
+    const active = args.at(-1);
+    return [active === topic ? 3 : 0, 0, 0].map((offset, i) => [active, i, offset].join(":")).join("\n");
+  } };
+  let evidence;
+  await assert.rejects(verifyBroker(run, { m: { workload: { lifecycle: "broker-down" } },
+    before: { source: [1, 0, 0], dlt: [0, 0, 0] }, events, report(name, data) {
+      assert.equal(name, "lifecycle-broker.json");
+      evidence = data;
+    } }), /out of order/);
+  assert.equal(evidence.orderVerified, false);
+  assert.deepEqual(evidence.locations.map(({ offset, eventType }) => [offset, eventType]), [[1, "CHANGED"], [2, "CREATED"]]);
+  assert.doesNotMatch(JSON.stringify(evidence), /payload|headers|hidden/);
 });
 
 test("race evidence needs two overlapping HTTP windows and verifies at most one successful cancel", () => {

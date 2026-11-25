@@ -351,7 +351,7 @@ async function finishLifecycle(run, m, { first, previous, offsets, pre, code, me
       throw new Error("A rejected control changed durable state");
   }
   report("lifecycle-broker.json", await verifyBroker(run, { m, before: offsets, events,
-    drain: (target) => drain(target, 50_000), canary: mode === "write" }));
+    drain: (target) => drain(target, 50_000), canary: mode === "write", report }));
   run.resources(true);
   return summary;
 }

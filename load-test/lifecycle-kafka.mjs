@@ -80,17 +80,25 @@ export function matchEventOrder(events, messages, allowDuplicates) {
   return duplicates;
 }
 
-export async function verifyBroker(run, { m, before, events, drain, canary }) {
+export async function verifyBroker(run, { m, before, events, drain, canary, report }) {
   run.resources(true);
   if (events.some((e) => e.status !== "PUBLISHED" || !e.processedAt || !Number.isFinite(e.publishedMs) ||
       !Number.isFinite(e.processedMs) || e.publishedMs < 0 || e.processedMs < 0))
     throw new Error("Missing durable Publisher/Consumer evidence");
   const after = brokerOffsets(run);
-  if (!same(before.dlt, after.dlt)) throw new Error("Unexpected Dead Letter Topic entries");
   const messages = readSource(run, before.source, after.source);
-  const duplicates = matchEventOrder(events, messages, m.workload.lifecycle === "broker-down");
   const locations = messages.map(({ headers: _headers, payload: _payload, ...location }) => location);
-  const result = { before, after, locations, duplicates, dltRecords: 0 };
+  const dltRecords = after.dlt.reduce((sum, offset, part) => sum + offset - before.dlt[part], 0);
+  const result = { before, after, locations, dltRecords };
+  try {
+    if (!same(before.dlt, after.dlt)) throw new Error("Unexpected Dead Letter Topic entries");
+    result.duplicates = matchEventOrder(events, messages, m.workload.lifecycle === "broker-down");
+    result.orderVerified = true;
+  } catch (error) {
+    // Retain sanitized offsets/types even when an actual ordering/contract violation fails the run.
+    report("lifecycle-broker.json", { ...result, orderVerified: false, validationError: error.message });
+    throw error;
+  }
   if (!canary) return result;
   const record = messages.find((entry) => entry.eventType === "CREATED");
   if (!record) throw new Error("Missing duplicate delivery probe record");
