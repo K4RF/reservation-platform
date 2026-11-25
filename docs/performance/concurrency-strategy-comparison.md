@@ -15,6 +15,8 @@
 Network 분리, Redis Failover, Application 다중 Instance의 실제 처리량은 측정하지
 않으며 해당 범위는 v0.5.0 Performance & Load Testing에서 검증합니다.
 
+채택한 전략의 실제 HTTP 및 날짜별 DB 정합성 검증은 [#346 예약 생성 Baseline](reservation-creation-http-baseline.md)을 참고합니다.
+
 ## 공통 Scenario
 
 `ReservationConcurrencyStrategyComparisonIntegrationTest`가 MySQL 8.4와 Redis 7.4
