@@ -26,6 +26,8 @@ import {
   compareDetailReads, detailFinalTtls, detailSnapshot, detailSqlDelta, prepareDetail,
   redisDetailCounters, redisDetailDelta, runDetailBursts, runDetailLifecycle, verifyDetailRecovery, withDetailOutage,
 } from "./detail-diagnostics.mjs";
+import { lifecycleSnapshot, prepareLifecycle, readLifecycleLedger, reconcileLifecycle } from "./lifecycle-verification.mjs";
+import { brokerOffsets, kafkaOutage, lifecycleEvents, lifecycleTimings, verifyBroker } from "./lifecycle-kafka.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -38,7 +40,8 @@ function harnessHash() {
     "catalog-seed.mjs", "catalog-diagnostics.mjs", "k6/catalog.js", "k6/catalog-cases.js",
     "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js",
     "stay-seed.mjs", "stay-diagnostics.mjs", "k6/stay.js", "k6/stay-cases.js",
-    "creation-verification.mjs", "k6/creation.js", "k6/creation-cases.js"];
+    "creation-verification.mjs", "k6/creation.js", "k6/creation-cases.js",
+    "lifecycle-verification.mjs", "lifecycle-kafka.mjs", "k6/lifecycle.js", "k6/lifecycle-cases.js"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -81,6 +84,7 @@ function openRun(runtime, m) {
     LOAD_JAR: join(root, "backend", "build", "libs", m.jar), LOAD_CACHE: String(m.cache !== "off"),
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
+    ...(m.workload.lifecycle && m.workload.lifecycle !== "history" ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
     LOAD_OUTPUT_USER: (process.getuid?.() ?? 0) + ":" + (process.getgid?.() ?? 0),
     // Only used by 'up'; exec/run/down refer to the existing service environments.
     LOAD_DB_PASSWORD: randomBytes(24).toString("hex"),
@@ -224,8 +228,9 @@ async function prepare(runtime, settings) {
   });
 }
 
-async function drain(run) {
-  for (let attempts = 0; attempts < 50; attempts++) {
+async function drain(run, budget = Infinity) {
+  const deadline = Date.now() + budget;
+  for (let attempts = 0; attempts < 50 && Date.now() < deadline; attempts++) {
     const db = JSON.parse(run.sql(counters));
     if (!db.pending && !db.unmatchedEvents && db.outbox === db.processed) {
       const lag = kafkaLag(run.compose);
@@ -247,13 +252,16 @@ function clearDetail(run) {
 }
 
 function measured(run, m) {
+  const ledger = m.workload.creation ? "creation" :
+    m.workload.lifecycle && m.workload.lifecycle !== "history" ? "lifecycle" : null;
   const result = spawn("docker", ["--context", run.context, ...run.composeArgs, "run",
     "--no-deps", "--pull", "never", "--rm", "--name", m.project + "-k6", "-T",
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
     ...(m.workload.catalog || m.workload.stayRead ? ["-e", "LOAD_CATALOG_SIZE=" + m.catalogSize] : []),
-    "k6", ...(m.workload.creation ? ["--log-format=raw"] : []), "run", "--quiet", "--out", "json=/results/raw.jsonl",
-    ...(m.workload.creation ? ["--console-output=/results/creation-ledger.jsonl"] : []),
-    m.workload.creation ? "/scripts/creation.js" : m.workload.stayRead ? "/scripts/stay.js" :
+    "k6", ...(ledger ? ["--log-format=raw"] : []), "run", "--quiet", "--out", "json=/results/raw.jsonl",
+    ...(ledger ? ["--console-output=/results/" + ledger + "-ledger.jsonl"] : []),
+    m.workload.lifecycle ? "/scripts/lifecycle.js" : m.workload.creation ? "/scripts/creation.js" :
+      m.workload.stayRead ? "/scripts/stay.js" :
       m.workload.catalog ? "/scripts/catalog.js" :
       m.workload.detail ? "/scripts/detail.js" : "/scripts/baseline.js"],
     { cwd: root, env: run.env, stdio: "ignore", windowsHide: true });
@@ -296,6 +304,53 @@ async function settleCreation(run, m, report) {
   return { ledger, observation };
 }
 
+async function finishLifecycle(run, m, { first, previous, offsets, pre, code, measureError, report }) {
+  const mode = m.workload.lifecycle;
+  const raw = join(run.results, "raw.jsonl"), ledgerPath = join(run.results, "lifecycle-ledger.jsonl");
+  const summary = existsSync(raw) && summarize(safeReal(raw, "file"), m.workload);
+  if (summary) report("summary.json", summary);
+  const ledger = existsSync(ledgerPath) ? readLifecycleLedger(readFileSync(safeReal(ledgerPath, "file"), "utf8")) : [];
+  // Ambiguous requests may still commit; allow a bounded settle window and never send them again.
+  if (measureError || code !== 0 || ledger.filter((x) => x.event === "dispatch").length !==
+      ledger.filter((x) => x.event === "response").length || ledger.some((x) => x.outcome === "unconfirmed_write"))
+    await delay(6500);
+  const started = Date.now();
+  let post, drainError;
+  try { post = await drain(run, 50_000); } catch (error) { drainError = error; }
+  report("verification.json", { before: pre.db, after: post?.db ?? JSON.parse(run.sql(counters)),
+    lag: post?.lag, drained: !!post, drainMs: Date.now() - started });
+  const events = lifecycleEvents(run, first.watermarks.outbox);
+  const current = lifecycleSnapshot(run, first, mode);
+  const reconciled = reconcileLifecycle({ mode, first, previous, current, events, ledger, summary });
+  report("lifecycle-reconciliation.json", reconciled);
+  const timings = mode !== "history" && lifecycleTimings(run.docker([
+    "logs", "--since", m.measurement.startedAt, m.resources.backend,
+  ], { label: "Isolated Outbox observation" }), events);
+  if (timings) report("lifecycle-timings.json", timings);
+  if (measureError || drainError) throw measureError ?? drainError;
+  if (!summary || reconciled.errors.length) throw new Error("Lifecycle reconciliation failed; inspect scoped artifacts, never retry writes");
+  const operations = Object.fromEntries(Object.entries(reconciled.counts)
+    .map(([name, success]) => ["reservation." + name, { success }]));
+  checkInvariants(pre.db, post.db, { operations }, m.profile);
+  checkMeasurement(summary, m.workload, code);
+  if (timings && (timings.brokerAckWaitMs.count < events.length ||
+      timings.publishedRowsInCommittedBatches !== events.length || !timings.committedNonemptyBatchMs.count))
+    throw new Error("Missing Publisher timing evidence");
+  if (mode === "write") {
+    const { id, ownerIndex } = reconciled.records[0];
+    const controls = JSON.parse(run.fixture("lifecycle-controls", String(id), String(ownerIndex)));
+    report("lifecycle-controls.json", controls);
+    if (JSON.stringify(current) !== JSON.stringify(lifecycleSnapshot(run, first, mode)) ||
+        JSON.stringify(post.db) !== JSON.stringify(JSON.parse(run.sql(counters))) ||
+        JSON.stringify(events) !== JSON.stringify(lifecycleEvents(run, first.watermarks.outbox)))
+      throw new Error("A rejected control changed durable state");
+  }
+  report("lifecycle-broker.json", await verifyBroker(run, { m, before: offsets, events,
+    drain: (target) => drain(target, 50_000), canary: mode === "write" }));
+  run.resources(true);
+  return summary;
+}
+
 async function execute(run, m, path) {
   if (m.state !== "prepared") throw new Error("Run is not fresh; use reset for a new namespace");
   checkStay(m.stay);
@@ -323,7 +378,7 @@ async function execute(run, m, path) {
           " AND email='load-admin@example.test' AND role='USER'; SELECT ROW_COUNT();") !== "1")
       throw new Error("Cannot grant fixture admin in the isolated DB");
     const seeded = JSON.parse(run.fixture("seed", String(m.seed), m.stay, m.profile));
-    const pre = await drain(run);
+    let pre = await drain(run);
     for (const [key, value] of Object.entries(seeded.counts))
       if (pre.db[key] !== value) throw new Error("Seed count mismatch: " + key);
     report("seed.json", seeded);
@@ -369,6 +424,20 @@ async function execute(run, m, path) {
       days: createSeed.fixture.days, endDate: createSeed.fixture.endDate, inventory: createSeed.included,
       lockWaitMs: 3000, leaseMs: 30000, maxAttempts: 3,
     });
+    const lifecycle = m.workload.lifecycle;
+    let first, previous, offsets;
+    if (lifecycle) {
+      if (lifecycle === "history") {
+        report("lifecycle-history-fixture.json", JSON.parse(run.fixture("lifecycle-history")));
+        pre = await drain(run, 50_000);
+        if (pre.db.reservations !== seeded.counts.reservations + 30) throw new Error("Unexpected history reservation count");
+      }
+      first = prepareLifecycle(run);
+      previous = lifecycleSnapshot(run, first, lifecycle);
+      offsets = brokerOffsets(run);
+      m.lifecycleWatermark = first.watermarks.outbox;
+      report("lifecycle-fixture.json", { watermarks: first.watermarks, offsets, days: first.fixture.days });
+    }
     observe("before");
     if (existsSync(stop)) throw new Error("Stopped before starting k6");
     if (detail === "lifecycle") {
@@ -404,10 +473,18 @@ async function execute(run, m, path) {
     let code, measureError;
     try {
       code = detail === "outage" || creation === "redis-down" ?
-        await withDetailOutage(run, m.resources.redis, measure) : await measure();
+        await withDetailOutage(run, m.resources.redis, measure) : lifecycle === "broker-down" ?
+          await kafkaOutage(run, m, measure, report) : await measure();
     } catch (error) {
-      if (!creation || !m.measurement?.startedAt) throw error;
+      if ((!creation && !lifecycle) || !m.measurement?.startedAt) throw error;
       measureError = error;
+    }
+    if (lifecycle) {
+      const summary = await finishLifecycle(run, m, { first, previous, offsets, pre, code, measureError, report });
+      observe("after");
+      m.state = "passed";
+      console.log("PASS: " + summary.count + " measured requests; lifecycle, DB and Kafka verified");
+      return;
     }
     const sqlDelta = catalogBefore && catalogSqlDelta(catalogBefore, catalogSqlSnapshot(run.sql));
     if (sqlDelta) report("catalog-sql.json", sqlDelta);

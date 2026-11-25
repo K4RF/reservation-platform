@@ -88,6 +88,7 @@ services:
       RESERVATION_CACHE_ENABLED: ${LOAD_CACHE:?}
       RESERVATION_DETAIL_CACHE_TTL: ${LOAD_DETAIL_TTL:-600000ms}
       LOGGING_LEVEL_RESERVATION_CREATION_MEASUREMENT: ${LOAD_CREATE_OBSERVATION:-OFF}
+      LOGGING_LEVEL_RESERVATION_LIFECYCLE_MEASUREMENT: ${LOAD_LIFECYCLE_OBSERVATION:-OFF}
       SPRING_DATASOURCE_HIKARI_REGISTER_MBEANS: "true"
       SPRING_DATASOURCE_HIKARI_POOL_NAME: ReservationLoad
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
@@ -120,6 +121,7 @@ services:
       - ./k6/detail-cases.js:/detail-cases.mjs:ro
       - ./k6/stay-cases.js:/stay-cases.mjs:ro
       - ./k6/creation-cases.js:/creation-cases.mjs:ro
+      - ./k6/lifecycle-cases.js:/lifecycle-cases.mjs:ro
       - fixture-data:/private
   k6:
     image: grafana/k6:2.0.0@sha256:a33a0cfdc4d2483d6b7a3a22e726a499ff2831a671a49239104cd34a9937523c

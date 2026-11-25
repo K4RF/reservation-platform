@@ -71,7 +71,8 @@ export function checkResource(record, expectedId, kind, services = SERVICES) {
     const suffix = service === "k6" ? "k6" : service + "-1";
     const bindTargets = { backend: ["/app.jar", "/Observe.java"],
       "backend-peer": ["/app.jar", "/Observe.java"],
-      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs", "/creation-cases.mjs"],
+      fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs", "/creation-cases.mjs",
+        "/lifecycle-cases.mjs"],
       k6: ["/scripts", "/results"] };
     if (![...services, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
         record.HostConfig.NetworkMode !== project + "_default" ||
