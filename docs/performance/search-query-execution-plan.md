@@ -12,6 +12,7 @@ Index를 추가하지 않았다.
 의미하지 않는다.
 
 최신 위치·카탈로그 조건의 HTTP 측정과 실제 JPA SQL은 [#343 검색·자동완성 Baseline](search-http-load-baseline.md)을 참고한다.
+가용 객실·일별 요금의 현재 HTTP/SQL 비교는 [#345 숙박 조회 Baseline](stay-availability-price-http-baseline.md)을 참고한다.
 
 ## 재현 데이터와 Query
 
