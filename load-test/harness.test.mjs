@@ -7,6 +7,7 @@ import { argumentsFor, checkManifest, checkResource, checkStay, OWNED, projectOf
 import { plan } from "./k6/profiles.js";
 import { summarize } from "./metrics.mjs";
 import { checkInvariants, checkMeasurement } from "./verification.mjs";
+import { pollDelta, pollSnapshot } from "./outbox-poll.mjs";
 
 const id = "b".repeat(24);
 const project = projectOf(id);
@@ -54,6 +55,38 @@ test("cache and capacity experiment boundaries are explicit", () => {
   checkStay("2026-12-28", Date.parse("2026-11-23T00:00:00Z"));
   throws(() => checkStay("2026-11-31", Date.parse("2026-11-01T00:00:00Z")));
   throws(() => checkStay("2026-11-24", Date.parse("2026-11-23T00:00:00Z")));
+});
+
+test("Outbox comparison accepts only bounded lifecycle settings at prepare and manifest validation", () => {
+  const stay = new Date(Date.now() + 35 * 86400000).toISOString().slice(0, 10);
+  const args = ["prepare", "--confirm=isolated", "--seed=347", "--stay=" + stay, "--cache=off"];
+  const lifecycle = [...args, "--profile=lifecycle-write"];
+  equal(argumentsFor([...lifecycle, "--outbox-poll=1s"]).outboxPoll, "1s");
+  equal(argumentsFor([...lifecycle, "--outbox-poll=250ms"]).outboxPoll, "250ms");
+  equal(argumentsFor(lifecycle).outboxPoll, undefined);
+  throws(() => argumentsFor([...lifecycle, "--outbox-poll=1ms"]));
+  throws(() => argumentsFor([...args, "--profile=lifecycle-broker-down", "--outbox-poll=250ms"]));
+  throws(() => argumentsFor(["run", id, "--confirm=" + id, "--outbox-poll=1s"]));
+
+  const manifest = { schema: 1, id, project, engine: "local", source: "a".repeat(40), jarSha256: "a".repeat(64),
+    seed: 347, stay, state: "prepared", profile: "lifecycle-history", cache: "off", room: "distributed",
+    outboxPoll: "250ms", workload: plan("lifecycle-history", "off", "distributed") };
+  equal(checkManifest(manifest, id, "local", false), manifest);
+  throws(() => checkManifest({ ...manifest, outboxPoll: "2s" }, id, "local", false));
+});
+
+test("Outbox poll deltas retain empty-query cost and reject absent or reset counters", () => {
+  const before = { sampledAtMs: 1000, polls: 12, statementPs: 2e9, rowsSent: 4, rowsExamined: 6 };
+  const after = { ...before, sampledAtMs: 7000, polls: 35, statementPs: 5e9 };
+  deepEqual(pollSnapshot((sql) => {
+    equal(sql.includes("events_statements_summary_by_digest"), true);
+    equal(sql.includes("RESERVATION_OUTBOX_EVENTS% FOR UPDATE"), true);
+    return JSON.stringify(after);
+  }), after);
+  deepEqual(pollDelta(before, after), { wallMs: 6000, polls: 23, pollsPerSecond: 23 / 6,
+    statementMs: 3, rowsSent: 0, rowsExamined: 0 });
+  throws(() => pollDelta(before, { ...after, polls: before.polls }));
+  throws(() => pollDelta(before, { ...after, statementPs: 0 }));
 });
 
 test("expected rejection remains in HTTP error rate and endpoint histograms", () => {

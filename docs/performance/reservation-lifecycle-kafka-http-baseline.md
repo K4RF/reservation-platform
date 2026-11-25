@@ -214,7 +214,7 @@ offset은 `[1,1,2] → [2,1,3]`, drain 2.91초, 최종 lag 및 DLT 0.
 
 ## 후속 검증
 
-[#348 병목 분석](https://github.com/K4RF/reservation-platform/issues/348)의 우선
+[#348 병목 분석 및 폴링 실측](bottleneck-optimization.md)의 우선
 검토 후보는 정상 run에서 1초 내외로 모인 Outbox 발행 지연이다. Ack 대기와
 batch 비용을 분리한 채 poll 주기·배치 크기 변경 전후에 동일한 부하를 재측정한다.
 Broker 장애에서는 Future 반환 전 Producer 대기와 그동안의 batch 잠금 비용도

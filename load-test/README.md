@@ -16,6 +16,10 @@
 [#347 예약 생명주기·Kafka Baseline](../docs/performance/reservation-lifecycle-kafka-http-baseline.md)을 참고한다.
 별도 요청 원장과 날짜별 DB 재고·예약·Outbox를 대조하며 모호한 쓰기는 재전송하지 않는다.
 
+같은 생명주기 쓰기·이력 읽기에서 Outbox 폴링 지연과 유휴 DB 조회 비용을 비교하려면
+[#348 병목 재검증](../docs/performance/bottleneck-optimization.md)을 참고한다.
+`--outbox-poll=1s|250ms`는 격리 실험에서만 허용한다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와
