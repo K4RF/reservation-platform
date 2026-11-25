@@ -19,7 +19,9 @@ test("hot splits dates without changing the room; distributed owners remain dist
   equal(a.checkOutDate < b.checkInDate, true);
   deepEqual(b.nights, [{ stayDate: days[3], price: 2000 }, { stayDate: days[4], price: 2000 }]);
   equal(input("hot", "overlap", 1).checkInDate, days[1]);
-  equal(input("hot", "overlap", 0).checkOutDate, input("hot", "overlap", 1).nights[1].stayDate);
+  const overlapping = input("hot", "overlap", 1).nights.map(({ stayDate }) => stayDate);
+  deepEqual(input("hot", "overlap", 0).nights.map(({ stayDate }) => stayDate)
+    .filter((day) => overlapping.includes(day)), [days[1]]);
   equal(creationRooms(fixture.rooms, "distributed").length, 12);
   equal(input("distributed", "overlap", 0).roomId === input("distributed", "overlap", 1).roomId, false);
   equal(input("peer", "burst", 1).host, "backend-peer");
@@ -28,6 +30,10 @@ test("hot splits dates without changing the room; distributed owners remain dist
 
 test("peer is an explicit bounded profile, never allowed as a foreign service", () => {
   deepEqual(plan("create-hot", "off", "hot").stages, plan("create-distributed", "off", "distributed").stages);
+  const normal = plan("create-hot", "off", "hot");
+  deepEqual(normal.stages.filter((stage) => stage.iterations).map(({ name, iterations }) => [name, iterations]),
+    [["overlap", 3], ["disjoint", 3]]);
+  equal(normal.stages.reduce((n, s) => n + s.vus, 0), fixture.accounts.length);
   const peer = plan("create-peer", "off", "hot");
   equal(peer.stages[0].iterations, 4);
   throws(() => plan("create-peer", "off", "distributed"));

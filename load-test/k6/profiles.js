@@ -22,8 +22,8 @@ export function plan(profile, cache, roomMode, catalogSize) {
     return { creation, stages: [
       { name: "low", rate: 1, seconds: 6, at: 0, vus: 1 },
       { name: "shared", rate: 2, seconds: 5, at: 8, vus: 2 },
-      { name: "overlap", rate: 2, seconds: 5, at: 15, vus: 2 },
-      { name: "disjoint", rate: 2, seconds: 5, at: 22, vus: 2 },
+      { name: "overlap", iterations: 3, seconds: 5, at: 15, vus: 3 },
+      { name: "disjoint", iterations: 3, seconds: 5, at: 22, vus: 3 },
       { name: "steady", rate: 3, seconds: 8, at: 29, vus: 3 },
     ] };
   }
