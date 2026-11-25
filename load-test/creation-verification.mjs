@@ -109,7 +109,7 @@ export function reconcileCreation({ mode, fixture, ledger, db, beforeInventory, 
     const dbState = r ? "committed" : finished === dispatch.size ? "no_row_after_server_finish" : "unresolved";
     outcomes.push({ ordinal: id, scenario: d.scenario, target: a.host, sentAt: d.at, respondedAt: h?.at ?? null,
       status: h?.status ?? null, code: h?.code ?? null, outcome: h?.outcome ?? "unconfirmed_write",
-      dbState, reservationId: r?.reservationId ?? null });
+      dbState, reservationId: r?.reservationId ?? null, ...(h?.validatorError ? { validatorError: true } : {}) });
   }
   if (db.events.length !== db.bookings.length ||
       db.nights.some((n) => !db.bookings.some((r) => r.reservationId === n.reservationId)))
@@ -138,8 +138,10 @@ export function reconcileCreation({ mode, fixture, ledger, db, beforeInventory, 
     unconfirmed: count((x) => x.outcome === "unconfirmed_write" || x.dbState === "unresolved"),
     unresolved: count((x) => x.dbState === "unresolved") };
   if (!dispatch.size || finished !== dispatch.size) errors.push("server completion could not be matched to all dispatches");
+  if (counts.unconfirmed) errors.push("HTTP confirmation is incomplete; DB evidence was retained");
   if (mode === "redis-down" ? counts.redisError !== 1 || counts.committed !== 0 || counts.dispatch !== 1 :
-      mode === "exhaustion" ? counts.dispatch !== 4 || counts.committed !== 1 || counts.unavailable !== 3 :
+      mode === "exhaustion" ? counts.dispatch !== 4 || counts.committed !== 1 || counts.success !== 1 ||
+        counts.unavailable !== 3 :
       counts.committed !== counts.dispatch || counts.success !== counts.dispatch)
     errors.push("unexpected bounded profile outcomes");
   return { counts, outcomes, inventory, errors };

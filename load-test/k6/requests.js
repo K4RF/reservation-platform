@@ -24,9 +24,12 @@ export function request(method, path, endpoint, expected, {
     tags: { name: endpoint },
   });
   let data;
-  try { data = response.json(); } catch { /* malformed success is not a confirmed write */ }
+  try { data = onResult ? JSON.parse(response.body) : response.json(); } catch { /* malformed success is not confirmed */ }
   const write = method !== "GET";
-  const correct = response.status === expected && data && (!validate || validate(data));
+  let correct = false, validatorError = false;
+  if (response.status === expected && data) {
+    try { correct = !validate || validate(data); } catch { validatorError = true; }
+  }
   const rejection = (exhausted && response.status === 409 && data?.code === "INVENTORY_005") ||
     (expectedFailure && response.status === expectedFailure.status && data?.code === expectedFailure.code);
   const unknown = write && !rejection && (!response.status || response.status >= 500 ||
@@ -39,6 +42,7 @@ export function request(method, path, endpoint, expected, {
   outcomeLatency.add(response.timings.duration, tags);
   bad.add(outcome === "system_error" || unknown, { name: endpoint });
   onResult?.({ status: response.status, code: tags.domain, outcome,
+    ...(validatorError ? { validatorError: true } : {}),
     reservationId: correct && write ? data.reservationId : null });
   if (unknown || (onResult && outcome === "system_error"))
     exec.test.abort("Unexpected write response: stop and verify DB; no retry");

@@ -31,13 +31,15 @@ export function creationInput(fixture, mode, stage, ordinal, ownerIndex) {
 }
 
 export function creationMatches(attempt, response) {
-  return response?.memberId === attempt.memberId && response.roomId === attempt.roomId &&
+  const matchesSummary = response?.memberId === attempt.memberId && response.roomId === attempt.roomId &&
     response.guestCount === attempt.guestCount && response.status === "CONFIRMED" &&
-    Number.isSafeInteger(response.reservationId) && response.reservationId > 0 &&
+    Number.isInteger(response.reservationId) && response.reservationId > 0 &&
     response.checkInDate === attempt.checkInDate && response.checkOutDate === attempt.checkOutDate &&
     response.nightlyPriceSnapshot === attempt.nights[0].price &&
     response.stayNights === attempt.nights.length && response.totalAmount === attempt.total &&
-    Array.isArray(response.nights) && response.nights.length === attempt.nights.length &&
-    response.nights.every((night, i) => night.stayDate === attempt.nights[i].stayDate &&
-      night.priceSnapshot === attempt.nights[i].price);
+    Array.isArray(response.nights) && response.nights.length === attempt.nights.length;
+  if (!matchesSummary) return false;
+  // Compare each returned night against the independently constructed fixture dates.
+  return attempt.nights.every((night, i) => response.nights[i]?.stayDate === night.stayDate &&
+    response.nights[i]?.priceSnapshot === night.price);
 }

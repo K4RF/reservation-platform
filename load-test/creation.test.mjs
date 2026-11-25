@@ -76,6 +76,9 @@ test("reservation response and durable exhaust ledger check money, dates, invent
   equal(good.counts.committed, 1);
   equal(good.counts.unavailable, 3);
   deepEqual(good.errors, []);
+  const unlogged = reconcileCreation({ ...x, ledger: x.ledger.filter((_, i) => i !== 1) });
+  equal(unlogged.counts.unconfirmed, 1);
+  equal(unlogged.errors.includes("HTTP confirmation is incomplete; DB evidence was retained"), true);
   x.db.inventory[0].reserved += 1;
   x.db.events.push(x.db.events[0]);
   equal(reconcileCreation(x).errors.length > 1, true);
