@@ -30,6 +30,7 @@ import { lifecycleSnapshot, prepareLifecycle, readLifecycleLedger, reconcileLife
 import {
   brokerOffsets, kafkaOutage, lifecycleEvents, lifecycleTimings, outageProducerMaxBlockMs, verifyBroker,
 } from "./lifecycle-kafka.mjs";
+import { pollDelta, pollSnapshot } from "./outbox-poll.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -43,7 +44,7 @@ function harnessHash() {
     "detail-diagnostics.mjs", "k6/detail.js", "k6/detail-cases.js",
     "stay-seed.mjs", "stay-diagnostics.mjs", "k6/stay.js", "k6/stay-cases.js",
     "creation-verification.mjs", "k6/creation.js", "k6/creation-cases.js",
-    "lifecycle-verification.mjs", "lifecycle-kafka.mjs", "k6/lifecycle.js", "k6/lifecycle-cases.js"];
+    "lifecycle-verification.mjs", "lifecycle-kafka.mjs", "k6/lifecycle.js", "k6/lifecycle-cases.js", "outbox-poll.mjs"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
   return sha.digest("hex");
@@ -87,6 +88,7 @@ function openRun(runtime, m) {
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
     ...(m.workload.lifecycle && m.workload.lifecycle !== "history" ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
+    ...(m.outboxPoll ? { LOAD_OUTBOX_POLL: m.outboxPoll } : {}),
     // Bound metadata lookup only in the controlled fault probe; all healthy profiles use Kafka's defaults.
     LOAD_PRODUCER_CONFIG: m.workload.lifecycle === "broker-down" ?
       JSON.stringify({ "spring.kafka.producer.properties[max.block.ms]": String(outageProducerMaxBlockMs) }) : "{}",
@@ -133,6 +135,7 @@ function openRun(runtime, m) {
         expectedServices.some((svc) => !services[svc]?.State.Running ||
           (m.resources && m.resources[svc] !== services[svc].Id)) ||
         (m.network && m.network !== networks[0].Id) ||
+        (m.outboxPoll && !services.backend.Config.Env.includes("RESERVATION_KAFKA_OUTBOX_PUBLISH_INTERVAL=" + m.outboxPoll)) ||
         ["mysql", "redis", "kafka"].some((svc) => services[svc].State.Health?.Status !== "healthy")))
       throw new Error("Run resources missing, replaced, or unhealthy");
     return { services, networks, volumes };
@@ -446,6 +449,13 @@ async function execute(run, m, path) {
       report("lifecycle-fixture.json", { watermarks: first.watermarks, offsets, days: first.fixture.days });
     }
     observe("before");
+    let idlePolls;
+    if (m.outboxPoll) {
+      const idle = pollSnapshot(run.sql);
+      await delay(6000);
+      idlePolls = pollDelta(idle, pollSnapshot(run.sql));
+      if (idlePolls.rowsSent) throw new Error("Idle Outbox probe unexpectedly returned pending rows");
+    }
     if (existsSync(stop)) throw new Error("Stopped before starting k6");
     if (detail === "lifecycle") {
       report("detail-lifecycle.json", await runDetailLifecycle(run, cases, maxTtl, () => existsSync(stop)));
@@ -460,10 +470,12 @@ async function execute(run, m, path) {
     }
     const redisBefore = detail === "reads" && redisDetailCounters(run);
     let sqlBefore, sqlAfter, staySqlBefore, staySqlAfter;
+    let activePolls;
     const measure = async () => {
       if (existsSync(stop)) throw new Error("Stopped before starting k6");
       if (detail) sqlBefore = detailSnapshot(run);
       if (stayRead) staySqlBefore = staySnapshot(run.sql);
+      const pollsBefore = idlePolls && pollSnapshot(run.sql);
       m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
       json(path, m);
       const generator = measured(run, m);
@@ -474,6 +486,7 @@ async function execute(run, m, path) {
       m.measurement.generatorCode = code;
       if (detail) sqlAfter = detailSnapshot(run);
       if (stayRead) staySqlAfter = staySnapshot(run.sql);
+      if (pollsBefore) activePolls = pollDelta(pollsBefore, pollSnapshot(run.sql));
       return code;
     };
     const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
@@ -487,6 +500,7 @@ async function execute(run, m, path) {
       measureError = error;
     }
     if (lifecycle) {
+      if (idlePolls) report("outbox-poll.json", { interval: m.outboxPoll, idle: idlePolls, active: activePolls });
       const summary = await finishLifecycle(run, m, { first, previous, offsets, pre, code, measureError, report });
       observe("after");
       m.state = "passed";
@@ -606,7 +620,7 @@ try {
       }
       if (options.action === "reset") {
         run.resources();
-        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "workload"]
+        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "outboxPoll", "workload"]
           .map((key) => [key, m[key]])));
       }
     });

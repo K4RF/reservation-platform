@@ -18,10 +18,16 @@ export function checkStay(date, now = Date.now()) {
       new Date(ms).toISOString().slice(0, 10) !== date || ms - now < 9 * 86400000 || ms - now > 150 * 86400000)
     throw new Error("The stay start must be a real YYYY-MM-DD between 9 and 150 days from now");
 }
+export function checkOutboxPoll(profile, value) {
+  if (value !== undefined && (!["lifecycle-write", "lifecycle-history"].includes(profile) ||
+      !["1s", "250ms"].includes(value)))
+    throw new Error("Outbox poll comparison requires lifecycle-write/history and 1s or 250ms");
+}
 export function argumentsFor([action, ...args]) {
   if (!["prepare", "run", "stop", "reset", "cleanup"].includes(action))
     throw new Error("Use prepare, run, stop, reset or cleanup (see load-test/README.md)");
-  const supported = action === "prepare" ? ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size"] : ["confirm"];
+  const supported = action === "prepare" ?
+    ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size", "outbox-poll"] : ["confirm"];
   const id = action === "prepare" ? null : validateId(args.shift());
   const values = {};
   while (args.length) {
@@ -37,7 +43,10 @@ export function argumentsFor([action, ...args]) {
   if (!/^[1-9]\d{0,5}$/.test(seed)) throw new Error("Expected integer --seed=1..999999");
   checkStay(stay);
   const catalogSize = values["catalog-size"];
-  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, workload: plan(profile, cache, room, catalogSize) };
+  const outboxPoll = values["outbox-poll"];
+  checkOutboxPoll(profile, outboxPoll);
+  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, outboxPoll,
+    workload: plan(profile, cache, room, catalogSize) };
 }
 export function checkManifest(value, id, engine, requireIdentities = true) {
   if (!value || value.schema !== 1 || value.id !== id || value.project !== projectOf(id) ||
@@ -47,6 +56,7 @@ export function checkManifest(value, id, engine, requireIdentities = true) {
       !["preparing", "prepared", "running", "passed", "failed"].includes(value.state) ||
       JSON.stringify(plan(value.profile, value.cache, value.room, value.catalogSize)) !== JSON.stringify(value.workload))
     throw new Error("Invalid run manifest or wrong Docker engine");
+  checkOutboxPoll(value.profile, value.outboxPoll);
   if (requireIdentities && ["prepared", "running", "passed"].includes(value.state) &&
       (!/^sha256:[a-f0-9]{64}$/.test(value.generatorImage) ||
         !/^[a-f0-9]{64}$/.test(value.harnessSha256) ||
