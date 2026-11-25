@@ -12,6 +12,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import junsik.reservation.config.ReservationOutboxProperties;
 import junsik.reservation.entity.reservation.ReservationOutboxEvent;
@@ -33,6 +35,7 @@ import junsik.reservation.repository.ReservationOutboxEventRepository;
 public class ReservationOutboxPublisher {
 
 	private static final Logger log = LoggerFactory.getLogger(ReservationOutboxPublisher.class);
+	private static final Logger measurement = LoggerFactory.getLogger("reservation.lifecycle.measurement");
 
 	private final ReservationOutboxEventRepository outboxEventRepository;
 	private final ReservationOutboxEventSerializer serializer;
@@ -56,30 +59,50 @@ public class ReservationOutboxPublisher {
 
 	@Transactional
 	public int publishPendingBatch() {
+		boolean observe = measurement.isTraceEnabled();
+		long begin = observe ? System.nanoTime() : 0L;
 		List<ReservationOutboxEvent> pendingEvents = outboxEventRepository.findBatchByStatusForUpdate(
 				ReservationOutboxStatus.PENDING,
 				PageRequest.of(0, properties.batchSize())
 		);
 		int publishedCount = 0;
 		for (ReservationOutboxEvent outboxEvent : pendingEvents) {
-			if (publish(outboxEvent)) {
+			if (publish(outboxEvent, observe)) {
 				publishedCount++;
 			}
+		}
+		if (observe && !pendingEvents.isEmpty() && TransactionSynchronizationManager.isSynchronizationActive()) {
+			int rows = pendingEvents.size();
+			int published = publishedCount;
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+				@Override
+				public void afterCompletion(int status) {
+					measurement.trace("LOAD_OUTBOX_BATCH rows={} published={} committed={} elapsedNs={}",
+							rows, published, status == STATUS_COMMITTED, System.nanoTime() - begin);
+				}
+			});
 		}
 		return publishedCount;
 	}
 
-	private boolean publish(ReservationOutboxEvent outboxEvent) {
+	private boolean publish(ReservationOutboxEvent outboxEvent, boolean observe) {
 		outboxEvent.recordAttempt(Instant.now(clock));
 		try {
 			ReservationEvent event = serializer.deserialize(
 					outboxEvent.getEventType(),
 					outboxEvent.getPayload()
 			);
-			SendResult<Object, Object> result = producer.send(event).get(
-					properties.publishTimeout().toMillis(),
-					TimeUnit.MILLISECONDS
-			);
+			long start = observe ? System.nanoTime() : 0L;
+			boolean acknowledged = false;
+			SendResult<Object, Object> result;
+			try {
+				result = producer.send(event).get(properties.publishTimeout().toMillis(), TimeUnit.MILLISECONDS);
+				acknowledged = true;
+			} finally {
+				if (observe) {
+					measurement.trace("LOAD_OUTBOX_SEND ack={} elapsedNs={}", acknowledged, System.nanoTime() - start);
+				}
+			}
 			outboxEvent.markPublished(Instant.now(clock));
 			log.info(
 					"Reservation Outbox event published: eventId={}, eventType={}, reservationId={}, topic={}, partition={}, offset={}",
