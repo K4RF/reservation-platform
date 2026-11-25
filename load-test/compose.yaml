@@ -78,6 +78,7 @@ services:
       REDIS_PORT: 6379
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_CONSUMER_GROUP_ID: reservation-load-consumer
+      SPRING_APPLICATION_JSON: "${LOAD_PRODUCER_CONFIG:-}"
       MEDIA_STORAGE_ROOT: /media
       JWT_SECRET: ${LOAD_JWT:?}
       JWT_ISSUER: reservation-load-${LOAD_ID:?}

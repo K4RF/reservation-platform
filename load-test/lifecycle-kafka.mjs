@@ -3,6 +3,7 @@ import { rows } from "./lifecycle-verification.mjs";
 
 const source = "reservation.events.v1";
 const dlt = source + ".dlt";
+export const outageProducerMaxBlockMs = 5000;
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const kafka = (run, tool, args, options) => run.compose(["exec", "-T", "kafka", "/opt/kafka/bin/" + tool + ".sh",
   "--bootstrap-server", "kafka:29092", ...args], { label: "Isolated " + tool, timeout: 20_000, ...options });
@@ -114,7 +115,7 @@ export async function verifyBroker(run, { m, before, events, drain, canary }) {
 export async function kafkaOutage(run, m, measure, report) {
   const owned = m.resources.kafka;
   if (run.resources(true).services.kafka?.Id !== owned) throw new Error("Unsafe broker outage scope");
-  const evidence = { stopped: false, restored: false, pending: [] };
+  const evidence = { stopped: false, restored: false, pending: [], producerMaxBlockMs: outageProducerMaxBlockMs };
   const requireOwned = () => {
     const broker = run.resources().services.kafka;
     if (broker?.Id !== owned) throw new Error("Owned Kafka instance was replaced");

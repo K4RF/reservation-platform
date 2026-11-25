@@ -27,7 +27,9 @@ import {
   redisDetailCounters, redisDetailDelta, runDetailBursts, runDetailLifecycle, verifyDetailRecovery, withDetailOutage,
 } from "./detail-diagnostics.mjs";
 import { lifecycleSnapshot, prepareLifecycle, readLifecycleLedger, reconcileLifecycle } from "./lifecycle-verification.mjs";
-import { brokerOffsets, kafkaOutage, lifecycleEvents, lifecycleTimings, verifyBroker } from "./lifecycle-kafka.mjs";
+import {
+  brokerOffsets, kafkaOutage, lifecycleEvents, lifecycleTimings, outageProducerMaxBlockMs, verifyBroker,
+} from "./lifecycle-kafka.mjs";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -85,6 +87,9 @@ function openRun(runtime, m) {
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
     ...(m.workload.lifecycle && m.workload.lifecycle !== "history" ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
+    // Bound metadata lookup only in the controlled fault probe; all healthy profiles use Kafka's defaults.
+    LOAD_PRODUCER_CONFIG: m.workload.lifecycle === "broker-down" ?
+      JSON.stringify({ "spring.kafka.producer.properties[max.block.ms]": String(outageProducerMaxBlockMs) }) : "{}",
     LOAD_OUTPUT_USER: (process.getuid?.() ?? 0) + ":" + (process.getgid?.() ?? 0),
     // Only used by 'up'; exec/run/down refer to the existing service environments.
     LOAD_DB_PASSWORD: randomBytes(24).toString("hex"),
