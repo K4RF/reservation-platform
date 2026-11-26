@@ -1,4 +1,4 @@
-const phase = { low: 0, ramp: 100, steady: 200, burst: 300 };
+const phase = { low: 0, ramp: 100, steady: 200, burst: 300, hold: 600 };
 export const lifecycleDayFeeRate = 30;
 export const historySeedCount = 30;
 export const historyPageSize = 5;
@@ -13,11 +13,17 @@ export function stay(f, room, memberId, start, end, rate) {
     guestCount: 2, nights, totalAmount, rate, fee: Math.round(totalAmount * rate) / 100 };
 }
 
-export function cycleInput(f, stage, iteration, vu) {
-  if (!Object.hasOwn(phase, stage) || !Number.isInteger(iteration) || iteration < 0 || iteration >= 80 ||
+export const explores = (mode) => ["read", "mixed", "stability"].includes(mode);
+export const lifecycleReadOnly = (mode) => ["read", "history"].includes(mode);
+export const journeyKind = (mode, i) => mode === "read" || i % 5 < 3 ? "browse" : i % 5 === 3 ? "keep" : "cycle";
+export const explorationNames = ["search", "accommodation", "availability", "room", "price"];
+
+export function cycleInput(f, stage, iteration, vu, roomMode = "distributed") {
+  if (!Object.hasOwn(phase, stage) || !Number.isInteger(iteration) || iteration < 0 ||
+      iteration >= (stage === "hold" ? 100 : 80) ||
       !Number.isInteger(vu) || vu < 0 || vu >= 8)
     throw new Error("Unknown lifecycle assignment");
-  const room = f.rooms[vu * 3], account = f.accounts[vu];
+  const room = f.rooms[roomMode === "hot" ? 0 : vu * 3], account = f.accounts[vu];
   return { ordinal: phase[stage] + iteration + 1, ownerIndex: vu,
     created: stay(f, room, account.memberId, 0, 2, lifecycleDayFeeRate),
     changed: stay(f, room, account.memberId, 1, 3, lifecycleDayFeeRate) };

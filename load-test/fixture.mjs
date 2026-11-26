@@ -92,7 +92,7 @@ async function seed(seedNumber, firstDay, profile) {
   const admin = await login(read(adminFile));
   unlinkSync(adminFile);
   if (profile === "detail-lifecycle") save(detailAdminFile, { runId, admin });
-  const lifecycle = profile.startsWith("lifecycle-");
+  const lifecycle = profile.startsWith("lifecycle-") || profile.startsWith("final-");
   const days = Array.from({ length: 5 }, (_, n) =>
     new Date(Date.parse(firstDay + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10),
   );

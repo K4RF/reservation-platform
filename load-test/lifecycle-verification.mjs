@@ -1,5 +1,7 @@
 import { inventoryRows } from "./creation-verification.mjs";
-import { matchesLifecycle, matchesCancellation, raceInput, cycleInput } from "./k6/lifecycle-cases.js";
+import {
+  matchesLifecycle, matchesCancellation, raceInput, cycleInput, explores, explorationNames, journeyKind, lifecycleReadOnly,
+} from "./k6/lifecycle-cases.js";
 
 export const rows = (sqlResult) => sqlResult ? sqlResult.split(/\r?\n/).map(JSON.parse) : [];
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -26,7 +28,7 @@ export function prepareLifecycle(run) {
 
 export function lifecycleSnapshot(run, first, mode) {
   const ids = first.fixture.accounts.slice(0, 4).map((a) => a.reservationId).join(",");
-  const where = mode === "history" ? "1=1" : "r.id>" + first.watermarks.reservation + " OR r.id IN (" + ids + ")";
+  const where = lifecycleReadOnly(mode) ? "1=1" : "r.id>" + first.watermarks.reservation + " OR r.id IN (" + ids + ")";
   const reservations = rows(run.sql("SELECT JSON_OBJECT('reservationId',id,'roomId',room_id,'memberId',member_id," +
     "'ordinal',CASE WHEN guest_name REGEXP '^Lifecycle-[0-9]+$' THEN CAST(SUBSTRING(guest_name,11) AS UNSIGNED) END," +
     "'checkInDate',DATE_FORMAT(check_in_date,'%Y-%m-%d'),'checkOutDate',DATE_FORMAT(check_out_date,'%Y-%m-%d')," +
@@ -44,11 +46,22 @@ export function lifecycleSnapshot(run, first, mode) {
   return { reservations, inventory: inventoryRows(run.sql) };
 }
 
-export function reconcileLifecycle({ mode, first, previous, current, events, ledger, summary }) {
+export function reconcileLifecycle({ mode, first, previous, current, events, ledger, summary, roomMode }) {
   const errors = [], records = [], counts = { create: 0, change: 0, cancel: 0 };
   const require = (yes, message) => { if (!yes) errors.push(message); };
-  if (mode === "history") {
-    require(!events.length && equal(previous, current), "Owner read profile changed persistent state");
+  const journeys = explores(mode) ? { browse: 0, keep: 0, cycle: 0 } : undefined;
+  if (journeys) {
+    for (const n of Object.values(summary?.scenarioIterations ?? {}))
+      for (let i = 0; i < n; i++) journeys[journeyKind(mode, i)]++;
+    const total = journeys.browse + journeys.keep + journeys.cycle;
+    for (const name of explorationNames)
+      require(total > 0 && summary?.operations?.["explore." + name]?.success === total, "Incomplete exploration: " + name);
+    require((summary?.operations?.["lifecycle.owner_detail"]?.success ?? 0) === journeys.keep + journeys.cycle,
+      "Owner detail count differs from booked journeys");
+  }
+  if (lifecycleReadOnly(mode)) {
+    require(!events.length && equal(previous, current), "Read-only profile changed persistent state");
+    if (mode === "read") return { errors, counts, journeys };
     for (const name of ["offset_first", "offset_deep", "cursor_first", "cursor_deep", "detail"]) {
       require(summary?.operations?.["history." + name]?.success > 0, "Missing history operation: " + name);
     }
@@ -132,24 +145,35 @@ export function reconcileLifecycle({ mode, first, previous, current, events, led
     }
   } else {
     require(newRows.length > 0 && newRows.length === byOrdinal.size, "Creation count differs from lifecycle ledger");
+    if (journeys) require(newRows.length === journeys.keep + journeys.cycle, "Booking mix differs from committed rows");
+    require(equal(previous?.reservations ?? [], current.reservations.filter((r) => r.reservationId <= first.watermarks.reservation)),
+      "A lifecycle journey changed an existing reservation");
     for (const [ordinal, batch] of byOrdinal) {
       const dispatch = batch.find((x) => x.event === "dispatch");
       if (!dispatch) { errors.push("Missing first dispatch"); continue; }
       const { scenario, iteration, ownerIndex } = dispatch;
-      const a = cycleInput(first.fixture, scenario, iteration, ownerIndex);
+      const a = cycleInput(first.fixture, scenario, iteration, ownerIndex, roomMode);
+      const journey = journeys && journeyKind(mode, iteration);
       const label = "Cycle " + ordinal;
       require(ordinal === a.ordinal && batch.every((x) => x.ownerIndex === ownerIndex &&
         x.scenario === scenario && x.iteration === iteration), label + ": assignment mismatch");
       const creation = readAttempt("create", batch, label);
-      const change = readAttempt("change", batch, label);
-      const cancellation = readAttempt("cancel", batch, label);
       const r = newRows.find((item) => item.ordinal === ordinal);
       const id = r?.reservationId;
-      require(int(id) && creation.dispatched === null && change.dispatched === id && cancellation.dispatched === id,
-        label + ": target mismatch");
+      require(journey !== "browse" && int(id) && creation.dispatched === null, label + ": create target mismatch");
+      apply(a.created, datesOf(a.created), 1);
+      if (journey === "keep") {
+        require(batch.length === 2, label + ": kept booking was mutated again");
+        checkEvents(id, ["CREATED"], label);
+        checkReservation(r, a.created, "CONFIRMED", label);
+        records.push({ ordinal, id, ownerIndex, events: 1 });
+        continue;
+      }
+      const change = readAttempt("change", batch, label);
+      const cancellation = readAttempt("cancel", batch, label);
+      require(batch.length === 6 && change.dispatched === id && cancellation.dispatched === id, label + ": target mismatch");
       checkEvents(id, ["CREATED", "CHANGED", "CANCELLED"], label);
       checkReservation(r, a.changed, "CANCELLED", label);
-      apply(a.created, datesOf(a.created), 1);
       apply(a.created, datesOf(a.created).filter((x) => !datesOf(a.changed).includes(x)), -1);
       apply(a.changed, datesOf(a.changed).filter((x) => !datesOf(a.created).includes(x)), 1);
       apply(a.changed, datesOf(a.changed), -1);
@@ -163,5 +187,6 @@ export function reconcileLifecycle({ mode, first, previous, current, events, led
     require((summary?.operations?.["lifecycle." + op]?.success ?? 0) === ids.length, op + ": summary differs from verified ledger");
   }
   require(equal([...updatedInventory.values()], current.inventory), "Inventory quantities/versions differ from winning transitions");
-  return { errors, counts, records, events: events.map(({ id, aggregateId, eventType }) => ({ id, aggregateId, eventType })) };
+  if (journeys) require(counts.change === journeys.cycle && counts.cancel === journeys.cycle, "Lifecycle mix differs from durable events");
+  return { errors, counts, records, journeys, events: events.map(({ id, aggregateId, eventType }) => ({ id, aggregateId, eventType })) };
 }
