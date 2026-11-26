@@ -20,6 +20,11 @@
 [#348 병목 재검증](../docs/performance/bottleneck-optimization.md)을 참고한다.
 `--outbox-poll=1s|250ms`는 격리 실험에서만 허용한다.
 
+[v0.5.0 최종 보고서(#349)](../docs/performance/v0.5.0-final-report.md)에 개별
+재검증, `final-read`/`final-mixed`/`final-stability` 조건과 재현 명령을 정리한다.
+혼합 모드의 Room 비교는 warm·distributed ↔ warm·hot, Cache 비교는 warm·distributed ↔
+cold·distributed로 나누며, 90초 안정성 구간을 운영 soak로 해석하지 않는다.
+
 **로컬에서 러너가 만든 전용 스택**의 Boot JAR에만 HTTP를 보낸다. URL 옵션이나 개발/운영
 포트가 없다. Vite/프록시 측정, 신규 기능, 용량 보장 및 운영 SLO는 범위 밖이다.
 [기존 격리 통합 스모크](../docs/testing/frontend-backend-integration.md)와
