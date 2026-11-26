@@ -11,6 +11,19 @@ export const profiles = {
 };
 
 export function plan(profile, cache, roomMode, catalogSize) {
+  if (["final-read", "final-mixed", "final-stability"].includes(profile)) {
+    const lifecycle = profile.slice(6);
+    if (catalogSize !== undefined || !["distributed", "hot"].includes(roomMode) ||
+        (lifecycle === "mixed" ? !["warm", "cold"].includes(cache) :
+          cache !== "warm" || roomMode !== "distributed"))
+      throw new Error("Final workload requires the fixed fixture and an approved cache/room comparison");
+    return { lifecycle, stages: [
+      { name: "low", rate: 1, seconds: 6, at: 0, vus: 2 },
+      { name: "ramp", rate: 2, seconds: 6, at: 8, vus: 2 },
+      lifecycle === "stability" ? { name: "hold", rate: 1, seconds: 90, at: 16, vus: 4 } :
+        { name: "steady", rate: 3, seconds: 12, at: 16, vus: 4 },
+    ] };
+  }
   if (["lifecycle-write", "lifecycle-history", "lifecycle-race", "lifecycle-broker-down"].includes(profile)) {
     if (catalogSize !== undefined || cache !== "off" || roomMode !== "distributed")
       throw new Error("Lifecycle profiles require the fixed fixture, cache=off and distributed mode");

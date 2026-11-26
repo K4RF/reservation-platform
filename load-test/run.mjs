@@ -31,6 +31,7 @@ import {
   brokerOffsets, kafkaOutage, lifecycleEvents, lifecycleTimings, outageProducerMaxBlockMs, verifyBroker,
 } from "./lifecycle-kafka.mjs";
 import { pollDelta, pollSnapshot } from "./outbox-poll.mjs";
+import { explores, lifecycleReadOnly } from "./k6/lifecycle-cases.js";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
@@ -87,7 +88,7 @@ function openRun(runtime, m) {
     LOAD_JAR: join(root, "backend", "build", "libs", m.jar), LOAD_CACHE: String(m.cache !== "off"),
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
-    ...(m.workload.lifecycle && m.workload.lifecycle !== "history" ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
+    ...(m.workload.lifecycle && !lifecycleReadOnly(m.workload.lifecycle) ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
     ...(m.outboxPoll ? { LOAD_OUTBOX_POLL: m.outboxPoll } : {}),
     // Bound metadata lookup only in the controlled fault probe; all healthy profiles use Kafka's defaults.
     LOAD_PRODUCER_CONFIG: m.workload.lifecycle === "broker-down" ?
@@ -261,7 +262,7 @@ function clearDetail(run) {
 
 function measured(run, m) {
   const ledger = m.workload.creation ? "creation" :
-    m.workload.lifecycle && m.workload.lifecycle !== "history" ? "lifecycle" : null;
+    m.workload.lifecycle && !lifecycleReadOnly(m.workload.lifecycle) ? "lifecycle" : null;
   const result = spawn("docker", ["--context", run.context, ...run.composeArgs, "run",
     "--no-deps", "--pull", "never", "--rm", "--name", m.project + "-k6", "-T",
     "-e", "LOAD_PROFILE=" + m.profile, "-e", "LOAD_CACHE_MODE=" + m.cache, "-e", "LOAD_ROOM_MODE=" + m.room,
@@ -279,7 +280,7 @@ function measured(run, m) {
       if (k6?.State.Running) run.docker(["stop", "--time", "3", k6.Id]);
     } catch { /* leave the run for an explicit stop and inspection */ }
   };
-  const timer = setTimeout(cancel, 65_000);
+  const timer = setTimeout(cancel, m.workload.lifecycle === "stability" ? 145_000 : 65_000);
   process.once("SIGINT", cancel);
   return new Promise((resolve, reject) => {
     result.once("error", () => reject(new Error("Could not start the load generator")));
@@ -329,9 +330,9 @@ async function finishLifecycle(run, m, { first, previous, offsets, pre, code, me
     lag: post?.lag, drained: !!post, drainMs: Date.now() - started });
   const events = lifecycleEvents(run, first.watermarks.outbox);
   const current = lifecycleSnapshot(run, first, mode);
-  const reconciled = reconcileLifecycle({ mode, first, previous, current, events, ledger, summary });
+  const reconciled = reconcileLifecycle({ mode, first, previous, current, events, ledger, summary, roomMode: m.room });
   report("lifecycle-reconciliation.json", reconciled);
-  const timings = mode !== "history" && lifecycleTimings(run.docker([
+  const timings = !lifecycleReadOnly(mode) && lifecycleTimings(run.docker([
     "logs", "--since", m.measurement.startedAt, m.resources.backend,
   ], { label: "Isolated Outbox observation" }), events);
   if (timings) report("lifecycle-timings.json", timings);
@@ -435,6 +436,7 @@ async function execute(run, m, path) {
       lockWaitMs: 3000, leaseMs: 30000, maxAttempts: 3,
     });
     const lifecycle = m.workload.lifecycle;
+    const journey = explores(lifecycle);
     let first, previous, offsets;
     if (lifecycle) {
       if (lifecycle === "history") {
@@ -471,11 +473,13 @@ async function execute(run, m, path) {
     const redisBefore = detail === "reads" && redisDetailCounters(run);
     let sqlBefore, sqlAfter, staySqlBefore, staySqlAfter;
     let activePolls;
+    let journeyCache;
     const measure = async () => {
       if (existsSync(stop)) throw new Error("Stopped before starting k6");
       if (detail) sqlBefore = detailSnapshot(run);
       if (stayRead) staySqlBefore = staySnapshot(run.sql);
       const pollsBefore = idlePolls && pollSnapshot(run.sql);
+      const cacheBefore = journey && redisDetailCounters(run);
       m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
       json(path, m);
       const generator = measured(run, m);
@@ -487,6 +491,7 @@ async function execute(run, m, path) {
       if (detail) sqlAfter = detailSnapshot(run);
       if (stayRead) staySqlAfter = staySnapshot(run.sql);
       if (pollsBefore) activePolls = pollDelta(pollsBefore, pollSnapshot(run.sql));
+      if (cacheBefore) journeyCache = redisDetailDelta(cacheBefore, redisDetailCounters(run));
       return code;
     };
     const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
@@ -500,6 +505,7 @@ async function execute(run, m, path) {
       measureError = error;
     }
     if (lifecycle) {
+      if (journeyCache) report("journey-cache.json", journeyCache);
       if (idlePolls) report("outbox-poll.json", { interval: m.outboxPoll, idle: idlePolls, active: activePolls });
       const summary = await finishLifecycle(run, m, { first, previous, offsets, pre, code, measureError, report });
       observe("after");
