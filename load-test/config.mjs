@@ -2,8 +2,15 @@ import { plan } from "./k6/profiles.js";
 
 export const OWNED = "reservation.load.run";
 export const SERVICES = ["mysql", "redis", "kafka", "backend", "fixture"];
-export const servicesFor = (workload) => workload.creation === "peer" ? [...SERVICES, "backend-peer"] : SERVICES;
+export const MONITOR_IMAGES = {
+  prometheus: "prom/prometheus:v3.13.5@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9",
+  grafana: "grafana/grafana:13.3.2@sha256:81556409ba48b2b922e0adb69a2511337d8ba7578f11962eefa6149a2d815101",
+};
+export const servicesFor = (workload, monitoring) => [...SERVICES,
+  ...(workload.creation === "peer" ? ["backend-peer"] : []), ...(monitoring ? Object.keys(MONITOR_IMAGES) : [])];
 export const VOLUMES = ["mysql-data", "kafka-data", "kafka-config", "kafka-secrets", "media", "fixture-data"];
+export const volumesFor = (services) => [...VOLUMES, ...Object.keys(MONITOR_IMAGES)
+  .filter((service) => services.includes(service)).map((service) => service + "-data")];
 export const K6 = "grafana/k6:2.0.0@sha256:a33a0cfdc4d2483d6b7a3a22e726a499ff2831a671a49239104cd34a9937523c";
 export const hostEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
   /^(path|pathext|systemroot|systemdrive|windir|comspec|home|homedrive|homepath|userprofile|appdata|localappdata|programdata|programfiles(?:\(x86\))?|programw6432|temp|tmp|tmpdir|lang)$/i.test(key)));
@@ -23,11 +30,15 @@ export function checkOutboxPoll(profile, value) {
       !["1s", "250ms"].includes(value)))
     throw new Error("Outbox poll comparison requires lifecycle-write/history and 1s or 250ms");
 }
+function checkMonitoring(profile, value) {
+  if (value !== undefined && (value !== "on" || profile === "create-peer"))
+    throw new Error("Monitoring requires --monitoring=on and one backend");
+}
 export function argumentsFor([action, ...args]) {
-  if (!["prepare", "run", "stop", "reset", "cleanup"].includes(action))
-    throw new Error("Use prepare, run, stop, reset or cleanup (see load-test/README.md)");
+  if (!["prepare", "run", "stop", "reset", "cleanup", "monitor-check"].includes(action))
+    throw new Error("Use prepare, run, stop, reset, cleanup or monitor-check (see load-test/README.md)");
   const supported = action === "prepare" ?
-    ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size", "outbox-poll"] : ["confirm"];
+    ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size", "outbox-poll", "monitoring"] : ["confirm"];
   const id = action === "prepare" ? null : validateId(args.shift());
   const values = {};
   while (args.length) {
@@ -44,8 +55,10 @@ export function argumentsFor([action, ...args]) {
   checkStay(stay);
   const catalogSize = values["catalog-size"];
   const outboxPoll = values["outbox-poll"];
+  const monitoring = values.monitoring;
   checkOutboxPoll(profile, outboxPoll);
-  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, outboxPoll,
+  checkMonitoring(profile, monitoring);
+  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, outboxPoll, monitoring,
     workload: plan(profile, cache, room, catalogSize) };
 }
 export function checkManifest(value, id, engine, requireIdentities = true) {
@@ -57,23 +70,34 @@ export function checkManifest(value, id, engine, requireIdentities = true) {
       JSON.stringify(plan(value.profile, value.cache, value.room, value.catalogSize)) !== JSON.stringify(value.workload))
     throw new Error("Invalid run manifest or wrong Docker engine");
   checkOutboxPoll(value.profile, value.outboxPoll);
+  checkMonitoring(value.profile, value.monitoring);
   if (requireIdentities && ["prepared", "running", "passed"].includes(value.state) &&
       (!/^sha256:[a-f0-9]{64}$/.test(value.generatorImage) ||
         !/^[a-f0-9]{64}$/.test(value.harnessSha256) ||
         !/^[a-f0-9]{64}$/.test(value.network) ||
-        servicesFor(value.workload).some((service) => !/^[a-f0-9]{64}$/.test(value.resources?.[service]))))
+        servicesFor(value.workload, value.monitoring).some((service) => !/^[a-f0-9]{64}$/.test(value.resources?.[service])) ||
+        (value.monitoring && Object.keys(MONITOR_IMAGES).some((svc) => !/^sha256:[a-f0-9]{64}$/.test(value.images?.[svc])))))
     throw new Error("Missing manifest resource identities");
   return value;
 }
 
-export function checkResource(record, expectedId, kind, services = SERVICES) {
+function sameSource(actual, expected) {
+  const normalize = (s) => {
+    const p = (s ?? "").replaceAll("\\", "/")
+      .replace(/^\/(?:run\/desktop\/mnt\/host|host_mnt)\/([a-z])\//i, "$1:/");
+    return /^[a-z]:\//i.test(p) ? p.toLowerCase() : p;
+  };
+  return normalize(actual) === normalize(expected);
+}
+
+export function checkResource(record, expectedId, kind, services = SERVICES, monitorSources = {}) {
   const project = projectOf(expectedId);
   const labels = kind === "container" ? record.Config.Labels : record.Labels;
   if (labels?.[OWNED] !== expectedId || labels?.["com.docker.compose.project"] !== project)
     throw new Error("Foreign " + kind + " in run scope");
   if (kind === "network" && (record.Name !== project + "_default" || !record.Internal || record.Driver !== "bridge"))
     throw new Error("Run network is not a private bridge");
-  if (kind === "volume" && (!VOLUMES.some((name) => record.Name === project + "_" + name) ||
+  if (kind === "volume" && (!volumesFor(services).some((name) => record.Name === project + "_" + name) ||
       record.Driver !== "local" || Object.keys(record.Options ?? {}).length))
     throw new Error("Unexpected storage in run scope");
   if (kind === "container") {
@@ -84,14 +108,35 @@ export function checkResource(record, expectedId, kind, services = SERVICES) {
       fixture: ["/fixture.mjs", "/catalog-cases.mjs", "/detail-cases.mjs", "/stay-cases.mjs", "/creation-cases.mjs",
         "/lifecycle-cases.mjs"],
       k6: ["/scripts", "/results"] };
+    const monitoring = services.includes("prometheus");
+    const monitorBinds = !monitoring ? {} : {
+      backend: { "/run/monitoring/scrape.secret": monitorSources.scrape },
+      prometheus: { "/run/monitoring/scrape.secret": monitorSources.scrape,
+        "/etc/prometheus/prometheus.yml": monitorSources.prometheus },
+      grafana: { "/run/monitoring/grafana.secret": monitorSources.grafana,
+        "/etc/grafana/provisioning/datasources/reservation.yml": monitorSources.datasource },
+    }[service] ?? {};
+    const mounts = record.Mounts ?? [];
+    const monitorVolumes = { prometheus: "/prometheus", grafana: "/var/lib/grafana" };
     if (![...services, "k6"].includes(service) || record.Name !== "/" + project + "-" + suffix ||
         record.HostConfig.NetworkMode !== project + "_default" ||
+        Object.keys(record.NetworkSettings?.Networks ?? {}).some((name) => name !== project + "_default") ||
         Object.keys(record.HostConfig.PortBindings ?? {}).length ||
         record.HostConfig.Privileged || record.HostConfig.PublishAllPorts ||
-        (record.Mounts ?? []).some((m) => {
-          if (m.Type === "volume") return !VOLUMES.some((v) => m.Name === project + "_" + v);
-          if (m.Type === "bind") return !bindTargets[service]?.includes(m.Destination) ||
-            (m.Destination !== "/results" && m.RW);
+        (Object.hasOwn(MONITOR_IMAGES, service) && (record.Config.Image !== MONITOR_IMAGES[service] ||
+          !mounts.some((m) => m.Type === "volume" && m.Destination === monitorVolumes[service]))) ||
+        Object.keys(monitorBinds).some((dest) => !mounts.some((m) => m.Type === "bind" && m.Destination === dest)) ||
+        mounts.some((m) => {
+          if (m.Type === "volume") {
+            if (Object.hasOwn(monitorVolumes, service))
+              return m.Name !== project + "_" + service + "-data" || m.Destination !== monitorVolumes[service] || !m.RW;
+            return !VOLUMES.some((v) => m.Name === project + "_" + v);
+          }
+          if (m.Type === "bind") {
+            if (Object.hasOwn(monitorBinds, m.Destination))
+              return !monitorBinds[m.Destination] || m.RW || !sameSource(m.Source, monitorBinds[m.Destination]);
+            return !bindTargets[service]?.includes(m.Destination) || (m.Destination !== "/results" && m.RW);
+          }
           return m.Type !== "tmpfs" || service !== "redis" || m.Destination !== "/data";
         }))
       throw new Error("Unexpected service, host exposure, or mount in run scope");

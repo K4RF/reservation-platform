@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static junsik.reservation.support.AuthenticationTestSupport.bearer;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,15 @@ class SecurityIntegrationTest {
 
 	@Autowired
 	private JwtProperties jwtProperties;
+
+	@Test
+	void actuatorIsNotAccessibleInTheDefaultApiContext() throws Exception {
+		String authorization = bearer(jwtTokenProvider.createAccessToken(15L, MemberRole.ADMIN));
+		for (String path : List.of("/actuator/health", "/actuator/prometheus", "/actuator/env")) {
+			mockMvc.perform(get(path)).andExpect(status().is4xxClientError());
+			mockMvc.perform(get(path).header("Authorization", authorization)).andExpect(status().is4xxClientError());
+		}
+	}
 
 	@Test
 	void rejectsUnauthenticatedRequestWithUnauthorizedResponse() throws Exception {

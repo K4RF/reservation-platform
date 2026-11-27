@@ -7,6 +7,7 @@ spring:
     name: backend
   config:
     import:
+      - classpath:observability.yaml
       - optional:file:.env[.properties]
       - optional:file:../.env[.properties]
   datasource:

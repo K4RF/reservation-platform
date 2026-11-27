@@ -30,7 +30,7 @@ verification.
 reservation-platform/
 ├── backend/       # Spring Boot application and Gradle project root
 ├── frontend/      # React/TypeScript/Vite browser application; pnpm project root
-├── infra/         # Placeholder directories for Docker and monitoring
+├── infra/         # Isolated integration and opt-in monitoring Compose
 ├── load-test/     # Guarded, isolated k6 runner, fixtures, metrics and checks
 ├── docs/          # Architecture, ADR, API, ERD, and performance documents
 ├── .github/       # Issue and pull request templates
@@ -69,6 +69,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
   handlers, an asynchronous structured Audit Log stub, and Reservation-ID Key based
   aggregate ordering across a three-partition Topic
 - Springdoc OpenAPI 3.0.3 with Swagger UI and JWT Bearer authentication scheme
+- Spring Boot Actuator and Micrometer Prometheus 1.16.6; isolated opt-in Prometheus
+  3.13.5 / Grafana 13.3.2, with no host-published management ports
 - MySQL Connector/J
 - Lombok
 - JUnit Platform and H2 for fast tests
@@ -76,9 +78,8 @@ tests. Cross-domain database constraint tests may remain at the shared test pack
   distributed-lock integration tests
 
 External Kafka post-processing, automatic DLT replay, raw deserialization-error recovery,
-Outbox/processed-event Cleanup,
-additional OAuth2
-providers, Access Token blacklisting, Prometheus, Grafana, and CD
+Outbox/processed-event Cleanup, additional OAuth2 providers, Access Token blacklisting,
+business observability meters, Grafana Dashboards/Alerts, and CD
 are planned but are not currently configured unless the repository is
 updated to include them.
 
@@ -120,6 +121,9 @@ For #342 HTTP performance work, follow `load-test/README.md`. Run k6 only
 through the manifest-verified runner on its own internal Compose network;
 do not target the development stack, override the endpoint, replay ambiguous
 writes, expose raw payloads/tokens, or treat the small Baseline as a capacity test.
+For #358 monitoring, see `docs/architecture/observability.md` and
+`docs/observability/runbook.md`. Enable it through the same runner only; never
+publish the management listener or attach an external collector.
 
 ## Frontend Design References
 
