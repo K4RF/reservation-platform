@@ -117,6 +117,7 @@ Kafka 이벤트 처리를 단계적으로 적용했습니다. 프론트엔드에
 | Redis     | Redis 7.4, Spring Data Redis/Cache, Redisson 4.7.0                             |
 | 이벤트    | Spring Kafka, Apache Kafka 4.3.1, Transactional Outbox                         |
 | API 문서  | Springdoc OpenAPI 3.0.3, Swagger UI                                            |
+| 격리 관측 | Spring Boot Actuator, Micrometer Prometheus 1.16.6, Prometheus 3.13.5, Grafana 13.3.2 (opt-in) |
 | Frontend  | React 19.3, TypeScript 6.0, React Router 7.18.4, Vite 8.3, pnpm 11.19.0        |
 | 테스트·CI | JUnit, H2, Testcontainers 2.0.5, Vitest, React Testing Library, GitHub Actions |
 
@@ -137,7 +138,7 @@ reservation-platform/
 │   ├── api/               # API 오류·요청 계약
 │   └── performance/       # 동시성·조회 전략 비교
 ├── .github/               # Issue/PR 템플릿·Backend/Frontend CI
-├── infra/                 # 격리 통합 검증용 Compose 및 인프라 폴더
+├── infra/                 # 격리 통합·모니터링 Compose
 ├── scripts/               # 격리 Frontend/Backend 통합 실행기
 ├── load-test/             # 전용 환경·시드·k6 Baseline·관측
 ├── docker-compose.yml     # 로컬 MySQL·Redis·Kafka
@@ -343,6 +344,7 @@ f0.6.0의 이슈별 증거, 최종 사용자 검수 절차와 다음 성능 테�
 - [숙소 통합 검색](docs/architecture/accommodation-integrated-search.md) · [카탈로그](docs/architecture/accommodation-catalog.md)
 - [조회·캐시 구조](docs/architecture/read-query-cache-architecture.md)
 - [예약 이벤트·Outbox·Consumer](docs/architecture/reservation-event-contract.md)
+- [격리 관측 기반](docs/architecture/observability.md) · [지표 카탈로그](docs/observability/metrics-catalog.md) · [실행·복구](docs/observability/runbook.md)
 - [공통 API 오류](docs/api/error-response.md)
 
 ### 검증과 비교
@@ -390,7 +392,8 @@ f0.6.0에서 실기기·외부 인증·서비스 자산과 최종 사용자 UX�
 - Access Token 블랙리스트, 추가 OAuth2 Provider, 서버 요청 멱등성
 - 변경·취소 재시도, Retry Backoff/Jitter, 분산 락 범위 확대
 - 외부 Kafka 후처리, 자동 DLT 재처리, Outbox/처리 이력 Cleanup
-- 정식 DB Migration 도구, Prometheus/Grafana, 운영 규모 단계별 부하 검증, CD·운영 배포
+- 업무별 지표·구조화 로그·Grafana Dashboard/Alert (격리 수집 기반만 구현)
+- 정식 DB Migration 도구, 운영 규모 단계별 부하 검증, CD·운영 배포
 
 현재 전략 비교는 전체 사용자 부하 테스트나 API SLO를 증명하지 않습니다.
 실제 Browser/Google E2E와 최종 반응형·시각 검수도 통합 테스트 기록과 구분해야 합니다.

@@ -55,7 +55,8 @@ ID를 사용한다. 같은 seed·날짜·설정으로 다시 준비하려면 `re
   MySQL 8.4·Redis 7.4·Kafka 4.3.1(단일 브로커·3 파티션)과 Media 볼륨을 공유하지 않는다.
 - 기존 격리 실행기의 임의 프로젝트/자격증명 방식을 재사용한다. Compose env 파일은 전용 빈 파일이다.
   백엔드는 저장소가 보이지 않는 `/isolated`의 JAR만 읽고 classpath만 사용하는 동시에
-  `spring.config.import`를 빈 값으로 지정한다. 두 후보 위치에 개발 `.env`가 없는지도 확인한다.
+  `spring.config.import`를 빈 값으로 지정한다. 운영 공통 설정인 `observability.yaml`도
+  classpath에서만 명시적으로 읽는다. 두 후보 위치에 개발 `.env`가 없는지도 확인한다.
 - 시작·seed·부하·정리는 명시적 확인과 manifest가 필요하다. 이미 존재하는 이름/라벨, 외부 네트워크
   부착, 변경된 JAR나 컨테이너 ID, 원격 Docker를 거절한다. 가입 API로 만든 테스트 ADMIN
   1명만 전용 SQL로 승격한다. 쓰기 VU는 각각 다른 USER로 로그인하고 토큰 발급은 측정에서 제외한다.
@@ -66,6 +67,11 @@ ID를 사용한다. 같은 seed·날짜·설정으로 다시 준비하려면 `re
   없음을 확인한 뒤 그 파일만 제거한다. 다른 소유권이 섞인 경우 좁혀 조사하며 전역 prune은 하지 않는다.
 - `cleanup`은 확인한 컨테이너·네트워크·볼륨만 삭제하고, `.local/load-test/<run-id>`의 자료는
   비교용으로 남긴다. 토큰이 들어 있는 전용 볼륨은 cleanup 시 함께 제거된다.
+
+격리 Prometheus/Grafana는 단일 Backend에 한해 prepare의 `--monitoring=on`으로 선택한다.
+기본값은 꺼져 있고, 켜면 Docker 엔진에 6 vCPU/6 GiB가 필요하다. 호스트 포트 또는 외부 attach 없이
+`monitor-check <run-id> --confirm=<run-id>`로 확인한다. [관측 Runbook](../docs/observability/runbook.md)에
+자격증명, 실행·복구 및 `up=0`/미수집 판단을 정리했다.
 
 ## 데이터와 단계
 
