@@ -30,7 +30,7 @@ class ObservabilityConfig {
 
 	static final String SCRAPER = "reservation-scraper";
 	private static final String SCRAPE_ROLE = "OBSERVABILITY_SCRAPER";
-	private static final String ACTUATOR = "/actuator";
+	static final String ACTUATOR = "/actuator";
 
 	@Bean
 	@Order(1)
@@ -46,12 +46,9 @@ class ObservabilityConfig {
 				|| !env.getProperty("management.server.base-path", "").isEmpty()) {
 			throw new IllegalStateException("The management path is fixed to /actuator");
 		}
-		RequestMatcher onManagement = request -> {
-			int port = env.getProperty("local.management.port", Integer.class, configuredPort);
-			return enabled && port > 0 && request.getLocalPort() == port;
-		};
+		RequestMatcher onManagement = managementListener(env);
 		var paths = PathPatternRequestMatcher.withDefaults();
-		http.securityMatcher(new OrRequestMatcher(onManagement, paths.matcher(ACTUATOR), paths.matcher(ACTUATOR + "/**")))
+		http.securityMatcher(new OrRequestMatcher(onManagement, actuatorPaths()))
 				.formLogin(AbstractHttpConfigurer::disable)
 				.logout(AbstractHttpConfigurer::disable)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -75,6 +72,20 @@ class ObservabilityConfig {
 				.hasRole(SCRAPE_ROLE)
 				.anyRequest().denyAll());
 		return http.build();
+	}
+
+	static RequestMatcher managementListener(Environment env) {
+		boolean enabled = env.getProperty("reservation.observability.enabled", Boolean.class, false);
+		int configuredPort = env.getProperty("management.server.port", Integer.class, -1);
+		return request -> {
+			int port = env.getProperty("local.management.port", Integer.class, configuredPort);
+			return enabled && port > 0 && request.getLocalPort() == port;
+		};
+	}
+
+	static RequestMatcher actuatorPaths() {
+		var paths = PathPatternRequestMatcher.withDefaults();
+		return new OrRequestMatcher(paths.matcher(ACTUATOR), paths.matcher(ACTUATOR + "/**"));
 	}
 
 	private String scrapePassword(Environment env) {
@@ -101,8 +112,4 @@ class ObservabilityConfig {
 				|| families.stream().anyMatch(id.getName()::startsWith));
 	}
 
-	@Bean
-	MeterFilter boundedHttpRoutes() {
-		return MeterFilter.maximumAllowableTags("http.server.requests", "uri", 64, MeterFilter.deny());
-	}
 }
