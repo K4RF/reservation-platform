@@ -27,6 +27,7 @@ import junsik.reservation.enums.ReservationErrorCode;
 import junsik.reservation.enums.MediaErrorCode;
 import junsik.reservation.enums.RoomInventoryErrorCode;
 import junsik.reservation.global.exception.ErrorResponse.ValidationError;
+import junsik.reservation.global.observability.HttpErrorMetric;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,7 +37,7 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(MaxUploadSizeExceededException.class)
 	public ResponseEntity<ErrorResponse> handleLargeUpload(MaxUploadSizeExceededException exception, HttpServletRequest request) {
 		ErrorCode errorCode = MediaErrorCode.INVALID_IMAGE;
-		return ResponseEntity.status(errorCode.getStatus()).body(ErrorResponse.of(errorCode, request.getRequestURI()));
+		return errorResponse(errorCode, request);
 	}
 
 	@ExceptionHandler(BusinessException.class)
@@ -45,9 +46,7 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request
 	) {
 		ErrorCode errorCode = exception.getErrorCode();
-		return ResponseEntity
-				.status(errorCode.getStatus())
-				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+		return errorResponse(errorCode, request);
 	}
 
 	@ExceptionHandler(InvalidReservationStateTransitionException.class)
@@ -59,9 +58,7 @@ public class GlobalExceptionHandler {
 			case CANCEL -> ReservationErrorCode.ALREADY_CANCELLED;
 			case CHANGE_SCHEDULE -> ReservationErrorCode.SCHEDULE_CHANGE_NOT_ALLOWED;
 		};
-		return ResponseEntity
-				.status(errorCode.getStatus())
-				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+		return errorResponse(errorCode, request);
 	}
 
 	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
@@ -70,9 +67,7 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request
 	) {
 		ErrorCode errorCode = RoomInventoryErrorCode.CONCURRENT_UPDATE;
-		return ResponseEntity
-				.status(errorCode.getStatus())
-				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+		return errorResponse(errorCode, request);
 	}
 
 	@ExceptionHandler(BindException.class)
@@ -126,9 +121,7 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request
 	) {
 		ErrorCode errorCode = CommonErrorCode.INVALID_REQUEST;
-		return ResponseEntity
-				.status(errorCode.getStatus())
-				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
+		return errorResponse(errorCode, request);
 	}
 
 	@ExceptionHandler(Exception.class)
@@ -136,8 +129,13 @@ public class GlobalExceptionHandler {
 			Exception exception,
 			HttpServletRequest request
 	) {
-		log.error("Unhandled exception", exception);
+		log.error("Unhandled exception type={}", exception.getClass().getSimpleName());
 		ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
+		return errorResponse(errorCode, request);
+	}
+
+	private ResponseEntity<ErrorResponse> errorResponse(ErrorCode errorCode, HttpServletRequest request) {
+		HttpErrorMetric.record(request, errorCode);
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode, request.getRequestURI()));
@@ -172,6 +170,7 @@ public class GlobalExceptionHandler {
 			HttpServletRequest request,
 			List<ValidationError> errors
 	) {
+		HttpErrorMetric.record(request, errorCode);
 		return ResponseEntity
 				.status(errorCode.getStatus())
 				.body(ErrorResponse.of(errorCode, request.getRequestURI(), errors));

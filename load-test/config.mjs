@@ -34,11 +34,16 @@ function checkMonitoring(profile, value) {
   if (value !== undefined && (value !== "on" || profile === "create-peer"))
     throw new Error("Monitoring requires --monitoring=on and one backend");
 }
+function checkHttpMetrics(profile, monitoring, value) {
+  if (value !== undefined && (monitoring !== "on" || !["read-heavy", "mixed"].includes(profile) ||
+      !["base", "histogram"].includes(value)))
+    throw new Error("HTTP metric verification requires monitored read-heavy or mixed with base or histogram");
+}
 export function argumentsFor([action, ...args]) {
   if (!["prepare", "run", "stop", "reset", "cleanup", "monitor-check"].includes(action))
     throw new Error("Use prepare, run, stop, reset, cleanup or monitor-check (see load-test/README.md)");
   const supported = action === "prepare" ?
-    ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size", "outbox-poll", "monitoring"] : ["confirm"];
+    ["confirm", "seed", "stay", "profile", "cache", "room", "catalog-size", "outbox-poll", "monitoring", "http-metrics"] : ["confirm"];
   const id = action === "prepare" ? null : validateId(args.shift());
   const values = {};
   while (args.length) {
@@ -56,9 +61,11 @@ export function argumentsFor([action, ...args]) {
   const catalogSize = values["catalog-size"];
   const outboxPoll = values["outbox-poll"];
   const monitoring = values.monitoring;
+  const httpMetrics = values["http-metrics"];
   checkOutboxPoll(profile, outboxPoll);
   checkMonitoring(profile, monitoring);
-  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, outboxPoll, monitoring,
+  checkHttpMetrics(profile, monitoring, httpMetrics);
+  return { action, seed: Number(seed), stay, profile, cache, room, catalogSize, outboxPoll, monitoring, httpMetrics,
     workload: plan(profile, cache, room, catalogSize) };
 }
 export function checkManifest(value, id, engine, requireIdentities = true) {
@@ -71,6 +78,7 @@ export function checkManifest(value, id, engine, requireIdentities = true) {
     throw new Error("Invalid run manifest or wrong Docker engine");
   checkOutboxPoll(value.profile, value.outboxPoll);
   checkMonitoring(value.profile, value.monitoring);
+  checkHttpMetrics(value.profile, value.monitoring, value.httpMetrics);
   if (requireIdentities && ["prepared", "running", "passed"].includes(value.state) &&
       (!/^sha256:[a-f0-9]{64}$/.test(value.generatorImage) ||
         !/^[a-f0-9]{64}$/.test(value.harnessSha256) ||

@@ -49,7 +49,7 @@ function harnessHash() {
     "lifecycle-verification.mjs", "lifecycle-kafka.mjs", "k6/lifecycle.js", "k6/lifecycle-cases.js", "outbox-poll.mjs"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
-  for (const file of ["compose.yaml", "prometheus.yml", "datasource.yml", "probe.mjs"])
+  for (const file of ["compose.yaml", "prometheus.yml", "datasource.yml", "probe.mjs", "http-metrics-probe.mjs"])
     sha.update("monitoring/" + file + "\0" + hash(safeReal(join(monitorDir, file), "file")));
   return sha.digest("hex");
 }
@@ -98,7 +98,7 @@ function openRun(runtime, m) {
     ...(m.workload.lifecycle && !lifecycleReadOnly(m.workload.lifecycle) ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
     ...(m.outboxPoll ? { LOAD_OUTBOX_POLL: m.outboxPoll } : {}),
     ...(m.monitoring ? { LOAD_MONITOR_CONFIG: monitorDir, LOAD_SCRAPE_FILE: monitorSources.scrape,
-      LOAD_GRAFANA_FILE: monitorSources.grafana } : {}),
+      LOAD_GRAFANA_FILE: monitorSources.grafana, LOAD_HTTP_HISTOGRAM: String(m.httpMetrics !== "base") } : {}),
     // Bound metadata lookup only in the controlled fault probe; all healthy profiles use Kafka's defaults.
     LOAD_PRODUCER_CONFIG: m.workload.lifecycle === "broker-down" ?
       JSON.stringify({ "spring.kafka.producer.properties[max.block.ms]": String(outageProducerMaxBlockMs) }) : "{}",
@@ -184,7 +184,28 @@ function openRun(runtime, m) {
     for (const name of ["scrape", "grafana"])
       if (m.monitoring && existsSync(monitorSources[name])) unlinkSync(safeReal(monitorSources[name], "file"));
   };
-  return { dir, results, docker, compose, composeArgs, env, resources, sql, fixture, monitor, removeCredentials, context: runtime.context };
+  function httpMetricProbe(checkpoint, args) {
+    const source = readFileSync(safeReal(join(monitorDir, "http-metrics-probe.mjs"), "file"), "utf8");
+    const input = source + "\nconsole.log(JSON.stringify(await " +
+      (checkpoint ? "httpCheckpoint" : "httpWindow") + "(" + JSON.stringify(args) + ")));";
+    return JSON.parse(compose(["exec", "-T", "fixture", "node", "--input-type=module", "-"],
+      { label: "Isolated HTTP metric evidence", input, timeout: 10_000 }));
+  }
+  async function httpCheckpoint() {
+    if (!m.httpMetrics) throw new Error("No HTTP measurement configured");
+    resources(true);
+    const threshold = Date.now(), deadline = threshold + 38_000;
+    do {
+      try { return httpMetricProbe(true, threshold); } catch { await delay(1500); }
+    } while (Date.now() < deadline);
+    throw new Error("No fresh HTTP measurement scrape");
+  }
+  function httpWindow(before, after) {
+    resources(true);
+    return httpMetricProbe(false, { before, after, histogram: m.httpMetrics === "histogram" });
+  }
+  return { dir, results, docker, compose, composeArgs, env, resources, sql, fixture, monitor, removeCredentials,
+    httpCheckpoint, httpWindow, context: runtime.context };
 }
 
 function withLock(run, fn) {
@@ -536,12 +557,14 @@ async function execute(run, m, path) {
     let sqlBefore, sqlAfter, staySqlBefore, staySqlAfter;
     let activePolls;
     let journeyCache;
+    let httpEvidence;
     const measure = async () => {
       if (existsSync(stop)) throw new Error("Stopped before starting k6");
       if (detail) sqlBefore = detailSnapshot(run);
       if (stayRead) staySqlBefore = staySnapshot(run.sql);
       const pollsBefore = idlePolls && pollSnapshot(run.sql);
       const cacheBefore = journey && redisDetailCounters(run);
+      const beforeHttp = m.httpMetrics && await run.httpCheckpoint();
       m.measurement = { seedAndWarmupMs: Date.now() - start, startedAt: new Date().toISOString() };
       json(path, m);
       const generator = measured(run, m);
@@ -554,6 +577,7 @@ async function execute(run, m, path) {
       if (stayRead) staySqlAfter = staySnapshot(run.sql);
       if (pollsBefore) activePolls = pollDelta(pollsBefore, pollSnapshot(run.sql));
       if (cacheBefore) journeyCache = redisDetailDelta(cacheBefore, redisDetailCounters(run));
+      if (m.httpMetrics) httpEvidence = run.httpWindow(beforeHttp, await run.httpCheckpoint());
       return code;
     };
     const catalogBefore = m.workload.catalog && catalogSqlSnapshot(run.sql);
@@ -608,6 +632,12 @@ async function execute(run, m, path) {
     if (measureError) throw measureError;
     const result = summarize(safeReal(join(run.results, "raw.jsonl"), "file"), m.workload);
     report("summary.json", result);
+    if (m.httpMetrics) {
+      report("http-metrics.json", { mode: m.httpMetrics, ...httpEvidence, k6Count: result.count,
+        k6TransportErrors: result.transportErrors, k6Timeouts: result.timeouts });
+      if (result.transportErrors || httpEvidence.count !== result.count)
+        throw new Error("HTTP window count differs from k6; never replay failed operations");
+    }
     if (creation) {
       const server = settled.observation.total;
       const { counts, errors } = reconciled;
@@ -696,7 +726,7 @@ try {
       }
       if (options.action === "reset") {
         run.resources();
-        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "outboxPoll", "monitoring", "workload"]
+        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "outboxPoll", "monitoring", "httpMetrics", "workload"]
           .map((key) => [key, m[key]])));
       }
     });

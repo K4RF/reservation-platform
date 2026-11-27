@@ -3,6 +3,7 @@ reservation:
     enabled: ${RESERVATION_OBSERVABILITY_ENABLED:false}
     scrape-password: ${RESERVATION_SCRAPE_PASSWORD:}
     scrape-password-file: ${RESERVATION_SCRAPE_PASSWORD_FILE:}
+    http-histogram: ${RESERVATION_HTTP_HISTOGRAM_ENABLED:true}
 
 management:
   server:
@@ -46,6 +47,9 @@ management:
       export:
         enabled: false
   metrics:
+    web:
+      server:
+        max-uri-tags: 64
     distribution:
       percentiles-histogram:
         all: false

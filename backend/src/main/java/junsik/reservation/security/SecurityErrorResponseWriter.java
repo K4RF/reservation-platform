@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import junsik.reservation.global.exception.ErrorCode;
 import junsik.reservation.global.exception.ErrorResponse;
+import junsik.reservation.global.observability.HttpErrorMetric;
 import tools.jackson.databind.ObjectMapper;
 
 @Component
@@ -28,6 +29,7 @@ public class SecurityErrorResponseWriter {
 			ErrorCode errorCode
 	) throws IOException {
 		response.setStatus(errorCode.getStatus().value());
+		HttpErrorMetric.record(request, errorCode);
 		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 		response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 		objectMapper.writeValue(

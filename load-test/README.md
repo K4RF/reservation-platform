@@ -72,6 +72,9 @@ ID를 사용한다. 같은 seed·날짜·설정으로 다시 준비하려면 `re
 기본값은 꺼져 있고, 켜면 Docker 엔진에 6 vCPU/6 GiB가 필요하다. 호스트 포트 또는 외부 attach 없이
 `monitor-check <run-id> --confirm=<run-id>`로 확인한다. [관측 Runbook](../docs/observability/runbook.md)에
 자격증명, 실행·복구 및 `up=0`/미수집 판단을 정리했다.
+기존 `read-heavy`/ `mixed` 프로필의 서버 Timer와 k6 요청 수는
+[`--http-metrics=base|histogram`](../docs/observability/runbook.md#http-서버와-k6-동일-구간-검증)으로
+같은 구간에서 검증할 수 있다.
 
 ## 데이터와 단계
 
