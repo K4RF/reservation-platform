@@ -7,9 +7,9 @@
 
 | Micrometer / 출처 | Prometheus 예 | 유형 / 단위 | 제한된 차원 |
 | --- | --- | --- | --- |
-| `http.server.requests` | `http_server_requests_seconds_count`, `_sum`, `_max` | Timer: 건수·초 | method, status, outcome, exception의 타입 분류, route template `uri` 최대 64개. unmatched 요청은 분류값으로 유지한다. |
+| `http.server.requests` | `http_server_requests_seconds_count`, `_sum`, `_max`, `_bucket` | Timer: 요청 수·초·누적 bucket | method, uri, status, outcome, error_code. [#359 계약](http-jvm-metrics.md)에서 관리 트래픽 제외, label 예산과 계산식을 정의한다. |
 | `jvm.*` | `jvm_memory_used_bytes`, `jvm_threads_live_threads`, `jvm_gc_pause_seconds_count` | Gauge/Timer: bytes·threads·초 | 바인더가 정한 메모리 풀/영역·GC 분류 |
-| `process.*`, `system.*`, `application.*` | `process_uptime_seconds`, `system_cpu_usage`, `application_ready_time_seconds` | Gauge/시작 시간: 초, 0–1 비율 | 바인더의 고정값 |
+| `process.*`, `system.*`, `application.*` | `process_uptime_seconds`, `process_start_time_seconds`, `process_cpu_usage`, `system_cpu_usage`, `application_ready_time_seconds` | Gauge/시작 시간: 초, 0–1 비율 | 바인더의 고정값 |
 | `hikaricp.*`, `jdbc.connections.*` | `hikaricp_connections_active`, `hikaricp_connections_pending`, `jdbc_connections_max` | Gauge: connection/대기 수. Timer는 초 | 설정된 pool 또는 datasource 이름 |
 | Prometheus scrape | `up`, `scrape_duration_seconds`, `scrape_samples_scraped` | Gauge: 0/1·초·sample 수 | `job=reservation`, `instance=backend:9091` |
 
@@ -26,7 +26,7 @@ percentile이 아니다. DB와 JVM의 기본 meters를 추가 업무 기능/쿼�
   허용한다. 최대 64개 route template, custom meter당 label 차원 최대 4개/개별 enum 최대 16개,
   조합 상한 64개를 시작 예산으로 제안한다. ID, Correlation ID, raw URL, 검색어, Redis key,
   SQL/바인딩, 예외 메시지, token·개인정보는 금지한다. 예산 초과를 고-cardinality 값으로 대체하지 않는다.
-- histogram 기본값은 꺼져 있다. 이후 latency 분포가 필요한 한정된 meter에만 SLO 경계 8개 이내를
+- #359의 HTTP Timer를 제외한 histogram 기본값은 꺼져 있다. 이후 latency 분포가 필요한 한정된 meter에만 경계 8개 이내를
   제안한다. `(경계 수 + Inf/count/sum/max) × 실제 label 조합`과 다른 시계열의 여유를 계산하고
   target당 2,000 samples 상한을 실제 부하에서 검증하기 전에는 켜지 않는다. client percentile도 기본 미설정이다.
 - disabled는 의도적으로 수집하지 않음, unavailable은 데이터가 없거나 요청/대상 장애, stale은 마지막 성공이
@@ -37,7 +37,7 @@ percentile이 아니다. DB와 JVM의 기본 meters를 추가 업무 기능/쿼�
 
 | 이슈 | 소유 범위 |
 | --- | --- |
-| #359 | HTTP와 JVM 상세 정의, latency 및 오류 분류 |
+| #359 | [HTTP와 JVM 상세 정의, latency 및 오류 분류](http-jvm-metrics.md) |
 | #360 | MySQL/HikariCP 병목과 풀 지표 |
 | #361 | Redis cache 및 예약 동시성·lock 지표 |
 | #362 | Kafka/Outbox 지표와 처리 경계 |

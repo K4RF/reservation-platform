@@ -345,6 +345,7 @@ f0.6.0의 이슈별 증거, 최종 사용자 검수 절차와 다음 성능 테�
 - [조회·캐시 구조](docs/architecture/read-query-cache-architecture.md)
 - [예약 이벤트·Outbox·Consumer](docs/architecture/reservation-event-contract.md)
 - [격리 관측 기반](docs/architecture/observability.md) · [지표 카탈로그](docs/observability/metrics-catalog.md) · [실행·복구](docs/observability/runbook.md)
+- [HTTP 오류·latency와 JVM 지표, k6 대조 (#359)](docs/observability/http-jvm-metrics.md)
 - [공통 API 오류](docs/api/error-response.md)
 
 ### 검증과 비교

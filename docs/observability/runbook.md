@@ -52,7 +52,24 @@ Java의 전용 테스트처럼 로컬 단독 확인이 필요하면 별도 loopb
 | `RESERVATION_OBSERVABILITY_ADDRESS` | `127.0.0.1`; 격리 runner만 전용 internal network 안에서 `0.0.0.0` |
 | `RESERVATION_SCRAPE_PASSWORD_FILE` | 전용 password 파일 경로. runner가 자동 생성한다. |
 | `RESERVATION_SCRAPE_PASSWORD` | 파일 대신 별도 실행 환경에만 주입할 때 사용. 두 방식을 동시에 사용할 수 없다. |
+| `RESERVATION_HTTP_HISTOGRAM_ENABLED` | 관측이 켜진 경우 기본 `true`. runner의 `--http-metrics=base`만 비교를 위해 `false`로 설정한다. |
 
 자격증명은 32바이트 이상의 난수를 Base64URL로 생성한다(코드는 32~128자의 허용 형식을 검사).
 Grafana는 별도 랜덤 admin 암호를 파일로 주입하며 익명·가입을 끈다. Prometheus 관리 API는 전용 네트워크
 내부에서만 접근한다. 이 로컬 방식에 운영 보안 가정을 적용하거나 임의 포트를 publish하지 않는다.
+
+## HTTP 서버와 k6 동일 구간 검증
+
+Boot JAR을 한 번 빌드하고 동일한 날짜·seed로 아래 모드를 **각각 전용 run**에서 실행한다.
+`--http-metrics=base`는 bucket 이외의 HTTP 계측과 JVM/Prometheus/Grafana를 유지한다.
+`histogram`은 그 외 설정을 그대로 쓴다. 두 옵션 모두 기존 `mixed` 또는 `read-heavy`에서만 허용된다.
+
+```powershell
+$stay = (Get-Date).AddDays(35).ToString('yyyy-MM-dd')
+node load-test/run.mjs prepare --confirm=isolated --seed=359 "--stay=$stay" --profile=mixed --cache=warm --room=distributed --monitoring=on --http-metrics=base
+# 발급된 base ID로 run 및 cleanup을 마친 뒤 histogram 모드를 준비한다.
+node load-test/run.mjs prepare --confirm=isolated --seed=359 "--stay=$stay" --profile=mixed --cache=warm --room=distributed --monitoring=on --http-metrics=histogram
+```
+
+각 `run`의 `http-metrics.json`에는 성공 scrape 경계, 서버 count/sum/평균, bucket 분위수(해당 시),
+k6 count/transport 오류만 저장된다. 절차와 표본 한계는 [HTTP/JVM 계약](http-jvm-metrics.md)을 참고한다.

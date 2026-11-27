@@ -124,6 +124,9 @@ writes, expose raw payloads/tokens, or treat the small Baseline as a capacity te
 For #358 monitoring, see `docs/architecture/observability.md` and
 `docs/observability/runbook.md`. Enable it through the same runner only; never
 publish the management listener or attach an external collector.
+For #359 use the existing HTTP Timer and label/bucket budget in
+`docs/observability/http-jvm-metrics.md`. Keep management traffic, client
+transport failures and committed business outcomes separate.
 
 ## Frontend Design References
 
