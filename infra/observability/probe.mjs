@@ -39,9 +39,10 @@ export async function monitoringProbe({ scrape, grafana }, fetchImpl = fetch, no
     return Number(hits[0].value[1]);
   }
   const selector = '{job="reservation",instance="backend:9091"}';
+  const upSelector = "up" + selector;
   const [up, durationSeconds, samples, lastSuccess, live, ready, aggregate, source, sourceHealth] = await Promise.all([
-    metric("up" + selector), metric("scrape_duration_seconds" + selector),
-    metric("scrape_samples_scraped" + selector), metric("timestamp(up" + selector + " == 1)"),
+    metric(upSelector), metric("scrape_duration_seconds" + selector),
+    metric("scrape_samples_scraped" + selector), metric("timestamp(" + upSelector + ") and (" + upSelector + " == 1)"),
     health("/liveness"), health("/readiness"), health(""),
     get(dashboard, datasource, grafanaAuth).then((r) => r.json()),
     get(dashboard, datasource + "/health", grafanaAuth).then((r) => r.json()),
