@@ -1,0 +1,51 @@
+reservation:
+  observability:
+    enabled: ${RESERVATION_OBSERVABILITY_ENABLED:false}
+    scrape-password: ${RESERVATION_SCRAPE_PASSWORD:}
+    scrape-password-file: ${RESERVATION_SCRAPE_PASSWORD_FILE:}
+
+management:
+  server:
+    port: ${RESERVATION_OBSERVABILITY_PORT:-1}
+    address: ${RESERVATION_OBSERVABILITY_ADDRESS:127.0.0.1}
+  endpoints:
+    access:
+      default: none
+      max-permitted: read-only
+    jmx:
+      exposure:
+        exclude: "*"
+    web:
+      base-path: /actuator
+      discovery:
+        enabled: false
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+      show-components: never
+      cache:
+        time-to-live: 5s
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
+    prometheus:
+      access: read-only
+  prometheus:
+    metrics:
+      export:
+        enabled: ${reservation.observability.enabled}
+  simple:
+    metrics:
+      export:
+        enabled: false
+  metrics:
+    distribution:
+      percentiles-histogram:
+        all: false
