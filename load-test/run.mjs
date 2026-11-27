@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import {
   argumentsFor, checkManifest, checkResource, checkStay, hostEnv, K6, OWNED,
-  projectOf, SERVICES, servicesFor, VOLUMES,
+  projectOf, SERVICES, servicesFor, volumesFor,
 } from "./config.mjs";
 import { kafkaLag, sample, summarize } from "./metrics.mjs";
 import { checkInvariants, checkMeasurement, counters } from "./verification.mjs";
@@ -35,6 +35,7 @@ import { explores, lifecycleReadOnly } from "./k6/lifecycle-cases.js";
 
 const root = realpathSync(fileURLToPath(new URL("../", import.meta.url)));
 const loadDir = join(root, "load-test");
+const monitorDir = join(root, "infra", "observability");
 const scratch = join(root, ".local", "load-test");
 const group = "com.docker.compose.project";
 const hash = (file) => createHash("sha256").update(readFileSync(file)).digest("hex");
@@ -48,6 +49,8 @@ function harnessHash() {
     "lifecycle-verification.mjs", "lifecycle-kafka.mjs", "k6/lifecycle.js", "k6/lifecycle-cases.js", "outbox-poll.mjs"];
   const sha = createHash("sha256");
   for (const file of files) sha.update(file + "\0" + hash(safeReal(join(loadDir, ...file.split("/")), "file")));
+  for (const file of ["compose.yaml", "prometheus.yml", "datasource.yml", "probe.mjs"])
+    sha.update("monitoring/" + file + "\0" + hash(safeReal(join(monitorDir, file), "file")));
   return sha.digest("hex");
 }
 const json = (file, data) => writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
@@ -84,12 +87,18 @@ function openRun(runtime, m) {
   const { id, project } = m;
   const dir = safeReal(join(scratch, id), "directory");
   const results = safeReal(join(dir, "results"), "directory");
+  const expected = servicesFor(m.workload, m.monitoring);
+  const allowedVolumes = volumesFor(expected);
+  const monitorSources = { scrape: join(dir, "scrape.secret"), grafana: join(dir, "grafana.secret"),
+    prometheus: join(monitorDir, "prometheus.yml"), datasource: join(monitorDir, "datasource.yml") };
   const env = { ...hostEnv, LOAD_ID: id, LOAD_RESULTS: results,
     LOAD_JAR: join(root, "backend", "build", "libs", m.jar), LOAD_CACHE: String(m.cache !== "off"),
     ...(m.workload.detail ? { LOAD_DETAIL_TTL: String(detailTtlMs(m.profile)) + "ms" } : {}),
     ...(m.workload.creation ? { LOAD_CREATE_OBSERVATION: "TRACE" } : {}),
     ...(m.workload.lifecycle && !lifecycleReadOnly(m.workload.lifecycle) ? { LOAD_LIFECYCLE_OBSERVATION: "TRACE" } : {}),
     ...(m.outboxPoll ? { LOAD_OUTBOX_POLL: m.outboxPoll } : {}),
+    ...(m.monitoring ? { LOAD_MONITOR_CONFIG: monitorDir, LOAD_SCRAPE_FILE: monitorSources.scrape,
+      LOAD_GRAFANA_FILE: monitorSources.grafana } : {}),
     // Bound metadata lookup only in the controlled fault probe; all healthy profiles use Kafka's defaults.
     LOAD_PRODUCER_CONFIG: m.workload.lifecycle === "broker-down" ?
       JSON.stringify({ "spring.kafka.producer.properties[max.block.ms]": String(outageProducerMaxBlockMs) }) : "{}",
@@ -102,12 +111,13 @@ function openRun(runtime, m) {
   if (lstatSync(emptyEnv).size !== 0) throw new Error("The isolated Compose env file is not empty");
   const composeArgs = ["compose", "--project-name", project, "--project-directory", loadDir,
     "--env-file", emptyEnv, "--file", join(loadDir, "compose.yaml"),
+    ...(m.monitoring ? ["--file", safeReal(join(monitorDir, "compose.yaml"), "file")] : []),
     ...(m.workload.creation === "peer" ? ["--profile", "creation-peer"] : [])];
   const compose = (args, options = {}) => runtime.docker([...composeArgs, ...args],
     { label: "Compose " + args.slice(0, args[0] === "exec" ? 1 : 2).join(" "), ...options, env });
   const docker = runtime.docker;
 
-  function resources(required = false, expectedServices = servicesFor(m.workload)) {
+  function resources(required = false, expectedServices = expected) {
     // Consider both ownership labels and all reserved names. An unexpected or foreign
     // resource must block even cleanup; never fall back to a broad Compose down/prune.
     const records = (kind, ids) => ids.length ? JSON.parse(docker([kind, "inspect", ...ids])) : [];
@@ -125,14 +135,18 @@ function openRun(runtime, m) {
     // A short docker ps ID and full ID may identify the same object.
     const unique = [...new Map(containers.map((c) => [c.Id, c])).values()];
     const networks = named("network", [project + "_default"]);
-    const volumes = named("volume", VOLUMES.map((v) => project + "_" + v));
+    const volumes = named("volume", allowedVolumes.map((v) => project + "_" + v));
     for (const [kind, list] of [["container", unique], ["network", networks], ["volume", volumes]])
-      for (const row of list) checkResource(row, id, kind, servicesFor(m.workload));
+      for (const row of list) checkResource(row, id, kind, expected, monitorSources);
     const services = Object.fromEntries(unique.map((c) => [c.Config.Labels["com.docker.compose.service"], c]));
+    if (Object.entries(services).some(([svc, record]) =>
+      (m.resources?.[svc] && m.resources[svc] !== record.Id) || (m.images?.[svc] && m.images[svc] !== record.Image)) ||
+      networks.some((n) => m.network && m.network !== n.Id))
+      throw new Error("Run identities were replaced; no cleanup performed");
     for (const n of networks)
       if (Object.keys(n.Containers ?? {}).some((container) => !unique.some((c) => c.Id === container)))
         throw new Error("Foreign attachment to the run network");
-    if (required && (networks.length !== 1 || volumes.length !== VOLUMES.length ||
+    if (required && (networks.length !== 1 || volumes.length !== allowedVolumes.length ||
         expectedServices.some((svc) => !services[svc]?.State.Running ||
           (m.resources && m.resources[svc] !== services[svc].Id)) ||
         (m.network && m.network !== networks[0].Id) ||
@@ -148,7 +162,29 @@ function openRun(runtime, m) {
   }
   const fixture = (...args) => compose(["exec", "-T", "fixture", "node", "/fixture.mjs", ...args],
     { label: "Fixture " + args[0], timeout: 180_000 });
-  return { dir, results, docker, compose, composeArgs, env, resources, sql, fixture, context: runtime.context };
+  async function monitor() {
+    if (!m.monitoring) throw new Error("This run has no monitoring services");
+    resources(true);
+    const secrets = Object.fromEntries(["scrape", "grafana"].map((name) =>
+      [name, readFileSync(safeReal(monitorSources[name], "file"), "utf8").trim()]));
+    if (Object.values(secrets).some((value) => !/^[A-Za-z0-9_-]{43}$/.test(value)))
+      throw new Error("Invalid scoped monitoring credential");
+    const script = readFileSync(safeReal(join(monitorDir, "probe.mjs"), "file"), "utf8") +
+      "\nconsole.log(JSON.stringify(await monitoringProbe(" + JSON.stringify(secrets) + ")));";
+    const deadline = Date.now() + 65_000;
+    do {
+      try {
+        return JSON.parse(compose(["exec", "-T", "fixture", "node", "--input-type=module", "-"],
+          { label: "Internal monitoring probe", input: script, timeout: 10_000 }));
+      } catch { await delay(1300); }
+    } while (Date.now() < deadline);
+    throw new Error("Authenticated scrape or provisioned datasource did not become healthy");
+  }
+  const removeCredentials = () => {
+    for (const name of ["scrape", "grafana"])
+      if (m.monitoring && existsSync(monitorSources[name])) unlinkSync(safeReal(monitorSources[name], "file"));
+  };
+  return { dir, results, docker, compose, composeArgs, env, resources, sql, fixture, monitor, removeCredentials, context: runtime.context };
 }
 
 function withLock(run, fn) {
@@ -169,6 +205,8 @@ function withLock(run, fn) {
 async function prepare(runtime, settings) {
   if (settings.workload.creation === "peer" && (runtime.info.cpus < 6 || runtime.info.bytes < 7 * 1024 ** 3))
     throw new Error("Peer probe requires a local engine with at least 6 CPUs and 7 GiB");
+  if (settings.monitoring && (runtime.info.cpus < 6 || runtime.info.bytes < 6 * 1024 ** 3))
+    throw new Error("Monitoring requires a local engine with at least 6 CPUs and 6 GiB");
   safeReal(root, "directory");
   for (const path of [join(root, ".local"), scratch]) {
     if (!existsSync(path)) mkdirSync(path);
@@ -180,9 +218,11 @@ async function prepare(runtime, settings) {
   checkStay(settings.stay);
   const id = randomBytes(12).toString("hex");
   const dir = join(scratch, id);
-  mkdirSync(dir);
+  mkdirSync(dir, { mode: 0o700 });
   mkdirSync(join(dir, "results"));
   writeFileSync(join(dir, "empty.env"), "", { flag: "wx" });
+  if (settings.monitoring) for (const service of ["scrape", "grafana"])
+    writeFileSync(join(dir, service + ".secret"), randomBytes(32).toString("base64url"), { flag: "wx", mode: 0o644 });
   const { action: _action, ...inputs } = settings;
   const m = { ...inputs, schema: 1, id, project: projectOf(id), engine: runtime.info.engine,
     state: "preparing", source: command("git", ["rev-parse", "HEAD"]), jar: jars[0],
@@ -195,14 +235,15 @@ async function prepare(runtime, settings) {
   const path = join(dir, "manifest.json");
   json(path, m);
   const run = openRun(runtime, m);
+  const initialServices = m.monitoring ? servicesFor(m.workload, m.monitoring) : SERVICES;
   console.log("Isolated run " + id + " (no host ports)");
   await withLock(run, async () => {
     try {
       const scope = run.resources();
       if (Object.keys(scope.services).length || scope.volumes.length || scope.networks.length)
         throw new Error("Generated namespace is not empty");
-      run.compose(["up", "-d", "--wait", "--wait-timeout", "160", ...SERVICES], { timeout: 210_000, label: "Isolated startup" });
-      run.resources(true, SERVICES);
+      run.compose(["up", "-d", "--wait", "--wait-timeout", "160", ...initialServices], { timeout: 210_000, label: "Isolated startup" });
+      run.resources(true, initialServices);
       run.fixture("ready");
       if (m.workload.creation === "peer") {
         // Let the primary finish the initial Hibernate schema update before adding a peer.
@@ -211,9 +252,9 @@ async function prepare(runtime, settings) {
         run.fixture("ready-peer");
       }
       const owned = run.resources(true);
-      m.resources = Object.fromEntries(servicesFor(m.workload).map((name) => [name, owned.services[name].Id]));
+      m.resources = Object.fromEntries(servicesFor(m.workload, m.monitoring).map((name) => [name, owned.services[name].Id]));
       m.network = owned.networks[0].Id;
-      m.images = Object.fromEntries(servicesFor(m.workload).map((name) => [name, owned.services[name].Image]));
+      m.images = Object.fromEntries(servicesFor(m.workload, m.monitoring).map((name) => [name, owned.services[name].Image]));
       if (m.images["backend-peer"] && m.images["backend-peer"] !== m.images.backend)
         throw new Error("Isolated peer image does not match the primary");
       try {
@@ -226,6 +267,7 @@ async function prepare(runtime, settings) {
       for (const service of servicesFor(m.workload).filter((name) => name.startsWith("backend")))
         run.compose(["exec", "-T", service, "sh", "-c",
           'test ! -e /isolated/.env && test ! -e /.env && javac -d /tmp /Observe.java']);
+      if (m.monitoring) m.monitoringStartup = await run.monitor();
       m.state = "prepared";
       json(path, m);
       console.log("Prepared. Next: run " + id + " --confirm=" + id);
@@ -374,6 +416,16 @@ async function execute(run, m, path) {
   m.state = "running";
   json(path, m);
   const report = (name, value) => json(join(run.results, name), value);
+  let monitoringBefore;
+  const finishMonitoring = async () => {
+    if (!m.monitoring) return;
+    try {
+      report("monitoring.json", { state: "collected", before: monitoringBefore, after: await run.monitor() });
+    } catch (error) {
+      report("monitoring.json", { state: "unavailable", before: monitoringBefore });
+      throw error;
+    }
+  };
   const stop = join(run.dir, "stop.request");
   const observe = (phase) => appendFileSync(join(run.results, "observations.jsonl"),
     JSON.stringify(sample({ ...run, phase, peer: m.workload.creation === "peer",
@@ -382,6 +434,15 @@ async function execute(run, m, path) {
       "--filter", "label=" + group + "=" + m.project, "--filter", "label=" + OWNED + "=" + m.id])) })) + "\n");
   try {
     const start = Date.now();
+    if (m.monitoring) {
+      try {
+        monitoringBefore = await run.monitor();
+        report("monitoring.json", { state: "in-progress", before: monitoringBefore });
+      } catch (error) {
+        report("monitoring.json", { state: "unavailable" });
+        throw error;
+      }
+    }
     if (JSON.parse(run.sql(counters)).members !== 0) throw new Error("Seed requires an empty owned database");
     const adminId = Number(run.fixture("admin"));
     if (!Number.isSafeInteger(adminId) || adminId < 1 ||
@@ -466,6 +527,7 @@ async function execute(run, m, path) {
       if (JSON.stringify(pre.db) !== JSON.stringify(post.db)) throw new Error("Lifecycle changed unrelated counts");
       report("verification.json", { before: pre.db, after: post.db, lag: post.lag });
       run.resources(true);
+      await finishMonitoring();
       m.state = "passed";
       console.log("PASS: natural TTL expiration, reload and after-commit eviction");
       return;
@@ -509,6 +571,7 @@ async function execute(run, m, path) {
       if (idlePolls) report("outbox-poll.json", { interval: m.outboxPoll, idle: idlePolls, active: activePolls });
       const summary = await finishLifecycle(run, m, { first, previous, offsets, pre, code, measureError, report });
       observe("after");
+      await finishMonitoring();
       m.state = "passed";
       console.log("PASS: " + summary.count + " measured requests; lifecycle, DB and Kafka verified");
       return;
@@ -583,6 +646,7 @@ async function execute(run, m, path) {
       report("stay-readonly.json", { before: stayBefore, after });
       if (stayRead !== "journey") report("stay-plans.json", explainStay(run, stayRead));
     }
+    await finishMonitoring();
     m.state = "passed";
     console.log("PASS: " + result.count + " measured requests; DB, inventory, snapshot and events verified");
   } catch (error) {
@@ -616,17 +680,23 @@ try {
       console.log("Stop requested for this run only (stack preserved).");
     } else await withLock(run, async () => {
       if (options.action === "run") await execute(run, m, path);
+      if (options.action === "monitor-check") {
+        if (!m.monitoring || !["prepared", "passed"].includes(m.state) || harnessHash() !== m.harnessSha256)
+          throw new Error("An unchanged prepared or passed monitoring run is required");
+        console.log(JSON.stringify(await run.monitor()));
+      }
       if (options.action === "cleanup") {
         if (run.resources().services.k6?.State.Running) throw new Error("Stop the owned generator first");
         run.compose(["--profile", "generator", "down", "--volumes"], { timeout: 60_000, label: "Owned cleanup" });
         const remaining = run.resources();
         if (Object.keys(remaining.services).length || remaining.networks.length || remaining.volumes.length)
           throw new Error("Owned resources remain");
+        run.removeCredentials();
         console.log("Only this run's Docker resources removed; manifests and artifacts kept.");
       }
       if (options.action === "reset") {
         run.resources();
-        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "outboxPoll", "workload"]
+        await prepare(runtime, Object.fromEntries(["seed", "stay", "profile", "cache", "room", "catalogSize", "outboxPoll", "monitoring", "workload"]
           .map((key) => [key, m[key]])));
       }
     });

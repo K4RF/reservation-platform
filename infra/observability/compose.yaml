@@ -1,0 +1,68 @@
+# Overlay used only through load-test/run.mjs --monitoring=on.
+x-owned: &owned
+  reservation.load.run: ${LOAD_ID:?run ID required}
+services:
+  backend:
+    environment:
+      RESERVATION_OBSERVABILITY_ENABLED: "true"
+      RESERVATION_OBSERVABILITY_PORT: "9091"
+      RESERVATION_OBSERVABILITY_ADDRESS: "0.0.0.0"
+      RESERVATION_SCRAPE_PASSWORD_FILE: /run/monitoring/scrape.secret
+    volumes:
+      - type: bind
+        source: ${LOAD_SCRAPE_FILE:?}
+        target: /run/monitoring/scrape.secret
+        read_only: true
+        bind: { create_host_path: false }
+  prometheus:
+    image: prom/prometheus:v3.13.5@sha256:aafa9d694e6a883c02db516d9f6e5b84e14195f49a2a6456a4cca815edda72b9
+    labels: *owned
+    cpus: 0.5
+    mem_limit: 256m
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=6h
+      - --storage.tsdb.retention.size=256MB
+    volumes:
+      - type: bind
+        source: ${LOAD_MONITOR_CONFIG:?}/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${LOAD_SCRAPE_FILE:?}
+        target: /run/monitoring/scrape.secret
+        read_only: true
+        bind: { create_host_path: false }
+      - prometheus-data:/prometheus
+  grafana:
+    image: grafana/grafana:13.3.2@sha256:81556409ba48b2b922e0adb69a2511337d8ba7578f11962eefa6149a2d815101
+    labels: *owned
+    cpus: 0.5
+    mem_limit: 384m
+    environment:
+      GF_SECURITY_ADMIN_USER: reservation-observer
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/monitoring/grafana.secret
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - type: bind
+        source: ${LOAD_MONITOR_CONFIG:?}/datasource.yml
+        target: /etc/grafana/provisioning/datasources/reservation.yml
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${LOAD_GRAFANA_FILE:?}
+        target: /run/monitoring/grafana.secret
+        read_only: true
+        bind: { create_host_path: false }
+      - grafana-data:/var/lib/grafana
+volumes:
+  prometheus-data: { labels: *owned }
+  grafana-data: { labels: *owned }

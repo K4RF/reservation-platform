@@ -69,7 +69,7 @@ services:
     mem_limit: 1536m
     working_dir: /isolated
     # Only the packaged JAR is visible here, not the repository or any .env file.
-    command: ["java", "-Xms256m", "-Xmx512m", "-jar", "/app.jar", "--spring.config.location=classpath:/application.yaml", "--spring.config.import="]
+    command: ["java", "-Xms256m", "-Xmx512m", "-jar", "/app.jar", "--spring.config.location=classpath:/application.yaml,classpath:/observability.yaml", "--spring.config.import="]
     environment:
       DB_URL: jdbc:mysql://mysql:3306/reservation_load
       MYSQL_USER: reservation_load
